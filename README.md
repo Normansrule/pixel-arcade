@@ -1,58 +1,73 @@
 # Pixel Arcade
 
-A retro arcade that runs entirely in the browser: 43 original games on a 320x240 pixel canvas, with no build step, no server and no dependencies. It is made to be hosted on GitHub Pages.
+A retro arcade that runs entirely in the browser: 58 original games on a 320x240 pixel canvas, with no build step, no server and no dependencies. It is made to be hosted on GitHub Pages.
 
 Every game is original code with its own name and art. Several are written in the style of well-known arcade genres (maze chase, falling blocks, girder climbing), but none use the names, characters, mazes or assets of commercial games, which is what keeps a public repository safe from takedown requests.
 
 ## Play now
 
-The arcade is live at **[https://normansrule.github.io/pixel-arcade/](https://normansrule.github.io/pixel-arcade/)**. Every game also has its own link that opens it straight away:
+Live at **[https://normansrule.github.io/pixel-arcade/](https://normansrule.github.io/pixel-arcade/)**. Each link below opens that game directly.
 
 | Category | Game | Modes | Play |
 |---|---|---|---|
-| Sports | Paddle Duel | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#pong](https://normansrule.github.io/pixel-arcade/#pong) |
-| Sports | Court Tennis | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#tennis](https://normansrule.github.io/pixel-arcade/#tennis) |
-| Sports | Beach Volley | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#volley](https://normansrule.github.io/pixel-arcade/#volley) |
-| Sports | Hoops 1 On 1 | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#hoops](https://normansrule.github.io/pixel-arcade/#hoops) |
-| Sports | Pixel Soccer | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#soccer](https://normansrule.github.io/pixel-arcade/#soccer) |
-| Sports | Air Hockey | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#airhockey](https://normansrule.github.io/pixel-arcade/#airhockey) |
-| Sports | Bowling 3D | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#bowling](https://normansrule.github.io/pixel-arcade/#bowling) |
-| Sports | Mini Golf | solo / take turns | [https://normansrule.github.io/pixel-arcade/#golf](https://normansrule.github.io/pixel-arcade/#golf) |
-| Sports | Ring Boxing | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#boxing](https://normansrule.github.io/pixel-arcade/#boxing) |
-| Sports | Penalty Kicks 3D | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#penalty](https://normansrule.github.io/pixel-arcade/#penalty) |
-| Sports | 100M Dash | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#dash100](https://normansrule.github.io/pixel-arcade/#dash100) |
-| Sports | Home Run Derby | solo / take turns | [https://normansrule.github.io/pixel-arcade/#homerun](https://normansrule.github.io/pixel-arcade/#homerun) |
-| Sports | Ski Slalom | solo / take turns | [https://normansrule.github.io/pixel-arcade/#ski](https://normansrule.github.io/pixel-arcade/#ski) |
-| Sports | Archery | solo / take turns | [https://normansrule.github.io/pixel-arcade/#archery](https://normansrule.github.io/pixel-arcade/#archery) |
-| Classics | Byte Snake | solo / take turns | [https://normansrule.github.io/pixel-arcade/#snake](https://normansrule.github.io/pixel-arcade/#snake) |
-| Classics | Brick Buster | solo / take turns | [https://normansrule.github.io/pixel-arcade/#bricks](https://normansrule.github.io/pixel-arcade/#bricks) |
-| Classics | Block Drop | solo / take turns | [https://normansrule.github.io/pixel-arcade/#blocks](https://normansrule.github.io/pixel-arcade/#blocks) |
-| Classics | Munch Maze | solo / take turns | [https://normansrule.github.io/pixel-arcade/#munch](https://normansrule.github.io/pixel-arcade/#munch) |
-| Classics | Girder Climb | solo / take turns | [https://normansrule.github.io/pixel-arcade/#girder](https://normansrule.github.io/pixel-arcade/#girder) |
-| Classics | Invader Wave | solo / take turns | [https://normansrule.github.io/pixel-arcade/#invaders](https://normansrule.github.io/pixel-arcade/#invaders) |
-| Classics | Rock Blaster | solo / take turns | [https://normansrule.github.io/pixel-arcade/#rocks](https://normansrule.github.io/pixel-arcade/#rocks) |
-| Classics | Road Hopper | solo / take turns | [https://normansrule.github.io/pixel-arcade/#hopper](https://normansrule.github.io/pixel-arcade/#hopper) |
-| Classics | Sky Shield | solo / take turns | [https://normansrule.github.io/pixel-arcade/#shield](https://normansrule.github.io/pixel-arcade/#shield) |
-| Classics | Moon Lander | solo / take turns | [https://normansrule.github.io/pixel-arcade/#lander](https://normansrule.github.io/pixel-arcade/#lander) |
-| Classics | Flap Bot | solo / take turns | [https://normansrule.github.io/pixel-arcade/#flap](https://normansrule.github.io/pixel-arcade/#flap) |
-| Classics | Dash Runner | solo / take turns | [https://normansrule.github.io/pixel-arcade/#runner](https://normansrule.github.io/pixel-arcade/#runner) |
-| Classics | Cave Copter | solo / take turns | [https://normansrule.github.io/pixel-arcade/#copter](https://normansrule.github.io/pixel-arcade/#copter) |
-| Versus | Neon Trails | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#trails](https://normansrule.github.io/pixel-arcade/#trails) |
-| Versus | Tank Duel | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#tanks](https://normansrule.github.io/pixel-arcade/#tanks) |
-| Versus | Sumo Bump | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#sumo](https://normansrule.github.io/pixel-arcade/#sumo) |
-| Versus | Quick Draw | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#quickdraw](https://normansrule.github.io/pixel-arcade/#quickdraw) |
-| Retro 3D | Turbo Road 3D | solo / take turns | [https://normansrule.github.io/pixel-arcade/#road](https://normansrule.github.io/pixel-arcade/#road) |
-| Retro 3D | Dungeon 3D | solo / take turns | [https://normansrule.github.io/pixel-arcade/#dungeon](https://normansrule.github.io/pixel-arcade/#dungeon) |
-| Retro 3D | Star Run 3D | solo / take turns | [https://normansrule.github.io/pixel-arcade/#starrun](https://normansrule.github.io/pixel-arcade/#starrun) |
-| Board | Four In A Row | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#four](https://normansrule.github.io/pixel-arcade/#four) |
-| Board | Tic Tac Toe | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#ttt](https://normansrule.github.io/pixel-arcade/#ttt) |
-| Board | Flip Disks | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#flip](https://normansrule.github.io/pixel-arcade/#flip) |
-| Puzzle | Power Tiles | solo / take turns | [https://normansrule.github.io/pixel-arcade/#tiles](https://normansrule.github.io/pixel-arcade/#tiles) |
-| Puzzle | Mine Field | solo / take turns | [https://normansrule.github.io/pixel-arcade/#mines](https://normansrule.github.io/pixel-arcade/#mines) |
-| Puzzle | Crate Pusher | solo / take turns | [https://normansrule.github.io/pixel-arcade/#crates](https://normansrule.github.io/pixel-arcade/#crates) |
-| Board | Memory Match | vs CPU / 2P | [https://normansrule.github.io/pixel-arcade/#memory](https://normansrule.github.io/pixel-arcade/#memory) |
-| Puzzle | Echo Pads | solo / take turns | [https://normansrule.github.io/pixel-arcade/#echo](https://normansrule.github.io/pixel-arcade/#echo) |
-| Puzzle | Lights Out | solo / take turns | [https://normansrule.github.io/pixel-arcade/#lights](https://normansrule.github.io/pixel-arcade/#lights) |
+| Board | Flip Disks | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#flip) |
+| Board | Four In A Row | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#four) |
+| Board | Memory Match | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#memory) |
+| Board | Tic Tac Toe | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#ttt) |
+| Classics | Block Drop | solo | [play](https://normansrule.github.io/pixel-arcade/#blocks) |
+| Classics | Brick Buster | solo | [play](https://normansrule.github.io/pixel-arcade/#bricks) |
+| Classics | Byte Snake | solo | [play](https://normansrule.github.io/pixel-arcade/#snake) |
+| Classics | Cave Copter | solo | [play](https://normansrule.github.io/pixel-arcade/#copter) |
+| Classics | Cloud Hop | solo | [play](https://normansrule.github.io/pixel-arcade/#cloudhop) |
+| Classics | Dash Runner | solo | [play](https://normansrule.github.io/pixel-arcade/#runner) |
+| Classics | Flap Bot | solo | [play](https://normansrule.github.io/pixel-arcade/#flap) |
+| Classics | Girder Climb | solo | [play](https://normansrule.github.io/pixel-arcade/#girder) |
+| Classics | Invader Wave | solo | [play](https://normansrule.github.io/pixel-arcade/#invaders) |
+| Classics | Moon Lander | solo | [play](https://normansrule.github.io/pixel-arcade/#lander) |
+| Classics | Munch Maze | solo | [play](https://normansrule.github.io/pixel-arcade/#munch) |
+| Classics | Pinball | solo | [play](https://normansrule.github.io/pixel-arcade/#pinball) |
+| Classics | Road Hopper | solo | [play](https://normansrule.github.io/pixel-arcade/#hopper) |
+| Classics | Rock Blaster | solo | [play](https://normansrule.github.io/pixel-arcade/#rocks) |
+| Classics | Sky Fury | solo | [play](https://normansrule.github.io/pixel-arcade/#skyfury) |
+| Classics | Sky Shield | solo | [play](https://normansrule.github.io/pixel-arcade/#shield) |
+| Classics | Tower Stack | solo | [play](https://normansrule.github.io/pixel-arcade/#stack) |
+| Puzzle | Crate Pusher | solo | [play](https://normansrule.github.io/pixel-arcade/#crates) |
+| Puzzle | Echo Pads | solo | [play](https://normansrule.github.io/pixel-arcade/#echo) |
+| Puzzle | Lights Out | solo | [play](https://normansrule.github.io/pixel-arcade/#lights) |
+| Puzzle | Mine Field | solo | [play](https://normansrule.github.io/pixel-arcade/#mines) |
+| Puzzle | Orbit Hop | solo | [play](https://normansrule.github.io/pixel-arcade/#orbit) |
+| Puzzle | Power Tiles | solo | [play](https://normansrule.github.io/pixel-arcade/#tiles) |
+| Puzzle | Rhythm Tap | solo | [play](https://normansrule.github.io/pixel-arcade/#rhythm) |
+| Puzzle | Slide 15 | solo | [play](https://normansrule.github.io/pixel-arcade/#slide) |
+| Puzzle | Whack Bots | solo | [play](https://normansrule.github.io/pixel-arcade/#whack) |
+| Retro 3D | City Cruiser 3D | solo | [play](https://normansrule.github.io/pixel-arcade/#city) |
+| Retro 3D | Cube Field 3D | solo | [play](https://normansrule.github.io/pixel-arcade/#cubes) |
+| Retro 3D | Dungeon 3D | solo | [play](https://normansrule.github.io/pixel-arcade/#dungeon) |
+| Retro 3D | Mesh Drift 3D | solo | [play](https://normansrule.github.io/pixel-arcade/#drift) |
+| Retro 3D | Star Run 3D | solo | [play](https://normansrule.github.io/pixel-arcade/#starrun) |
+| Retro 3D | Trench Run 3D | solo | [play](https://normansrule.github.io/pixel-arcade/#trench) |
+| Retro 3D | Tunnel Run 3D | solo | [play](https://normansrule.github.io/pixel-arcade/#tunnel) |
+| Retro 3D | Turbo Road 3D | solo | [play](https://normansrule.github.io/pixel-arcade/#road) |
+| Sports | 100M Dash | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#dash100) |
+| Sports | Air Hockey | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#airhockey) |
+| Sports | Archery | solo | [play](https://normansrule.github.io/pixel-arcade/#archery) |
+| Sports | Beach Volley | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#volley) |
+| Sports | Bowling 3D | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#bowling) |
+| Sports | Court Tennis | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#tennis) |
+| Sports | Darts 301 | solo | [play](https://normansrule.github.io/pixel-arcade/#darts) |
+| Sports | Duck Gallery | solo | [play](https://normansrule.github.io/pixel-arcade/#gallery) |
+| Sports | Home Run Derby | solo | [play](https://normansrule.github.io/pixel-arcade/#homerun) |
+| Sports | Hoops 1 On 1 | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#hoops) |
+| Sports | Mini Golf | solo | [play](https://normansrule.github.io/pixel-arcade/#golf) |
+| Sports | Paddle Duel | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#pong) |
+| Sports | Penalty Kicks 3D | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#penalty) |
+| Sports | Pixel Soccer | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#soccer) |
+| Sports | Ring Boxing | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#boxing) |
+| Sports | Ski Slalom | solo | [play](https://normansrule.github.io/pixel-arcade/#ski) |
+| Versus | Neon Trails | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#trails) |
+| Versus | Quick Draw | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#quickdraw) |
+| Versus | Sumo Bump | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#sumo) |
+| Versus | Tank Duel | vs CPU / 2P | [play](https://normansrule.github.io/pixel-arcade/#tanks) |
 
 ## Put it online with GitHub Pages
 
@@ -77,14 +92,9 @@ P pauses, M mutes, Esc returns to the lobby. On phones and tablets an on-screen 
 
 Games marked `vs` (sports, versus and board games) offer "1 player vs CPU" with Easy, Normal and Hard levels, or "2 players" on one keyboard. All other games offer "1 player" or "2 players take turns", where each player has a go and the better score wins.
 
-## The games
+## Engine notes
 
-- Sports (14): Paddle Duel, Court Tennis, Beach Volley, Hoops 1 on 1, Pixel Soccer, Air Hockey, Bowling 3D, Mini Golf, Ring Boxing, Penalty Kicks 3D, 100M Dash, Home Run Derby, Ski Slalom, Archery
-- Classics (13): Byte Snake, Brick Buster, Block Drop, Munch Maze, Girder Climb, Invader Wave, Rock Blaster, Road Hopper, Sky Shield, Moon Lander, Flap Bot, Dash Runner, Cave Copter
-- Versus (4): Neon Trails, Tank Duel, Sumo Bump, Quick Draw
-- Retro 3D (3): Turbo Road 3D, Dungeon 3D, Star Run 3D
-- Board (4): Four in a Row, Tic Tac Toe, Flip Disks, Memory Match
-- Puzzle (5): Power Tiles, Mine Field, Crate Pusher, Echo Pads, Lights Out
+The engine adds a tiny flat-shaded polygon renderer (`A.p3`, `A.face`, `A.box3`, `A.flush`) used by the Retro 3D cabinets. Everything still draws on a 320x240 canvas, so it stays deliberately blocky rather than photoreal.
 
 ## Add a game
 

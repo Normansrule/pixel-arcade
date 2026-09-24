@@ -2,7 +2,7 @@
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0);
 
 /* ---- TURBO ROAD 3D ---- */
-A.add({id:'road',name:'TURBO ROAD 3D',cat:'RETRO 3D',how:'UP OR A ACCELERATES, DOWN BRAKES, LEFT AND RIGHT STEER.|REACH CHECKPOINTS FOR MORE TIME. DODGE TRAFFIC.',make(){
+A.add({id:'road',name:'TURBO ROAD 3D',cat:'RETRO 3D',how:'UP GAS. DOWN BRAKE. HIT CHECKPOINTS.',make(){
  const g={over:null,score:0};let pos=0,spd=0,px=0,time=3600,next=24000,cars=[],flash=0;const cx=new Float32Array(H);
  const curve=s=>{const v=Math.sin(s/28)*1.4+Math.sin(s/11)*.7;return Math.abs(v)<.55?0:v;};
  for(let i=0;i<7;i++)cars.push({z:900+i*650,lane:rnd(1.4)-.7,v:3+rnd(2.5),c:[K.r,K.y,K.p,K.w,K.o][i%5]});
@@ -18,7 +18,7 @@ A.add({id:'road',name:'TURBO ROAD 3D',cat:'RETRO 3D',how:'UP OR A ACCELERATES, D
  return g;}});
 
 /* ---- DUNGEON 3D ---- */
-A.add({id:'dungeon',name:'DUNGEON 3D',cat:'RETRO 3D',how:'UP AND DOWN WALK, LEFT AND RIGHT TURN. HOLD B FOR THE MAP.|FIND THE GLOWING EXIT BEFORE THE TORCH BURNS OUT.',make(){
+A.add({id:'dungeon',name:'DUNGEON 3D',cat:'RETRO 3D',how:'UP/DOWN WALK. TURN. B = MAP. FIND EXIT.',make(){
  const g={over:null,score:0};let N,m,p,ex,lvl=0,time=0;const zb=new Float32Array(160);
  const build=()=>{lvl++;N=Math.min(9+lvl*2,21);m=[];for(let y=0;y<N;y++)m.push(Array(N).fill(1));const st=[[1,1]];m[1][1]=0;while(st.length){const c=st[st.length-1],ds=[[2,0],[-2,0],[0,2],[0,-2]].filter(d=>{const x=c[0]+d[0],y=c[1]+d[1];return x>0&&y>0&&x<N-1&&y<N-1&&m[y][x];});if(!ds.length){st.pop();continue;}const d=ds[ri(ds.length)];m[c[1]+d[1]/2][c[0]+d[0]/2]=0;m[c[1]+d[1]][c[0]+d[0]]=0;st.push([c[0]+d[0],c[1]+d[1]]);}
   for(let i=0;i<N;i++){const x=1+ri(N-2),y=1+ri(N-2);if((x%2)!==(y%2))m[y][x]=0;}
@@ -37,7 +37,7 @@ A.add({id:'dungeon',name:'DUNGEON 3D',cat:'RETRO 3D',how:'UP AND DOWN WALK, LEFT
  return g;}});
 
 /* ---- STAR RUN 3D ---- */
-A.add({id:'starrun',name:'STAR RUN 3D',cat:'RETRO 3D',how:'FLY WITH THE ARROWS. A FIRES.|DODGE OR BLAST THE ROCKS RUSHING AT YOU. THREE SHIELDS.',make(){
+A.add({id:'starrun',name:'STAR RUN 3D',cat:'RETRO 3D',how:'FLY. A FIRES. DODGE ROCKS.',make(){
  const g={over:null,score:0};let px=0,py=0,ob=[],bl=[],st=[],sh=3,inv=0,d=0;for(let i=0;i<50;i++)st.push({x:rnd(4)-2,y:rnd(4)-2,z:rnd(12)+.5});
  const pj=(x,y,z)=>[160+(x-px*.7)*170/z,120+(y-py*.7)*170/z];
  g.update=()=>{const k=A.in(0);d++;px=cl(px+ax(k)*.045,-1,1);py=cl(py+ay(k)*.045,-.8,.8);if(inv>0)inv--;const sp=.11+Math.min(.12,d/30000);if(d%10===0)g.score++;

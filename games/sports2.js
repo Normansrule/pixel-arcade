@@ -3,7 +3,7 @@ const ax=k=>(k.r?1:0)-(k.l?1:0);
 const human=p=>A.two?p:0; /* which input a human seat uses */
 
 /* ---- BOWLING 3D ---- */
-A.add({id:'bowling',name:'BOWLING 3D',cat:'SPORTS',vs:1,how:'LEFT AND RIGHT TO LINE UP, THEN PRESS A THREE TIMES:|SET POSITION, LOCK THE ANGLE, LOCK THE POWER. 5 FRAMES.',make(){
+A.add({id:'bowling',name:'BOWLING 3D',cat:'SPORTS',vs:1,how:'A x3: POSITION, ANGLE, POWER. 5 FRAMES.',make(){
  const g={over:null,score:0},NF=5;let rolls=[[],[]],p=0,fr=0,rl=0,ph='pos',ball,pins,t=0,down0=0,msg='',mt=0;
  const pr=(x,d)=>{const s=1/(1+d*.22);return[160+x*80*s,228-(1-s)*205,s];};
  const rack=()=>{pins=[];for(let r=0;r<4;r++)for(let j=0;j<=r;j++)pins.push({x:(j-r/2)*.36,d:15+r*.7,up:1,vx:0,vd:0,t:0});};
@@ -33,7 +33,7 @@ A.add({id:'bowling',name:'BOWLING 3D',cat:'SPORTS',vs:1,how:'LEFT AND RIGHT TO L
  return g;}});
 
 /* ---- MINI GOLF ---- */
-A.add({id:'golf',name:'MINI GOLF',cat:'SPORTS',low:1,how:'LEFT AND RIGHT AIM. HOLD A TO CHARGE, RELEASE TO PUTT.|SIX HOLES. FEWEST STROKES WINS.',make(){
+A.add({id:'golf',name:'MINI GOLF',cat:'SPORTS',low:1,how:'AIM. HOLD A, RELEASE TO PUTT. 6 HOLES.',make(){
  const g={over:null,score:0};const HO=[{s:[40,125],c:[280,125],w:[]},{s:[40,125],c:[280,125],w:[[150,70,20,110]]},{s:[40,200],c:[280,50],w:[[100,24,16,130],[200,100,16,130]]},{s:[40,50],c:[280,200],w:[[90,90,140,16],[90,150,16,80]]},{s:[30,125],c:[290,125],w:[[80,24,14,90],[80,140,14,90],[160,80,14,100],[235,24,14,90],[235,140,14,90]]},{s:[40,40],c:[160,125],w:[[110,80,100,12],[110,160,100,12],[110,80,12,92]]}];
  let hi=0,b,ang=0,pow=0,chg=false,st=0,ht,wait=0;const load=()=>{ht=HO[hi];b={x:ht.s[0],y:ht.s[1],vx:0,vy:0};ang=Math.atan2(ht.c[1]-b.y,ht.c[0]-b.x);st=0;};load();
  const inW=(x,y)=>x<13||x>W-13||y<27||y>H-13||ht.w.some(w=>x>w[0]-3&&x<w[0]+w[2]+3&&y>w[1]-3&&y<w[1]+w[3]+3);
@@ -50,7 +50,7 @@ A.add({id:'golf',name:'MINI GOLF',cat:'SPORTS',low:1,how:'LEFT AND RIGHT AIM. HO
  return g;}});
 
 /* ---- BOXING ---- */
-A.add({id:'boxing',name:'RING BOXING',cat:'SPORTS',vs:1,how:'LEFT AND RIGHT MOVE. A PUNCHES. HOLD B TO BLOCK.|KNOCK OUT OR LEAD AFTER 60 SECONDS.',make(){
+A.add({id:'boxing',name:'RING BOXING',cat:'SPORTS',vs:1,how:'A PUNCHES. B BLOCKS. 60 SEC.',make(){
  const g={over:null,score:0};let f=[{x:110,hp:100,pt:0,st:0},{x:210,hp:100,pt:0,st:0}],time=3600;
  g.update=()=>{time--;
   if(A.cpu){const q=f[1],d=q.x-f[0].x;A.bot({l:d>32||(d>26&&Math.random()<.3),r:d<22||(q.hp<30&&Math.random()<.04),b:f[0].pt>4&&Math.random()<.5+A.ai*.45,a:d<=34&&f[0].pt===0&&Math.random()<.04+.07*A.ai});}
@@ -66,7 +66,7 @@ A.add({id:'boxing',name:'RING BOXING',cat:'SPORTS',vs:1,how:'LEFT AND RIGHT MOVE
  return g;}});
 
 /* ---- PENALTY KICKS 3D ---- */
-A.add({id:'penalty',name:'PENALTY KICKS 3D',cat:'SPORTS',vs:1,how:'HOLD A DIRECTION BEFORE THE WHISTLE: LEFT, RIGHT, UP, OR NOTHING.|SHOOTER PICKS A CORNER, KEEPER PICKS A DIVE. 5 KICKS EACH.',make(){
+A.add({id:'penalty',name:'PENALTY KICKS 3D',cat:'SPORTS',vs:1,how:'HOLD A DIRECTION BEFORE THE WHISTLE. 5 EACH.',make(){
  const g={over:null,score:0};let sc=[0,0],rd=0,ph='ready',t=0,sh,kp,res='',bot=null,log=[[],[]];
  const pick=()=>({hx:A.ri(3)-1,hy:A.ri(2)});
  g.update=()=>{t++;const s=rd%2,kI=1-s;if(A.cpu&&!bot)bot=pick();
@@ -85,7 +85,7 @@ A.add({id:'penalty',name:'PENALTY KICKS 3D',cat:'SPORTS',vs:1,how:'HOLD A DIRECT
  return g;}});
 
 /* ---- 100M DASH ---- */
-A.add({id:'dash100',name:'100M DASH',cat:'SPORTS',vs:1,how:'TAP LEFT AND RIGHT IN TURN AS FAST AS YOU CAN.|TAPPING THE SAME KEY TWICE DOES NOTHING.',make(){
+A.add({id:'dash100',name:'100M DASH',cat:'SPORTS',vs:1,how:'TAP LEFT-RIGHT-LEFT FAST.',make(){
  const g={over:null,score:0};let r=[{p:0,v:0,last:'',fin:0},{p:0,v:0,last:'',fin:0}],t=-180;
  g.update=()=>{t++;if(t<0)return;if(t===0)S('shoot');
   for(let i=0;i<2;i++){const q=r[i];if(q.fin)continue;if(A.cpu&&i===1){const tv=2.1+1.9*A.ai;q.v+=(tv-q.v)*.05+rnd(.1)-.05;}else{const h=A.hit(i);for(const n of['l','r'])if(h[n]&&q.last!==n){q.last=n;q.v+=.42;}q.v*=.965;}
@@ -98,7 +98,7 @@ A.add({id:'dash100',name:'100M DASH',cat:'SPORTS',vs:1,how:'TAP LEFT AND RIGHT I
  return g;}});
 
 /* ---- HOME RUN DERBY ---- */
-A.add({id:'homerun',name:'HOME RUN DERBY',cat:'SPORTS',how:'PRESS A TO SWING AS THE BALL CROSSES THE PLATE.|TEN PITCHES. 120 METRES OR MORE IS A HOME RUN.',make(){
+A.add({id:'homerun',name:'HOME RUN DERBY',cat:'SPORTS',how:'A SWINGS AT THE PLATE. 10 PITCHES.',make(){
  const g={over:null,score:0};let n=0,z=1,T_=60,cv=0,sw=0,ph='wait',t=0,msg='',hr=0,fly=null;
  const pitch=()=>{z=1;T_=34+rnd(34);cv=rnd(2)-1;ph='pitch';sw=0;fly=null;};
  g.update=()=>{t++;if(sw>0)sw--;
@@ -114,7 +114,7 @@ A.add({id:'homerun',name:'HOME RUN DERBY',cat:'SPORTS',how:'PRESS A TO SWING AS 
  return g;}});
 
 /* ---- SKI SLALOM ---- */
-A.add({id:'ski',name:'SKI SLALOM',cat:'SPORTS',how:'LEFT AND RIGHT STEER. PASS BETWEEN THE FLAGS FOR POINTS.|THREE CRASHES AND YOUR RUN IS OVER.',make(){
+A.add({id:'ski',name:'SKI SLALOM',cat:'SPORTS',how:'STEER BETWEEN FLAGS. 3 CRASHES = OUT.',make(){
  const g={over:null,score:0};let x=160,vx=0,ob=[],dist=0,lives=3,inv=0,nextG=120,combo=0;
  g.update=()=>{const sp=2+Math.min(3.2,dist/2600);dist+=sp;vx=(vx+ax(A.in(0))*.5)*.88;x=cl(x+vx,10,W-10);if(inv>0)inv--;
   if(Math.random()<.05+dist/90000)ob.push({t:0,x:rnd(W),y:H+10});nextG-=sp;if(nextG<=0){nextG=130;ob.push({t:1,x:50+rnd(W-100),y:H+10,ok:0});}
@@ -128,7 +128,7 @@ A.add({id:'ski',name:'SKI SLALOM',cat:'SPORTS',how:'LEFT AND RIGHT STEER. PASS B
  return g;}});
 
 /* ---- ARCHERY ---- */
-A.add({id:'archery',name:'ARCHERY',cat:'SPORTS',how:'PRESS A TO LOCK THE SIDEWAYS AIM, THEN AGAIN TO LOCK HEIGHT AND FIRE.|THE WIND PUSHES YOUR ARROW. SIX ARROWS.',make(){
+A.add({id:'archery',name:'ARCHERY',cat:'SPORTS',how:'A LOCKS AIM, A AGAIN FIRES. MIND THE WIND.',make(){
  const g={over:null,score:0};let n=0,ph=0,t=0,cx=160,cy=110,wind=0,marks=[],msg='';const nw=()=>{wind=Math.round(rnd(28)-14);ph=0;t=rnd(100)|0;};nw();
  g.update=()=>{t++;const sp=.05+n*.012;if(ph===0){cx=160+Math.sin(t*sp)*70;if(A.hit(0).a){ph=1;t=rnd(100)|0;S('blip');}}
   else if(ph===1){cy=110+Math.sin(t*sp*1.2)*60;if(A.hit(0).a){const x=cx+wind,y=cy+rnd(4)-2,d=Math.hypot(x-160,y-110),p=d<6?10:d<13?8:d<21?6:d<30?4:d<40?2:0;g.score+=p;marks.push([x,y]);msg=p?'+'+p:'MISS';S(p>=8?'score':'hit');ph=2;t=0;}}

@@ -2,7 +2,7 @@
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0);
 
 /* ---- PADDLE DUEL ---- */
-A.add({id:'pong',name:'PADDLE DUEL',cat:'SPORTS',vs:1,how:'UP AND DOWN MOVE YOUR PADDLE.|FIRST TO 7 POINTS WINS.',make(){
+A.add({id:'pong',name:'PADDLE DUEL',cat:'SPORTS',vs:1,how:'UP/DOWN. FIRST TO 7.',make(){
  const g={over:null,score:0};let p=[104,104],sc=[0,0],b,serve;
  const reset=d=>{b={x:160,y:120,vx:d*2.2,vy:rnd(2)-1};serve=50;};reset(1);
  g.update=()=>{if(A.cpu){const ty=b.vx>0?b.y:120,c=p[1]+16;A.bot({u:c>ty+5,d:c<ty-5});}
@@ -15,7 +15,7 @@ A.add({id:'pong',name:'PADDLE DUEL',cat:'SPORTS',vs:1,how:'UP AND DOWN MOVE YOUR
  return g;}});
 
 /* ---- COURT TENNIS (pseudo-3D) ---- */
-A.add({id:'tennis',name:'COURT TENNIS',cat:'SPORTS',vs:1,how:'MOVE ANYWHERE ON YOUR SIDE. A SWINGS.|HOLD LEFT OR RIGHT WHILE SWINGING TO AIM. FIRST TO 7.',make(){
+A.add({id:'tennis',name:'COURT TENNIS',cat:'SPORTS',vs:1,how:'MOVE. A SWINGS. HOLD SIDE TO AIM. FIRST TO 7.',make(){
  const g={over:null,score:0},GR=.0012;let pl,b,sc=[0,0],wait=0,srv=0,msg='';
  const pr=(x,y,z)=>{const s=1/(1+y*.5);return[160+x*125*s,218-(y/(1+y*.5))*150-(z||0)*70*s,s];};
  const shoot=(i,tx,ty,t)=>{b.vx=(tx-b.x)/t;b.vy=(ty-b.y)/t;b.vz=(.5*GR*t*t-b.z)/t;b.last=i;b.bn=0;S('hit');};
@@ -38,7 +38,7 @@ A.add({id:'tennis',name:'COURT TENNIS',cat:'SPORTS',vs:1,how:'MOVE ANYWHERE ON Y
  return g;}});
 
 /* ---- BEACH VOLLEY ---- */
-A.add({id:'volley',name:'BEACH VOLLEY',cat:'SPORTS',vs:1,how:'LEFT AND RIGHT MOVE, UP OR A JUMPS.|BOUNCE THE BALL OVER THE NET. FIRST TO 7.',make(){
+A.add({id:'volley',name:'BEACH VOLLEY',cat:'SPORTS',vs:1,how:'MOVE. UP JUMPS. FIRST TO 7.',make(){
  const g={over:null,score:0},GY=212;let pl,b,sc=[0,0],wait=40;
  const reset=s=>{pl=[{x:80,y:GY,vy:0},{x:240,y:GY,vy:0}];b={x:s?232:88,y:90,vx:0,vy:0};wait=40;};reset(0);
  g.update=()=>{if(wait>0){wait--;return;}
@@ -56,7 +56,7 @@ A.add({id:'volley',name:'BEACH VOLLEY',cat:'SPORTS',vs:1,how:'LEFT AND RIGHT MOV
  return g;}});
 
 /* ---- HOOPS ONE ON ONE ---- */
-A.add({id:'hoops',name:'HOOPS 1 ON 1',cat:'SPORTS',vs:1,how:'A SHOOTS WHEN YOU HAVE THE BALL, STEALS WHEN YOU DO NOT.|UP JUMPS TO BLOCK. CLOSER SHOTS ARE SAFER. 60 SECONDS.',make(){
+A.add({id:'hoops',name:'HOOPS 1 ON 1',cat:'SPORTS',vs:1,how:'A SHOOTS / STEALS. UP BLOCKS. 60 SEC.',make(){
  const g={over:null,score:0},GY=205,HX=[296,24],HY=112;let pl,b,sc=[0,0],time=3600,clock=0,msg='',mt=0;
  const give=i=>{pl=[{x:110,y:GY,vy:0,cd:0},{x:210,y:GY,vy:0,cd:0}];b={own:i,x:0,y:0,vx:0,vy:0,pts:2,by:i};clock=600;};give(0);
  g.update=()=>{if(mt>0)mt--;time--;
@@ -83,7 +83,7 @@ A.add({id:'hoops',name:'HOOPS 1 ON 1',cat:'SPORTS',vs:1,how:'A SHOOTS WHEN YOU H
  return g;}});
 
 /* ---- PIXEL SOCCER ---- */
-A.add({id:'soccer',name:'PIXEL SOCCER',cat:'SPORTS',vs:1,how:'RUN INTO THE BALL TO DRIBBLE. A KICKS HARD.|KEEPERS MOVE ON THEIR OWN. FIRST TO 5 OR BEST AFTER 90 SECONDS.',make(){
+A.add({id:'soccer',name:'PIXEL SOCCER',cat:'SPORTS',vs:1,how:'RUN INTO BALL. A KICKS. FIRST TO 5.',make(){
  const g={over:null,score:0};let pl,kp,b,sc=[0,0],time=5400,wait=50;
  const reset=()=>{pl=[{x:100,y:125,fx:1,fy:0},{x:220,y:125,fx:-1,fy:0}];kp=[125,125];b={x:160,y:125,vx:0,vy:0};wait=50;};reset();
  g.update=()=>{if(wait>0){wait--;return;}time--;
@@ -101,7 +101,7 @@ A.add({id:'soccer',name:'PIXEL SOCCER',cat:'SPORTS',vs:1,how:'RUN INTO THE BALL 
  return g;}});
 
 /* ---- AIR HOCKEY ---- */
-A.add({id:'airhockey',name:'AIR HOCKEY',cat:'SPORTS',vs:1,how:'SLIDE YOUR MALLET AROUND YOUR HALF.|KNOCK THE PUCK INTO THE FAR GOAL. FIRST TO 7.',make(){
+A.add({id:'airhockey',name:'AIR HOCKEY',cat:'SPORTS',vs:1,how:'SLIDE MALLET. SCORE 7.',make(){
  const g={over:null,score:0};let m,b,sc=[0,0],wait=40;
  const reset=s=>{m=[{x:50,y:125,vx:0,vy:0},{x:270,y:125,vx:0,vy:0}];b={x:s?190:130,y:125,vx:0,vy:0};wait=40;};reset(0);
  g.update=()=>{if(wait>0){wait--;return;}

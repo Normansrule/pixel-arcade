@@ -2,7 +2,7 @@
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0);
 
 /* ---- BYTE SNAKE ---- */
-A.add({id:'snake',name:'BYTE SNAKE',cat:'CLASSICS',how:'STEER WITH THE ARROWS. EAT TO GROW.|DO NOT HIT THE WALLS OR YOURSELF.',make(){
+A.add({id:'snake',name:'BYTE SNAKE',cat:'CLASSICS',how:'ARROWS STEER. EAT. DO NOT CRASH.',make(){
  const g={over:null,score:0},CW=32,CH=22;let s=[[8,11],[7,11],[6,11]],d=[1,0],nd=[1,0],f,t=0;
  const food=()=>{do{f=[ri(CW),ri(CH)];}while(s.some(c=>c[0]===f[0]&&c[1]===f[1]));};food();
  g.update=()=>{const h=A.hit(0);if(h.l&&d[0]!==1)nd=[-1,0];if(h.r&&d[0]!==-1)nd=[1,0];if(h.u&&d[1]!==1)nd=[0,-1];if(h.d&&d[1]!==-1)nd=[0,1];
@@ -13,7 +13,7 @@ A.add({id:'snake',name:'BYTE SNAKE',cat:'CLASSICS',how:'STEER WITH THE ARROWS. E
  return g;}});
 
 /* ---- BRICK BUSTER ---- */
-A.add({id:'bricks',name:'BRICK BUSTER',cat:'CLASSICS',how:'LEFT AND RIGHT MOVE THE BAT. A LAUNCHES THE BALL.|CLEAR EVERY BRICK. THREE LIVES.',make(){
+A.add({id:'bricks',name:'BRICK BUSTER',cat:'CLASSICS',how:'MOVE THE BAT. A LAUNCHES. CLEAR ALL BRICKS.',make(){
  const g={over:null,score:0};let px=140,b,br,lives=3,lvl=1,stuck=true;
  const build=()=>{br=[];for(let r=0;r<6;r++)for(let c=0;c<10;c++)br.push({x:10+c*30,y:34+r*11,c:[K.r,K.o,K.y,K.g,K.b,K.p][r],p:(6-r)*10});};
  const nb=()=>{b={x:0,y:0,vx:1.5,vy:-(2.2+lvl*.3)};stuck=true;};build();nb();
@@ -27,7 +27,7 @@ A.add({id:'bricks',name:'BRICK BUSTER',cat:'CLASSICS',how:'LEFT AND RIGHT MOVE T
  return g;}});
 
 /* ---- BLOCK DROP ---- */
-A.add({id:'blocks',name:'BLOCK DROP',cat:'CLASSICS',how:'LEFT AND RIGHT SLIDE. UP OR A ROTATES. DOWN DROPS FASTER. B SLAMS.|FILL A ROW TO CLEAR IT.',make(){
+A.add({id:'blocks',name:'BLOCK DROP',cat:'CLASSICS',how:'SLIDE. A ROTATES. B SLAMS. FILL ROWS.',make(){
  const g={over:null,score:0},BW=12,BH=18,CS=12,OX=88,OY=20,SH=['0000111100000000','100111000','001111000','1111','011110000','010111000','110011000'],CO=[K.c,K.b,K.o,K.y,K.g,K.p,K.r];
  let bd=[],pc,nx=ri(7),t=0,lines=0,rep=0;for(let i=0;i<BH;i++)bd.push(Array(BW).fill(0));
  const mk=i=>{const n=Math.sqrt(SH[i].length),m=[];for(let r=0;r<n;r++){m.push([]);for(let c=0;c<n;c++)m[r].push(+SH[i][r*n+c]);}return m;};
@@ -45,7 +45,7 @@ A.add({id:'blocks',name:'BLOCK DROP',cat:'CLASSICS',how:'LEFT AND RIGHT SLIDE. U
  return g;}});
 
 /* ---- MUNCH MAZE ---- */
-A.add({id:'munch',name:'MUNCH MAZE',cat:'CLASSICS',how:'EAT EVERY PELLET. BIG PELLETS LET YOU EAT THE GLITCH BUGS.|THE SIDE TUNNEL WRAPS AROUND.',make(){
+A.add({id:'munch',name:'MUNCH MAZE',cat:'CLASSICS',how:'EAT EVERY PELLET. BIG PELLET = EAT BUGS.',make(){
  const g={over:null,score:0},M=['###################','#........#........#','#o##.###.#.###.##o#','#.................#','#.##.#.#####.#.##.#','#....#...#...#....#','####.### # ###.####','   #.#       #.#   ','####.# ## ## #.####','    .  #   #  .    ','####.# ##### #.####','   #.#       #.#   ','####.# ##### #.####','#........#........#','#.##.###.#.###.##.#','#o..#....P....#..o#','##.#.#.#####.#.#.##','#....#...#...#....#','#.######.#.######.#','#.................#','###################'],CS=11,OX=8,OY=5;
  let dots,left,pl,bugs,lives=3,lvl=1,fr=0,wait=60;
  const wall=(x,y)=>{x=(x+19)%19;return y<0||y>20||M[y][x]==='#';};
@@ -71,7 +71,7 @@ A.add({id:'munch',name:'MUNCH MAZE',cat:'CLASSICS',how:'EAT EVERY PELLET. BIG PE
  return g;}});
 
 /* ---- GIRDER CLIMB ---- */
-A.add({id:'girder',name:'GIRDER CLIMB',cat:'CLASSICS',how:'CLIMB TO THE FLAG AT THE TOP. UP AND DOWN USE LADDERS.|A JUMPS. HOP OVER THE ROLLING COGS FOR POINTS.',make(){
+A.add({id:'girder',name:'GIRDER CLIMB',cat:'CLASSICS',how:'REACH THE FLAG. A JUMPS COGS. UP/DOWN ON LADDERS.',make(){
  const g={over:null,score:0},PL=[{y:222,x0:0,x1:320},{y:182,x0:0,x1:286},{y:142,x0:34,x1:320},{y:102,x0:0,x1:286},{y:62,x0:34,x1:320}],LD=[{x:250,a:182,b:222},{x:70,a:142,b:182},{x:170,a:142,b:182},{x:250,a:102,b:142},{x:120,a:102,b:142},{x:70,a:62,b:102}];
  let p,cogs,lives=3,lvl=1,sp=0,bonus=3000;const dirOf=q=>q.x0>0?-1:q.x1<320?1:-1;
  const platAt=(x,y)=>PL.find(q=>Math.abs(q.y-y)<1.5&&x>=q.x0&&x<=q.x1);
@@ -97,7 +97,7 @@ A.add({id:'girder',name:'GIRDER CLIMB',cat:'CLASSICS',how:'CLIMB TO THE FLAG AT 
  return g;}});
 
 /* ---- INVADER WAVE ---- */
-A.add({id:'invaders',name:'INVADER WAVE',cat:'CLASSICS',how:'LEFT AND RIGHT MOVE. A FIRES.|STOP THE WAVE BEFORE IT LANDS.',make(){
+A.add({id:'invaders',name:'INVADER WAVE',cat:'CLASSICS',how:'MOVE. A FIRES. STOP THE WAVE.',make(){
  const g={over:null,score:0};let px=160,sh=null,en,bm=[],dir=1,lives=3,wave=1,t=0;
  const build=()=>{en=[];for(let r=0;r<5;r++)for(let c=0;c<9;c++)en.push({x:30+c*26,y:34+r*16+Math.min(wave-1,4)*8,r});dir=1;bm=[];};build();
  g.update=()=>{px=cl(px+ax(A.in(0))*2.6,10,W-10);if(A.hit(0).a&&!sh){sh={x:px,y:212};S('shoot');}
@@ -112,7 +112,7 @@ A.add({id:'invaders',name:'INVADER WAVE',cat:'CLASSICS',how:'LEFT AND RIGHT MOVE
  return g;}});
 
 /* ---- ROCK BLASTER ---- */
-A.add({id:'rocks',name:'ROCK BLASTER',cat:'CLASSICS',how:'LEFT AND RIGHT TURN. UP THRUSTS. A FIRES.|BIG ROCKS SPLIT. THE SCREEN WRAPS.',make(){
+A.add({id:'rocks',name:'ROCK BLASTER',cat:'CLASSICS',how:'TURN. UP THRUSTS. A FIRES.',make(){
  const g={over:null,score:0};let s,rk=[],bl=[],lives=3,lvl=0,inv=120;
  const wave=()=>{lvl++;for(let i=0;i<3+lvl;i++){let x,y;do{x=rnd(W);y=rnd(H);}while(Math.hypot(x-160,y-120)<70);rk.push({x,y,vx:rnd(1.6)-.8,vy:rnd(1.6)-.8,r:16,s:rnd(9)});}};
  s={x:160,y:120,vx:0,vy:0,a:-1.57};wave();const wr=o=>{o.x=(o.x+W)%W;o.y=(o.y+H)%H;};

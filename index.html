@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>pixel arcade</title>
+<title>Pixel Arcade</title>
 <meta name="description" content="A free browser arcade of original retro sports, action, 3D and board games. Play solo, against the CPU, or two players on one keyboard.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕹️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,13 +15,13 @@
 <main class="lobby">
   <header class="sign">
     <span class="bulbs b"></span><span class="bulbs t"></span>
-    <h1>pixel arcade</h1>
-    <p><strong><span id="count">0</span> original games</strong>, all free, all running right here in your browser. Every cabinet plays solo; sports, versus and board games also let you take on the CPU or a friend on the same keyboard.</p>
-    <p class="insert">Insert coin: click any cabinet</p>
+    <h1>Pixel Arcade</h1>
+    <p><strong><span id="count">0</span> games.</strong> Solo, vs CPU, or 2 players on one keyboard.</p>
+    <p class="insert">Click a cabinet to play</p>
   </header>
   <nav class="chips" id="chips" aria-label="Filter games"></nav>
   <section class="grid" id="grid" aria-label="Games"></section>
-  <p class="foot">One player: <kbd>Arrows</kbd> or <kbd>WASD</kbd> to move, <kbd>Space</kbd> for A, <kbd>X</kbd> for B. Two players: player 1 uses <kbd>WASD</kbd> with <kbd>F</kbd> and <kbd>G</kbd>, player 2 uses the <kbd>Arrows</kbd> with <kbd>Enter</kbd> and <kbd>Shift</kbd>. <kbd>P</kbd> pauses, <kbd>M</kbd> mutes, <kbd>Esc</kbd> returns to the lobby. Best scores are saved in this browser.</p>
+  <p class="foot"><kbd>Arrows</kbd>/<kbd>WASD</kbd> move · <kbd>Space</kbd> A · <kbd>X</kbd> B · <kbd>Esc</kbd> back. 2P: P1 <kbd>WASD</kbd>+<kbd>F</kbd><kbd>G</kbd>, P2 <kbd>Arrows</kbd>+<kbd>Enter</kbd><kbd>Shift</kbd>.</p>
 </main>
 <div id="cab" role="application" aria-label="Game screen">
   <div class="bar"><button id="back" type="button">Back to lobby</button><span class="sp"></span><button id="pause" type="button">Pause</button><button id="mute" type="button">Sound on</button></div>
@@ -38,5 +38,7 @@
 <script src="games/classics2.js"></script>
 <script src="games/threed.js"></script>
 <script src="games/puzzle.js"></script>
+<script src="games/threed2.js"></script>
+<script src="games/solo.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@ const human=p=>A.two?p:0;
 const mvCur=(h,c,w,hh)=>{if(h.l)c.x=(c.x+w-1)%w;if(h.r)c.x=(c.x+1)%w;if(h.u)c.y=(c.y+hh-1)%hh;if(h.d)c.y=(c.y+1)%hh;if(h.l||h.r||h.u||h.d)S('blip');};
 
 /* ---- FOUR IN A ROW ---- */
-A.add({id:'four',name:'FOUR IN A ROW',cat:'BOARD',vs:1,how:'LEFT AND RIGHT PICK A COLUMN. A DROPS A DISC.|CONNECT FOUR IN ANY DIRECTION.',make(){
+A.add({id:'four',name:'FOUR IN A ROW',cat:'BOARD',vs:1,how:'PICK COLUMN. A DROPS. CONNECT 4.',make(){
  const g={over:null,score:0},WN=[];for(let r=0;r<6;r++)for(let c=0;c<7;c++)for(const d of[[0,1],[1,0],[1,1],[1,-1]]){const er=r+d[0]*3,ec=c+d[1]*3;if(er<6&&ec>=0&&ec<7)WN.push([0,1,2,3].map(i=>(r+d[0]*i)*7+c+d[1]*i));}
  let b=Array(42).fill(0),p=0,col=3,think=0,winL=null,fall=null;
  const drop=(bd,c)=>{for(let r=5;r>=0;r--)if(!bd[r*7+c])return r*7+c;return -1;};const won=(bd,v)=>WN.find(w=>w.every(i=>bd[i]===v));
@@ -17,7 +17,7 @@ A.add({id:'four',name:'FOUR IN A ROW',cat:'BOARD',vs:1,how:'LEFT AND RIGHT PICK 
  return g;}});
 
 /* ---- TIC TAC TOE ---- */
-A.add({id:'ttt',name:'TIC TAC TOE',cat:'BOARD',vs:1,how:'MOVE THE CURSOR AND PRESS A TO MARK A SQUARE.|THREE IN A ROW WINS. FIRST TO 3 GAMES.',make(){
+A.add({id:'ttt',name:'TIC TAC TOE',cat:'BOARD',vs:1,how:'MOVE. A MARKS. 3 IN A ROW. BEST OF 5.',make(){
  const g={over:null,score:0},LN=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];let b,p,c={x:1,y:1},sc=[0,0],wait=0,msg='',think=0,first=0;
  const reset=()=>{b=Array(9).fill(0);p=first;first=1-first;think=0;};reset();const won=v=>LN.some(l=>l.every(i=>b[i]===v));
  const mm=mx=>{if(won(2))return 1;if(won(1))return -1;if(b.every(v=>v))return 0;let best=mx?-2:2;for(let i=0;i<9;i++)if(!b[i]){b[i]=mx?2:1;const v=mm(!mx);b[i]=0;best=mx?Math.max(best,v):Math.min(best,v);}return best;};
@@ -30,7 +30,7 @@ A.add({id:'ttt',name:'TIC TAC TOE',cat:'BOARD',vs:1,how:'MOVE THE CURSOR AND PRE
  return g;}});
 
 /* ---- FLIP DISKS ---- */
-A.add({id:'flip',name:'FLIP DISKS',cat:'BOARD',vs:1,how:'PLACE A DISC TO TRAP RIVAL DISCS IN A LINE AND FLIP THEM.|MOST DISCS WHEN THE BOARD FILLS WINS.',make(){
+A.add({id:'flip',name:'FLIP DISKS',cat:'BOARD',vs:1,how:'TRAP RIVAL DISCS TO FLIP THEM. MOST WINS.',make(){
  const g={over:null,score:0},DR=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]],WT=[100,-10,10,5,5,10,-10,100,-10,-25,1,1,1,1,-25,-10,10,1,3,2,2,3,1,10,5,1,2,1,1,2,1,5];
  let b=Array(64).fill(0),p=0,c={x:2,y:3},think=0,pass=0;b[27]=b[36]=2;b[28]=b[35]=1;const wt=i=>{const r=(i/8)|0;return WT[(r<4?r:7-r)*8+i%8];};
  const flips=(bd,i,v)=>{if(bd[i])return[];const out=[],x0=i%8,y0=(i/8)|0;for(const d of DR){const ln=[];let x=x0+d[0],y=y0+d[1];while(x>=0&&y>=0&&x<8&&y<8&&bd[y*8+x]===3-v){ln.push(y*8+x);x+=d[0];y+=d[1];}if(ln.length&&x>=0&&y>=0&&x<8&&y<8&&bd[y*8+x]===v)out.push(...ln);}return out;};
@@ -44,7 +44,7 @@ A.add({id:'flip',name:'FLIP DISKS',cat:'BOARD',vs:1,how:'PLACE A DISC TO TRAP RI
  return g;}});
 
 /* ---- POWER TILES ---- */
-A.add({id:'tiles',name:'POWER TILES',cat:'PUZZLE',how:'SLIDE ALL TILES WITH THE ARROWS. MATCHING TILES MERGE AND DOUBLE.|HOW BIG CAN YOU BUILD?',make(){
+A.add({id:'tiles',name:'POWER TILES',cat:'PUZZLE',how:'SLIDE. MATCHING TILES MERGE.',make(){
  const g={over:null,score:0};let b=Array(16).fill(0);const add=()=>{const e=[];b.forEach((v,i)=>{if(!v)e.push(i);});if(e.length)b[e[ri(e.length)]]=Math.random()<.9?2:4;};add();add();
  const slide=(bd,d)=>{let moved=false,gain=0;for(let n=0;n<4;n++){const idx=[0,1,2,3].map(i=>d==='l'?n*4+i:d==='r'?n*4+3-i:d==='u'?i*4+n:(3-i)*4+n),v=idx.map(i=>bd[i]).filter(x=>x),o=[];for(let i=0;i<v.length;i++){if(v[i]===v[i+1]){o.push(v[i]*2);gain+=v[i]*2;i++;}else o.push(v[i]);}while(o.length<4)o.push(0);idx.forEach((i,j)=>{if(bd[i]!==o[j])moved=true;bd[i]=o[j];});}return moved?gain+1:0;};
  g.update=()=>{const h=A.hit(0);for(const d of['l','r','u','d'])if(h[d]){const r=slide(b,d);if(r){g.score+=r-1;add();S(r>1?'coin':'blip');if(!['l','r','u','d'].some(x=>slide(b.slice(),x)))g.over='NO MOVES LEFT';}break;}};
@@ -52,7 +52,7 @@ A.add({id:'tiles',name:'POWER TILES',cat:'PUZZLE',how:'SLIDE ALL TILES WITH THE 
  return g;}});
 
 /* ---- MINE FIELD ---- */
-A.add({id:'mines',name:'MINE FIELD',cat:'PUZZLE',how:'A UNCOVERS A TILE. B PLANTS A FLAG.|NUMBERS COUNT THE MINES NEXT TO THEM. CLEAR FAST FOR POINTS.',make(){
+A.add({id:'mines',name:'MINE FIELD',cat:'PUZZLE',how:'A DIGS. B FLAGS. NUMBERS = NEARBY MINES.',make(){
  const g={over:null,score:0},GW=16,GH=10,NM=26,CS=18,OX=16,OY=36;let mine=null,open=Array(GW*GH).fill(0),flag=Array(GW*GH).fill(0),c={x:8,y:5},t=0,left=GW*GH-NM;
  const nb=i=>{const o=[],x=i%GW,y=(i/GW)|0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=x+dx,ny=y+dy;if((dx||dy)&&nx>=0&&ny>=0&&nx<GW&&ny<GH)o.push(ny*GW+nx);}return o;};const cnt=i=>nb(i).filter(j=>mine[j]).length;
  const rev=i=>{const st=[i];while(st.length){const j=st.pop();if(open[j]||flag[j])continue;open[j]=1;left--;if(cnt(j)===0)st.push(...nb(j));}};
@@ -66,7 +66,7 @@ A.add({id:'mines',name:'MINE FIELD',cat:'PUZZLE',how:'A UNCOVERS A TILE. B PLANT
 /* ---- CRATE PUSHER ---- */
 const CRATES=[['#######','#     #','# .$@ #','#     #','#######'],['########','#  .   #','# $$ . #','#  @   #','########'],['#########','#   #   #','# $ # . #','#   $ . #','# @ #   #','#########'],[' #######','##  .  #','# $ #$ #','# .$  .#','##  @ ##',' ###### '],['##########','#  .  #  #','# $$$    #','# .@. #  #','#     #  #','##########']];
 A.CRATES=CRATES;
-A.add({id:'crates',name:'CRATE PUSHER',cat:'PUZZLE',low:1,how:'PUSH EVERY CRATE ONTO A MARKED SPOT. YOU CANNOT PULL.|B RESTARTS THE ROOM. FEWEST MOVES WINS.',make(){
+A.add({id:'crates',name:'CRATE PUSHER',cat:'PUZZLE',low:1,how:'PUSH CRATES ONTO SPOTS. B RESETS.',make(){
  const g={over:null,score:0};let li=0,m,p,bx,wait=0;const load=()=>{m=CRATES[li].map(r=>r.split(''));bx=[];m.forEach((r,y)=>r.forEach((ch,x)=>{if(ch==='@'){p={x,y};r[x]=' ';}if(ch==='$'){bx.push({x,y});r[x]=' ';}if(ch==='*'){bx.push({x,y});r[x]='.';}}));};load();
  const at=(x,y)=>(m[y]&&m[y][x])||'#',box=(x,y)=>bx.find(b=>b.x===x&&b.y===y);
  g.update=()=>{if(wait>0){if(--wait===0){li++;if(li>=CRATES.length)g.over='ALL CRATES HOME! WIN';else load();}return;}const h=A.hit(0);if(h.b){load();S('lose');return;}
@@ -78,7 +78,7 @@ A.add({id:'crates',name:'CRATE PUSHER',cat:'PUZZLE',low:1,how:'PUSH EVERY CRATE 
  return g;}});
 
 /* ---- MEMORY MATCH ---- */
-A.add({id:'memory',name:'MEMORY MATCH',cat:'BOARD',vs:1,how:'FLIP TWO CARDS. A PAIR SCORES AND YOU GO AGAIN.|MOST PAIRS WINS.',make(){
+A.add({id:'memory',name:'MEMORY MATCH',cat:'BOARD',vs:1,how:'FLIP 2. MATCH = SCORE + GO AGAIN.',make(){
  const g={over:null,score:0},GW=5,GH=4;let cards=[],c={x:0,y:0},p=0,pick=[],sc=[0,0],wait=0,seen={},think=0;
  for(let i=0;i<10;i++)cards.push({v:i},{v:i});cards.sort(()=>Math.random()-.5);
  const flip=i=>{if(cards[i].up||cards[i].gone||pick.length>=2)return;cards[i].up=1;pick.push(i);S('blip');if(Math.random()<A.ai+.15||!A.cpu)seen[i]=cards[i].v;if(pick.length===2)wait=55;};
@@ -92,7 +92,7 @@ A.add({id:'memory',name:'MEMORY MATCH',cat:'BOARD',vs:1,how:'FLIP TWO CARDS. A P
  return g;}});
 
 /* ---- ECHO PADS ---- */
-A.add({id:'echo',name:'ECHO PADS',cat:'PUZZLE',how:'WATCH THE PADS LIGHT UP, THEN REPEAT THE PATTERN WITH THE ARROWS.|EACH ROUND ADDS ONE MORE.',make(){
+A.add({id:'echo',name:'ECHO PADS',cat:'PUZZLE',how:'WATCH, THEN REPEAT WITH ARROWS.',make(){
  const g={over:null,score:0},P={u:[160,60,K.g],l:[90,130,K.r],r:[230,130,K.b],d:[160,200,K.y]},KS=['u','l','r','d'];let seq=[],ph='show',i=0,t=0,lit='',lt=0;const grow=()=>{seq.push(KS[ri(4)]);ph='show';i=0;t=-30;};grow();
  g.update=()=>{if(lt>0)lt--;else lit='';if(ph==='show'){if(++t>=Math.max(14,34-seq.length)){t=0;if(i<seq.length){lit=seq[i++];lt=Math.max(9,22-seq.length);S(['blip','hit','coin','jump'][KS.indexOf(lit)]);}else{ph='in';i=0;}}}
   else{const h=A.hit(0);for(const k of KS)if(h[k]){lit=k;lt=10;if(k===seq[i]){S(['blip','hit','coin','jump'][KS.indexOf(k)]);if(++i>=seq.length){g.score=seq.length;grow();}}else g.over='WRONG PAD';break;}}};
@@ -100,7 +100,7 @@ A.add({id:'echo',name:'ECHO PADS',cat:'PUZZLE',how:'WATCH THE PADS LIGHT UP, THE
  return g;}});
 
 /* ---- LIGHTS OUT ---- */
-A.add({id:'lights',name:'LIGHTS OUT',cat:'PUZZLE',how:'A FLIPS A LAMP AND ITS FOUR NEIGHBOURS.|SWITCH EVERY LAMP OFF. SOLVE AS MANY BOARDS AS YOU CAN IN 3 MINUTES.',make(){
+A.add({id:'lights',name:'LIGHTS OUT',cat:'PUZZLE',how:'A FLIPS A LAMP + NEIGHBOURS. ALL OFF WINS.',make(){
  const g={over:null,score:0};let b,c={x:2,y:2},lvl=0,time=10800;const tog=(x,y)=>{[[0,0],[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const X=x+d[0],Y=y+d[1];if(X>=0&&Y>=0&&X<5&&Y<5)b[Y*5+X]^=1;});};
  const build=()=>{lvl++;b=Array(25).fill(0);do{for(let i=0;i<2+lvl;i++)tog(ri(5),ri(5));}while(!b.some(v=>v));};build();
  g.update=()=>{const h=A.hit(0);mvCur(h,c,5,5);if(h.a){tog(c.x,c.y);S('hit');if(!b.some(v=>v)){g.score+=100;S('score');build();}}if(--time<=0)g.over='TIME UP';};

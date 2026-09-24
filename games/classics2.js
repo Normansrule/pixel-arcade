@@ -2,7 +2,7 @@
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0);
 
 /* ---- ROAD HOPPER ---- */
-A.add({id:'hopper',name:'ROAD HOPPER',cat:'CLASSICS',how:'HOP ACROSS THE ROAD AND RIDE THE LOGS.|FILL ALL FIVE DOCKS AT THE TOP.',make(){
+A.add({id:'hopper',name:'ROAD HOPPER',cat:'CLASSICS',how:'HOP ACROSS. RIDE LOGS. FILL 5 DOCKS.',make(){
  const g={over:null,score:0},CS=16;let f,lanes,homes,lives=3,lvl=1,best;
  const build=()=>{lanes=[];for(let r=3;r<=7;r++){const d=r%2?1:-1,sp=(.5+((r*7)%5)*.18)*(1+lvl*.12)*d,len=r%3===0?3:r%3===1?4:2,it=[];for(let x=0;x<W+120;x+=(len+2+r%2)*CS+16)it.push(x);lanes[r]={sp,len:len*CS,it,log:1};}
   for(let r=9;r<=13;r++){const d=r%2?-1:1,sp=(.7+((r*5)%4)*.3)*(1+lvl*.12)*d,len=r===11?2:1,it=[];for(let x=0;x<W+100;x+=(r%2?5:4)*CS+r*3)it.push(x);lanes[r]={sp,len:len*CS+6,it,log:0};}};
@@ -20,7 +20,7 @@ A.add({id:'hopper',name:'ROAD HOPPER',cat:'CLASSICS',how:'HOP ACROSS THE ROAD AN
  return g;}});
 
 /* ---- SKY SHIELD ---- */
-A.add({id:'shield',name:'SKY SHIELD',cat:'CLASSICS',how:'MOVE THE CROSSHAIR. A LAUNCHES AN INTERCEPTOR THERE.|BLASTS DESTROY INCOMING ROCKETS. SAVE YOUR CITIES.',make(){
+A.add({id:'shield',name:'SKY SHIELD',cat:'CLASSICS',how:'MOVE CROSSHAIR. A FIRES. SAVE THE CITIES.',make(){
  const g={over:null,score:0};let cx=160,cy=100,ci=[1,1,1,1,1,1],en=[],sh=[],ex=[],wave=1,toSpawn=8,ammo=20,t=0;const cxs=i=>30+i*52;
  g.update=()=>{const k=A.in(0);cx=cl(cx+ax(k)*3.2,6,W-6);cy=cl(cy+ay(k)*3.2,24,190);
   if(A.hit(0).a&&ammo>0){ammo--;const d=Math.hypot(cx-160,cy-214);sh.push({x:160,y:214,tx:cx,ty:cy,vx:(cx-160)/d*5,vy:(cy-214)/d*5});S('shoot');}
@@ -35,7 +35,7 @@ A.add({id:'shield',name:'SKY SHIELD',cat:'CLASSICS',how:'MOVE THE CROSSHAIR. A L
  return g;}});
 
 /* ---- MOON LANDER ---- */
-A.add({id:'lander',name:'MOON LANDER',cat:'CLASSICS',how:'LEFT AND RIGHT TILT. UP OR A FIRES THE ENGINE.|TOUCH DOWN ON THE PAD SLOWLY AND UPRIGHT.',make(){
+A.add({id:'lander',name:'MOON LANDER',cat:'CLASSICS',how:'TILT. UP = ENGINE. LAND SOFT ON THE PAD.',make(){
  const g={over:null,score:0};let s,ter,pad,lvl=0,fuel=0,wait=0,msg='';
  const build=()=>{lvl++;ter=[];const pi=3+ri(10),pw=Math.max(2,4-(lvl>>1));let y=170+rnd(30);for(let i=0;i<=16;i++){if(i>pi&&i<=pi+pw){}else y=cl(y+rnd(60)-30,120,225);ter.push(y);}pad=[pi*20,(pi+pw)*20,ter[pi]];fuel=Math.max(250,520-lvl*40);s={x:30+rnd(60),y:30,vx:.6,vy:0,a:0};};build();
  const gy=x=>{const i=cl(Math.floor(x/20),0,15),f=(x-i*20)/20;return ter[i]+(ter[i+1]-ter[i])*f;};
@@ -48,7 +48,7 @@ A.add({id:'lander',name:'MOON LANDER',cat:'CLASSICS',how:'LEFT AND RIGHT TILT. U
  return g;}});
 
 /* ---- FLAP BOT ---- */
-A.add({id:'flap',name:'FLAP BOT',cat:'CLASSICS',how:'PRESS A OR UP TO FLAP.|SLIP THROUGH THE GAPS.',make(){
+A.add({id:'flap',name:'FLAP BOT',cat:'CLASSICS',how:'A FLAPS. THREAD THE GAPS.',make(){
  const g={over:null,score:0};let y=110,vy=0,pp=[],t=0,go=false;
  g.update=()=>{const h=A.hit(0);if(h.a||h.u){vy=-2.9;go=true;S('jump');}if(!go)return;vy+=.17;y+=vy;if(++t%85===1)pp.push({x:W+10,g:50+rnd(110),ok:0});
   for(const p of pp){p.x-=1.7;if(!p.ok&&p.x<60){p.ok=1;g.score++;S('coin');}if(p.x<76&&p.x>36&&(y-6<p.g-2||y+6>p.g+54))g.over='GAME OVER';}pp=pp.filter(p=>p.x>-30);if(y>222||y<0)g.over='GAME OVER';};
@@ -57,7 +57,7 @@ A.add({id:'flap',name:'FLAP BOT',cat:'CLASSICS',how:'PRESS A OR UP TO FLAP.|SLIP
  return g;}});
 
 /* ---- DASH RUNNER ---- */
-A.add({id:'runner',name:'DASH RUNNER',cat:'CLASSICS',how:'A OR UP JUMPS. DOWN DUCKS UNDER DRONES.|IT ONLY GETS FASTER.',make(){
+A.add({id:'runner',name:'DASH RUNNER',cat:'CLASSICS',how:'A JUMPS. DOWN DUCKS.',make(){
  const g={over:null,score:0},GY=190;let y=GY,vy=0,ob=[],d=0,nx=60;
  g.update=()=>{const k=A.in(0),sp=3+Math.min(4,d/3000);d+=sp;g.score=d/10|0;const duck=k.d&&y>=GY;if((k.a||k.u)&&y>=GY){vy=-5.6;S('jump');}vy+=k.d?.6:.3;y+=vy;if(y>GY){y=GY;vy=0;}
   nx-=sp;if(nx<=0){nx=70+rnd(110);const fl=d>1500&&Math.random()<.3;ob.push(fl?{x:W+10,y:GY-24,w:16,h:8,f:1}:{x:W+10,w:8+ri(3)*5,h:14+ri(2)*10,y:0});}
@@ -68,7 +68,7 @@ A.add({id:'runner',name:'DASH RUNNER',cat:'CLASSICS',how:'A OR UP JUMPS. DOWN DU
  return g;}});
 
 /* ---- CAVE COPTER ---- */
-A.add({id:'copter',name:'CAVE COPTER',cat:'CLASSICS',how:'HOLD A TO CLIMB. LET GO TO SINK.|THE CAVE NARROWS AS YOU FLY.',make(){
+A.add({id:'copter',name:'CAVE COPTER',cat:'CLASSICS',how:'HOLD A TO RISE. RELEASE TO SINK.',make(){
  const g={over:null,score:0};let y=120,vy=0,cave=[],d=0,mid=120,blocks=[];for(let i=0;i<82;i++)cave.push([30,210]);
  g.update=()=>{d++;g.score=d/6|0;vy+=A.in(0).a||A.in(0).u?-.16:.14;vy=cl(vy,-3,3);y+=vy;if(d%2===0){mid=cl(mid+rnd(14)-7,70,170);const gap=Math.max(62,150-d/60);cave.shift();cave.push([mid-gap/2,mid+gap/2]);blocks.forEach(b=>b.x-=4);if(d%90===0)blocks.push({x:W,y:mid-gap/2+rnd(gap-24)});blocks=blocks.filter(b=>b.x>-10);}
   const c=cave[15];if(y-5<c[0]||y+5>c[1]||blocks.some(b=>b.x<70&&b.x+8>50&&y+5>b.y&&y-5<b.y+24)){g.over='GAME OVER';S('boom');}};
@@ -76,7 +76,7 @@ A.add({id:'copter',name:'CAVE COPTER',cat:'CLASSICS',how:'HOLD A TO CLIMB. LET G
  return g;}});
 
 /* ---- NEON TRAILS ---- */
-A.add({id:'trails',name:'NEON TRAILS',cat:'VERSUS',vs:1,how:'STEER YOUR LIGHT BIKE. NEVER STOP, NEVER HIT A TRAIL.|FIRST TO WIN 3 ROUNDS.',make(){
+A.add({id:'trails',name:'NEON TRAILS',cat:'VERSUS',vs:1,how:'STEER. NEVER HIT A TRAIL. FIRST TO 3.',make(){
  const g={over:null,score:0},GW=80,GH=55;let gr,b,sc=[0,0],wait=50,t=0;
  const reset=()=>{gr=new Uint8Array(GW*GH);b=[{x:15,y:27,dx:1,dy:0},{x:64,y:27,dx:-1,dy:0}];wait=50;};reset();
  const free=(x,y)=>x>=0&&y>=0&&x<GW&&y<GH&&!gr[y*GW+x];const room=(x,y,dx,dy)=>{let n=0;while(n<30&&free(x+dx*(n+1),y+dy*(n+1)))n++;return n;};
@@ -88,7 +88,7 @@ A.add({id:'trails',name:'NEON TRAILS',cat:'VERSUS',vs:1,how:'STEER YOUR LIGHT BI
  return g;}});
 
 /* ---- TANK DUEL ---- */
-A.add({id:'tanks',name:'TANK DUEL',cat:'VERSUS',vs:1,how:'LEFT AND RIGHT TURN. UP AND DOWN DRIVE. A FIRES.|SHELLS BOUNCE ONCE. FIVE HITS WINS.',make(){
+A.add({id:'tanks',name:'TANK DUEL',cat:'VERSUS',vs:1,how:'TURN + DRIVE. A FIRES. 5 HITS WINS.',make(){
  const g={over:null,score:0},WL=[[70,60,12,60],[238,120,12,60],[130,110,60,12],[150,40,12,40],[158,170,12,40]];let tk,sh=[],sc=[0,0],stuck=0;
  const blocked=(x,y,r)=>x<r||x>W-r||y<22+r||y>H-r||WL.some(w=>x>w[0]-r&&x<w[0]+w[2]+r&&y>w[1]-r&&y<w[1]+w[3]+r);
  const reset=()=>{tk=[{x:30,y:130,a:0,cd:0},{x:290,y:130,a:3.14,cd:0}];sh=[];};reset();
@@ -102,7 +102,7 @@ A.add({id:'tanks',name:'TANK DUEL',cat:'VERSUS',vs:1,how:'LEFT AND RIGHT TURN. U
  return g;}});
 
 /* ---- SUMO BUMP ---- */
-A.add({id:'sumo',name:'SUMO BUMP',cat:'VERSUS',vs:1,how:'PUSH YOUR RIVAL OUT OF THE RING.|A IS A SHORT DASH. FIRST TO 3.',make(){
+A.add({id:'sumo',name:'SUMO BUMP',cat:'VERSUS',vs:1,how:'PUSH RIVAL OUT. A DASHES. FIRST TO 3.',make(){
  const g={over:null,score:0},RR=92;let p,sc=[0,0],wait=50;const reset=()=>{p=[{x:115,y:128,vx:0,vy:0,cd:0},{x:205,y:128,vx:0,vy:0,cd:0}];wait=50;};reset();
  g.update=()=>{if(wait>0){wait--;return;}if(A.cpu){const q=p[1],o=p[0],me=Math.hypot(q.x-160,q.y-128);let tx=o.x,ty=o.y;if(me>RR*.72){tx=160;ty=128;}const d=Math.hypot(o.x-q.x,o.y-q.y);A.bot({l:q.x>tx+3,r:q.x<tx-3,u:q.y>ty+3,d:q.y<ty-3,a:d<45&&me<RR*.7&&Math.random()<.05*A.ai});}
   for(let i=0;i<2;i++){const q=p[i],k=A.in(i),acc=i&&A.cpu?.09+.09*A.ai:.17;q.vx=(q.vx+ax(k)*acc)*.95;q.vy=(q.vy+ay(k)*acc)*.95;if(q.cd>0)q.cd--;if(A.hit(i).a&&q.cd===0&&(ax(k)||ay(k))){q.vx+=ax(k)*3;q.vy+=ay(k)*3;q.cd=70;S('jump');}q.x+=q.vx;q.y+=q.vy;}
@@ -112,7 +112,7 @@ A.add({id:'sumo',name:'SUMO BUMP',cat:'VERSUS',vs:1,how:'PUSH YOUR RIVAL OUT OF 
  return g;}});
 
 /* ---- QUICK DRAW ---- */
-A.add({id:'quickdraw',name:'QUICK DRAW',cat:'VERSUS',vs:1,how:'WAIT FOR THE SIGNAL, THEN PRESS A FIRST.|FIRE EARLY AND YOU LOSE THE ROUND. FIRST TO 3.',make(){
+A.add({id:'quickdraw',name:'QUICK DRAW',cat:'VERSUS',vs:1,how:'ON DRAW! PRESS A FIRST. EARLY = LOSE.',make(){
  const g={over:null,score:0};let sc=[0,0],t=0,go=0,ph='wait',res='',cpuAt=0,w=-1;const nr=()=>{t=0;go=120+ri(200);ph='wait';cpuAt=go+Math.round(34-A.ai*20+rnd(10));w=-1;};nr();
  g.update=()=>{t++;if(ph==='wait'||ph==='go'){if(ph==='wait'&&t>=go){ph='go';S('coin');}if(A.cpu)A.bot({a:t>=cpuAt});const a=A.hit(0).a,b=A.hit(1).a;
    if(a||b){if(ph==='wait'){w=a?1:0;res=A.nm(1-w)+' FIRED EARLY!';}else{w=a&&b?(Math.random()<.5?0:1):a?0:1;res=A.nm(w)+' WINS IN '+((t-go)/60).toFixed(2)+'S';}sc[w]++;ph='res';t=0;S('shoot');}}
