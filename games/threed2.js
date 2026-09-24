@@ -13,8 +13,8 @@ A.add({id:'city',name:'CITY CRUISER 3D',cat:'RETRO 3D',how:'DRIVE THE GRID. GRAB
  for(let i=-N;i<N;i++)for(let j=-N;j<N;j++)bld.push({x:i*SP+SP/2,z:j*SP+SP/2,h:1.5+((i*7+j*13)%5)*.9,w:4+((i+j)%2),c:BC[(i*3+j*5+36)%6]});
  const spawnCoin=()=>{const i=ri(N*2)-N,j=ri(N*2)-N,h=Math.random()<.5;coins.push({x:h?i*SP+rnd(SP)-SP/2:i*SP,z:h?j*SP:j*SP+rnd(SP)-SP/2});};for(let i=0;i<10;i++)spawnCoin();
  for(let i=0;i<8;i++){const h=i%2===0,l=(ri(N*2)-N)*SP;cars.push({x:h?rnd(N*2*SP)-N*SP:l+.9,z:h?l-.9:rnd(N*2*SP)-N*SP,a:h?1.5708:0,v:.06+rnd(.05),c:[K.r,K.y,K.p,K.w][i%4]});}
- const inBld=(x,z)=>{const rx=((x%SP)+SP*1.5)%SP,rz=((z%SP)+SP*1.5)%SP;return rx>1.3&&rx<SP-1.3&&rz>1.3&&rz<SP-1.3;};
- g.update=()=>{time--;if(flash>0)flash--;const k=A.in(0);p.v+=k.u||k.a?.006:k.d?-.008:0;p.v*=.985;p.v=cl(p.v,-.05,.2);p.a+=ax(k)*.045*Math.min(1,Math.abs(p.v)*12);
+ const inBld=(x,z)=>{const rx=((x%SP)+2*SP)%SP,rz=((z%SP)+2*SP)%SP;return rx>1.3&&rx<SP-1.3&&rz>1.3&&rz<SP-1.3;};
+ g.update=()=>{time--;if(flash>0)flash--;const k=A.in(0);p.v+=(k.u||k.a)?.006:k.d?-.008:0;p.v*=.985;p.v=cl(p.v,-.05,.2);p.a+=ax(k)*.045*Math.min(1,Math.abs(p.v)*12);
   const nx=p.x+Math.sin(p.a)*p.v,nz=p.z+Math.cos(p.a)*p.v;if(!inBld(nx,nz)&&Math.abs(nx)<N*SP&&Math.abs(nz)<N*SP){p.x=nx;p.z=nz;}else{p.v*=-.3;S('hit');}
   coins=coins.filter(c=>{if(Math.hypot(c.x-p.x,c.z-p.z)<1.1){g.score+=10;S('coin');spawnCoin();return false;}return true;});
   for(const c of cars){c.x+=Math.sin(c.a)*c.v;c.z+=Math.cos(c.a)*c.v;if(Math.abs(c.x)>N*SP||Math.abs(c.z)>N*SP)c.a+=3.1416;if(Math.hypot(c.x-p.x,c.z-p.z)<1.5&&flash===0){flash=40;g.score=Math.max(0,g.score-5);p.v*=-.5;S('boom');}}
