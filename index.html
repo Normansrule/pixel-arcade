@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Arcade</title>
+<meta name="description" content="A free browser arcade of original retro sports, action, 3D and board games. Play solo, against the CPU, or two players on one keyboard.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕹️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg" aria-hidden="true"><div class="stars"></div><div class="sun"></div><div class="peaks"></div><div class="floor"></div></div>
+<main class="lobby">
+  <header class="sign">
+    <span class="bulbs b"></span><span class="bulbs t"></span>
+    <h1>Pixel Arcade</h1>
+    <p><strong><span id="count">0</span> original games</strong>, all free, all running right here in your browser. Every cabinet plays solo; sports, versus and board games also let you take on the CPU or a friend on the same keyboard.</p>
+    <p class="insert">Insert coin: click any cabinet</p>
+  </header>
+  <nav class="chips" id="chips" aria-label="Filter games"></nav>
+  <section class="grid" id="grid" aria-label="Games"></section>
+  <p class="foot">One player: <kbd>Arrows</kbd> or <kbd>WASD</kbd> to move, <kbd>Space</kbd> for A, <kbd>X</kbd> for B. Two players: player 1 uses <kbd>WASD</kbd> with <kbd>F</kbd> and <kbd>G</kbd>, player 2 uses the <kbd>Arrows</kbd> with <kbd>Enter</kbd> and <kbd>Shift</kbd>. <kbd>P</kbd> pauses, <kbd>M</kbd> mutes, <kbd>Esc</kbd> returns to the lobby. Best scores are saved in this browser.</p>
+</main>
+<div id="cab" role="application" aria-label="Game screen">
+  <div class="bar"><button id="back" type="button">Back to lobby</button><span class="sp"></span><button id="pause" type="button">Pause</button><button id="mute" type="button">Sound on</button></div>
+  <div class="tube"><div class="crt"><canvas id="scr" width="320" height="240"></canvas></div></div>
+  <div class="pad" aria-hidden="true">
+    <div class="dp"><span></span><button data-k="u" type="button">▲</button><span></span><button data-k="l" type="button">◀</button><span></span><button data-k="r" type="button">▶</button><span></span><button data-k="d" type="button">▼</button><span></span></div>
+    <div class="ab"><button data-k="b" type="button">B</button><button data-k="a" type="button">A</button></div>
+  </div>
+</div>
+<script src="js/engine.js"></script>
+<script src="games/sports1.js"></script>
+<script src="games/sports2.js"></script>
+<script src="games/classics1.js"></script>
+<script src="games/classics2.js"></script>
+<script src="games/threed.js"></script>
+<script src="games/puzzle.js"></script>
+</body>
+</html>
