@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pixel Arcade</title>
-<meta name="description" content="A free browser arcade of original retro sports, action, 3D and board games. Play solo, against the CPU, or two players on one keyboard.">
+<title>Pixel Arcade — 140 original browser games</title>
+<meta name="description" content="A free browser arcade of 140 original games plus a full 3D kart racer. Play solo, against the CPU, or two players on one keyboard.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕹️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
@@ -12,18 +12,31 @@
 </head>
 <body>
 <div class="bg" aria-hidden="true"><div class="stars"></div><div class="sun"></div><div class="peaks"></div><div class="floor"></div></div>
-<main class="lobby">
-  <header class="sign">
-    <span class="bulbs b"></span><span class="bulbs t"></span>
-    <h1>Pixel Arcade</h1>
-    <p><strong><span id="count">0</span> games.</strong> Solo, vs CPU, or 2 players on one keyboard.</p>
-    <p class="insert">Click a cabinet to play</p>
+<div id="glow" aria-hidden="true"></div>
+<nav class="topbar" aria-label="Site">
+  <a class="brand" href="#top">🕹️ <b>PIXEL</b>ARCADE</a>
+  <div class="tools"><input id="q" type="search" placeholder="Search games" aria-label="Search games"><button id="rnd" type="button">Random</button></div>
+  <a class="kartlink" href="kart/">CRITTER KART ▶</a>
+</nav>
+<main class="lobby" id="top">
+  <header class="hero">
+    <p class="kicker">WELCOME TO THE</p>
+    <h1 aria-label="Pixel Arcade"><span>P</span><span>i</span><span>x</span><span>e</span><span>l</span><span class="sp"> </span><span>A</span><span>r</span><span>c</span><span>a</span><span>d</span><span>e</span></h1>
+    <p class="lede">Every cabinet is original, free and plays in your browser. Solo, against the CPU, or two players on one keyboard.</p>
+    <div class="stats">
+      <div class="stat"><b data-stat="games">0</b><span>games</span></div>
+      <div class="stat"><b data-stat="vs">0</b><span>vs CPU / 2P</span></div>
+      <div class="stat"><b data-stat="hd">0</b><span>3D worlds</span></div>
+      <div class="stat"><b data-stat="cats">0</b><span>categories</span></div>
+    </div>
+    <p class="insert">Hover a cabinet to watch it play · click to insert coin</p>
+    <a class="down" href="#chips" aria-label="Scroll to games">▼</a>
   </header>
+  <a class="feat" href="kart/"><img src="docs/kart.png" alt="Critter Kart screenshot"><span class="ft"><b>FEATURED · FULL 3D</b><strong>Critter Kart</strong>8 wacky animal racers, items, drift boosts, 3 laps. 1 or 2 players split-screen, the rest CPU. Keyboard or gamepads.<em>RACE NOW ▶</em></span></a>
   <nav class="chips" id="chips" aria-label="Filter games"></nav>
-  <a class="feat" href="kart/"><img src="docs/kart.png" alt="Critter Kart screenshot"><span class="ft"><b>NEW · CRITTER KART</b>Full 3D kart racing. 8 wacky animal racers, items, drifting, 3 laps. 1 or 2 players split-screen, the rest CPU.<em>PLAY IN 3D ▶</em></span></a>
-  <div class="tools"><input id="q" type="search" placeholder="Search 120 games" aria-label="Search games"><button id="rnd" type="button">Random game</button></div>
+  <p id="empty" class="empty" hidden>No cabinet matches that. Try another word.</p>
   <section class="grid" id="grid" aria-label="Games"></section>
-  <p class="foot"><kbd>Arrows</kbd>/<kbd>WASD</kbd> move · <kbd>Space</kbd> A · <kbd>X</kbd> B · <kbd>Esc</kbd> back. 2P: P1 <kbd>WASD</kbd>+<kbd>F</kbd><kbd>G</kbd>, P2 <kbd>Arrows</kbd>+<kbd>Enter</kbd><kbd>Shift</kbd>.</p>
+  <p class="foot"><kbd>Arrows</kbd>/<kbd>WASD</kbd> move · <kbd>Space</kbd> A · <kbd>X</kbd> B · <kbd>Esc</kbd> back. 2P: P1 <kbd>WASD</kbd>+<kbd>F</kbd><kbd>G</kbd>, P2 <kbd>Arrows</kbd>+<kbd>Enter</kbd><kbd>Shift</kbd>. Best scores save in this browser.</p>
 </main>
 <div id="cab" role="application" aria-label="Game screen">
   <div class="bar"><button id="back" type="button">Back to lobby</button><span class="sp"></span><button id="pause" type="button">Pause</button><button id="mute" type="button">Sound on</button></div>
@@ -51,5 +64,7 @@
 <script src="games/cards.js"></script>
 <script src="games/sim.js"></script>
 <script src="games/threed4.js"></script>
+<script src="games/party.js"></script>
+<script src="games/more.js"></script>
 </body>
 </html>
