@@ -1,0 +1,12 @@
+name: Bug in a game
+description: Something glitchy or broken
+labels: [bug]
+body:
+  - type: input
+    id: game
+    attributes: { label: Game, placeholder: "e.g. Strike Zone 3D" }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What happened, placeholder: "One or two lines" }
+    validations: { required: true }

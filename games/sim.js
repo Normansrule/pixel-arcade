@@ -9,7 +9,7 @@ const AN=[{n:'LION',c:'#d9a55b',c2:'#8a5c33',cost:60,draw:60,d(x,y,f){R(x-10,y-8
  {n:'FLAMINGO',c:K.p,c2:K.k,cost:50,draw:50,d(x,y,f){C(x,y-2,7,K.p);R(x+2,y-16,3,14,K.p);C(x+4,y-17,4,K.p);R(x+6,y-17,4,2,K.k);R(x-1,y+5,1,10,K.k);}}];
 
 /* ---- PIXEL ZOO ---- */
-A.add({id:'zoo',name:'PIXEL ZOO',cat:'SIM',how:'A BUYS AN ANIMAL IN AN EMPTY PEN. B FEEDS (10). HAPPY ANIMALS DRAW PAID VISITORS. 3 MIN.',make(){
+A.add({id:'zoo',name:'PIXEL ZOO',cat:'SIM',how:'A BUYS AN ANIMAL. B FEEDS. HAPPY ANIMALS BRING VISITORS. 3 MIN.',make(){
  const g={over:null,score:0};let pens=Array(9).fill(null),c={x:0,y:0},money=120,time=10800,vis=[],pick=0,t=0,msg='',mt=0;
  g.update=()=>{t++;time--;if(mt>0)mt--;const h=A.hit(0);mvCur(h,c,3,3);const i=c.y*3+c.x;if(h.l||h.r||h.u||h.d)S('blip');
   if(h.u&&h.d){}if(A.in(0).b&&A.hit(0).l||A.in(0).b&&A.hit(0).r){}
@@ -28,7 +28,7 @@ A.add({id:'zoo',name:'PIXEL ZOO',cat:'SIM',how:'A BUYS AN ANIMAL IN AN EMPTY PEN
 A.add({id:'safari',name:'SAFARI SNAP',cat:'SIM',how:'MOVE THE CAMERA. A SNAPS. CLOSER + CENTRED = MORE POINTS. 24 SHOTS.',make(){
  const g={over:null,score:0};let cx=160,cy=120,an=[],shots=24,fl=0,msg='',mt=0,t=0;
  const spawn=()=>{const a=ri(AN.length),z=.5+rnd(.9);an.push({a,x:Math.random()<.5?-30:W+30,y:100+z*60,z,v:(.4+rnd(.8))*(z),d:0});an[an.length-1].d=an[an.length-1].x<0?1:-1;};for(let i=0;i<3;i++)spawn();
- g.update=()=>{t++;if(fl>0)fl--;if(mt>0)mt--;const k=A.in(0);cx=cl(cx+ax(k)*3,20,W-20);cy=cl(cy+ay(k)*3,60,200);an.forEach(o=>{o.x+=o.d*o.v;});an=an.filter(o=>o.x>-40&&o.x<W+40);if(t%90===0&&an.length<5)spawn();
+ g.update=()=>{t++;if(fl>0)fl--;if(mt>0)mt--;const k=A.in(0);if(A.mouse.t>0){cx=cl(A.mouse.x,20,W-20);cy=cl(A.mouse.y,60,200);}else{cx=cl(cx+ax(k)*3,20,W-20);cy=cl(cy+ay(k)*3,60,200);}an.forEach(o=>{o.x+=o.d*o.v;});an=an.filter(o=>o.x>-40&&o.x<W+40);if(t%90===0&&an.length<5)spawn();
   if(A.hit(0).a&&shots>0){shots--;fl=6;S('shoot');let best=null,bd=1e9;for(const o of an){const d=Math.hypot(o.x-cx,o.y-cy);if(d<40*o.z&&d<bd){bd=d;best=o;}}if(best){const p=Math.round((40*best.z-bd)/(40*best.z)*50*best.z+10);g.score+=p;msg=AN[best.a].n+' +'+p;S('coin');}else msg='EMPTY SHOT';mt=50;if(shots===0)g.over='FILM FULL';}};
  g.draw=()=>{A.cls('#ffb060');R(0,0,W,90,'#ff9838');C(240,50,16,K.y);R(0,90,W,150,'#c4a54a');for(let i=0;i<8;i++){const x=(i*47+20)%W;R(x,80,3,14,'#5b3a1e');C(x+1,76,8,'#3f8a3a');}
   an.slice().sort((a,b)=>a.z-b.z).forEach(o=>{A.c.save();A.c.translate(o.x,o.y);A.c.scale(o.z*1.3,o.z*1.3);AN[o.a].d(0,0,t);A.c.restore();});

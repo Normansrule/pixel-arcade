@@ -118,9 +118,9 @@ A.add({id:'mancala',name:'MANCALA',cat:'BOARD',vs:1,how:'PICK A PIT, A SOWS COUN
  const g={over:null,score:0};let b=Array(14).fill(4),p=0,cur=0,think=0;b[6]=b[13]=0;
  const move=(bd,pl,pit)=>{let i=pl?7+pit:pit,n=bd[i];bd[i]=0;while(n>0){i=(i+1)%14;if(i===(pl?6:13))continue;bd[i]++;n--;}const own=pl?i>=7&&i<13:i<6;if(own&&bd[i]===1&&bd[12-i]>0){bd[pl?13:6]+=bd[12-i]+1;bd[i]=0;bd[12-i]=0;}return i===(pl?13:6);};
  const finish=()=>{for(let i=0;i<6;i++){b[6]+=b[i];b[i]=0;b[13]+=b[i+7];b[i+7]=0;}g.over=b[6]===b[13]?'DRAW!':A.win(b[6]>b[13]?0:1);};
- const play=pit=>{const again=move(b,p,pit);S('hit');if(b.slice(0,6).every(v=>!v)||b.slice(7,13).every(v=>!v)){finish();return;}if(!again)p=1-p;think=0;cur=0;};
+ const play=pit=>{const again=move(b,p,pit);S('hit');if(b.slice(0,6).every(v=>!v)||b.slice(7,13).every(v=>!v)){finish();return;}if(!again)p=1-p;think=0;cur=b.slice(p?7:0,p?13:6).findIndex(v=>v>0);if(cur<0)cur=0;};
  g.update=()=>{if(A.cpu&&p===1){if(++think>40){let best=-1e9,mv=0;for(let i=0;i<6;i++){if(!b[7+i])continue;const nb=b.slice(),again=move(nb,1,i);let s=(nb[13]-b[13])*2+(again?4:0)+rnd(A.lvl===0?6:A.lvl===1?1.5:.2);if(A.lvl===2){let worst=0;for(let j=0;j<6;j++)if(nb[j]){const n2=nb.slice();move(n2,0,j);worst=Math.max(worst,n2[6]-nb[6]);}s-=worst*.7;}if(s>best){best=s;mv=i;}}play(mv);}return;}
-  const h=A.hit(human(p));if(h.l)cur=(cur+5)%6;if(h.r)cur=(cur+1)%6;if(h.a){if(b[p?7+cur:cur])play(cur);else S('lose');}};
+  const h=A.hit(human(p)),has=i=>b[p?7+i:i]>0;if(h.l){let n=0;do{cur=(cur+5)%6;}while(!has(cur)&&++n<6);S('blip');}if(h.r){let n=0;do{cur=(cur+1)%6;}while(!has(cur)&&++n<6);S('blip');}if(!has(cur)){const f=[0,1,2,3,4,5].find(has);if(f!==undefined)cur=f;}if(h.a&&has(cur))play(cur);};
  g.draw=()=>{A.cls('#5b3a1e');R(20,60,280,120,'#8a5c33');const pit=(x,y,n,hi)=>{C(x,y,15,hi?K.y:'#3a2a18');for(let i=0;i<Math.min(n,12);i++)C(x-8+(i%4)*5.3,y-6+((i/4)|0)*6,2,i%2?K.c:K.p);T(n,x,y+18,K.w,1,'c');};
   for(let i=0;i<6;i++){pit(75+i*34,145,b[i],p===0&&cur===i&&!(A.cpu&&p===1));pit(75+(5-i)*34,95,b[7+i],p===1&&cur===i&&!(A.cpu&&p===1));}R(280-8,80,16,80,'#3a2a18');R(28,80,16,80,'#3a2a18');T(b[6],288,116,K.c,2,'c');T(b[13],36,116,K.p,2,'c');
   A.hud2('','');T(A.nm(p)+' TO SOW',160,6,p?K.p:K.c,2,'c');T('P1 BOTTOM ROW, STORE RIGHT   P2 TOP ROW, STORE LEFT',160,222,K.gr,1,'c');};

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pixel Arcade — 140 original browser games</title>
+<title>Pixel Arcade</title>
 <meta name="description" content="A free browser arcade of 140 original games plus a full 3D kart racer. Play solo, against the CPU, or two players on one keyboard.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕹️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,33 +14,35 @@
 <div class="bg" aria-hidden="true"><div class="stars"></div><div class="sun"></div><div class="peaks"></div><div class="floor"></div></div>
 <div id="glow" aria-hidden="true"></div>
 <nav class="topbar" aria-label="Site">
-  <a class="brand" href="#top">🕹️ <b>PIXEL</b>ARCADE</a>
-  <div class="tools"><input id="q" type="search" placeholder="Search games" aria-label="Search games"><button id="rnd" type="button">Random</button></div>
-  <a class="kartlink" href="kart/">CRITTER KART ▶</a>
+  <a class="brand" href="#top"><i></i><b>PIXEL</b>ARCADE</a>
+  <div class="tools"><input id="q" type="search" placeholder="Search" aria-label="Search games"><button id="rnd" type="button" title="Random game">🎲</button></div>
+  <button class="profile" id="profile" type="button" aria-label="Player profile"></button>
+  <a class="gh" href="https://github.com/Normansrule/pixel-arcade" target="_blank" rel="noopener" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a>
 </nav>
 <main class="lobby" id="top">
   <header class="hero">
-    <p class="kicker">WELCOME TO THE</p>
-    <h1 aria-label="Pixel Arcade"><span>P</span><span>i</span><span>x</span><span>e</span><span>l</span><span class="sp"> </span><span>A</span><span>r</span><span>c</span><span>a</span><span>d</span><span>e</span></h1>
-    <p class="lede">Every cabinet is original, free and plays in your browser. Solo, against the CPU, or two players on one keyboard.</p>
+    <div id="hero3d" aria-hidden="true"></div>
+    <div class="hcopy">
+      <h1 aria-label="Pixel Arcade"><span>P</span><span>i</span><span>x</span><span>e</span><span>l</span><span class="sp"> </span><span>A</span><span>r</span><span>c</span><span>a</span><span>d</span><span>e</span></h1>
+      <p class="lede">Click a cabinet to play.</p>
+      <p id="herolabel" class="herolabel" aria-live="polite"></p>
+    </div>
     <div class="stats">
       <div class="stat"><b data-stat="games">0</b><span>games</span></div>
-      <div class="stat"><b data-stat="vs">0</b><span>vs CPU / 2P</span></div>
-      <div class="stat"><b data-stat="hd">0</b><span>3D worlds</span></div>
-      <div class="stat"><b data-stat="cats">0</b><span>categories</span></div>
+      <div class="stat"><b data-stat="vs">0</b><span>vs CPU</span></div>
+      <div class="stat"><b data-stat="hd">0</b><span>3D</span></div>
     </div>
-    <p class="insert">Hover a cabinet to watch it play · click to insert coin</p>
-    <a class="down" href="#chips" aria-label="Scroll to games">▼</a>
+    <a class="down" href="#chips" aria-label="All games">▼</a>
   </header>
-  <a class="feat" href="kart/"><img src="docs/kart.png" alt="Critter Kart screenshot"><span class="ft"><b>FEATURED · FULL 3D</b><strong>Critter Kart</strong>8 wacky animal racers, items, drift boosts, 3 laps. 1 or 2 players split-screen, the rest CPU. Keyboard or gamepads.<em>RACE NOW ▶</em></span></a>
   <nav class="chips" id="chips" aria-label="Filter games"></nav>
   <p id="empty" class="empty" hidden>No cabinet matches that. Try another word.</p>
   <section class="grid" id="grid" aria-label="Games"></section>
-  <p class="foot"><kbd>Arrows</kbd>/<kbd>WASD</kbd> move · <kbd>Space</kbd> A · <kbd>X</kbd> B · <kbd>Esc</kbd> back. 2P: P1 <kbd>WASD</kbd>+<kbd>F</kbd><kbd>G</kbd>, P2 <kbd>Arrows</kbd>+<kbd>Enter</kbd><kbd>Shift</kbd>. Best scores save in this browser.</p>
+  <footer class="foot"><span><kbd>Arrows</kbd> move</span><span><kbd>Space</kbd>/<kbd>Click</kbd> A</span><span><kbd>X</kbd>/<kbd>Right-click</kbd> B</span><span><kbd>Esc</kbd> exit</span><a href="https://github.com/Normansrule/pixel-arcade/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">+ Add a game</a></footer>
 </main>
 <div id="cab" role="application" aria-label="Game screen">
   <div class="bar"><button id="back" type="button">Back to lobby</button><span class="sp"></span><button id="pause" type="button">Pause</button><button id="mute" type="button">Sound on</button></div>
-  <div class="tube"><div class="crt"><canvas id="scr" width="320" height="240"></canvas></div></div>
+  <div class="tube"><div class="crt"><canvas id="bloom" width="80" height="60" aria-hidden="true"></canvas><canvas id="scr" width="320" height="240"></canvas></div></div>
+  <div id="board" class="board" hidden><div class="bpanel"><h3></h3><ol></ol><p class="bnote">Scores are posted as GitHub issues titled <code>[score] game points</code>, so each entry is tied to a real GitHub account. Press <kbd>U</kbd> on a game-over screen to post yours.</p><button type="button">Close</button></div></div>
   <div class="pad" aria-hidden="true">
     <div class="dp"><span></span><button data-k="u" type="button">▲</button><span></span><button data-k="l" type="button">◀</button><span></span><button data-k="r" type="button">▶</button><span></span><button data-k="d" type="button">▼</button><span></span></div>
     <div class="ab"><button data-k="b" type="button">B</button><button data-k="a" type="button">A</button></div>
@@ -66,5 +68,7 @@
 <script src="games/threed4.js"></script>
 <script src="games/party.js"></script>
 <script src="games/more.js"></script>
+<script src="js/trail.js"></script>
+<script type="module" src="js/hero.js"></script>
 </body>
 </html>

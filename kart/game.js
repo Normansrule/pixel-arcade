@@ -1,4 +1,4 @@
-import * as THREE from './three.module.min.js';
+import * as THREE from '../vendor/three.module.min.js';
 
 /* ---------- characters ---------- */
 const CH=[
@@ -154,7 +154,7 @@ thumbR.dispose();
 function refreshChars(){[...chars.children].forEach((d,i)=>d.className='ch'+(i===picks[0]?' p1':i===picks[1]?' p2':''));}
 document.querySelectorAll('#players .opt').forEach(b=>b.onclick=()=>{humans=+b.dataset.n;document.querySelectorAll('#players .opt').forEach(x=>x.classList.toggle('on',x===b));});
 document.querySelectorAll('#skill .opt').forEach(b=>b.onclick=()=>{skill=+b.dataset.s;document.querySelectorAll('#skill .opt').forEach(x=>x.classList.toggle('on',x===b));});
-document.getElementById('go').onclick=startRace;document.getElementById('again').onclick=startRace;
+document.getElementById('go').onclick=startRace;document.getElementById('post').onclick=()=>{const me=karts.find(k=>k.human===0);if(!me||!me.fin)return alert('Finish a race first.');const ms=Math.round(me.fin*1000);let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}const body='Game: Critter Kart\nTime: '+(ms/1000).toFixed(2)+'s as '+me.ch.n+'\nPlace: '+me.pos+' of 8\nCPU: '+['easy','normal','hard'][skill]+'\n\nPosted from Pixel Arcade'+(u?' as @'+u:'')+'. Do not edit the title.';open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] kart '+ms)+'&body='+encodeURIComponent(body),'_blank');};document.getElementById('again').onclick=startRace;
 let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render(dt);requestAnimationFrame(loop);}
 window.KART={startRace,get karts(){return karts;},get state(){return state;},get raceT(){return raceT;},set humans(v){humans=v;},step};
 requestAnimationFrame(loop);

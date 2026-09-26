@@ -9,7 +9,7 @@ A.add({id:'pool',name:'POOL SHARK',cat:'PARTY',vs:1,how:'LEFT/RIGHT AIM. HOLD A,
  const POCK=[[14,24],[160,20],[306,24],[14,216],[160,220],[306,216]];
  g.update=()=>{if(mt>0)mt--;if(moving){let any=false;for(const b of balls){b.x+=b.vx;b.y+=b.vy;b.vx*=.985;b.vy*=.985;if(Math.hypot(b.vx,b.vy)<.05){b.vx=b.vy=0;}else any=true;if(b.x<20){b.x=20;b.vx=Math.abs(b.vx);}if(b.x>W-20){b.x=W-20;b.vx=-Math.abs(b.vx);}if(b.y<28){b.y=28;b.vy=Math.abs(b.vy);}if(b.y>H-28){b.y=H-28;b.vy=-Math.abs(b.vy);}}
    for(let i=0;i<balls.length;i++)for(let j=i+1;j<balls.length;j++){const a=balls[i],b=balls[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<12&&d>0){const nx=dx/d,ny=dy/d,rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){a.vx+=rv*nx;a.vy+=rv*ny;b.vx-=rv*nx;b.vy-=rv*ny;S('hit');}const o=(12-d)/2;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;}}
-   for(const b of balls.slice()){if(POCK.some(q=>Math.hypot(q[0]-b.x,q[1]-b.y)<11)){balls.splice(balls.indexOf(b),1);S('score');if(b.id===0){balls.push({id:0,x:80,y:120,vx:0,vy:0,c:K.w});msg='SCRATCH';mt=60;}else if(b.t===2){const mine=potted[p].length>=3;g.over=mine?A.win(p):A.win(1-p);return;}else{const own=b.t===p;potted[own?p:1-p].push(b);if(own){msg='POTTED!';g.again=true;}else msg='WRONG BALL';mt=60;}}}
+   for(const b of balls.slice()){if(POCK.some(q=>Math.hypot(q[0]-b.x,q[1]-b.y)<11)){balls.splice(balls.indexOf(b),1);S('score');A.burst(b.x,b.y,b.c,12,2);if(b.id===0){balls.push({id:0,x:80,y:120,vx:0,vy:0,c:K.w});msg='SCRATCH';mt=60;}else if(b.t===2){const mine=potted[p].length>=3;g.over=mine?A.win(p):A.win(1-p);return;}else{const own=b.t===p;potted[own?p:1-p].push(b);if(own){msg='POTTED!';g.again=true;}else msg='WRONG BALL';mt=60;}}}
    if(!any){moving=false;if(!g.again)p=1-p;g.again=false;think=0;aiPlan=null;}return;}
   const c=cue();if(!c)return;
   if(A.cpu&&p===1){if(++think<40)return;if(!aiPlan){const tg=balls.filter(b=>b.t===1).concat(potted[1].length>=3?balls.filter(b=>b.t===2):[])[0]||balls.find(b=>b.id!==0);let best=null,bs=1e9;for(const q of POCK){const dx=q[0]-tg.x,dy=q[1]-tg.y,d=Math.hypot(dx,dy),gx=tg.x-dx/d*12,gy=tg.y-dy/d*12,a=Math.atan2(gy-c.y,gx-c.x);const sc=d+Math.abs(Math.atan2(dy,dx)-a)*80;if(sc<bs){bs=sc;best={a:a+(rnd(.1)-.05)*(2-A.ai*1.5),pw:.55+rnd(.25)};}}aiPlan=best;}
@@ -62,7 +62,7 @@ A.add({id:'colorrush',name:'COLOR RUSH',cat:'PARTY',vs:1,how:'PRESS A ONLY WHEN 
  return g;}});
 
 /* ---- BOMB PASS ---- */
-A.add({id:'bombpass',name:'BOMB PASS',cat:'PARTY',vs:1,how:'TYPE THE SHOWN ARROWS TO PASS THE BOMB. HOLDING IT WHEN IT BLOWS LOSES. FIRST TO 3.',make(){
+A.add({id:'bombpass',name:'BOMB PASS',cat:'PARTY',vs:1,how:'TYPE THE ARROWS TO PASS THE BOMB. DON\'T HOLD IT AT ZERO.',make(){
  const g={over:null,score:0},KS=['l','u','r','d'];let holder=0,seq=[],idx=0,fuse=0,sc=[0,0],wait=40,cpuT=0;
  const newSeq=()=>{seq=[];for(let i=0;i<3+ri(2);i++)seq.push(ri(4));idx=0;cpuT=20+ri(30)-A.ai*12;};
  const reset=()=>{holder=ri(2);fuse=300+ri(200);newSeq();wait=40;};reset();
@@ -110,7 +110,7 @@ A.add({id:'rhythmduel',name:'RHYTHM DUEL',cat:'PARTY',vs:1,how:'HIT YOUR ARROWS 
  return g;}});
 
 /* ---- QUAD PONG ---- */
-A.add({id:'quadpong',name:'QUAD PONG',cat:'PARTY',vs:1,how:'YOU GUARD TWO WALLS: LEFT/RIGHT MOVES THE BOTTOM PADDLE, UP/DOWN THE SIDE ONE. FIRST TO 5.',make(){
+A.add({id:'quadpong',name:'QUAD PONG',cat:'PARTY',vs:1,how:'GUARD TWO WALLS. LEFT/RIGHT = BOTTOM, UP/DOWN = SIDE. FIRST TO 5.',make(){
  const g={over:null,score:0};let pad=[{h:160,v:120},{h:160,v:120}],b,sc=[0,0],wait=40;const reset=()=>{const a=rnd(6.28);b={x:160,y:120,vx:Math.cos(a)*2.5,vy:Math.sin(a)*2.5};wait=40;};reset();
  g.update=()=>{if(wait>0){wait--;return;}if(A.cpu){const q=pad[1];A.bot({l:q.h>b.x+4,r:q.h<b.x-4,u:q.v>b.y+4,d:q.v<b.y-4});}
   for(let i=0;i<2;i++){const q=pad[i],k=A.in(i),sp=i&&A.cpu?1.5+1.7*A.ai:3.2;q.h=cl(q.h+ax(k)*sp,40,W-40);q.v=cl(q.v+ay(k)*sp,60,H-40);}

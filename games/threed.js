@@ -41,7 +41,7 @@ A.add({id:'starrun',name:'STAR RUN 3D',cat:'RETRO 3D',how:'FLY. A FIRES. DODGE R
  const g={over:null,score:0};let px=0,py=0,ob=[],bl=[],st=[],sh=3,inv=0,d=0;for(let i=0;i<50;i++)st.push({x:rnd(4)-2,y:rnd(4)-2,z:rnd(12)+.5});
  const pj=(x,y,z)=>[160+(x-px*.7)*170/z,120+(y-py*.7)*170/z];
  g.update=()=>{const k=A.in(0);d++;px=cl(px+ax(k)*.045,-1,1);py=cl(py+ay(k)*.045,-.8,.8);if(inv>0)inv--;const sp=.11+Math.min(.12,d/30000);if(d%10===0)g.score++;
-  if(Math.random()<.035+d/90000)ob.push({x:cl(px+rnd(2.4)-1.2,-1.4,1.4),y:cl(py+rnd(2)-1,-1.1,1.1),z:14,r:.22+rnd(.18)});if(A.hit(0).a&&bl.length<4){bl.push({x:px,y:py,z:.8});S('shoot');}
+  if(Math.random()<.035+d/90000)ob.push({x:cl(px+rnd(2.4)-1.2,-1.4,1.4),y:cl(py+rnd(2)-1,-1.1,1.1),z:14,r:.22+rnd(.18)});if(A.fire(7)&&bl.length<12){bl.push({x:px,y:py,z:.8});S('shoot');}
   st.forEach(s=>{s.z-=sp;if(s.z<.3){s.z=12;s.x=rnd(4)-2;s.y=rnd(4)-2;}});bl.forEach(b=>b.z+=.5);
   for(const o of ob){o.z-=sp;for(const b of bl)if(!b.dead&&Math.abs(b.z-o.z)<.6&&Math.abs(b.x-o.x)<o.r+.08&&Math.abs(b.y-o.y)<o.r+.08){b.dead=o.dead=1;g.score+=50;S('hit');}
    if(!o.dead&&o.z<1&&o.z>.55&&inv===0&&Math.abs(o.x-px)<o.r+.14&&Math.abs(o.y-py)<o.r+.1){o.dead=1;sh--;inv=90;S('boom');if(sh<=0)g.over='SHIP LOST';}}

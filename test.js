@@ -4,7 +4,7 @@ const ctx=new Proxy({},{get:(t,k)=>k in t?t[k]:(...a)=>{if(a.some(v=>typeof v===
 require('./js/engine.js');['sports1','sports2','classics1','classics2','threed','puzzle','threed2','solo','sports3','versus2','puzzle2','classics3','threed3','action','cards','sim','threed4','party','more'].forEach(f=>require('./games/'+f+'.js'));
 const A=global.A;A.c=ctx;A.silent=true;const N=['l','r','u','d','a','b'];let fails=0;
 const rin=(bias)=>{const o={};for(const n of N)o[n]=Math.random()<bias;return o;};
-for(const gm of A.games){curId=gm.id;const modes=gm.vs?[['cpu',1,0],['two',0,1]]:[['solo',0,0]];
+for(const gm of A.games.filter(g=>!g.href)){curId=gm.id;const modes=gm.vs?[['cpu',1,0],['two',0,1]]:[['solo',0,0]];
  for(const [name,cpu,two] of modes)for(const lvl of [0,2]){A.cpu=!!cpu;A.two=!!two;A.lvl=lvl;A.ai=[.5,.75,1][lvl];let overs=0,g=gm.make(),hold=rin(.3),hold2=rin(.3);
   try{for(let f=0;f<6000;f++){A.t++;if(f%7===0){hold=rin(.35);hold2=rin(.35);}A._set(0,hold);if(two)A._set(1,hold2);g.update();g.draw();if(g.over){overs++;if(typeof g.over!=='string'||!isFinite(g.score))throw new Error('bad over/score '+g.over+' '+g.score);g=gm.make();}}
    console.log('ok  ',gm.id.padEnd(10),name,'lvl'+lvl,'games finished:',overs);}catch(e){fails++;console.log('FAIL',gm.id,name,e.stack.split('\n').slice(0,3).join(' | '));}}}

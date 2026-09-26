@@ -15,7 +15,7 @@ A.add({id:'pipes',name:'PIPE FLOW',cat:'PUZZLE',how:'A ROTATES A PIPE. CONNECT L
  return g;}});
 
 /* ---- COLOR FLOOD ---- */
-A.add({id:'flood',name:'COLOR FLOOD',cat:'PUZZLE',how:'PICK A COLOUR WITH LEFT/RIGHT, A FLOODS FROM THE CORNER. FILL THE BOARD IN 22 MOVES.',make(){
+A.add({id:'flood',name:'COLOR FLOOD',cat:'PUZZLE',how:'PICK A COLOUR, A FLOODS FROM THE CORNER. FILL IT IN 22 MOVES.',make(){
  const g={over:null,score:0},N=12,CO=[K.r,K.y,K.g,K.b,K.p,K.o];let b=[],sel=0,moves=22;for(let i=0;i<N*N;i++)b.push(ri(6));
  g.update=()=>{const h=A.hit(0);if(h.l)sel=(sel+5)%6;if(h.r)sel=(sel+1)%6;if(h.a){const old=b[0];if(old===sel){S('lose');return;}const st=[0];while(st.length){const i=st.pop();if(b[i]!==old)continue;b[i]=sel;const x=i%N,y=(i/N)|0;if(x>0)st.push(i-1);if(x<N-1)st.push(i+1);if(y>0)st.push(i-N);if(y<N-1)st.push(i+N);}moves--;S('blip');if(b.every(v=>v===b[0])){g.score=moves*10+10;g.over='FLOODED! WIN';S('win');}else if(moves<=0)g.over='OUT OF MOVES';}};
  g.draw=()=>{A.cls();b.forEach((v,i)=>R(70+(i%N)*15,30+((i/N)|0)*15,14,14,CO[v]));CO.forEach((col,i)=>{R(258+(i%2)*26,60+((i/2)|0)*26,22,22,col);if(i===sel)A.box(256+(i%2)*26,58+((i/2)|0)*26,26,26,K.w);});T('MOVES '+moves,6,6,moves<5?K.r:K.w,2);};

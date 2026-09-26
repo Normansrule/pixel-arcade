@@ -79,12 +79,12 @@ A.add({id:'spaceminer',name:'SPACE MINER 3D',cat:'RETRO 3D',hd:1,how:'FLY. A FIR
  return g;}});
 
 /* ---- RAIL BLASTER 3D ---- */
-A.add({id:'rail',name:'RAIL BLASTER 3D',cat:'RETRO 3D',hd:1,how:'YOU RIDE THE RAIL. MOVE THE SIGHT, A FIRES. DROIDS POP FROM COVER. SURVIVE 10 WAVES.',make(){
+A.add({id:'rail',name:'RAIL BLASTER 3D',cat:'RETRO 3D',hd:1,mouse:1,how:'AIM WITH MOUSE OR ARROWS. CLICK TO FIRE. SURVIVE 10 WAVES.',make(){
  const g={over:null,score:0};let z=0,cx=0,cy=1.5,en=[],hp=5,wave=0,fl=0,inv=0,left=0;const spawn=()=>{wave++;left=4+wave;};spawn();
- g.update=()=>{z+=.05;if(fl>0)fl--;if(inv>0)inv--;const k=A.in(0);cx=cl(cx+ax(k)*.09,-4,4);cy=cl(cy-ay(k)*.09,.3,3.2);
+ g.update=()=>{z+=.05;if(fl>0)fl--;if(inv>0)inv--;const k=A.in(0);cx=cl(cx+ax(k)*.09+A.mouse.dx*.025,-4,4);cy=cl(cy-ay(k)*.09-A.mouse.dy*.025,.3,3.2);
   if(left>0&&Math.random()<.03){left--;en.push({x:rnd(8)-4,y:.6,z:z+12+rnd(10),t:0,up:0,cd:90+ri(60),hp:1});}
   for(const e of en){e.t++;e.up=Math.min(1,e.t/25);e.z-=.03;if(--e.cd<=0){e.cd=120;if(inv===0){hp--;inv=50;S('hit');if(hp<=0)g.over='RAIL DERAILED  WAVE '+wave;}}if(e.z<z+1)e.hp=0;}
-  if(A.hit(0).a){fl=4;S('shoot');const best=en.filter(e=>e.hp>0).map(e=>{const sx=e.x/(e.z-z)*8,sy=(e.y+.8*e.up-1.5)/(e.z-z)*8;return{e,d:Math.hypot(sx-cx*8/(e.z-z)*(e.z-z)/8,sy-(cy-1.5))};}).filter(o=>Math.abs(o.e.x-cx)<.9&&Math.abs(o.e.y+.8*o.e.up-cy)<.9).sort((a,b)=>a.e.z-b.e.z)[0];if(best){best.e.hp=0;g.score+=100;S('boom');}}
+  if(A.fire(10)){fl=4;S('shoot');const best=en.filter(e=>e.hp>0).map(e=>{const sx=e.x/(e.z-z)*8,sy=(e.y+.8*e.up-1.5)/(e.z-z)*8;return{e,d:Math.hypot(sx-cx*8/(e.z-z)*(e.z-z)/8,sy-(cy-1.5))};}).filter(o=>Math.abs(o.e.x-cx)<.9&&Math.abs(o.e.y+.8*o.e.up-cy)<.9).sort((a,b)=>a.e.z-b.e.z)[0];if(best){best.e.hp=0;g.score+=100;S('boom');}}
   en=en.filter(e=>e.hp>0);if(left===0&&!en.length){if(wave>=10){g.over='RAIL CLEARED! WIN';return;}hp=Math.min(5,hp+1);S('win');spawn();}};
  g.draw=()=>{A.skyband('#3a1a6a','#ff7a59',120);R(0,120,W,120,'#2a2a38');A.fog={col:'#5a3a6a',near:14,far:40};A.cam.x=0;A.cam.y=1.6;A.cam.z=z;A.cam.ry=cx*.06;A.cam.rx=(cy-1.5)*.08;
   for(let zz=Math.floor(z)+1;zz<z+35;zz+=2){F([[-.6,0,zz],[.6,0,zz],[.6,0,zz+2],[-.6,0,zz+2]],'#555');F([[-5,-.05,zz],[5,-.05,zz],[5,-.05,zz+2],[-5,-.05,zz+2]],(zz/2)%2?'#3a3a44':'#40404c');if(zz%6===1){B3(-4,0,zz,1.2,1.4,1.2,'#6a6a78');B3(4,0,zz,1.2,1.4,1.2,'#6a6a78');}}

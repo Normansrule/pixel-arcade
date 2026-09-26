@@ -22,12 +22,12 @@ A.add({id:'hopper',name:'ROAD HOPPER',cat:'CLASSICS',how:'HOP ACROSS. RIDE LOGS.
 /* ---- SKY SHIELD ---- */
 A.add({id:'shield',name:'SKY SHIELD',cat:'CLASSICS',how:'MOVE CROSSHAIR. A FIRES. SAVE THE CITIES.',make(){
  const g={over:null,score:0};let cx=160,cy=100,ci=[1,1,1,1,1,1],en=[],sh=[],ex=[],wave=1,toSpawn=8,ammo=20,t=0;const cxs=i=>30+i*52;
- g.update=()=>{const k=A.in(0);cx=cl(cx+ax(k)*3.2,6,W-6);cy=cl(cy+ay(k)*3.2,24,190);
+ g.update=()=>{const k=A.in(0);if(A.mouse.t>0){cx=cl(A.mouse.x,6,W-6);cy=cl(A.mouse.y,24,190);}else{cx=cl(cx+ax(k)*3.2,6,W-6);cy=cl(cy+ay(k)*3.2,24,190);}
   if(A.hit(0).a&&ammo>0){ammo--;const d=Math.hypot(cx-160,cy-214);sh.push({x:160,y:214,tx:cx,ty:cy,vx:(cx-160)/d*5,vy:(cy-214)/d*5});S('shoot');}
   if(toSpawn>0&&++t>Math.max(25,80-wave*6)){t=0;toSpawn--;const live=ci.map((v,i)=>v?i:-1).filter(i=>i>=0),ti=live.length?live[ri(live.length)]:ri(6),sx=rnd(W),tx=cxs(ti),d=Math.hypot(tx-sx,206),sp=.45+wave*.07;en.push({sx,x:sx,y:14,vx:(tx-sx)/d*sp,vy:206/d*sp,ti});}
   sh.forEach(s=>{s.x+=s.vx;s.y+=s.vy;if(Math.hypot(s.x-s.tx,s.y-s.ty)<5){s.done=1;ex.push({x:s.tx,y:s.ty,r:1,g:1});S('boom');}});sh=sh.filter(s=>!s.done);
   ex.forEach(e=>{e.r+=e.g*.55;if(e.r>19)e.g=-1;});ex=ex.filter(e=>e.r>0);
-  en.forEach(m=>{m.x+=m.vx;m.y+=m.vy;if(ex.some(e=>Math.hypot(e.x-m.x,e.y-m.y)<e.r)){m.done=1;g.score+=25;ex.push({x:m.x,y:m.y,r:1,g:1});}else if(m.y>=214){m.done=1;if(ci[m.ti]){ci[m.ti]=0;S('lose');}ex.push({x:m.x,y:214,r:1,g:1});}});en=en.filter(m=>!m.done);
+  en.forEach(m=>{m.x+=m.vx;m.y+=m.vy;if(ex.some(e=>Math.hypot(e.x-m.x,e.y-m.y)<e.r)){m.done=1;g.score+=25;ex.push({x:m.x,y:m.y,r:1,g:1});A.burst(m.x,m.y,K.o,8,2);}else if(m.y>=214){m.done=1;if(ci[m.ti]){ci[m.ti]=0;S('lose');}ex.push({x:m.x,y:214,r:1,g:1});}});en=en.filter(m=>!m.done);
   if(!ci.some(v=>v)){g.over='CITIES LOST';return;}if(toSpawn===0&&!en.length&&!ex.length){g.score+=ci.filter(v=>v).length*50+ammo*5;wave++;toSpawn=7+wave*2;ammo=20;S('win');}};
  g.draw=()=>{A.cls();R(0,220,W,20,'#5b3a1e');A.poly([[145,220],[152,208],[168,208],[175,220]],'#8a5c33',1);ci.forEach((v,i)=>{const x=cxs(i);if(v){R(x-9,212,6,8,K.c);R(x-3,208,6,12,K.b);R(x+3,214,6,6,K.c);}else R(x-9,218,18,2,K.gr);});
   en.forEach(m=>{L(m.sx,14,m.x,m.y,'#7a1d33');R(m.x-1,m.y-1,3,3,K.r);});sh.forEach(s=>{L(160,214,s.x,s.y,'#1c5f8a');R(s.x-1,s.y-1,2,2,K.w);});ex.forEach(e=>C(e.x,e.y,e.r,A.t%4<2?K.y:K.o));
@@ -51,7 +51,7 @@ A.add({id:'lander',name:'MOON LANDER',cat:'CLASSICS',how:'TILT. UP = ENGINE. LAN
 A.add({id:'flap',name:'FLAP BOT',cat:'CLASSICS',how:'A FLAPS. THREAD THE GAPS.',make(){
  const g={over:null,score:0};let y=110,vy=0,pp=[],t=0,go=false;
  g.update=()=>{const h=A.hit(0);if(h.a||h.u){vy=-2.9;go=true;S('jump');}if(!go)return;vy+=.17;y+=vy;if(++t%85===1)pp.push({x:W+10,g:50+rnd(110),ok:0});
-  for(const p of pp){p.x-=1.7;if(!p.ok&&p.x<60){p.ok=1;g.score++;S('coin');}if(p.x<76&&p.x>36&&(y-6<p.g-2||y+6>p.g+54))g.over='GAME OVER';}pp=pp.filter(p=>p.x>-30);if(y>222||y<0)g.over='GAME OVER';};
+  for(const p of pp){p.x-=1.7;if(!p.ok&&p.x<60){p.ok=1;g.score++;S('coin');A.burst(57,y,K.y,6,1.5);}if(p.x<76&&p.x>36&&(y-6<p.g-2||y+6>p.g+54))g.over='GAME OVER';}pp=pp.filter(p=>p.x>-30);if(y>222||y<0)g.over='GAME OVER';};
  g.draw=()=>{A.cls('#1c5f8a');R(0,226,W,14,'#c4915a');pp.forEach(p=>{R(p.x,0,26,p.g,K.g);R(p.x-2,p.g-8,30,8,'#1e8a45');R(p.x,p.g+52,26,H,K.g);R(p.x-2,p.g+52,30,8,'#1e8a45');});
   R(50,y-6,14,12,K.y);R(59,y-4,4,4,K.w);R(61,y-3,2,2,K.k);R(64,y,5,3,K.o);R(46,y-2+(vy<0?3:-3),6,4,K.o);T(g.score,160,10,K.w,4,'c');if(!go)T('PRESS A TO FLAP',160,150,K.w,2,'c');};
  return g;}});

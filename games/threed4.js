@@ -22,7 +22,7 @@ A.add({id:'kart',name:'KART CUP 3D',cat:'RETRO 3D',hd:1,how:'UP GAS. STEER. 3 LA
 /* ---- SKY ACE 3D ---- */
 A.add({id:'skyace',name:'SKY ACE 3D',cat:'RETRO 3D',hd:1,how:'FLY. A FIRES. SHOOT DOWN 20 ENEMY PLANES.',make(){
  const g={over:null,score:0};let px=0,py=2,z=0,bl=[],en=[],hp=5,inv=0,kills=0,roll=0;const spawn=()=>en.push({x:rnd(10)-5,y:1+rnd(4),z:z+50+rnd(20),vx:rnd(.06)-.03,cd:60+ri(90)});for(let i=0;i<4;i++)spawn();
- g.update=()=>{const k=A.in(0);px=cl(px+ax(k)*.12,-6,6);py=cl(py-ay(k)*.1,.5,6);roll+=(ax(k)*.5-roll)*.1;z+=.2;if(inv>0)inv--;if(A.hit(0).a&&bl.length<6){bl.push({x:px-.5,y:py,z:z+1});bl.push({x:px+.5,y:py,z:z+1});S('shoot');}
+ g.update=()=>{const k=A.in(0);px=cl(px+ax(k)*.12,-6,6);py=cl(py-ay(k)*.1,.5,6);roll+=(ax(k)*.5-roll)*.1;z+=.2;if(inv>0)inv--;if(A.fire(6)&&bl.length<16){bl.push({x:px-.5,y:py,z:z+1});bl.push({x:px+.5,y:py,z:z+1});S('shoot');}
   bl.forEach(b=>b.z+=1);bl=bl.filter(b=>b.z<z+60);
   for(const e of en){e.z-=.12;e.x+=e.vx;if(Math.abs(e.x)>6)e.vx*=-1;e.x+=(px-e.x)*.002;for(const b of bl)if(Math.abs(b.z-e.z)<1.2&&Math.abs(b.x-e.x)<.9&&Math.abs(b.y-e.y)<.7){e.dead=1;b.z=999;kills++;g.score+=100;S('boom');}
    if(--e.cd<=0){e.cd=120;if(Math.abs(e.x-px)<1.5&&Math.abs(e.y-py)<1.2&&inv===0){hp--;inv=60;S('hit');if(hp<=0)g.over='SHOT DOWN';}}if(e.z<z-2){e.dead=1;}if(Math.abs(e.z-z)<1&&Math.abs(e.x-px)<1&&Math.abs(e.y-py)<.8&&inv===0){e.dead=1;hp--;inv=60;S('boom');if(hp<=0)g.over='COLLISION';}}
@@ -35,9 +35,9 @@ A.add({id:'skyace',name:'SKY ACE 3D',cat:'RETRO 3D',hd:1,how:'FLY. A FIRES. SHOO
  return g;}});
 
 /* ---- SNIPER ALLEY 3D ---- */
-A.add({id:'sniper',name:'SNIPER ALLEY 3D',cat:'RETRO 3D',hd:1,how:'MOVE THE SCOPE. HOLD B TO ZOOM. A FIRES. HIT 15 TARGETS.',make(){
+A.add({id:'sniper',name:'SNIPER ALLEY 3D',cat:'RETRO 3D',hd:1,mouse:1,how:'MOUSE AIMS. RIGHT-CLICK ZOOMS. CLICK FIRES. HIT 15 TARGETS.',make(){
  const g={over:null,score:0};let cx=0,cy=1.5,tg=[],hits=0,ammo=25,fl=0,zoom=1;const spawn=()=>tg.push({x:rnd(16)-8,y:1+rnd(2),z:14+rnd(22),t:0,life:200+ri(100),up:0});for(let i=0;i<3;i++)spawn();
- g.update=()=>{const k=A.in(0);zoom+=((k.b?2.6:1)-zoom)*.15;const sp=.06/zoom;cx=cl(cx+ax(k)*sp*3,-3,3);cy=cl(cy-ay(k)*sp*3,.2,3.5);if(fl>0)fl--;
+ g.update=()=>{const k=A.in(0);zoom+=((k.b?2.6:1)-zoom)*.15;const sp=.06/zoom;cx=cl(cx+ax(k)*sp*3+A.mouse.dx*.012/zoom,-3,3);cy=cl(cy-ay(k)*sp*3-A.mouse.dy*.012/zoom,.2,3.5);if(fl>0)fl--;
   for(const t of tg){t.t++;t.up=Math.min(1,t.t/20);if(t.t>t.life){t.dead=1;}}tg=tg.filter(t=>!t.dead);while(tg.length<3)spawn();
   if(A.hit(0).a&&ammo>0){ammo--;fl=4;S('shoot');const ray={x:cx,y:cy};let best=null,bd=1e9;for(const t of tg){const sx=t.x/t.z*12,sy=(t.y-1.5)/t.z*12;const d=Math.hypot(sx-ray.x,sy-(ray.y-1.5));if(d<.9*12/t.z*.9+.05&&t.z<bd){bd=t.z;best=t;}}if(best){best.dead=1;hits++;g.score+=Math.round(best.z*10);S('hit');if(hits>=15)g.over='MISSION COMPLETE! WIN';}else if(ammo===0)g.over='OUT OF AMMO';}};
  g.draw=()=>{A.skyband('#6a4aaa','#ffb070',120);R(0,120,W,120,'#6a6a78');A.fog={col:'#c08a8a',near:18,far:50};A.cam.x=0;A.cam.y=1.5;A.cam.z=0;A.cam.ry=cx*.14/zoom*0+cx*.1;A.cam.rx=(cy-1.5)*.1;A.cam.f=210*zoom;

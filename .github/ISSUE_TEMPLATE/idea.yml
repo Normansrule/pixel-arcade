@@ -1,0 +1,11 @@
+name: Game idea
+description: Suggest a new cabinet
+labels: [idea]
+body:
+  - type: input
+    id: name
+    attributes: { label: Game idea }
+    validations: { required: true }
+  - type: dropdown
+    id: mode
+    attributes: { label: Mode, options: [Solo, vs CPU / 2 players, Both] }

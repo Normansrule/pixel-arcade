@@ -5,7 +5,7 @@ const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0);
 A.add({id:'defender',name:'SPACE DEFENDER',cat:'CLASSICS',how:'FLY LEFT/RIGHT. A FIRES FORWARD. SAVE THE FALLING PODS.',make(){
  const g={over:null,score:0};let p={x:100,y:120,d:1,vx:0},en=[],bl=[],pods=[],lives=3,inv=0,t=0,cam=0;for(let i=0;i<6;i++)pods.push({x:rnd(1200),y:200,v:0});
  g.update=()=>{t++;const k=A.in(0);if(ax(k))p.d=ax(k);p.vx=(p.vx+ax(k)*.3)*.94;p.x+=p.vx;p.y=cl(p.y+ay(k)*2.5,30,200);if(inv>0)inv--;cam=p.x-160+p.d*60;
-  if(A.hit(0).a){bl.push({x:p.x,y:p.y,vx:p.d*7,t:40});S('shoot');}if(t%Math.max(30,90-t/100)===0)en.push({x:p.x+(Math.random()<.5?-400:400),y:30+rnd(100),vx:0,vy:0,c:0});
+  if(A.fire(6)){bl.push({x:p.x,y:p.y,vx:p.d*7,t:40});S('shoot');}if(t%Math.max(30,90-t/100)===0)en.push({x:p.x+(Math.random()<.5?-400:400),y:30+rnd(100),vx:0,vy:0,c:0});
   bl.forEach(b=>{b.x+=b.vx;b.t--;});bl=bl.filter(b=>b.t>0);
   for(const e of en){const tg=pods.find(q=>q.v===0&&Math.abs(q.x-e.x)<200);if(tg&&!e.c){e.vx=(tg.x-e.x)*.01;e.vy=(tg.y-e.y)*.01;if(Math.abs(tg.x-e.x)<6&&Math.abs(tg.y-e.y)<8){e.c=tg;tg.v=1;}}else if(e.c){e.vy=-.8;e.c.x=e.x;e.c.y=e.y+8;if(e.y<0){e.dead=1;pods.splice(pods.indexOf(e.c),1);S('lose');}}else{e.vx=(p.x-e.x)*.005;e.vy=(p.y-e.y)*.01;}e.x+=e.vx;e.y+=e.vy;
    for(const b of bl)if(Math.abs(b.x-e.x)<8&&Math.abs(b.y-e.y)<8){e.dead=1;b.t=0;g.score+=e.c?150:50;if(e.c){e.c.v=2;}S('hit');}
@@ -86,7 +86,7 @@ A.add({id:'cubehop',name:'CUBE HOP',cat:'CLASSICS',how:'HOP DIAGONALLY WITH THE 
 A.add({id:'galaxy',name:'GALAXY WAVE',cat:'CLASSICS',how:'MOVE. A FIRES. ENEMIES DIVE AT YOU.',make(){
  const g={over:null,score:0};let px=160,en=[],bl=[],eb=[],lives=3,inv=0,t=0,wave=0;
  const spawn=()=>{wave++;en=[];for(let r=0;r<4;r++)for(let c=0;c<8;c++)en.push({hx:60+c*28,hy:40+r*18,x:60+c*28,y:-20-r*18,st:0,r,dt:0});};spawn();
- g.update=()=>{t++;px=cl(px+ax(A.in(0))*3,10,W-10);if(inv>0)inv--;if(A.hit(0).a&&bl.length<3){bl.push({x:px,y:210});S('shoot');}bl.forEach(b=>b.y-=6);bl=bl.filter(b=>b.y>0);
+ g.update=()=>{t++;px=cl(px+ax(A.in(0))*3,10,W-10);if(inv>0)inv--;if(A.fire(8)&&bl.length<8){bl.push({x:px,y:210});S('shoot');}bl.forEach(b=>b.y-=6);bl=bl.filter(b=>b.y>0);
   for(const e of en){if(e.st===0){e.x+=(e.hx+Math.sin(t*.03)*10-e.x)*.05;e.y+=(e.hy-e.y)*.05;if(Math.random()<.0015*wave&&t>120){e.st=1;e.dt=0;}}else{e.dt++;e.x=e.hx+Math.sin(e.dt*.05)*(px-e.hx)*1.2;e.y=e.hy+e.dt*2.2;if(e.dt%40===20)eb.push({x:e.x,y:e.y});if(e.y>H+10){e.y=-20;e.st=0;}}
    for(const b of bl)if(Math.abs(b.x-e.x)<8&&Math.abs(b.y-e.y)<8){e.dead=1;b.y=-9;g.score+=e.st?80:(4-e.r)*10+10;S('hit');}
    if(inv===0&&Math.abs(px-e.x)<10&&Math.abs(210-e.y)<10){e.dead=1;lives--;inv=90;S('boom');if(lives<=0)g.over='GAME OVER';}}
@@ -96,7 +96,7 @@ A.add({id:'galaxy',name:'GALAXY WAVE',cat:'CLASSICS',how:'MOVE. A FIRES. ENEMIES
  return g;}});
 
 /* ---- ASTRO MINER ---- */
-A.add({id:'miner',name:'ASTRO MINER',cat:'CLASSICS',how:'DRILL DOWN WITH THE ARROWS. GRAB GEMS. UP TO THE SURFACE TO SELL BEFORE FUEL RUNS OUT.',make(){
+A.add({id:'miner',name:'ASTRO MINER',cat:'CLASSICS',how:'DIG DOWN, GRAB GEMS, SELL AT THE SURFACE BEFORE FUEL RUNS OUT.',make(){
  const g={score:0,over:null},GW=20,CS=16;let m=[],p={x:10,y:0,mv:0},fuel=300,cargo=0,cam=0,depthMax=0;
  const row=y=>{const r=[];for(let x=0;x<GW;x++){const v=Math.random();r.push(y<1?0:v<.08?3:v<.14?2:v<.2?0:1);}return r;};for(let i=0;i<60;i++)m.push(row(i));
  g.update=()=>{if(p.mv>0){p.mv--;return;}const k=A.in(0),dx=ax(k),dy=dx?0:ay(k);if(dx||dy){const nx=cl(p.x+dx,0,GW-1),ny=Math.max(0,p.y+dy);if(ny>=m.length)m.push(row(ny));const v=m[ny][nx];if(dy<0&&m[ny][nx]===1){}else{p.x=nx;p.y=ny;p.mv=v?7:4;fuel-=v?2:1;if(v===2){cargo+=10;S('coin');}if(v===3){cargo+=50;S('coin');}m[ny][nx]=0;if(v===1)S('blip');}depthMax=Math.max(depthMax,p.y);

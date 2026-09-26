@@ -70,7 +70,7 @@ A.add({id:'tunnel',name:'TUNNEL RUN 3D',cat:'RETRO 3D',hd:1,how:'MOVE TO THE GAP
 /* ---- TRENCH RUN 3D ---- */
 A.add({id:'trench',name:'TRENCH RUN 3D',cat:'RETRO 3D',hd:1,how:'FLY. A FIRES. BLAST TURRETS, DODGE BARS.',make(){
  const g={over:null,score:0};let px=0,py=0,z=0,v=.15,ob=[],bl=[],sh=3,inv=0;for(let i=1;i<16;i++)ob.push({z:i*10,t:i%3===0?1:0,x:ri(3)-1,y:ri(2),hp:1});
- g.update=()=>{const k=A.in(0);px=cl(px+ax(k)*.14,-2,2);py=cl(py-ay(k)*.14,-1.5,1.5);z+=v;if(inv>0)inv--;if(A.hit(0).a&&bl.length<4){bl.push({x:px,y:py,z:z+1});S('shoot');}
+ g.update=()=>{const k=A.in(0);px=cl(px+ax(k)*.14,-2,2);py=cl(py-ay(k)*.14,-1.5,1.5);z+=v;if(inv>0)inv--;if(A.fire(7)&&bl.length<12){bl.push({x:px,y:py,z:z+1});S('shoot');}
   bl.forEach(b=>b.z+=.9);bl=bl.filter(b=>b.z<z+60);
   for(const o of ob){if(o.t===1&&o.hp>0)for(const b of bl)if(Math.abs(b.z-o.z)<1&&Math.abs(b.x-o.x*1.5)<.9&&Math.abs(b.y-(o.y?1:-1.5))<1){o.hp=0;b.z=999;g.score+=100;S('hit');}
    if(o.z<z+.5&&o.z>z-.5&&inv===0){const hit=o.t===0?(o.y?py>-.2:py<.2)&&true:o.hp>0&&Math.abs(px-o.x*1.5)<1&&Math.abs(py-(o.y?1:-1.5))<1;if(hit){sh--;inv=70;S('boom');if(sh<=0)g.over='SHIP LOST';}}

@@ -19,7 +19,7 @@ A.add({id:'bowling',name:'BOWLING 3D',cat:'SPORTS',vs:1,how:'A x3: POSITION, ANG
    if(ball.d>19){ph='settle';t=0;}}
   if(ph==='roll'||ph==='settle')for(const q of pins)if(q.t>0){q.t--;q.x+=q.vx;q.d+=q.vd;q.vx*=.93;q.vd*=.93;for(const o of pins)if(o.up){const dx=o.x-q.x,dd=o.d-q.d,m=Math.hypot(dx,dd);if(m<.2)knock(o,dx/m,dd/m,Math.hypot(q.vx,q.vd)*.85);}}
   if(ph==='settle'&&t>55){const got=pins.filter(q=>!q.up).length,dn=down0+got;rolls[p].push(got);
-   let endFrame=false;if(rl===0&&dn===10){msg='STRIKE!';endFrame=true;}else if(rl===1){msg=dn===10?'SPARE!':got+' DOWN';endFrame=true;}else msg=got?got+' DOWN':'GUTTER!';mt=70;if(dn===10)S('score');
+   let endFrame=false;if(rl===0&&dn===10){msg='STRIKE!';endFrame=true;}else if(rl===1){msg=dn===10?'SPARE!':got+' DOWN';endFrame=true;}else msg=got?got+' DOWN':'GUTTER!';mt=70;if(dn===10){S('score');A.burst(160,80,K.y,30,3);}
    if(endFrame){rl=0;down0=0;rack();if(p===1){fr++;p=0;}else p=1;if(fr>=NF){const a=total(rolls[0]),b=total(rolls[1]);g.over=a===b?'DRAW!':A.win(a>b?0:1);}}else{rl=1;down0=dn;pins=pins.filter(q=>q.up);}
    fresh();}};
  g.draw=()=>{A.cls('#1a1238');A.poly([pr(-1.25,0),pr(1.25,0),pr(1.25,19),pr(-1.25,19)].map(v=>[v[0],v[1]]),'#3a2a18',1);A.poly([pr(-1,0),pr(1,0),pr(1,19),pr(-1,19)].map(v=>[v[0],v[1]]),'#d9a55b',1);
