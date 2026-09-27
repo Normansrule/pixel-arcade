@@ -13,7 +13,7 @@ const lamp=(x,z)=>{A.cyl3(x,0,z,.06,2.4,'#777',5);B3(x,2.4,z,.3,.15,.3,'#fff3a0'
 /* ---- CITY CRUISER 3D ---- */
 A.add({id:'city',name:'CITY CRUISER 3D',cat:'RETRO 3D',hd:1,how:'DRIVE THE GRID. GRAB COINS. DODGE CARS. 90 SEC.',warm:20,make(){
  const g={over:null,score:0},N=6,SP=8,BC=['#5c6b8a','#8a5c6b','#6b8a5c','#7a6b9a','#9a8a5c','#5c8a8a'];let p={x:0,z:0,a:0,v:0},time=5400,coins=[],cars=[],flash=0,bld=[];
- for(let i=-N;i<N;i++)for(let j=-N;j<N;j++)bld.push({x:i*SP+SP/2,z:j*SP+SP/2,h:1.5+((i*7+j*13)%5)*.9,w:4+((i+j)%2),c:BC[(i*3+j*5+36)%6]});
+ for(let i=-N;i<N;i++)for(let j=-N;j<N;j++)bld.push({x:i*SP+SP/2,z:j*SP+SP/2,h:1.5+((i*7+j*13)%5)*.9,w:4+((i+j)%2),c:BC[((i*3+j*5)%6+6)%6]});
  const spawnCoin=()=>{const i=ri(N*2)-N,j=ri(N*2)-N,h=Math.random()<.5;coins.push({x:h?i*SP+rnd(SP)-SP/2:i*SP,z:h?j*SP:j*SP+rnd(SP)-SP/2});};for(let i=0;i<10;i++)spawnCoin();
  for(let i=0;i<8;i++){const h=i%2===0,l=(ri(N*2)-N)*SP;cars.push({x:h?rnd(N*2*SP)-N*SP:l+.9,z:h?l-.9:rnd(N*2*SP)-N*SP,a:h?1.5708:0,v:.06+rnd(.05),c:[K.r,K.y,K.p,K.w][i%4]});}
  const inBld=(x,z)=>{const rx=((x%SP)+2*SP)%SP,rz=((z%SP)+2*SP)%SP;return rx>1.3&&rx<SP-1.3&&rz>1.3&&rz<SP-1.3;};

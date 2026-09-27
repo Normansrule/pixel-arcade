@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strike Zone · Pixel Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="strike.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="cross"><i></i><i></i><i></i><i></i></div>
+  <div id="hitm"></div>
+  <div id="dmg"></div>
+  <div id="dir"></div>
+  <canvas id="mini" width="160" height="136"></canvas>
+  <div id="feed"></div>
+  <div class="tl"><b id="wave">WAVE 1</b><span id="left"></span></div>
+  <div class="tr"><b id="score">0</b><span>SCORE</span></div>
+  <div class="bl"><div id="hpbar"><i></i></div><span id="hp">100</span></div>
+  <div class="br"><b id="ammo">30</b><span id="mag">/ 90</span></div>
+  <div id="banner"></div>
+</div>
+<div id="menu">
+  <h1>STRIKE ZONE</h1>
+  <div class="row" id="diff"><button data-d="0">RECRUIT</button><button data-d="1" class="on">REGULAR</button><button data-d="2">VETERAN</button></div>
+  <button id="go" class="go">CLICK TO DEPLOY</button>
+  <p class="keys"><kbd>Mouse</kbd> aim · <kbd>Click</kbd> fire · <kbd>WASD</kbd> move · <kbd>Space</kbd> jump · <kbd>Shift</kbd> sprint · <kbd>C</kbd> crouch · <kbd>R</kbd> reload</p>
+</div>
+<div id="over" hidden><h1 id="otitle">K.I.A.</h1><p id="ostats"></p><div class="row"><button id="again" class="go">DEPLOY AGAIN</button><button id="post">POST SCORE</button></div></div>
+<a class="back" href="../">◀ ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

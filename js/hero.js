@@ -5,12 +5,12 @@ if(host&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
  const start=()=>{
  const A=window.A,W=host.clientWidth,H=host.clientHeight;
  const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(devicePixelRatio,1.5));r.setSize(W,H);host.appendChild(r.domElement);
- const scene=new THREE.Scene();scene.fog=new THREE.Fog(0x12082a,14,34);
+ const scene=new THREE.Scene();scene.fog=new THREE.Fog(0x000000,14,32);
  const cam=new THREE.PerspectiveCamera(42,W/H,.1,100);cam.position.set(0,2.4,15);cam.lookAt(0,1.6,0);
  scene.add(new THREE.HemisphereLight(0xb0a0ff,0x100820,.9));const key=new THREE.DirectionalLight(0xffe0f0,1.2);key.position.set(4,8,6);scene.add(key);
- const rim=new THREE.PointLight(0x2fe8d0,40,30);rim.position.set(0,5,-6);scene.add(rim);const pink=new THREE.PointLight(0xff3f8e,12,24);pink.position.set(0,6,10);scene.add(pink);
+ const rim=new THREE.PointLight(0x2fe8d0,40,30);rim.position.set(0,5,-6);scene.add(rim);const pink=new THREE.PointLight(0xff4d00,16,24);pink.position.set(0,6,10);scene.add(pink);
  // floor grid
- const grid=new THREE.GridHelper(80,40,0xff3f8e,0x2fe8d0);grid.material.transparent=true;grid.material.opacity=.35;scene.add(grid);
+ const grid=new THREE.GridHelper(80,40,0xff4d00,0x333333);grid.material.transparent=true;grid.material.opacity=.35;scene.add(grid);
  const ring=new THREE.Group();scene.add(ring);
  const pool=A.games.filter(g=>!g.href);const pick=[];while(pick.length<10){const g=pool[Math.random()*pool.length|0];if(!pick.includes(g))pick.push(g);}
  const cols=[0x3a2a78,0x4a2a6a,0x2a3a78,0x3a2a58];const cabs=[],stops=[];

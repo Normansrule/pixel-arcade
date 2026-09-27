@@ -47,3 +47,4 @@ A.add({id:'sniper',name:'SNIPER ALLEY 3D',cat:'RETRO 3D',hd:1,mouse:1,how:'MOUSE
   T('HITS '+hits+'/15',6,4,K.y,2);T('AMMO '+ammo,W-6,4,ammo<5?K.r:K.w,2,'r');T('HOLD B TO ZOOM',160,226,K.gr,1,'c');};
  return g;}});
 })();
+window.A.add({id:'strike3d',name:'STRIKE ZONE',cat:'ACTION',href:'strike/',img:'docs/strike.png',how:'WAVE SHOOTER. MOUSE AIM.'});
