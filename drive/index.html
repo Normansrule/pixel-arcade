@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Drive · Pixel Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="drive.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div class="tl"><b id="cash">$0</b><span id="fare">FIND A PASSENGER</span></div>
+  <div class="tc"><b id="time">60</b><span>SECONDS</span></div>
+  <canvas id="mini" width="180" height="180"></canvas>
+  <div class="bl"><b id="spd">0</b><span>KM/H</span><div id="dmg"><i></i></div></div>
+  <div id="pop"></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D</p>
+  <h1>NIGHT<br>DRIVE<em>.</em></h1>
+  <p class="how">Pick up passengers. Drop them off. Beat the clock.</p>
+  <button id="go">CLICK TO DRIVE</button>
+  <p class="keys"><kbd>W A S D</kbd> / <kbd>Arrows</kbd> drive · <kbd>Space</kbd> handbrake drift · <kbd>C</kbd> camera</p>
+</div>
+<div id="over" hidden><p class="eye">SHIFT OVER</p><h1 id="ototal">$0</h1><p id="ostats"></p><div class="row"><button id="again">DRIVE AGAIN</button><button id="post" class="ghost">POST SCORE</button></div></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

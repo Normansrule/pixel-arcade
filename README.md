@@ -2,11 +2,11 @@
 
 # 🕹️ Pixel Arcade
 
-**200 original games. One click to play.**
+**201 original games. One click to play.**
 
 [![Play](https://img.shields.io/badge/▶_PLAY-normansrule.github.io%2Fpixel--arcade-ff3f8e?style=for-the-badge)](https://normansrule.github.io/pixel-arcade/)
 [![test](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml/badge.svg)](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml)
-![games](https://img.shields.io/badge/games-200-ff4d00)
+![games](https://img.shields.io/badge/games-201-ff4d00)
 ![license](https://img.shields.io/badge/license-MIT-2fe8d0)
 
 [![Pixel Arcade](docs/screenshot.png)](https://normansrule.github.io/pixel-arcade/)
@@ -41,6 +41,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Dungeon Brawl](https://normansrule.github.io/pixel-arcade/#brawl) | solo | [src](games/action.js) |
 | [Last Bot Standing](https://normansrule.github.io/pixel-arcade/#royale) | solo | [src](games/action.js) |
 | [Neon Fighters](https://normansrule.github.io/pixel-arcade/#fighters) | vs CPU · 2P | [src](games/action.js) |
+| [Night Drive](https://normansrule.github.io/pixel-arcade/drive/) | full 3D | [src](drive/game.js) |
 | [Strike Zone](https://normansrule.github.io/pixel-arcade/strike/) | full 3D | [src](games/threed4.js) |
 | [Strike Zone 3D](https://normansrule.github.io/pixel-arcade/#fps) | solo | [src](games/action.js) |
 | [Tower Line](https://normansrule.github.io/pixel-arcade/#towers) | solo | [src](games/action.js) |
