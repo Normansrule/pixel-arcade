@@ -6,7 +6,7 @@ const A=global.A;A.c=ctx;A.silent=true;
 const ot=A.text;A.text=(s,x,y,col,sc,al,ns)=>{s=String(s).toUpperCase();sc=sc||1;const w=s.length*4*sc-sc;const x0=al==='c'?x-w/2:al==='r'?x-w:x;if(x0<-2||x0+w>322||y<-2||y+5*sc>242)textBad.add(curId);ot(s,x,y,col,sc,al,ns);};
 let seed=1;const rng=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};const realRand=Math.random;
 const N=['l','r','u','d','a','b'];
-function run(gm,input,frames){seed=12345;Math.random=rng;A.cpu=!!gm.vs;A.two=false;A.lvl=1;A.ai=.75;A.t=0;let g=gm.make(),h='';for(let f=0;f<frames;f++){A.t++;A._set(0,input?input(f):{});g.update();if(g.over)g=gm.make();}calls=[];g.draw();A.flush&&A.flush();h=calls.join('|');Math.random=realRand;return h;}
+function run(gm,input,frames){seed=12345;Math.random=rng;A.cpu=!!gm.vs;A.two=false;A.lvl=1;A.ai=.75;A.t=0;let g=gm.make(),h='';for(let f=0;f<frames;f++){A.t++;A._set(0,input?input(f):{});g.update();if(g.over)g=gm.make();if(f%60===59){calls=[];g.draw();A.flush&&A.flush();const js=calls.join('|');let x=5381;for(let q=0;q<js.length;q++)x=((x*33)^js.charCodeAt(q))>>>0;h+=x+',';}}Math.random=realRand;return h;}
 const rows=[];let fails=0;
 for(const gm of A.games.filter(g=>!g.href)){curId=gm.id;let err=null,resp=false;try{const idle=run(gm,null,240);const scripts=[f=>({l:f%40<20,r:f%40>=20,a:f%15===0}),f=>({u:f%30<15,d:f%30>=15,a:f%9===0,b:f%50===0}),f=>({a:f%3===0,r:f%60<30}),f=>({a:f%20<10,l:f%80<40,u:f%25===0})];for(const s of scripts){if(run(gm,s,240)!==idle){resp=true;break;}}}catch(e){err=e.message;}
  const how=(gm.how||'').length,ok=!err&&resp&&!textBad.has(gm.id)&&how>0&&how<=90;if(!ok)fails++;rows.push({id:gm.id,name:gm.name,cat:gm.cat,vs:!!gm.vs,resp,text:!textBad.has(gm.id),err,how,ok});}
