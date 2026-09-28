@@ -2,11 +2,11 @@
 
 # 🕹️ Pixel Arcade
 
-**201 original games. One click to play.**
+**221 original games. One click to play.**
 
 [![Play](https://img.shields.io/badge/▶_PLAY-normansrule.github.io%2Fpixel--arcade-ff3f8e?style=for-the-badge)](https://normansrule.github.io/pixel-arcade/)
 [![test](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml/badge.svg)](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml)
-![games](https://img.shields.io/badge/games-201-ff4d00)
+![games](https://img.shields.io/badge/games-221-ff4d00)
 ![license](https://img.shields.io/badge/license-MIT-2fe8d0)
 
 [![Pixel Arcade](docs/screenshot.png)](https://normansrule.github.io/pixel-arcade/)
@@ -304,12 +304,16 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 ![Lobby](docs/lobby.png)
 
+## Quality
+
+Every cabinet passes the same automated gate on every push: it must respond to input, keep all text on screen, never throw, and have a one-line how-to. See the [quality report](docs/QUALITY.md).
+
 ## Develop
 
 ```bash
 git clone https://github.com/Normansrule/pixel-arcade.git && cd pixel-arcade
 python3 -m http.server 8000   # http://localhost:8000
-node test.js && node qa.js    # every game, every mode
+node test.js && node quality.js   # every game, every mode + quality gate
 python3 build.py              # dist/pixel-arcade.html (single file)
 ```
 

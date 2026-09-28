@@ -3,6 +3,7 @@
 'use strict';
 const W=320,H=240;
 const A=window.A={W,H,t:0,cpu:false,two:false,lvl:1,ai:.75,c:null,silent:false,games:[]};
+const lift=(h,f)=>{const n=parseInt(h.slice(1),16);const r=n>>16,g=(n>>8)&255,b=n&255;const m=v=>Math.max(0,Math.min(255,f>1?v+(255-v)*(f-1):v*f))|0;return`rgb(${m(r)},${m(g)},${m(b)})`;};
 A.K={bg:'#0d0926',w:'#fff3d6',r:'#ff4f6d',g:'#3dff8b',b:'#4dabff',y:'#ffcf3f',o:'#ff9838',p:'#ff4f9a',c:'#2fd6c3',d:'#2b2257',gr:'#8d86b8',k:'#000'};
 const K=A.K;
 A.add=g=>{try{const s=document.currentScript&&document.currentScript.src;if(s)g.src=s.replace(/^.*?(games\/[^?#]+).*$/,'$1');}catch(_){}A.games.push(g);};
@@ -11,10 +12,10 @@ A.win=i=>i===0?'PLAYER 1 WINS!':A.cpu?'CPU WINS!':'PLAYER 2 WINS!';
 A.nm=i=>i===0?'P1':A.cpu?'CPU':'P2';
 
 /* ---------- drawing ---------- */
-A.cls=col=>{A.c.fillStyle=col||K.bg;A.c.fillRect(0,0,W,H);};
-A.rect=(x,y,w,h,col)=>{A.c.fillStyle=col;A.c.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
+A.cls=col=>{col=col||K.bg;const c=A.c;if(A.hdOn&&col[0]==='#'&&col.length===7&&c.createLinearGradient){const g=c.createLinearGradient(0,0,0,H);if(g&&g.addColorStop){g.addColorStop(0,lift(col,1.18));g.addColorStop(1,lift(col,.72));c.fillStyle=g;}else c.fillStyle=col;}else c.fillStyle=col;c.fillRect(0,0,W,H);};
+A.rect=(x,y,w,h,col)=>{const c=A.c;x=Math.round(x);y=Math.round(y);w=Math.round(w);h=Math.round(h);c.fillStyle=col;c.fillRect(x,y,w,h);if(A.hdOn&&w>=5&&h>=5&&w<=110&&h<=110&&typeof col==='string'&&col[0]==='#'&&col.length===7){c.fillStyle=lift(col,1.4);c.fillRect(x,y,w,1);c.fillRect(x,y,1,h);c.fillStyle=lift(col,.6);c.fillRect(x,y+h-1,w,1);c.fillRect(x+w-1,y,1,h);}};
 A.box=(x,y,w,h,col)=>{A.rect(x,y,w,1,col);A.rect(x,y+h-1,w,1,col);A.rect(x,y,1,h,col);A.rect(x+w-1,y,1,h,col);};
-const gcache=new Map();const lift=(h,f)=>{const n=parseInt(h.slice(1),16);const r=n>>16,g=(n>>8)&255,b=n&255;const m=v=>Math.max(0,Math.min(255,f>1?v+(255-v)*(f-1):v*f))|0;return`rgb(${m(r)},${m(g)},${m(b)})`;};
+const gcache=new Map();const lift0=(h,f)=>{const n=parseInt(h.slice(1),16);const r=n>>16,g=(n>>8)&255,b=n&255;const m=v=>Math.max(0,Math.min(255,f>1?v+(255-v)*(f-1):v*f))|0;return`rgb(${m(r)},${m(g)},${m(b)})`;};
 A.circ=(x,y,r,col)=>{const c=A.c;r=Math.max(r,.5);if(A.hdOn&&r>=3&&typeof col==='string'&&col[0]==='#'&&col.length===7&&c.createRadialGradient){const gr=c.createRadialGradient(x-r*.35,y-r*.4,r*.1,x,y,r);if(gr&&gr.addColorStop){gr.addColorStop(0,lift(col,1.45));gr.addColorStop(.55,col);gr.addColorStop(1,lift(col,.55));c.fillStyle=gr;}else c.fillStyle=col;}else c.fillStyle=col;c.beginPath();c.arc(x,y,r,0,6.2832);c.fill();};
 A.ring=(x,y,r,col)=>{const c=A.c;c.strokeStyle=col;c.lineWidth=1;c.beginPath();c.arc(x,y,Math.max(r,.5),0,6.2832);c.stroke();};
 A.line=(x1,y1,x2,y2,col,w)=>{const c=A.c;c.strokeStyle=col;c.lineWidth=w||1;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();};
@@ -93,9 +94,9 @@ function render(){
   if(cur.vs&&sel===0)A.text('< '+['EASY','NORMAL','HARD'][A.lvl]+' >',160,136,K.c,2,'c');
   if(!cur.vs){const b=getHS();if(b!==null)A.text('BEST '+b,160,136,K.c,1,'c');}
   if(cur.vs&&sel===1)A.text('P1 WASD F/G     P2 ARROWS ENTER/SHIFT',160,160,K.p,1,'c');else A.text(cur.mouse?'MOUSE AIM + CLICK FIRE   OR ARROWS + SPACE':'ARROWS   SPACE/CLICK = A   X/RIGHT-CLICK = B',160,160,K.gr,1,'c');
-  if(A.t%60<40)A.text('CLICK OR SPACE TO PLAY',160,196,K.w,2,'c');A.text('ESC BACK   P PAUSE   M MUTE   L LEADERBOARD',160,226,K.gr,1,'c');return;}
+  if(A.t%60<40)A.text('CLICK OR SPACE TO PLAY',160,196,K.w,2,'c');A.text('ESC BACK  P PAUSE+HELP  R RESTART  M MUTE  L SCORES',160,226,K.gr,1,'c');return;}
  if(!g)return;g.draw();A.fxDraw();const crt=document.querySelector('.crt');if(crt)crt.style.transform=A.shake>0?'translate('+(A.rnd(A.shake)-A.shake/2)+'px,'+(A.rnd(A.shake)-A.shake/2)+'px)':'';
- if(paused)panel([['PAUSED',K.y,2],['P TO RESUME',K.gr]]);
+ if(paused)panel([['PAUSED',K.y,2],...(cur.how||'').match(/.{1,34}(\s|$)/g).slice(0,4).map(l=>[l.trim(),K.w]),['P RESUME  R RESTART  ESC EXIT',K.gr]]);else if(state==='play'&&A.t<200&&!hot){const a=Math.min(1,(200-A.t)/40);A.c.globalAlpha=a*.85;A.rect(0,H-22,W,22,'#000000');A.c.globalAlpha=a;A.text(cur.how||'',W/2,H-14,K.w,1,'c',1);A.c.globalAlpha=1;}
  else if(hot&&state==='play')A.text('P'+(turn+1)+' TURN',160,232,K.gr,1,'c');
  if(state==='swap')panel([['PLAYER 1 DONE',K.y,2],['SCORE '+ts[0]],['P2 READY? SPACE',K.c]]);
  if(state==='over'){if(hot){const w=ts[0]===ts[1]?-1:(cur.low?ts[0]<ts[1]:ts[0]>ts[1])?0:1;panel([[w<0?'DRAW!':'PLAYER '+(w+1)+' WINS!',K.y,2],['P1 '+ts[0]+'    P2 '+ts[1]],['CLICK/SPACE AGAIN   ESC BACK',K.gr]]);}
@@ -117,7 +118,7 @@ function boot(){
  const scr=document.getElementById('scr');A.c=scr.getContext('2d');A.c.imageSmoothingEnabled=false;
  const PREV=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Slash'];
  addEventListener('keydown',e=>{if(state==='hub')return;keys[e.code]=true;if(!e.repeat)tap[e.code]=1;if(PREV.includes(e.code))e.preventDefault();
-  if(e.code==='Escape'){if(A.closeBoard&&A.closeBoard())return;A.close();}else if(e.code==='KeyP'&&state==='play')paused=!paused;else if(e.code==='KeyM')A.toggleMute();else if(state==='over'&&g&&e.code==='KeyU'&&(!cur.vs||A.cpu))A.submitScore(g);else if((state==='over'||state==='title')&&e.code==='KeyL')A.showBoard(cur);});
+  if(e.code==='Escape'){if(A.closeBoard&&A.closeBoard())return;A.close();}else if((e.code==='KeyP'||e.code==='KeyH')&&state==='play')paused=!paused;else if(e.code==='KeyR'&&(state==='play'||state==='over')&&cur){if(hot){turn=0;ts=[0,0];}begin();}else if(e.code==='KeyM')A.toggleMute();else if(state==='over'&&g&&e.code==='KeyU'&&(!cur.vs||A.cpu))A.submitScore(g);else if((state==='over'||state==='title')&&e.code==='KeyL')A.showBoard(cur);});
  addEventListener('keyup',e=>{keys[e.code]=false;});
  addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
  document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k,on=e=>{e.preventDefault();vk[k]=true;},off=e=>{e.preventDefault();vk[k]=false;};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',off);b.addEventListener('pointercancel',off);});
