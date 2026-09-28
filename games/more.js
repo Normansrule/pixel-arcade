@@ -31,7 +31,7 @@ A.add({id:'frost',name:'FROST PEAK',cat:'CLASSICS',how:'A JUMPS. BREAK THROUGH F
 
 /* ---- DRONE DROP ---- */
 A.add({id:'drone',name:'DRONE DROP',cat:'SIM',how:'FLY. PICK UP PARCELS, A DROPS ONTO THE MARKED ROOF. BATTERY DRAINS. 90 SEC.',make(){
- const g={over:null,score:0};let d={x:160,y:60,vx:0,vy:0,has:false},bld=[],time=5400,tgt=0,pick={x:0,y:0};for(let i=0;i<7;i++)bld.push({x:20+i*42,w:30,h:40+ri(80)});const newT=()=>{tgt=ri(7);pick={x:rnd(W-40)+20,y:200};};newT();
+ const g={over:null,score:0};let d={x:160,y:60,vx:0,vy:0,has:false},bld=[],time=5400,tgt=0,pick={x:0,y:0};for(let i=0;i<7;i++)bld.push({x:20+i*42,w:30,h:40+ri(80)});const newT=()=>{tgt=ri(7);let pb;do{pb=ri(7);}while(pb===tgt);const b=bld[pb];pick={x:b.x+b.w/2,y:H-b.h-8};};newT();
  g.update=()=>{time--;const k=A.in(0);d.vx=(d.vx+ax(k)*.15)*.95;d.vy=(d.vy+ay(k)*.15)*.95;d.x=cl(d.x+d.vx,8,W-8);d.y=cl(d.y+d.vy,20,H-8);if(!d.has&&Math.hypot(d.x-pick.x,d.y-pick.y)<12){d.has=true;S('blip');}
   if(A.hit(0).a&&d.has){d.has=false;const b=bld[tgt];if(d.x>b.x&&d.x<b.x+b.w&&d.y<H-b.h-4&&d.y>H-b.h-40){g.score+=100;S('score');}else{g.score=Math.max(0,g.score-20);S('lose');}newT();}
   if(bld.some(b=>d.x>b.x-4&&d.x<b.x+b.w+4&&d.y>H-b.h-4)){d.y=Math.min(d.y,H-bld.find(b=>d.x>b.x-4&&d.x<b.x+b.w+4).h-5);d.vy=-Math.abs(d.vy)*.5;}if(time<=0)g.over='SHIFT OVER';};
@@ -107,7 +107,7 @@ A.add({id:'skee',name:'SKEE BALL',cat:'SPORTS',how:'LEFT/RIGHT AIM. A LOCKS POWE
 /* ---- SUSHI STACK ---- */
 A.add({id:'sushi',name:'SUSHI STACK',cat:'PUZZLE',how:'MOVE THE PLATE. CATCH FALLING SUSHI, DODGE WASABI. STACK HIGH. 3 MISSES.',make(){
  const g={over:null,score:0};let px=160,items=[],stack=0,miss=0,t=0;
- g.update=()=>{t++;px=cl(px+ax(A.in(0))*3.4,20,W-20);if(t%Math.max(18,50-t/100)===0)items.push({x:rnd(W-40)+20,y:-10,v:1.5+rnd(1.5)+t/2000,k:Math.random()<.2?'w':['s','m','r','t'][ri(4)]});
+ g.update=()=>{t++;px=cl(px+ax(A.in(0))*3.4,20,W-20);if(t%Math.max(18,50-(t/100|0))===0)items.push({x:rnd(W-40)+20,y:-10,v:1.5+rnd(1.5)+t/2000,k:Math.random()<.2?'w':['s','m','r','t'][ri(4)]});
   for(const it of items){it.y+=it.v;const top=200-stack*6;if(it.y>top-6&&it.y<top+4&&Math.abs(it.x-px)<18){it.dead=1;if(it.k==='w'){miss++;stack=Math.max(0,stack-3);S('boom');if(miss>=3)g.over='STACK TOPPLED';}else{stack++;g.score+=10*Math.min(5,1+stack/5|0);S('coin');}}else if(it.y>H){it.dead=1;if(it.k!=='w'){miss++;S('lose');if(miss>=3)g.over='TOO MANY DROPPED';}}}items=items.filter(i=>!i.dead);};
  g.draw=()=>{A.cls('#1a1238');R(0,200,W,40,'#8a5c33');R(0,200,W,4,'#a0724a');const draw=(k,x,y)=>{if(k==='w')C(x,y,5,K.g);else{R(x-8,y-3,16,6,K.w);R(x-8,y-6,16,4,k==='s'?'#ff8a5a':k==='m'?'#b8b8b8':k==='r'?K.r:K.y);if(k==='m')R(x-8,y-3,16,2,K.k);}};
   items.forEach(i=>draw(i.k,i.x,i.y));for(let i=0;i<stack;i++)draw(['s','m','r','t'][i%4],px,196-i*6);R(px-18,198,36,5,'#e8e8e8');T('SCORE '+g.score,6,6,K.y,2);T('X'.repeat(miss),W-6,6,K.r,2,'r');T('STACK '+stack,160,6,K.w,1,'c');};

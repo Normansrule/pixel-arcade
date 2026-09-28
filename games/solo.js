@@ -65,7 +65,7 @@ A.add({id:'skyfury',name:'SKY FURY',cat:'CLASSICS',how:'FLY. A FIRES. SHOOT EVER
  const g={over:null,score:0};let p={x:160,y:200},en=[],bl=[],eb=[],lives=3,inv=0,t=0,pw=0;
  g.update=()=>{t++;const k=A.in(0);p.x=cl(p.x+ax(k)*3,8,W-8);p.y=cl(p.y+ay(k)*2.5,30,H-10);if(inv>0)inv--;
   if(A.hit(0).a||A.in(0).a&&t%(pw?5:9)===0){bl.push({x:p.x-4,y:p.y-8});bl.push({x:p.x+4,y:p.y-8});S('shoot');}
-  if(t%Math.max(18,50-t/200)===0){const big=Math.random()<.15;en.push({x:rnd(W-40)+20,y:-10,vx:rnd(1.6)-.8,vy:big?.6:1.2+rnd(.8),hp:big?6:1,big,w:0});}
+  if(t%Math.max(18,50-(t/200|0))===0){const big=Math.random()<.15;en.push({x:rnd(W-40)+20,y:-10,vx:rnd(1.6)-.8,vy:big?.6:1.2+rnd(.8),hp:big?6:1,big,w:0});}
   bl.forEach(b=>b.y-=6);bl=bl.filter(b=>b.y>-10);
   for(const e of en){e.x+=e.vx;e.y+=e.vy;if(e.x<10||e.x>W-10)e.vx*=-1;e.w++;if(e.w%(e.big?40:90)===0&&e.y>0){const d=Math.hypot(p.x-e.x,p.y-e.y);eb.push({x:e.x,y:e.y,vx:(p.x-e.x)/d*2,vy:(p.y-e.y)/d*2});}
    for(const b of bl)if(Math.abs(b.x-e.x)<(e.big?12:7)&&Math.abs(b.y-e.y)<(e.big?12:7)){b.y=-99;e.hp--;if(e.hp<=0){g.score+=e.big?200:10;S('hit');A.burst(e.x,e.y,e.big?K.p:K.r,e.big?24:8,2.5);if(e.big&&!pw){pw=600;S('win');}}}
@@ -80,7 +80,7 @@ A.add({id:'skyfury',name:'SKY FURY',cat:'CLASSICS',how:'FLY. A FIRES. SHOOT EVER
 /* ---- WHACK BOTS ---- */
 A.add({id:'whack',name:'WHACK BOTS',cat:'PUZZLE',how:'MOVE TO A BOT, PRESS A. AVOID THE RED ONES. 45 SEC.',make(){
  const g={over:null,score:0};let c={x:1,y:1},bots=Array(9).fill(0),time=2700,t=0;
- g.update=()=>{time--;t++;if(time<=0){g.over='TIME UP';return;}const h=A.hit(0);mvCur(h,c,3,3);if(t%Math.max(20,60-time/60)===0){const i=ri(9);if(!bots[i])bots[i]=Math.random()<.22?-40:50+rnd(30);}
+ g.update=()=>{time--;t++;if(time<=0){g.over='TIME UP';return;}const h=A.hit(0);mvCur(h,c,3,3);if(t%Math.max(20,60-(time/60|0))===0){const i=ri(9);if(!bots[i])bots[i]=Math.random()<.22?-40:50+rnd(30);}
   bots=bots.map(v=>v>0?v-1:v<0?v+1:0);if(h.a){const i=c.y*3+c.x;if(bots[i]>0){g.score+=10;bots[i]=0;S('coin');}else if(bots[i]<0){g.score=Math.max(0,g.score-15);bots[i]=0;S('boom');}else S('blip');}};
  g.draw=()=>{A.cls('#2a5db0');R(0,40,W,H,'#1e8a45');for(let i=0;i<9;i++){const x=70+(i%3)*70,y=70+((i/3)|0)*60;C(x,y+14,22,'#4a2a10');C(x,y+14,16,K.k);if(bots[i]){const bad=bots[i]<0,up=Math.min(1,Math.abs(bots[i])/10);R(x-12,y+14-26*up,24,26*up,bad?K.r:K.gr);R(x-9,y+14-22*up,6,6,bad?K.k:K.c);R(x+3,y+14-22*up,6,6,bad?K.k:K.c);}}
   A.box(70+c.x*70-30,70+c.y*60-24,60,52,K.y);T('SCORE '+g.score,6,6,K.y,2);T(Math.ceil(time/60),W-6,6,K.w,2,'r');};

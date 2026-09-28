@@ -9,3 +9,4 @@ jobs:
         with: { node-version: 22 }
       - run: node test.js
       - run: node quality.js
+      - run: node scorecheck.js

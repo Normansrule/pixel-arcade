@@ -93,7 +93,7 @@ A.add({id:'dash100',name:'100M DASH',cat:'SPORTS',vs:1,how:'TAP LEFT-RIGHT-LEFT 
   if(r[0].fin||r[1].fin){const w=!r[1].fin?0:!r[0].fin?1:r[0].fin<=r[1].fin?0:1;g.over=A.win(w);}};
  g.draw=()=>{A.cls('#2a5db0');R(0,60,W,30,'#555');for(let i=0;i<W;i+=6)R(i,64+(i%4),4,20,['#c33','#eee','#36c','#ec3'][(i/6)%4|0]);R(0,90,W,150,'#c4552d');
   const cam=Math.max(r[0].p,r[1].p)-100;for(let m=0;m<=1000;m+=100){const x=m-cam+40;if(x>-20&&x<W+20){R(x,90,2,150,K.w);T(m/10+'M',x+4,94,K.w);}}
-  r.forEach((q,i)=>{const x=q.p-cam+40,y=150+i*55,st=Math.floor(q.p/12)%2;R(0,y+4,W,1,K.w);R(x-5,y-22,10,14,i?K.p:K.c);R(x-4,y-31,8,8,'#ffd9a8');R(x-5+(st?4:-3),y-8,4,10,K.w);R(x+1+(st?-4:3),y-8,4,10,K.w);T(A.nm(i),6,y-30,i?K.p:K.c);});
+  r.forEach((q,i)=>{const x=q.p-cam+40,y=150+i*55,st=Math.floor(q.p/12)%2;R(0,y+4,W,1,K.w);A.person(x,y,{c:i?K.p:K.c,st:q.p*.26,num:i+1,s:1.1,id:i*3});T(A.nm(i),6,y-30,i?K.p:K.c);});
   if(t<0)T(t<-120?'ON YOUR MARKS':t<-50?'SET':'...',160,30,K.y,3,'c');else T((t/60).toFixed(2)+' S',160,30,K.w,2,'c');};
  return g;}});
 

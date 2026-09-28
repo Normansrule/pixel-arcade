@@ -77,7 +77,7 @@ A.add({id:'hoops',name:'HOOPS 1 ON 1',cat:'SPORTS',vs:1,how:'A SHOOTS / STEALS. 
   if(time<=0&&sc[0]!==sc[1])g.over=A.win(sc[0]>sc[1]?0:1);};
  g.draw=()=>{A.cls('#241a4d');R(0,GY,W,35,'#b5651d');R(0,GY,W,2,K.w);L(160,GY,160,H,K.w);
   HX.forEach((hx,i)=>{const bx=i?4:W-8;R(bx,HY-34,4,44,K.w);R(bx+(i?4:-16),HY,16,2,K.o);R(i?hx-10:hx-10,HY,20,2,K.r);for(let n=0;n<4;n++)L(hx-9+n*6,HY+2,hx-6+n*4,HY+14,K.gr);R(bx+1,HY+10,2,GY-HY-10,K.gr);});
-  pl.forEach((q,i)=>{R(q.x-5,q.y-24,10,15,i?K.p:K.c);R(q.x-4,q.y-32,8,8,'#ffd9a8');R(q.x-5,q.y-9,4,9,K.w);R(q.x+1,q.y-9,4,9,K.w);});
+  pl.forEach((q,i)=>A.person(q.x,q.y,{c:i?K.p:K.c,pants:i?'#6a1a3a':'#0a4a44',num:i?7:23,st:q.y<GY?0:q.x*.25,d:i?-1:1,s:1.15,id:i*3+1}));
   C(b.x,b.y,5,K.o);A.hud2(sc[0],sc[1]);T(Math.max(0,Math.ceil(time/60)),160,4,time<0?K.r:K.w,2,'c');if(time<=0)T('NEXT BASKET WINS',160,20,K.r,1,'c');
   if(b.own>=0)T('SHOT '+Math.ceil(clock/60),160,28,K.gr,1,'c');if(mt>0)T(msg,160,70,K.y,3,'c');};
  return g;}});
@@ -96,7 +96,7 @@ A.add({id:'soccer',name:'PIXEL SOCCER',cat:'SPORTS',vs:1,how:'RUN INTO BALL. A K
   const inG=b.y>95&&b.y<155;if(b.x<12||b.x>W-12){if(inG){const w=b.x<12?1:0;sc[w]++;S('score');A.burst(b.x,b.y,K.y,18,3);if(sc[w]>=5){g.over=A.win(w);return;}reset();}else{b.vx*=-1;b.x=cl(b.x,12,W-12);}}
   if(time<=0){if(sc[0]!==sc[1])g.over=A.win(sc[0]>sc[1]?0:1);else time=600;}};
  g.draw=()=>{A.cls('#176b35');for(let i=0;i<8;i++)if(i%2)R(i*40,24,40,H-32,'#1a7a3d');A.box(10,26,W-20,H-36,K.w);L(160,26,160,H-10,K.w);A.ring(160,125,28,K.w);A.box(10,85,34,80,K.w);A.box(W-44,85,34,80,K.w);R(4,95,7,60,K.gr);R(W-11,95,7,60,K.gr);
-  kp.forEach((y,i)=>R((i?W-18:18)-3,y-8,6,16,i?'#ffb3d1':'#a8fff5'));pl.forEach((q,i)=>{R(q.x-5,q.y-6,10,12,i?K.p:K.c);R(q.x-3,q.y-10,6,5,'#ffd9a8');R(q.x+q.fx*6-1,q.y+q.fy*6-1,3,3,K.w);});
+  kp.forEach((y,i)=>R((i?W-18:18)-3,y-8,6,16,i?'#ffb3d1':'#a8fff5'));pl.forEach((q,i)=>A.person(q.x,q.y+7,{c:i?K.p:K.c,pants:'#f2f2f2',num:i?9:10,st:(q.x+q.y)*.3,d:q.fx<0?-1:1,s:.62,id:i*2}));
   C(b.x,b.y,3.5,K.w);A.hud2(sc[0],sc[1]);T(Math.ceil(time/60),160,4,K.w,2,'c');if(wait>0)T('KICK OFF',160,60,K.y,3,'c');};
  return g;}});
 

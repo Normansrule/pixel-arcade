@@ -1,7 +1,7 @@
 (function(){const A=window.A,{W,H,K}=A,R=A.rect,T=A.text,C=A.circ,L=A.line,rnd=A.rnd,ri=A.ri,cl=A.clamp,S=A.sfx;
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0),human=p=>A.two?p:0;
 const tapper=(i,q)=>{if(A.cpu&&i===1){const tv=2+2*A.ai;q.v+=(tv-q.v)*.05+rnd(.1)-.05;return;}const h=A.hit(i);for(const n of['l','r'])if(h[n]&&q.last!==n){q.last=n;q.v+=.45;}q.v*=.965;};
-const runner=(x,y,col,st)=>{R(x-5,y-22,10,14,col);R(x-4,y-31,8,8,'#ffd9a8');R(x-5+(st?4:-3),y-8,4,10,K.w);R(x+1+(st?-4:3),y-8,4,10,K.w);};
+const runner=(x,y,col,st)=>A.person(x,y,{c:col,st:typeof st==='number'?st*Math.PI+(A.t*.35):0,s:1.05});
 
 /* ---- TABLE KICK ---- */
 A.add({id:'foos',name:'TABLE KICK',cat:'SPORTS',vs:1,how:'UP/DOWN SLIDE YOUR ROD. A KICKS. FIRST TO 5.',make(){
@@ -111,7 +111,7 @@ A.add({id:'badminton',name:'BADMINTON',cat:'SPORTS',vs:1,how:'MOVE. UP JUMPS. A 
   if(b.y>GY-70&&Math.abs(b.x-160)<6){b.vx=(b.x<160?-1:1)*Math.abs(b.vx)*.5;b.x=160+(b.x<160?-6:6);}
   if(b.y>GY-4){const w=b.x<160?1:0;sc[w]++;S('score');if(sc[w]>=7)g.over=A.win(w);else reset(w);}};
  g.draw=()=>{A.cls('#1a1238');R(0,GY,W,30,'#1e8a45');L(0,GY,W,GY,K.w);R(158,GY-68,4,68,K.w);for(let y=GY-66;y<GY;y+=6)L(150,y,170,y,'#aaa');
-  pl.forEach((q,i)=>{R(q.x-5,q.y-24,10,16,i?K.p:K.c);R(q.x-4,q.y-32,8,8,'#ffd9a8');R(q.x-5,q.y-8,4,8,K.w);R(q.x+1,q.y-8,4,8,K.w);A.ring(q.x+(i?-12:12),q.y-24,5,K.y);});
+  pl.forEach((q,i)=>{A.person(q.x,q.y,{c:i?K.p:K.c,pants:'#f2f2f2',st:q.x*.2,d:i?-1:1,s:1.1,id:i*4+2,arm2:-1.2});A.ring(q.x+(i?-12:12),q.y-28,5,K.y);});
   C(b.x,b.y,3,K.w);A.poly([[b.x,b.y],[b.x-b.vx*2-3,b.y-b.vy*2-6],[b.x-b.vx*2+3,b.y-b.vy*2-6]],K.y,1);A.hud2(sc[0],sc[1]);};
  return g;}});
 })();

@@ -1,7 +1,7 @@
 (function(){const A=window.A,{W,H,K}=A,R=A.rect,T=A.text,C=A.circ,L=A.line,rnd=A.rnd,ri=A.ri,cl=A.clamp,S=A.sfx;
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0),human=p=>A.two?p:0;
 const tap=(i,q)=>{if(A.cpu&&i===1){q.v+=((2+2*A.ai)-q.v)*.05+rnd(.1)-.05;return;}const h=A.hit(i);for(const n of['l','r'])if(h[n]&&q.last!==n){q.last=n;q.v+=.45;}q.v*=.965;};
-const guy=(x,y,c,st)=>{R(x-5,y-22,10,14,c);R(x-4,y-31,8,8,'#ffd9a8');R(x-5+(st?4:-3),y-8,4,10,K.w);R(x+1+(st?-4:3),y-8,4,10,K.w);};
+const guy=(x,y,col,st)=>A.person(x,y,{c:col,st:typeof st==='number'?st*Math.PI+(A.t*.35):0,s:1.05});
 
 A.add({id:'polevault',name:'POLE VAULT',cat:'SPORTS',how:'TAP LEFT/RIGHT TO RUN. HOLD A TO PLANT, RELEASE AT THE TOP. 3 TRIES.',make(){
  const g={over:null,score:0};let q={p:0,v:0,last:''},ph='run',y=0,vy=0,bar=4,tries=3,msg='',mt=0,plant=0;

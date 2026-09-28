@@ -49,3 +49,4 @@ A.add({id:'sniper',name:'SNIPER ALLEY 3D',cat:'RETRO 3D',hd:1,mouse:1,how:'MOUSE
 })();
 window.A.add({id:'strike3d',name:'STRIKE ZONE',cat:'ACTION',href:'strike/',img:'docs/strike.png',how:'WAVE SHOOTER. MOUSE AIM.'});
 window.A.add({id:'drive3d',name:'NIGHT DRIVE',cat:'RETRO 3D',href:'drive/',img:'docs/drive.png',how:'OPEN CITY. TAXI FARES. BEAT THE CLOCK.'});
+window.A.add({id:'petbrawl',name:'PET BRAWL',cat:'BOARD',href:'pets/',img:'docs/pets.png',how:'TEAM AUTO-BATTLER. BUY, MERGE, WIN 10.'});

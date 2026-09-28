@@ -1,7 +1,7 @@
 (function(){const A=window.A,{W,H,K}=A,R=A.rect,T=A.text,C=A.circ,L=A.line,rnd=A.rnd,ri=A.ri,cl=A.clamp,S=A.sfx;
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0),human=p=>A.two?p:0;
 const tapRace=(i,q)=>{if(A.cpu&&i===1){q.v+=((2+2*A.ai)-q.v)*.05+rnd(.1)-.05;return;}const h=A.hit(i);for(const n of['l','r'])if(h[n]&&q.last!==n){q.last=n;q.v+=.45;}q.v*=.965;};
-const person=(x,y,c,st)=>{R(x-5,y-22,10,14,c);R(x-4,y-31,8,8,'#ffd9a8');R(x-5+(st?4:-3),y-8,4,10,K.w);R(x+1+(st?-4:3),y-8,4,10,K.w);};
+const person=(x,y,col,st)=>A.person(x,y,{c:col,st:typeof st==='number'?st*Math.PI+(A.t*.35):0,s:1.05});
 
 A.add({id:'tabletennis',name:'TABLE TENNIS',cat:'SPORTS',vs:1,how:'LEFT/RIGHT MOVE THE BAT. HOLD UP OR DOWN AS YOU HIT TO ADD SPIN. FIRST TO 11.',make(){
  const g={over:null,score:0};let bat=[160,160],b,sc=[0,0],srv=0,wait=50;const reset=()=>{b={x:bat[srv],y:srv?50:190,vx:0,vy:srv?2.4:-2.4,z:0,vz:0,spin:0,bounced:false};wait=50;};reset();
