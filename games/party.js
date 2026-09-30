@@ -42,7 +42,7 @@ A.add({id:'dodgeball',name:'DODGEBALL',cat:'PARTY',vs:1,how:'MOVE ON YOUR HALF. 
    if(A.hit(i).a&&q.has&&q.cd===0){q.has=false;q.cd=20;const o=pl[1-i],dx=o.x-q.x,dy=o.y-q.y,d=Math.hypot(dx,dy);balls.push({x:q.x,y:q.y,vx:dx/d*5.5,vy:dy/d*5.5+(rnd(1)-.5),o:i,loose:false});S('shoot');}
    for(const b of balls){if(b.loose&&Math.hypot(b.x-q.x,b.y-q.y)<12&&!q.has){q.has=true;b.dead=1;S('blip');}else if(!b.loose&&b.o!==i&&Math.hypot(b.x-q.x,b.y-q.y)<10){b.dead=1;sc[1-i]++;S('boom');if(sc[1-i]>=3){g.over=A.win(1-i);return;}reset();return;}}}
   for(const b of balls){b.x+=b.vx;b.y+=b.vy;if(!b.loose){b.vx*=.995;}else{b.vx*=.95;b.vy*=.95;}if(b.x<14||b.x>W-14){b.vx*=-.6;b.x=cl(b.x,14,W-14);b.loose=true;}if(b.y<34||b.y>H-14){b.vy*=-.6;b.y=cl(b.y,34,H-14);b.loose=true;}if(!b.loose&&Math.abs(b.vx)<1)b.loose=true;}balls=balls.filter(b=>!b.dead);};
- g.draw=()=>{A.cls('#c4915a');A.box(10,30,W-20,H-40,K.w);L(160,30,160,H-10,K.w,2);A.ring(160,120,20,K.w);pl.forEach((q,i)=>{R(q.x-6,q.y-9,12,18,i?K.p:K.c);R(q.x-4,q.y-14,8,6,'#ffd9a8');if(q.has)C(q.x+q.fx*8,q.y-4,5,K.r);});balls.forEach(b=>C(b.x,b.y,5,K.r));A.hud2(sc[0],sc[1]);if(wait>0)T('READY',160,60,K.y,2,'c');};
+ g.draw=()=>{A.cls('#c4915a');A.box(10,30,W-20,H-40,K.w);L(160,30,160,H-10,K.w,2);A.ring(160,120,20,K.w);pl.forEach((q,i)=>{A.person(q.x,q.y+10,{c:i?K.p:K.c,st:(q.x+q.y)*.3,s:.75,id:i*5,d:i?-1:1});if(q.has)C(q.x+q.fx*8,q.y-4,5,K.r);});balls.forEach(b=>C(b.x,b.y,5,K.r));A.hud2(sc[0],sc[1]);if(wait>0)T('READY',160,60,K.y,2,'c');};
  return g;}});
 
 /* ---- BALLOON BLITZ ---- */
@@ -69,7 +69,7 @@ A.add({id:'bombpass',name:'BOMB PASS',cat:'PARTY',vs:1,how:'TYPE THE ARROWS TO P
  g.update=()=>{if(wait>0){wait--;return;}fuse--;if(fuse<=0){sc[1-holder]++;S('boom');if(sc[1-holder]>=3){g.over=A.win(1-holder);return;}reset();return;}
   if(A.cpu&&holder===1){if(--cpuT<=0){cpuT=10+ri(20)-A.ai*8;if(Math.random()<.1*(1-A.ai))idx=0;else idx++;S('blip');if(idx>=seq.length){holder=0;newSeq();S('hit');}}return;}
   const h=A.hit(human(holder));for(let k=0;k<4;k++)if(h[KS[k]]){if(k===seq[idx]){idx++;S('blip');if(idx>=seq.length){holder=1-holder;newSeq();S('hit');}}else{idx=0;S('lose');}}};
- g.draw=()=>{A.cls();[0,1].forEach(i=>{const x=80+i*160;R(x-14,140,28,44,i?K.p:K.c);R(x-10,120,20,20,'#ffd9a8');if(holder===i){C(x,100,14,K.k);R(x-2,84,4,6,K.o);if(A.t%10<5)C(x+3,82,3,K.y);}});
+ g.draw=()=>{A.cls();[0,1].forEach(i=>{const x=80+i*160;A.person(x,190,{c:i?K.p:K.c,s:2.2,id:i*2+3,d:i?-1:1,arm1:-.8,arm2:-.8});if(holder===i){C(x,100,14,K.k);R(x-2,84,4,6,K.o);if(A.t%10<5)C(x+3,82,3,K.y);}});
   const bar=fuse/500;R(60,30,200,8,K.d);R(60,30,200*bar,8,bar<.3?K.r:K.o);seq.forEach((k,i)=>{const x=160-seq.length*14+i*28,d=[[-8,0,8,-8,8,8],[0,-8,-8,8,8,8],[8,0,-8,-8,-8,8],[0,8,-8,-8,8,-8]][k];A.poly([[x+d[0],200+d[1]],[x+d[2],200+d[3]],[x+d[4],200+d[5]]],i<idx?K.g:i===idx?K.y:K.gr,1);});
   A.hud2(sc[0],sc[1]);T(A.nm(holder)+' HAS THE BOMB',160,50,K.w,1,'c');if(wait>0)T('READY',160,110,K.y,2,'c');};
  return g;}});

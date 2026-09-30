@@ -33,7 +33,7 @@ A.add({id:'tennis',name:'COURT TENNIS',cat:'SPORTS',vs:1,how:'MOVE. A SWINGS. HO
  g.draw=()=>{A.cls('#123a2a');const q=(x,y)=>pr(x,y);A.poly([q(-1,0),q(1,0),q(1,2),q(-1,2)],'#1d6b4a',1);
   [[-1,0,1,0],[-1,2,1,2],[-1,0,-1,2],[1,0,1,2],[-.75,0,-.75,2],[.75,0,.75,2],[-.75,.5,.75,.5],[-.75,1.5,.75,1.5],[0,.5,0,1.5]].forEach(l=>{const a=q(l[0],l[1]),c=q(l[2],l[3]);L(a[0],a[1],c[0],c[1],K.w);});
   const ents=[{y:pl[1].y,f:()=>man(1)},{y:1,f:()=>{const a=pr(-1.1,1),c=pr(1.1,1),t=pr(-1.1,1,.13);A.rect(a[0],t[1],c[0]-a[0],a[1]-t[1],'rgba(255,255,255,.35)');L(a[0],t[1],c[0],t[1],K.w);}},{y:b.y,f:()=>{const s=pr(b.x,b.y),p=pr(b.x,b.y,b.z);C(s[0],s[1],2.5*s[2]+.5,'rgba(0,0,0,.4)');C(p[0],p[1],3*p[2]+.8,K.y);}},{y:pl[0].y,f:()=>man(0)}];
-  function man(i){const m=pl[i],p=pr(m.x,m.y),s=p[2];R(p[0]-5*s,p[1]-22*s,10*s,16*s,i?K.p:K.c);R(p[0]-4*s,p[1]-30*s,8*s,8*s,'#ffd9a8');R(p[0]-5*s,p[1]-6*s,4*s,6*s,K.w);R(p[0]+1*s,p[1]-6*s,4*s,6*s,K.w);const rx=m.sw>8?12:7;L(p[0]+5*s,p[1]-16*s,p[0]+rx*s+4,p[1]-(m.sw>8?26:14)*s,K.y,2);}
+  function man(i){const m=pl[i],p=pr(m.x,m.y),s=p[2];A.person(p[0],p[1],{c:i?K.p:K.c,pants:'#f2f2f2',st:(m.x+m.y)*.4,s:s*1.05,id:i*3+2,cap:i?null:'#ffffff'});const rx=m.sw>8?12:7;L(p[0]+5*s,p[1]-16*s,p[0]+rx*s+4,p[1]-(m.sw>8?26:14)*s,K.y,2);}
   ents.sort((a,c)=>c.y-a.y).forEach(e=>e.f());A.hud2(sc[0],sc[1]);if(wait>0)T(msg,160,60,K.y,3,'c');};
  return g;}});
 

@@ -60,8 +60,8 @@ A.add({id:'boxing',name:'RING BOXING',cat:'SPORTS',vs:1,how:'A PUNCHES. B BLOCKS
   for(let i=0;i<2;i++)if(f[i].hp<=0){f[i].hp=0;g.over=A.win(1-i);return;}
   if(time<=0)g.over=Math.round(f[0].hp)===Math.round(f[1].hp)?'DRAW!':A.win(f[0].hp>f[1].hp?0:1);};
  g.draw=()=>{A.cls('#1a1238');R(20,190,W-40,30,'#3d6fb5');for(let i=0;i<3;i++)L(30,120+i*20,W-30,120+i*20,K.r);R(28,110,4,80,K.w);R(W-32,110,4,80,K.w);
-  f.forEach((q,i)=>{const d=i?-1:1,y=190,col=i?K.p:K.c,hurt=q.st>0;R(q.x-7,y-44,14,24,hurt?K.w:col);R(q.x-5,y-56,10,11,'#ffd9a8');R(q.x-7,y-20,6,20,K.w);R(q.x+1,y-20,6,20,K.w);
-   const ext=q.pt>8?(18-q.pt)*2.6:q.pt>0?q.pt*2.2:0;if(q.blk){R(q.x+d*6-3,y-54,7,14,K.r);}else{R(q.x+d*(8+ext)-3,y-42,7,7,K.r);R(q.x+d*7-3,y-34,7,7,K.r);}});
+  f.forEach((q,i)=>{const d=i?-1:1,y=190,col=i?K.p:K.c,hurt=q.st>0;A.person(q.x,y,{c:hurt?'#ffffff':col,pants:col,st:q.x*.15,s:1.9,d,id:i*4+1,arm1:-1.4*d,arm2:-1.2*d});R(q.x-7,y-26,14,3,'#1a1a1a');
+   const ext=q.pt>8?(18-q.pt)*2.6:q.pt>0?q.pt*2.2:0;if(q.blk){C(q.x+d*7,y-50,5,K.r);C(q.x+d*7,y-42,5,K.r);}else{C(q.x+d*(10+ext),y-42,5,K.r);C(q.x+d*8,y-34,5,K.r);}});
   f.forEach((q,i)=>{A.box(i?W-110:8,16,102,8,K.w);R(i?W-109+(100-q.hp):9,17,q.hp,6,q.hp>30?K.g:K.r);T(A.nm(i),i?W-8:8,6,i?K.p:K.c,1,i?'r':'l');});T(Math.ceil(time/60),160,10,K.w,2,'c');};
  return g;}});
 

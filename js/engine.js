@@ -61,6 +61,7 @@ A.person=(x,y,o)=>{o=o||{};const s=o.s||1,c=A.c,sh=o.c||'#2fe8d0',pants=o.pants|
  c.fillStyle='#1a1a1a';c.fillRect(d>0?.6:-2.2,-29,1.2,1.4);c.fillRect(d>0?2.6:-.2-2.2+1,-29,1.2,1.4);c.fillStyle='rgba(120,40,40,.6)';c.fillRect(d>0?.8:-2,-26.2,2,.7);
  c.restore();};
 
+A.emoji=(ch,x,y,size)=>{const c=A.c;if(!c.fillText)return;c.save();c.font=size+'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#ffffff';c.fillText(ch,x,y);c.restore();};
 /* ---------- sound ---------- */
 let ac=null,mute=false;
 const SFX={blip:[440,.05],hit:[220,.08],score:[660,.15,'square',.07,440],boom:[110,.3,'sawtooth',.1,-80],jump:[300,.12,'square',.06,300],lose:[300,.5,'sawtooth',.09,-250],win:[520,.4,'square',.07,520],shoot:[880,.08,'square',.04,-600],coin:[990,.1,'square',.05,300]};
@@ -81,7 +82,7 @@ const held=[{},{}],hitS=[{},{}],prev=[{},{}];let botPrev={};
 let state='hub';
 function poll(){A.mouse.dx=mdx;A.mouse.dy=mdy;mdx=0;mdy=0;if(A.mouse.t>0)A.mouse.t--;const split=A.two&&state==='play';for(let p=0;p<2;p++){const m=split?(p?MAP2:MAP1):(p?null:MAPS);for(const n of N){let v=m?m[n].some(k=>keys[k]||tap[k]):false;if(p===0&&(vk[n]||mtap[n]||(n==='a'&&A.mouse.down)||(n==='b'&&A.mouse.bdown)))v=true;hitS[p][n]=v&&(!prev[p][n]||(p===0&&mtap[n+'!']));prev[p][n]=v;held[p][n]=v;}}tap={};mtap={};}
 A.in=p=>held[p];A.hit=p=>hitS[p];
-A.mouse={x:160,y:120,dx:0,dy:0,t:0,down:false};const fireT={};A.fire=(rate,p)=>{p=p||0;if(A.hit(p).a||(A.in(p).a&&A.t-(fireT[p]||-999)>=rate)){fireT[p]=A.t;return true;}return false;};let mdx=0,mdy=0,mtap={};
+A.typed=[];A.mouse={x:160,y:120,dx:0,dy:0,t:0,down:false};const fireT={};A.fire=(rate,p)=>{p=p||0;if(A.hit(p).a||(A.in(p).a&&A.t-(fireT[p]||-999)>=rate)){fireT[p]=A.t;return true;}return false;};let mdx=0,mdy=0,mtap={};
 A.bot=o=>{for(const n of N){const v=!!o[n];hitS[1][n]=v&&!botPrev[n];botPrev[n]=v;held[1][n]=v;}};
 A._set=(p,o)=>{for(const n of N){const v=!!o[n];hitS[p][n]=v&&!held[p][n];held[p][n]=v;}}; /* test hook */
 
@@ -141,7 +142,7 @@ function boot(){
  const scr=document.getElementById('scr');A.c=scr.getContext('2d');A.c.imageSmoothingEnabled=false;
  const PREV=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Slash'];
  addEventListener('keydown',e=>{if(state==='hub')return;keys[e.code]=true;if(!e.repeat)tap[e.code]=1;if(PREV.includes(e.code))e.preventDefault();
-  if(e.code==='Escape'){if(A.closeBoard&&A.closeBoard())return;A.close();}else if((e.code==='KeyP'||e.code==='KeyH')&&state==='play')paused=!paused;else if(e.code==='KeyR'&&(state==='play'||state==='over')&&cur){if(hot){turn=0;ts=[0,0];}begin();}else if(e.code==='KeyM')A.toggleMute();else if(state==='over'&&g&&e.code==='KeyU'&&(!cur.vs||A.cpu))A.submitScore(g);else if((state==='over'||state==='title')&&e.code==='KeyL')A.showBoard(cur);});
+  if(e.code==='Escape'){if(A.closeBoard&&A.closeBoard())return;A.close();}else if(cur&&cur.typing&&state==='play'&&(/^Key[A-Z]$/.test(e.code)||e.code==='Backspace'||e.code==='Enter')){A.typed.push(e.code==='Backspace'?'<':e.code==='Enter'?'>':e.code.slice(3));e.preventDefault();}else if((e.code==='KeyP'||e.code==='KeyH')&&state==='play')paused=!paused;else if(e.code==='KeyR'&&(state==='play'||state==='over')&&cur){if(hot){turn=0;ts=[0,0];}begin();}else if(e.code==='KeyM')A.toggleMute();else if(state==='over'&&g&&e.code==='KeyU'&&(!cur.vs||A.cpu))A.submitScore(g);else if((state==='over'||state==='title')&&e.code==='KeyL')A.showBoard(cur);});
  addEventListener('keyup',e=>{keys[e.code]=false;});
  addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
  document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k,on=e=>{e.preventDefault();vk[k]=true;},off=e=>{e.preventDefault();vk[k]=false;};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',off);b.addEventListener('pointercancel',off);});

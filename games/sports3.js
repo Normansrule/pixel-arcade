@@ -78,7 +78,7 @@ A.add({id:'fishing',name:'FISHING DERBY',cat:'SPORTS',how:'LEFT/RIGHT MOVE. DOWN
  g.update=()=>{time--;const k=A.in(0);bx=cl(bx+ax(k)*2,20,W-20);hy=cl(hy+ay(k)*2,70,225);fish.forEach(f=>{f.x+=f.d*f.v/f.s*1.5;if(f.x<-20)f.x=W+20;if(f.x>W+20)f.x=-20;});
   if(caught){caught.x=bx;caught.y=hy;if(hy<=72){g.score+=caught.s*caught.s*10;S('score');fish.push({x:rnd(W),y:100+ri(9)*14,d:1,s:1+ri(3),v:.5+rnd(1)});fish.splice(fish.indexOf(caught),1);caught=null;}}
   else{const f=fish.find(f=>Math.abs(f.x-bx)<6*f.s&&Math.abs(f.y-hy)<6);if(f){caught=f;S('coin');}}if(time<=0)g.over='TIME UP';};
- g.draw=()=>{A.cls('#4dabff');R(0,60,W,H,'#1b5fa8');R(0,60,W,3,'#7fc3ff');R(bx-16,48,32,12,'#8a5c33');R(bx-6,30,12,18,K.c);R(bx-4,22,8,8,'#ffd9a8');L(bx+12,40,bx+12,hy,K.w);fish.forEach(f=>{const s=f.s,c=[K.o,K.y,K.p][s-1];R(f.x-6*s,f.y-3*s,12*s,6*s,c);A.poly([[f.x-f.d*6*s,f.y],[f.x-f.d*10*s,f.y-4*s],[f.x-f.d*10*s,f.y+4*s]],c,1);R(f.x+f.d*3*s,f.y-2*s,2,2,K.k);});if(!caught)R(bx+11,hy,3,4,K.w);
+ g.draw=()=>{A.cls('#4dabff');R(0,60,W,H,'#1b5fa8');R(0,60,W,3,'#7fc3ff');R(bx-16,48,32,12,'#8a5c33');A.person(bx,48,{c:K.c,pants:'#3a4a2a',cap:'#e8c040',s:.95,id:4,arm2:-1.3});L(bx+12,40,bx+12,hy,K.w);fish.forEach(f=>{const s=f.s,c=A.c;c.save&&c.save();c.translate&&c.translate(f.x,f.y);if(f.d>0&&c.scale)c.scale(-1,1);A.emoji(['🐟','🐠','🐡'][s-1],0,0,12+s*9);c.restore&&c.restore();});for(let i=0;i<12;i++)C((i*53+A.t*.3)%W,H-((i*37+A.t*.6)%150),1.5,'rgba(255,255,255,.35)');if(!caught)R(bx+11,hy,3,4,K.w);
   T('SCORE '+g.score,6,6,K.k,2);T(Math.ceil(time/60),W-6,6,K.k,2,'r');};
  return g;}});
 
