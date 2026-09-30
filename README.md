@@ -2,11 +2,11 @@
 
 # 🕹️ Pixel Arcade
 
-**272 original games. One click to play.**
+**302 original games. One click to play.**
 
 [![Play](https://img.shields.io/badge/▶_PLAY-normansrule.github.io%2Fpixel--arcade-ff3f8e?style=for-the-badge)](https://normansrule.github.io/pixel-arcade/)
 [![test](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml/badge.svg)](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml)
-![games](https://img.shields.io/badge/games-272-ff4d00)
+![games](https://img.shields.io/badge/games-302-ff4d00)
 ![license](https://img.shields.io/badge/license-MIT-2fe8d0)
 
 [![Pixel Arcade](docs/screenshot.png)](https://normansrule.github.io/pixel-arcade/)
@@ -25,13 +25,23 @@
 | Exit · Pause · Mute | Esc · P · M | |
 | 2 players | P1 WASD + F/G · P2 Arrows + Enter/Shift | |
 
+## Highlights
+
+- **Voxel Frontier**: block sandbox. Punch trees, craft (**E**) planks, sticks, torches and wood → stone → iron → diamond pickaxes; rock needs a pickaxe. Torches cast real flickering light. Sheep drop mutton (right click to eat). A 9-step goal chain guides new players.
+- **Abyss Diver**: ocean survival. **R** sonar ping marks deposits and predators, **B** drops a beacon you can navigate back to, **Tab** opens the survey tablet, **Shift** runs the scooter on battery (recharge at the lifepod).
+- **Hub**: star any cabinet to add it to **Favorites**; the **Recent** chip lists what you played last.
+
+## Graphics
+
+Full-3D cabinets (Voxel Frontier, Abyss Diver, Strike Zone, Night Drive, Critter Kart) share a cinematic post stack in [`js/fx3d.js`](js/fx3d.js): ACES filmic tone mapping, ground-truth ambient occlusion (GTAO), bloom, colour grade, and subpixel morphological anti-aliasing (SMAA). Press **G** in any of them to cycle quality (low · medium · ultra).
+
 ## Scores
 
 Click the profile chip → enter your GitHub username. Game over → **U** posts your score (as a GitHub issue), **L** opens the global top 10.
 
 ## Games
 
-<details><summary><b>Action</b> · 10</summary>
+<details><summary><b>Action</b> · 13</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -42,8 +52,9 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Last Bot Standing](https://normansrule.github.io/pixel-arcade/#royale) | solo | [src](games/action.js) |
 | [Neon Fighters](https://normansrule.github.io/pixel-arcade/#fighters) | vs CPU · 2P | [src](games/action.js) |
 | [Pet Brawl](https://normansrule.github.io/pixel-arcade/pets/) | auto-battler | [src](pets/game.js) |
+| [Abyss Diver](https://normansrule.github.io/pixel-arcade/abyss/) | full 3D · ocean survival | [src](abyss/game.js) |
 | [Night Drive](https://normansrule.github.io/pixel-arcade/drive/) | full 3D | [src](drive/game.js) |
-| [Strike Zone](https://normansrule.github.io/pixel-arcade/strike/) | full 3D | [src](games/threed4.js) |
+| [Strike Zone](https://normansrule.github.io/pixel-arcade/strike/) | full 3D | [src](strike/game.js) |
 | [Strike Zone 3D](https://normansrule.github.io/pixel-arcade/#fps) | solo | [src](games/action.js) |
 | [Tower Line](https://normansrule.github.io/pixel-arcade/#towers) | solo | [src](games/action.js) |
 | [Zombie Night](https://normansrule.github.io/pixel-arcade/#zombies) | solo | [src](games/action.js) |
@@ -187,10 +198,11 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 </details>
 
-<details><summary><b>Retro 3D</b> · 23</summary>
+<details><summary><b>Retro 3D</b> · 24</summary>
 
 | Game | Mode | |
 |---|---|---|
+| [Voxel Frontier](https://normansrule.github.io/pixel-arcade/voxel/) | full 3D · block sandbox | [src](voxel/game.js) |
 | [Brick Breaker 3D](https://normansrule.github.io/pixel-arcade/#bricks3d) | solo | [src](games/threed3.js) |
 | [Canyon Run 3D](https://normansrule.github.io/pixel-arcade/#canyon) | solo | [src](games/threed3.js) |
 | [City Cruiser 3D](https://normansrule.github.io/pixel-arcade/#city) | solo | [src](games/threed2.js) |

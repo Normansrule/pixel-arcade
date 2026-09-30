@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abyss Diver · Pixel Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../drive/drive.css">
+<style>
+:root{--c:#6ff0ff}
+#hud{font-family:var(--mono)}
+.gauge{position:fixed;left:22px;bottom:22px;display:flex;gap:18px;align-items:flex-end}
+.ring{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font:700 .8rem var(--mono);background:conic-gradient(var(--c) var(--p,100%),rgba(255,255,255,.12) 0);-webkit-mask:radial-gradient(circle,transparent 31px,#000 32px);mask:radial-gradient(circle,transparent 31px,#000 32px)}
+.gl{position:relative;width:84px;height:84px}.gl span{position:absolute;inset:0;display:grid;place-items:center;font:700 .82rem var(--mono);text-shadow:1px 1px 0 #000}.gl i{position:absolute;left:0;right:0;bottom:-16px;text-align:center;font-size:.6rem;color:#9fdcea;font-style:normal;letter-spacing:.14em}
+#depth{position:fixed;right:24px;top:50%;transform:translateY(-50%);text-align:right}#depth b{display:block;font:400 3.2rem var(--disp);color:#e8fbff;text-shadow:0 0 18px rgba(111,240,255,.5)}#depth span{font-size:.65rem;color:#9fdcea;letter-spacing:.2em}#depth em{display:block;font-style:normal;font-size:.7rem;color:#ff8a6a;margin-top:4px}
+#comp{position:fixed;left:50%;top:14px;transform:translateX(-50%);width:320px;height:22px;overflow:hidden;border-bottom:1px solid rgba(111,240,255,.35);font:.62rem var(--mono);color:#bdf6ff;-webkit-mask:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);mask:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}
+#comp div{position:absolute;top:4px;white-space:nowrap}
+#tl{position:fixed;left:22px;top:18px;font-size:.72rem;line-height:1.8;color:#cff8ff;text-shadow:1px 1px 0 #000}#tl b{color:var(--o)}
+#scan{position:fixed;left:50%;top:58%;transform:translateX(-50%);text-align:center;font-size:.72rem;color:#bdf6ff;opacity:0}#scan div{width:180px;height:4px;background:rgba(255,255,255,.15);margin:6px auto}#scan i{display:block;height:100%;background:var(--c);width:0}
+#toast{position:fixed;left:50%;top:18%;transform:translateX(-50%);text-align:center;opacity:0;transition:opacity .4s;pointer-events:none}#toast b{display:block;font:400 2.2rem var(--disp);color:#e8fbff;text-shadow:0 0 20px rgba(111,240,255,.6)}#toast span{font-size:.75rem;color:#9fdcea}
+#hint{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);font-size:.7rem;color:#cff8ff;background:rgba(0,20,30,.5);padding:6px 12px;border-radius:999px;opacity:0}
+#dmg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 50%,rgba(255,40,40,.55));opacity:0}
+.mk{position:fixed;transform:translate(-50%,-100%);font:700 .6rem var(--mono);color:#e8fbff;text-align:center;text-shadow:1px 1px 0 #000;pointer-events:none;white-space:nowrap;letter-spacing:.08em}.mk i{display:block;width:8px;height:8px;margin:3px auto 0;border:2px solid currentColor;transform:rotate(45deg)}.mk em{display:block;font-style:normal;opacity:.7;font-weight:400}
+#pda{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,12,20,.55);backdrop-filter:blur(8px);z-index:30}#pda[hidden]{display:none}
+#pda .box{width:min(720px,94vw);max-height:88vh;overflow:auto;background:rgba(4,22,32,.9);border:1px solid rgba(111,240,255,.3);border-radius:16px;padding:22px 24px;font:.74rem var(--mono);color:#cff8ff;box-shadow:0 0 60px rgba(111,240,255,.15)}
+#pda h2{margin:0;font:400 2rem var(--disp);color:#e8fbff}#pda .sub{margin:2px 0 16px;color:#7fb8c8;letter-spacing:.14em;font-size:.62rem}
+#pda .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px}
+#pda .sp{padding:10px 12px;border-radius:10px;background:rgba(111,240,255,.06);border:1px solid rgba(111,240,255,.12);line-height:1.45}#pda .sp b{display:block;color:#6ff0ff;letter-spacing:.1em}#pda .sp.no{opacity:.45}#pda .sp.no b{color:#7fb8c8}
+#pda .goals div{padding:3px 0}#pda .goals .ok{color:#6fff9a}
+#cross{position:fixed;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:rgba(200,250,255,.8);box-shadow:0 0 6px #6ff0ff}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="cross"></div><div id="dmg"></div>
+  <div id="tl"></div><div id="comp"><div id="compin"></div></div>
+  <div class="gauge"><div class="gl"><div class="ring" id="o2"></div><span id="o2t">45</span><i>OXYGEN</i></div><div class="gl"><div class="ring" id="hp" style="--c:#ff7a5a"></div><span id="hpt">100</span><i>HEALTH</i></div><div class="gl"><div class="ring" id="bat" style="--c:#ffd24a"></div><span id="batt">100</span><i>SCOOTER</i></div></div><div id="marks"></div>
+  <div id="depth"><b id="dm">0</b><span>METRES</span><em id="crush"></em></div>
+  <div id="scan">SCANNING<div><i id="scanbar"></i></div><span id="scanname"></span></div>
+  <div id="toast"><b id="toastb"></b><span id="toasts"></span></div><div id="hint"></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · OCEAN SURVIVAL</p>
+  <h1>ABYSS<br>DIVER<em>.</em></h1>
+  <p class="how">Your ship went down. Scan the ocean's life, gather samples, upgrade your suit at the lifepod and survive the deep.</p>
+  <button id="go">CLICK TO DIVE</button>
+  <p class="keys"><kbd>Mouse</kbd> look · <kbd>WASD</kbd> swim · <kbd>Space</kbd>/<kbd>C</kbd> up / down · <kbd>Shift</kbd> seaglide · <kbd>E</kbd> collect / use pod · <kbd>Q</kbd> hold to scan · <kbd>R</kbd> sonar · <kbd>B</kbd> beacon · <kbd>Tab</kbd> tablet · <kbd>F</kbd> flare · <kbd>L</kbd> light · <kbd>G</kbd> graphics</p>
+</div>
+<div id="pda" hidden><div class="box"><h2>SURVEY TABLET</h2><p class="sub">RELEASE TAB TO CLOSE</p><div class="grid" id="pdas"></div><div class="goals" id="pdag"></div></div></div>
+<div id="over" hidden><p class="eye">DIVE LOG</p><h1 id="otitle">LOST AT SEA</h1><p id="ostats"></p><div class="row"><button id="again">DIVE AGAIN</button><button id="post" class="ghost">POST SCORE</button></div></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

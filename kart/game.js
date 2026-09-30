@@ -1,4 +1,6 @@
 import * as THREE from '../vendor/three.module.min.js';
+import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
+
 
 /* ---------- characters ---------- */
 const CH=[
@@ -131,13 +133,13 @@ function step(dt){if(state!=='race')return;raceT+=dt;
 function showResults(){state='results';const order=karts.slice().sort((a,b)=>(a.fin||1e9)-(b.fin||1e9)||rank(a)-rank(b));document.getElementById('rlist').innerHTML=order.map((k,i)=>`<li style="color:${k.human>=0?'#2fe8d0':'#fff3d6'}">${k.ch.n}${k.human>=0?' (P'+(k.human+1)+')':''} ${k.fin?(k.fin).toFixed(1)+'s':'DNF'}</li>`).join('');document.getElementById('results').style.display='flex';}
 
 /* ---------- render ---------- */
-const cams=[0,1].map(()=>new THREE.PerspectiveCamera(60,1,.1,600));
+const cams=[0,1].map(()=>new THREE.PerspectiveCamera(60,1,.1,600));let fx=null,fxW=0;bindQualityKey(()=>fx?fx.q:quality(),()=>{fx=null;fxW=0;});
 function render(dt){const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==w*renderer.getPixelRatio()|0)renderer.setSize(w,h,false);
  const hum=karts.filter(k=>k.human>=0);const views=state==='menu'?1:hum.length;
  for(let v=0;v<views;v++){const cam=cams[v];let vx=0,vy=0,vw=w,vh=h;if(views===2){vh=h/2;vy=v===0?h/2:0;}cam.aspect=vw/vh;cam.updateProjectionMatrix();
   if(state==='menu'||!hum[v]){const t=(performance.now()*.00002)%1,p=posAt(t),q=posAt(t+.03);cam.position.set(p.x+Math.sin(t*20)*10,p.y+9,p.z+Math.cos(t*20)*10);cam.lookAt(q.x,q.y+1,q.z);}
   else{const k=hum[v],back=8,up=3.6;const tx=k.x-Math.sin(k.a)*back,tz=k.z-Math.cos(k.a)*back;cam.position.lerp(new THREE.Vector3(tx,k.y+up,tz),Math.min(1,dt*6));cam.lookAt(k.x+Math.sin(k.a)*4,k.y+1.2,k.z+Math.cos(k.a)*4);}
-  renderer.setViewport(vx,vy,vw,vh);renderer.setScissor(vx,vy,vw,vh);renderer.render(scene,cam);}
+  if(views===1){if(!fx){fx=cinematic(renderer,scene,cam,{exposure:1.05,bloom:.45,bloomThreshold:.85,vignette:.3,saturation:1.12,aoStrength:.8});}if(fxW!==w*1000+h){fxW=w*1000+h;fx.setSize(w,h);}renderer.setScissorTest(false);renderer.setViewport(0,0,w,h);fx.render();}else{renderer.setScissorTest(true);renderer.setViewport(vx,vy,vw,vh);renderer.setScissor(vx,vy,vw,vh);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.render(scene,cam);}}
  if(state==='race')drawHUD(hum,views,w,h);}
 function drawHUD(hum,views,w,h){let html='';hum.forEach((k,v)=>{const top=views===2?(v===0?0:h/2):0,vh=views===2?h/2:h;const pos=k.pos||1,sfx=['ST','ND','RD','TH','TH','TH','TH','TH'][pos-1];
   html+=`<div class="hud big" style="left:16px;top:${top+12}px;color:#ffcf3f">${pos}<span style="font-size:.8rem">${sfx}</span></div><div class="hud" style="left:16px;top:${top+52}px">LAP ${lapNo(k)}/${lapsTotal}</div><div class="hud" style="right:16px;top:${top+12}px">${Math.round(k.v*3.2)} KM/H</div><div class="item" style="right:16px;top:${top+40}px;border-color:${k.itemT>0?'#ffcf3f':'#fff'}">${k.itemT>0?ITEMS[Math.floor(performance.now()/60)%ITEMS.length]:(k.item||'')}</div>`;

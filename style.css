@@ -220,3 +220,7 @@ h1.mega em{color:var(--o);font-style:normal}
 .board{background:rgba(0,0,0,.85)}.bpanel{background:#050505;border:1px solid var(--line);box-shadow:none}.bpanel h3{font:400 1.8rem var(--disp);color:var(--fg)}.bpanel button{background:var(--o);box-shadow:none;border-radius:999px;font:700 .75rem var(--mono)}
 #cab{background:#000}.bar button{font:.7rem var(--mono);background:transparent;border:1px solid var(--line);border-radius:999px;box-shadow:none}
 .crt{background:#0a0a0a;box-shadow:0 0 0 1px var(--line),0 0 90px 30px var(--amb,rgba(255,77,0,.15))}
+
+.acts .fav{font:.8rem/1 system-ui,sans-serif;color:var(--cream);opacity:.35;padding:2px 4px;cursor:pointer;transition:opacity .2s,color .2s,transform .2s}
+.cab:hover .acts .fav{opacity:.8}.acts .fav:hover{transform:scale(1.2)}.acts .fav.on{opacity:1;color:#ffcf3a}
+#chips button.sp{border-style:dashed}

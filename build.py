@@ -9,6 +9,10 @@ import base64
 if os.path.exists('docs/kart.png'):
     src = src.replace('src="docs/kart.png"', 'src="data:image/png;base64,' + base64.b64encode(open('docs/kart.png','rb').read()).decode() + '"')
 src = src.replace('href="kart/"', 'href="https://normansrule.github.io/pixel-arcade/kart/"')
+# full-3D cabinets live in their own folders; point the single-file build at the live site
+BASE = 'https://normansrule.github.io/pixel-arcade/'
+src = re.sub(r"href:'([a-z0-9]+/)'", lambda m: "href:'" + BASE + m.group(1) + "'", src)
+src = re.sub(r"img:'(docs/[a-z0-9]+\.png)'", lambda m: "img:'" + BASE + m.group(1) + "'", src)
 os.makedirs('dist', exist_ok=True)
 open('dist/pixel-arcade.html', 'w', encoding='utf-8').write(src)
 print('dist/pixel-arcade.html', len(src) // 1024, 'KB')

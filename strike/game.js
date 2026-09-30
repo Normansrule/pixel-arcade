@@ -1,4 +1,6 @@
 import * as THREE from '../vendor/three.module.min.js';
+import {cinematic,bindQualityKey} from '../js/fx3d.js';
+
 
 /* ================= map ================= */
 const MAP=[
@@ -195,7 +197,8 @@ function drawHUD(){if(hud.hidden)return;$('hp').textContent=Math.ceil(P.hp);$('h
  mini.save();mini.translate(P.pos.x*s,P.pos.z*s);mini.rotate(-P.yaw+Math.PI);mini.fillStyle='#2fe8d0';mini.beginPath();mini.moveTo(0,5);mini.lineTo(-4,-4);mini.lineTo(4,-4);mini.fill();mini.restore();}
 
 /* ================= loop ================= */
-function resize(){const w=innerWidth,h=innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}addEventListener('resize',resize);resize();
+const POST={exposure:1.05,bloom:.5,bloomThreshold:.8,vignette:.38,saturation:1.08,aoStrength:.9};let post=cinematic(R,scene,cam,POST);bindQualityKey(()=>post.q,()=>{post=cinematic(R,scene,cam,POST);post.setSize(innerWidth,innerHeight);});
+function resize(){const w=innerWidth,h=innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();post.setSize(w,h);}addEventListener('resize',resize);resize();
 reset();state='menu';cam.position.set(24,6,34);cam.lookAt(24,0,16);
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);gun.visible=state==='play';if(state==='menu'){const t=now*.00008;cam.position.set(MW+Math.sin(t)*16,7,MH+Math.cos(t)*14);cam.lookAt(MW,1,MH);}drawHUD();R.render(scene,cam);requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);gun.visible=state==='play';if(state==='menu'){const t=now*.00008;cam.position.set(MW+Math.sin(t)*16,7,MH+Math.cos(t)*14);cam.lookAt(MW,1,MH);}drawHUD();post.render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 window.STRIKE={step,P,get enemies(){return enemies;},get state(){return state;},get wave(){return wave;},deploy,fire,aimAt(e){const t=e.g.position.clone();t.y=1.8;const dx=t.x-P.pos.x,dz=t.z-P.pos.z,dy=t.y-(P.pos.y+1.6);P.yaw=Math.atan2(-dx,-dz);P.pitch=Math.atan2(dy,Math.hypot(dx,dz));cam.rotation.set(P.pitch,P.yaw,0);cam.updateMatrixWorld();}};

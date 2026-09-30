@@ -1,4 +1,6 @@
 import * as THREE from '../vendor/three.module.min.js';
+import {cinematic,bindQualityKey} from '../js/fx3d.js';
+
 
 /* ================= city layout ================= */
 const N=8,SP=48,ROAD=14,B=SP-ROAD,WORLD=N*SP;
@@ -125,9 +127,10 @@ function hud(){if($('hud').hidden)return;$('cash').textContent='$'+P.cash;$('tim
  traffic.forEach(c=>{const[x,z]=tpos(c);mini.fillStyle='#8a8a9a';mini.fillRect(x*s-1.5,z*s-1.5,3,3);});mini.fillStyle=mode==='pickup'?'#ff4d00':'#3dff8b';mini.beginPath();mini.arc(target.x*s,target.z*s,5,0,7);mini.fill();mini.restore();
  mini.fillStyle='#ffcf3f';mini.beginPath();mini.moveTo(cx,cy-7);mini.lineTo(cx-5,cy+5);mini.lineTo(cx+5,cy+5);mini.fill();}
 
-function resize(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}addEventListener('resize',resize);resize();
+const POST={exposure:1.15,bloom:1.05,bloomThreshold:.55,bloomRadius:.65,vignette:.42,saturation:1.15,ao:false};let fx=cinematic(R,scene,cam,POST);bindQualityKey(()=>fx.q,()=>{fx=cinematic(R,scene,cam,POST);fx.setSize(innerWidth,innerHeight);});
+function resize(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();fx.setSize(innerWidth,innerHeight);}addEventListener('resize',resize);resize();
 spawnTraffic();newPickup();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);if(state==='menu')stepTrafficOnly(dt);updateCam(dt);hud();R.render(scene,cam);requestAnimationFrame(loop);}
+let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);if(state==='menu')stepTrafficOnly(dt);updateCam(dt);hud();fx.render();requestAnimationFrame(loop);}
 function stepTrafficOnly(dt){const s=state;state='play';const saved={...P};P.time=999;P.x=-999;P.z=-999;try{for(const c of traffic){c.along+=c.dir*c.v*dt;if(c.along<0||c.along>WORLD)c.dir*=-1;const[nx,nz]=tpos(c);c.g.position.set(nx,0,nz);c.g.rotation.y=c.ax==='x'?(c.dir>0?Math.PI/2:-Math.PI/2):(c.dir>0?0:Math.PI);}}finally{Object.assign(P,saved);state=s;}}
 requestAnimationFrame(loop);
 window.DRIVE={step,P,start,updateCam,get state(){return state;},get mode(){return mode;},get target(){return target;},get traffic(){return traffic;},keys};
