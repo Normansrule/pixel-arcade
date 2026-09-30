@@ -27,8 +27,8 @@
 
 ## Highlights
 
-- **Voxel Frontier**: block sandbox. Punch trees, craft (**E**) planks, sticks, torches and wood → stone → iron → diamond pickaxes; rock needs a pickaxe. Torches cast real flickering light. Sheep drop mutton (right click to eat). A 9-step goal chain guides new players.
-- **Abyss Diver**: ocean survival. **R** sonar ping marks deposits and predators, **B** drops a beacon you can navigate back to, **Tab** opens the survey tablet, **Shift** runs the scooter on battery (recharge at the lifepod).
+- **Voxel Frontier**: block sandbox. Punch trees, craft (**E**) planks, sticks, torches and wood → stone → iron → diamond pickaxes; rock needs a pickaxe. Torches cast real flickering light. Sheep drop mutton (right click to eat). Craft **TNT** (4 sand + 2 coal), hit it to light the fuse; blasts carve craters and chain-react. At night, watch for **Bloaters**: they swell and explode. Animated reflective water, wind-blown leaves, drifting clouds and block debris. A 9-step goal chain guides new players.
+- **Abyss Diver**: ocean survival. **R** sonar ping marks deposits and predators, **B** drops a beacon you can navigate back to, **Tab** opens the survey tablet, **Shift** runs the scooter on battery (recharge at the lifepod). Breath bubbles rise to the surface; below 45 m, plankton glows when you swim through it.
 - **Hub**: star any cabinet to add it to **Favorites**; the **Recent** chip lists what you played last.
 
 ## Graphics

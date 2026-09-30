@@ -207,6 +207,26 @@ function step(dt){t+=dt;U.uTime.value=t;if(state!=='play'){return;}
  stepSchools(dt);stepCreatures(dt);if(hurtT>0)hurtT-=dt;
  const nn=nearest();hint(P.pos.distanceTo(pod.position)<7?'E  LIFEPOD: STORE SAMPLES + REFILL OXYGEN':nn?'E  COLLECT '+RES[nn.k].n:(P.o2<12&&under?'LOW OXYGEN, SURFACE NOW':''));}
 
+/* ================= breath bubbles + bioluminescent plankton ================= */
+const bubTex=(()=>{const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d');const g=x.createRadialGradient(16,16,4,16,16,15);g.addColorStop(0,'rgba(255,255,255,0.05)');g.addColorStop(.7,'rgba(220,250,255,0.35)');g.addColorStop(.88,'rgba(255,255,255,0.95)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,32,32);x.fillStyle='rgba(255,255,255,.9)';x.beginPath();x.arc(11,11,2.5,0,6.3);x.fill();return new THREE.CanvasTexture(c);})();
+const BN=160,bubPos=new Float32Array(BN*3).fill(1e5),bubs=[];for(let i=0;i<BN;i++)bubs.push({t:0,vx:0,vz:0,ph:Math.random()*6});
+const bubGeo=new THREE.BufferGeometry();bubGeo.setAttribute('position',new THREE.BufferAttribute(bubPos,3));
+const bubPts=new THREE.Points(bubGeo,new THREE.PointsMaterial({map:bubTex,size:.11,transparent:true,depthWrite:false,sizeAttenuation:true,fog:true}));bubPts.frustumCulled=false;scene.add(bubPts);
+let bubHead=0,breathT=1.5;
+function emitBubbles(n,spread){const f=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(P.pitch,P.yaw,0,'YXZ'));for(let i=0;i<n;i++){const b=bubs[bubHead],k=bubHead*3;bubHead=(bubHead+1)%BN;bubPos[k]=P.pos.x+f.x*.45+(Math.random()-.5)*spread;bubPos[k+1]=P.pos.y-.25+(Math.random()-.5)*spread*.5;bubPos[k+2]=P.pos.z+f.z*.45+(Math.random()-.5)*spread;b.t=5+Math.random()*3;b.vx=(Math.random()-.5)*.3;b.vz=(Math.random()-.5)*.3;b.v=.9+Math.random()*.8;}}
+function stepBubbles(dt,moving,boost){if(state==='play'&&P.pos.y<-1){breathT-=dt;if(breathT<=0){breathT=2.6+Math.random();emitBubbles(5+(Math.random()*4|0),.12);}if(boost&&Math.random()<dt*14)emitBubbles(1,.5);}
+ for(let i=0;i<BN;i++){const b=bubs[i],k=i*3;if(b.t<=0)continue;b.t-=dt;b.ph+=dt*7;bubPos[k]+=(b.vx+Math.sin(b.ph)*.12)*dt;bubPos[k+1]+=b.v*dt;bubPos[k+2]+=(b.vz+Math.cos(b.ph*1.3)*.12)*dt;b.v=Math.min(2.4,b.v+dt*.25);if(b.t<=0||bubPos[k+1]>-.1){b.t=0;bubPos[k+1]=1e5;}}bubGeo.attributes.position.needsUpdate=true;}
+const PLN=900,plPos=new Float32Array(PLN*3),plPh=new Float32Array(PLN);for(let i=0;i<PLN;i++){plPos[i*3]=Math.random()*24;plPos[i*3+1]=Math.random()*24;plPos[i*3+2]=Math.random()*24;plPh[i]=Math.random()*100;}
+const plGeo=new THREE.BufferGeometry();plGeo.setAttribute('position',new THREE.BufferAttribute(plPos,3));plGeo.setAttribute('ph',new THREE.BufferAttribute(plPh,1));
+const plU={uTime:U.uTime,uCam:{value:new THREE.Vector3()},uStir:{value:0},uDeep:{value:0}};
+const plankton=new THREE.Points(plGeo,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:plU,
+ vertexShader:`attribute float ph;uniform float uTime,uStir,uDeep;uniform vec3 uCam;varying float vA;
+ void main(){vec3 p=position+vec3(sin(uTime*.3+ph)*.4,sin(uTime*.2+ph*1.7)*.3,cos(uTime*.25+ph)*.4);p=uCam+mod(p-uCam+12.,24.)-12.;float d=distance(p,uCam);
+  float tw=.35+.65*pow(.5+.5*sin(uTime*(1.5+fract(ph)*3.)+ph),6.);float stir=uStir*smoothstep(7.,1.5,d);vA=uDeep*(tw*.55+stir*1.6)*smoothstep(12.,6.,d)*smoothstep(1.,2.2,d);
+  vec4 mv=modelViewMatrix*vec4(p,1.);gl_PointSize=clamp((1.+stir*1.5)*(16./-mv.z),1.,4.5);gl_Position=projectionMatrix*mv;}`,
+ fragmentShader:'varying float vA;void main(){float r=length(gl_PointCoord-.5);if(r>.5)discard;gl_FragColor=vec4(vec3(.25,1.,.85)*vA*smoothstep(.5,0.,r),1.);}'}));
+plankton.frustumCulled=false;scene.add(plankton);
+
 /* ================= visual update ================= */
 const deepC=new THREE.Color(0x020a14),shallowC=new THREE.Color(0x1a88a8),midC=new THREE.Color(0x0a3a5a);
 function visuals(dt){const d=depthOf(cam.position.y),under=cam.position.y<0;const f=cl(d/260,0,1);
@@ -218,6 +238,7 @@ function visuals(dt){const d=depthOf(cam.position.y),under=cam.position.y<0;cons
  surfM.uniforms.camPos.value.copy(cam.position);surf.position.set(Math.round(cam.position.x/10)*10,0,Math.round(cam.position.z/10)*10);
  pod.position.y=-.4+Math.sin(t*.8)*.25;pod.rotation.z=Math.sin(t*.6)*.04;pod.userData.beacon.visible=pod.userData.bl.visible=Math.sin(t*3)>0;
  nodes.forEach(n=>n.m.rotation.y+=dt*.4);
+ const spd=P.vel.length();stepBubbles(dt,spd>1,(keys.ShiftLeft||keys.ShiftRight)&&P.bat>0&&spd>3);plU.uCam.value.copy(cam.position);plU.uStir.value+=((Math.min(1,spd/6))-plU.uStir.value)*Math.min(1,dt*3);plU.uDeep.value=under?cl((d-45)/60,0,1):0;
  if(fx.grade){const hv=hurtT>0?hurtT/.6:0;fx.grade.uniforms.tint.value.setRGB(1,1-hv*.5,1-hv*.5);}}
 
 function hud(){if($('hud').hidden)return;$('bat').style.setProperty('--p',P.bat+'%');$('batt').textContent=Math.ceil(P.bat);const d=Math.max(0,Math.round(-P.pos.y));$('dm').textContent=d;$('crush').textContent=d>P.rating?'CRUSH DEPTH '+P.rating+'m':d>P.rating*.85?'NEAR LIMIT '+P.rating+'m':'';
@@ -234,4 +255,4 @@ buildFx();resize();spawnSchools();spawnCreatures();spawnNodes();
 let last=performance.now(),mA=0;function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);
  if(state==='play'||state==='paused'){cam.position.copy(P.pos);cam.rotation.set(P.pitch,P.yaw,0,'YXZ');}else{mA+=dt*.05;cam.position.set(Math.cos(mA)*40+20,-16+Math.sin(mA*.7)*4,Math.sin(mA)*40-20);cam.lookAt(40,-24,-30);stepSchools(dt);stepCreatures(dt);}
  visuals(dt);fx.render();hud();if(state==='play')drawMarks(dt);else $('marks').innerHTML='';requestAnimationFrame(loop);}requestAnimationFrame(loop);
-window.ABYSS={sonar,dropBeacon,openPda,beaconList,pings,drawMarks,step,P,start,get state(){return state;},heightAt,creatures,schools,nodes,use,bank,flare,keys,pod,visuals,render:()=>fx.render(),R,cam,end};
+window.ABYSS={emitBubbles,stepBubbles,plU,sonar,dropBeacon,openPda,beaconList,pings,drawMarks,step,P,start,get state(){return state;},heightAt,creatures,schools,nodes,use,bank,flare,keys,pod,visuals,render:()=>fx.render(),R,cam,end};
