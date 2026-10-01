@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rocket Arena · Pixel Arcade</title>
+<meta name="description" content="Rocket Arena: full 3D car soccer in the browser. Boost, jump, flip and fly to score. 1v1 to 3v3 against CPU teams or split-screen with a friend.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rocket.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bars"></div>
+<div id="hud" hidden>
+  <div id="board"><div class="tm b"><i>BLUE</i><b id="s0">0</b></div><div class="clk"><b id="clock">5:00</b><span id="ot"></span></div><div class="tm o"><b id="s1">0</b><i>ORANGE</i></div></div>
+  <div id="views"></div>
+  <canvas id="mini" width="112" height="156"></canvas>
+  <div id="feed"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="replay" hidden><i></i>REPLAY<span>JUMP / ENTER TO SKIP</span></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · CAR SOCCER</p>
+  <h1>ROCKET<br>ARENA<em>.</em></h1>
+  <p class="how">Rocket-powered cars, one giant ball. Boost, jump, flip and fly to put it in the net. Five-minute matches, golden-goal overtime.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="1">1V1</button><button data-v="2" class="on">2V2</button><button data-v="3">3V3</button><button data-v="0">FREEPLAY</button></div>
+    <label>PLAYERS</label><div class="seg" id="o-pl"><button data-v="1" class="on">1P</button><button data-v="2">2P SPLIT</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">KICK OFF</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Throttle / reverse</td><td><kbd>W</kbd> <kbd>S</kbd> <span class="pad">RT LT</span></td></tr>
+    <tr><td>Steer · air pitch / yaw</td><td><kbd>A</kbd> <kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Jump · again to double / flip</td><td><kbd>Space</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Boost</td><td><kbd>Shift</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Powerslide</td><td><kbd>Ctrl</kbd> <kbd>B</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Air roll left / right</td><td><kbd>Q</kbd> <kbd>E</kbd> <span class="pad">LB RB</span></td></tr>
+    <tr><td>Ball cam</td><td><kbd>C</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Reset (freeplay) · pause</td><td><kbd>R</kbd> <kbd>Esc</kbd> <span class="pad">Back Start</span></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p>Flip into the ball for a power shot: jump, then jump again with a direction held. Hit an opponent at supersonic speed to demolish them.<br>2P split: P2 uses <kbd>Arrows</kbd>, <kbd>Enter</kbd> jump, <kbd>.</kbd> boost, <kbd>,</kbd> slide, <kbd>;</kbd> <kbd>'</kbd> roll, <kbd>\</kbd> ball cam, or gamepad 2.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>TIME<br>OUT<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">FULL TIME</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="fs" id="ofs"></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

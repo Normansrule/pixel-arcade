@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Builder · Pixel Arcade</title>
+<meta name="description" content="Build your own arcade game in the browser — templates, drag-and-drop assets, components, visual rules, instant play, share links.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23000'/><rect x='22' y='22' width='56' height='56' fill='%23ff4d00'/><rect x='38' y='38' width='24' height='24' fill='%23000'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="builder.css">
+</head>
+<body>
+<div id="app" class="app">
+  <header class="tb" id="tb">
+    <button class="tbtn icon only-sm" id="leftToggle" type="button" data-tip="Show Hierarchy &amp; Assets" aria-label="Toggle left panel"></button>
+    <a class="brand" href="../" data-tip="Back to the Pixel Arcade"><i></i><b>PIXEL</b>ARCADE</a>
+    <span class="badge">BUILDER</span>
+    <div class="tb-group">
+      <button class="tbtn" id="fileBtn" type="button" data-tip="Project: new, open, import, export" aria-haspopup="menu">File <span class="car">▾</span></button>
+      <input class="pname" id="projName" type="text" spellcheck="false" aria-label="Game title" data-tip="Rename your game">
+      <span class="savestate" id="saveState" data-tip="Projects autosave to this browser">Saved</span>
+    </div>
+    <div class="tb-group" role="group" aria-label="History">
+      <button class="tbtn icon" id="undoBtn" type="button" data-tip="Undo" data-key="Ctrl+Z" aria-label="Undo"></button>
+      <button class="tbtn icon" id="redoBtn" type="button" data-tip="Redo" data-key="Ctrl+Y" aria-label="Redo"></button>
+    </div>
+    <div class="tb-group tools" role="toolbar" aria-label="Tools">
+      <button class="tbtn icon" data-tool="select" type="button" data-tip="Select &amp; move — click, Shift-click, drag a box" data-key="V" aria-label="Select tool"></button>
+      <button class="tbtn icon" data-tool="place" type="button" data-tip="Place the chosen asset — click, or drag to paint" data-key="B" aria-label="Place tool"></button>
+      <button class="tbtn icon" data-tool="pan" type="button" data-tip="Pan the view (or hold Space / middle mouse)" data-key="H" aria-label="Pan tool"></button>
+      <button class="tbtn icon" data-tool="erase" type="button" data-tip="Erase — click or drag over objects" data-key="E" aria-label="Erase tool"></button>
+    </div>
+    <div class="tb-group" id="snapGroup">
+      <button class="tbtn icon" id="snapBtn" type="button" data-tip="Snap to grid" data-key="G" aria-label="Snap to grid" aria-pressed="true"></button>
+      <select class="tsel" id="gridSel" data-tip="Grid size" aria-label="Grid size"><option value="8">8px</option><option value="16">16px</option><option value="32" selected>32px</option><option value="64">64px</option></select>
+    </div>
+    <div class="tb-center">
+      <button class="play" id="playBtn" type="button" data-tip="Play your game in the scene" data-key="F5"><span class="pi"></span><span class="pl">Play</span></button>
+    </div>
+    <div class="tb-right">
+      <button class="tbtn" id="tourBtn" type="button" data-tip="60-second guided tour">Tour</button>
+      <button class="tbtn icon" id="helpBtn" type="button" data-tip="Keyboard shortcuts" data-key="?" aria-label="Keyboard shortcuts"></button>
+      <button class="tbtn" id="shareBtn" type="button" data-tip="Make a link anyone can play">Share</button>
+      <button class="tbtn accent" id="publishBtn" type="button" data-tip="Add to My Games and publish to the arcade">Publish</button>
+      <button class="tbtn icon only-sm" id="rightToggle" type="button" data-tip="Show Inspector" aria-label="Toggle inspector"></button>
+    </div>
+  </header>
+
+  <aside class="panel left" id="left" aria-label="Hierarchy and assets">
+    <section class="pane hier" id="hier">
+      <header class="ph"><span class="pn">01</span><span class="pt">Hierarchy</span><span class="pc" id="hierCount"></span></header>
+      <div class="filter"><input id="hierFilter" type="search" placeholder="Filter objects…" aria-label="Filter objects" spellcheck="false"></div>
+      <div class="hlist" id="hierList" role="tree"></div>
+    </section>
+    <section class="pane assets" id="assets">
+      <header class="ph"><span class="pn">02</span><span class="pt">Assets</span><span class="pc" id="assetHint">click → place</span></header>
+      <div class="cats" id="assetCats" role="tablist"></div>
+      <div class="agrid" id="assetGrid"></div>
+    </section>
+  </aside>
+
+  <main class="scene" id="scene">
+    <div class="shead">
+      <span class="stab"><i></i>Scene</span>
+      <span class="sinfo" id="sceneInfo"></span>
+      <span class="sp"></span>
+      <button class="sbtn" id="frameBtn" type="button" data-tip="Frame the whole level" data-key="F">Frame</button>
+      <button class="sbtn" id="zoomOut" type="button" data-tip="Zoom out" data-key="−" aria-label="Zoom out">−</button>
+      <button class="sbtn zv" id="zoomVal" type="button" data-tip="Reset zoom to 100%">100%</button>
+      <button class="sbtn" id="zoomIn" type="button" data-tip="Zoom in" data-key="+" aria-label="Zoom in">+</button>
+    </div>
+    <div class="sbody" id="sbody">
+      <canvas id="view" tabindex="0" aria-label="Scene view"></canvas>
+      <canvas id="gameCv" hidden aria-label="Game"></canvas>
+      <div class="playhost" id="playHost"></div>
+      <div class="minimap" id="minimap" data-tip="Minimap — click to jump"><canvas id="miniCv"></canvas></div>
+      <div class="playbar" id="playBar" hidden><span class="rec"></span><span>PLAYING</span><span class="ph-keys">Arrows / WASD move · Space jump/shoot · X shoot · R restart · P pause · Esc stop</span></div>
+    </div>
+  </main>
+
+  <aside class="panel right" id="right" aria-label="Inspector">
+    <header class="ph"><span class="pn">03</span><span class="pt">Inspector</span><span class="pc" id="inspHint"></span></header>
+    <div class="insp" id="insp"></div>
+  </aside>
+
+  <section class="panel bottom" id="bottom">
+    <div class="tabs" role="tablist">
+      <button type="button" data-tab="settings" class="on" role="tab">Game Settings</button>
+      <button type="button" data-tab="rules" role="tab">Rules <span class="cnt" id="ruleCnt"></span></button>
+      <button type="button" data-tab="console" role="tab">Console <span class="cnt" id="conCnt"></span></button>
+      <span class="sp"></span>
+      <button type="button" class="tabx" id="bottomToggle" data-tip="Collapse / expand panel" aria-label="Collapse bottom panel">▾</button>
+    </div>
+    <div class="tabbody" id="tab-settings"></div>
+    <div class="tabbody" id="tab-rules" hidden></div>
+    <div class="tabbody" id="tab-console" hidden></div>
+  </section>
+
+  <footer class="status" id="status">
+    <span id="stTool"></span><span id="stPos"></span><span class="sp"></span><span id="stObjs"></span><span id="stSel"></span><span id="stZoom"></span><span id="stSave"></span>
+  </footer>
+</div>
+
+<div class="player" id="player" hidden>
+  <header class="pbar">
+    <a class="brand" href="../"><i></i><b>PIXEL</b>ARCADE</a>
+    <span class="ptitle" id="pTitle"></span>
+    <span class="sp"></span>
+    <button class="tbtn" id="pRestart" type="button">Restart</button>
+    <button class="tbtn" id="pMute" type="button">Sound</button>
+    <a class="tbtn accent" id="pRemix" href="./">Remix in builder</a>
+  </header>
+  <div class="pstage" id="pStage">
+    <canvas id="pCv" aria-label="Game"></canvas>
+    <div class="pintro" id="pIntro">
+      <div class="pcard">
+        <p class="pg-eyebrow" id="pCat">GAME</p>
+        <h1 id="pName">Loading…</h1>
+        <p class="pdesc" id="pDesc"></p>
+        <p class="pctrl" id="pCtrl"></p>
+        <button class="pg-btn primary big" id="pStart" type="button">▶ Play</button>
+        <p class="pmade">Made with the Pixel Arcade Game Builder</p>
+      </div>
+    </div>
+    <div class="touch" id="touch" aria-hidden="true">
+      <div class="dpad"><button data-k="left" type="button">◀</button><button data-k="up" type="button">▲</button><button data-k="down" type="button">▼</button><button data-k="right" type="button">▶</button></div>
+      <div class="abtn"><button data-k="b" type="button">B</button><button data-k="a" type="button">A</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+<script src="defs.js"></script>
+<script src="render.js"></script>
+<script src="runtime.js"></script>
+<script src="defs3d.js"></script>
+<script src="builder.js"></script>
+</body>
+</html>

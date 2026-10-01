@@ -30,6 +30,7 @@
 #craft .r.no{opacity:.35;cursor:default}#craft .r:not(.no):hover{border-color:var(--o)}
 #craft .r .ing{display:flex;gap:2px;margin-left:auto}#craft .r .ing .it{width:24px;height:24px}#craft .r .ing .it b{font-size:.55rem}
 #craft .r span{line-height:1.25}#craft .r small{display:block;color:#8a8a8a}
+.result{font:400 1.6rem var(--disp);color:var(--o);margin:0 0 12px;min-height:0}.result:empty{display:none}.tmode button{font-size:.72rem;padding:8px 14px}
 .mode{display:flex;gap:10px;margin-bottom:14px}.mode button{background:#1a1a1a;color:#f2f2f2}.mode button.on{background:var(--o);color:#000}
 </style>
 </head>
@@ -41,7 +42,9 @@
   <p class="eye">[ PIXEL ARCADE ] FULL 3D · VOXEL SANDBOX</p>
   <h1>VOXEL<br>FRONTIER<em>.</em></h1>
   <p class="how">Explore an endless block world. Punch trees, craft tools and TNT, light the dark, survive the night.</p>
+  <p id="result" class="result"></p>
   <div class="mode"><button data-m="survival" class="on">SURVIVAL</button><button data-m="creative">CREATIVE</button></div>
+  <div class="mode tmode"><button data-t="600" class="on">10 MIN</button><button data-t="1200">20 MIN</button><button data-t="0">ENDLESS</button></div>
   <div class="row"><button id="go">NEW WORLD</button><button id="cont" class="ghost">CONTINUE</button></div>
   <p class="keys"><kbd>WASD</kbd> move · <kbd>Mouse</kbd> look · <kbd>Left</kbd> mine / hit · <kbd>Right</kbd> place / eat · <kbd>E</kbd> craft · <kbd>1-9</kbd> / wheel pick · <kbd>Space</kbd> jump / swim · <kbd>Shift</kbd> sprint · <kbd>F</kbd> fly (creative) · <kbd>G</kbd> graphics</p>
 </div>

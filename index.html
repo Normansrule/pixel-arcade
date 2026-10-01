@@ -15,7 +15,7 @@
 <div id="glow" aria-hidden="true"></div>
 <nav class="topbar" aria-label="Site">
   <a class="brand" href="#top"><i></i><b>PIXEL</b>ARCADE</a>
-  <div class="tools"><input id="q" type="search" placeholder="Search 302 games" aria-label="Search games"><button id="rnd" type="button" title="Random game">🎲</button></div>
+  <div class="tools"><input id="q" type="search" placeholder="Search 431 games" aria-label="Search games"><button id="rnd" type="button" title="Random game">🎲</button><a class="buildlink" href="builder/" title="Make your own game">+ BUILD</a></div>
   <button class="profile" id="profile" type="button" aria-label="Player profile"></button>
   <a class="gh" href="https://github.com/Normansrule/pixel-arcade" target="_blank" rel="noopener" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a>
 </nav>
@@ -36,10 +36,27 @@
     <a class="down" href="#chips" aria-label="All games">▼</a>
   </header>
   <div class="ticker" aria-hidden="true"><div id="ticker"></div></div>
+  <section class="flag" id="flag" aria-label="Full 3D games">
+    <header><p>(00)</p><h2>FULL 3D</h2><span>Real-time 3D worlds. Cinematic lighting. Press G in game for graphics.</span></header>
+    <div class="fgrid">
+      <a class="fc big" href="voxel/" style="--img:url(docs/voxel.png)"><em>MINECRAFT-STYLE · SANDBOX · SURVIVAL</em><b>VOXEL FRONTIER</b><span>Endless block world. Mine, craft tools and TNT, light the night, survive.</span><i>PLAY →</i></a>
+      <a class="fc big" href="abyss/" style="--img:url(docs/abyss.png)"><em>SUBNAUTICA-STYLE · OCEAN SURVIVAL</em><b>ABYSS DIVER</b><span>Crash-landed on an alien sea. Scan life, gather samples, dive deeper.</span><i>PLAY →</i></a>
+      <a class="fc big" href="rocket/" style="--img:url(docs/rocket.png)"><em>CAR SOCCER · 1V1–3V3 · SPLIT SCREEN</em><b>ROCKET ARENA</b><span>Rocket cars, one giant ball. Boost, flip and fly to score. Rocket League-style.</span><i>PLAY →</i></a>
+      <a class="fc" href="strike/" style="--img:url(docs/strike.png)"><em>SHOOTER</em><b>STRIKE ZONE</b><span>Wave arena shooter.</span><i>PLAY →</i></a>
+      <a class="fc" href="drive/" style="--img:url(docs/drive.png)"><em>DRIVING</em><b>NIGHT DRIVE</b><span>Open-city taxi runs.</span><i>PLAY →</i></a>
+      <a class="fc wide" href="kart/" style="--img:url(docs/kart.png)"><em>RACING · 8P</em><b>CRITTER KART</b><span>Items, drifts, split screen.</span><i>PLAY →</i></a>
+      <a class="fc wide" href="pets/" style="--img:url(docs/pets.png)"><em>AUTO-BATTLER</em><b>PET BRAWL</b><span>Buy, merge, win 10.</span><i>PLAY →</i></a>
+    </div>
+  </section>
+  <section class="make" id="make" aria-label="Make your own game">
+    <header><p>(+)</p><h2>MAKE YOUR OWN</h2><span>A real 2D and 3D game editor in the browser: scenes, components, rules, play-test, share, publish.</span></header>
+    <a class="mkcard" href="builder/"><div class="mkimgs"><img src="docs/builder3d.png" alt="3D game builder editor" loading="lazy"><img class="mk2" src="docs/builder.png" alt="2D game builder editor" loading="lazy"></div><div><em>GAME BUILDER · 2D + 3D</em><b>BUILD A GAME<br>IN 60 SECONDS.</b><span>2D platformers and shooters or 3D obstacle courses, islands and arenas. Drop in players, enemies, coins and goals, move them with gizmos, wire up WHEN → DO rules, press Play. Share a link or publish it to the arcade.</span><i>OPEN BUILDER →</i></div></a>
+    <div class="mine" id="mine" hidden><h3>YOUR GAMES</h3><div class="minerow" id="minerow"></div></div>
+  </section>
   <nav class="chips" id="chips" aria-label="Filter games"></nav>
   <p id="empty" class="empty" hidden>No cabinet matches that. Try another word.</p>
   <section class="grid" id="grid" aria-label="Games"></section>
-  <footer class="foot"><span><kbd>Arrows</kbd> move</span><span><kbd>Space</kbd>/<kbd>Click</kbd> A</span><span><kbd>X</kbd>/<kbd>Right-click</kbd> B</span><span><kbd>Esc</kbd> exit</span><a href="https://github.com/Normansrule/pixel-arcade/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">+ Add a game</a></footer>
+  <footer class="foot"><span><kbd>Arrows</kbd> move</span><span><kbd>Space</kbd>/<kbd>Click</kbd> A</span><span><kbd>X</kbd>/<kbd>Right-click</kbd> B</span><span><kbd>Esc</kbd> exit</span><a href="builder/">+ Build a game</a></footer>
 </main>
 <div id="cab" role="application" aria-label="Game screen">
   <div class="bar"><button id="back" type="button">Back to lobby</button><span class="sp"></span><button id="pause" type="button">Pause</button><button id="mute" type="button">Sound on</button></div>
@@ -88,7 +105,23 @@
 <script src="games/retro4.js"></script>
 <script src="games/tabletop.js"></script>
 <script src="games/retro5.js"></script>
+<script src="games/sports6.js"></script>
+<script src="games/classics4.js"></script>
+<script src="games/versus5.js"></script>
+<script src="games/threed5.js"></script>
+<script src="games/board2.js"></script>
+<script src="games/puzzle5.js"></script>
+<script src="games/action3.js"></script>
+<script src="games/misc6.js"></script>
 <script src="js/trail.js"></script>
 <script type="module" src="js/hero.js"></script>
+<script>
+(function(){let L=[];try{L=JSON.parse(localStorage.getItem('pxd_mygames'))||[];}catch(e){}if(!Array.isArray(L)||!L.length)return;
+ const box=document.getElementById('mine'),row=document.getElementById('minerow');box.hidden=false;
+ L.slice(0,12).forEach(g=>{const a=document.createElement('a');a.className='minec';a.href=g.url||('builder/?play&game='+encodeURIComponent(g.id));
+  const im=document.createElement('img');im.alt='';im.src=g.thumb||'';a.appendChild(im);const b=document.createElement('b');b.textContent=g.title||'Untitled';a.appendChild(b);
+  const sp=document.createElement('span');sp.textContent=(g.category||'CUSTOM')+' · '+new Date(g.updated||Date.now()).toLocaleDateString();a.appendChild(sp);row.appendChild(a);});
+ const add=document.createElement('a');add.className='minec new';add.href='builder/';add.innerHTML='<b>+ NEW GAME</b>';row.appendChild(add);})();
+</script>
 </body>
 </html>

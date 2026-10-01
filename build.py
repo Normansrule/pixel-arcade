@@ -13,6 +13,9 @@ src = src.replace('href="kart/"', 'href="https://normansrule.github.io/pixel-arc
 BASE = 'https://normansrule.github.io/pixel-arcade/'
 src = re.sub(r"href:'([a-z0-9]+/)'", lambda m: "href:'" + BASE + m.group(1) + "'", src)
 src = re.sub(r"img:'(docs/[a-z0-9]+\.png)'", lambda m: "img:'" + BASE + m.group(1) + "'", src)
+src = re.sub(r'href="(voxel|abyss|strike|drive|kart|pets|builder|rocket)/"', lambda m: 'href="' + BASE + m.group(1) + '/"', src)
+src = re.sub(r'url\((docs/[a-z0-9]+\.png)\)', lambda m: 'url(' + BASE + m.group(1) + ')', src)
+src = re.sub(r'src="(docs/[a-z0-9]+\.png)"', lambda m: 'src="' + BASE + m.group(1) + '"', src)
 os.makedirs('dist', exist_ok=True)
 open('dist/pixel-arcade.html', 'w', encoding='utf-8').write(src)
 print('dist/pixel-arcade.html', len(src) // 1024, 'KB')

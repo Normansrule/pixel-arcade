@@ -88,6 +88,7 @@ function mkKart(ch,i,human){const col=[0x2fe8d0,0xff3f8e,0xffcf3f,0x4dabff,0xff9
  const t=-.004*(i+1),p=posAt(t),tg=tanAt(t),n=new THREE.Vector3(-tg.z,0,tg.x);const q=p.clone().addScaledVector(n,(i%2?-1:1)*2.6-(i%4>1?1.3:0));
  return{ch,mesh,i,human,x:q.x,z:q.z,y:q.y,a:Math.atan2(tg.x,tg.z),v:0,steer:0,prog:(t+1)%1,lap:0,item:null,itemT:0,spin:0,boost:0,shield:0,star:0,cd:0,tOff:(Math.random()-.5)*4,ipress:false,fin:0,drift:0,vy:0,air:false};}
 
+const RACECAP=240;
 function startRace(){karts.forEach(k=>scene.remove(k.mesh));projs.forEach(p=>scene.remove(p.m));karts=[];projs=[];finished=[];const used=new Set();for(let h=0;h<humans;h++){karts.push(mkKart(CH[picks[h]],h,h));used.add(picks[h]);}
  let ci=0;for(let i=humans;i<8;i++){while(used.has(ci))ci++;karts.push(mkKart(CH[ci],i,-1));used.add(ci);}
  raceT=-3.5;state='race';document.getElementById('menu').style.display='none';document.getElementById('results').style.display='none';}
@@ -127,6 +128,7 @@ function step(dt){if(state!=='race')return;raceT+=dt;
    const[,dist]=[0,0];}
   for(const k of karts){if(k===p.o&&p.life>(p.type==='acorn'?5.5:39))continue;if(Math.hypot(k.x-p.x,k.z-p.z)<1.6){if(k.shield>0){k.shield=0;}else if(k.star<=0){k.spin=1.1;k.v*=.3;}p.life=0;break;}}}
  projs=projs.filter(p=>{if(p.life<=0){scene.remove(p.m);return false;}return true;});
+ if(raceT>RACECAP&&state==='race'){showResults();return;}
  if(finished.length&&karts.filter(k=>k.human>=0).every(k=>k.fin)&&raceT-Math.max(...karts.filter(k=>k.human>=0).map(k=>k.fin))>3)showResults();
  const lead=karts[0];sun.position.set(lead.x+80,120,lead.z+40);sun.target.position.set(lead.x,0,lead.z);
 }
@@ -142,7 +144,7 @@ function render(dt){const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.w
   if(views===1){if(!fx){fx=cinematic(renderer,scene,cam,{exposure:1.05,bloom:.45,bloomThreshold:.85,vignette:.3,saturation:1.12,aoStrength:.8});}if(fxW!==w*1000+h){fxW=w*1000+h;fx.setSize(w,h);}renderer.setScissorTest(false);renderer.setViewport(0,0,w,h);fx.render();}else{renderer.setScissorTest(true);renderer.setViewport(vx,vy,vw,vh);renderer.setScissor(vx,vy,vw,vh);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.render(scene,cam);}}
  if(state==='race')drawHUD(hum,views,w,h);}
 function drawHUD(hum,views,w,h){let html='';hum.forEach((k,v)=>{const top=views===2?(v===0?0:h/2):0,vh=views===2?h/2:h;const pos=k.pos||1,sfx=['ST','ND','RD','TH','TH','TH','TH','TH'][pos-1];
-  html+=`<div class="hud big" style="left:16px;top:${top+12}px;color:#ffcf3f">${pos}<span style="font-size:.8rem">${sfx}</span></div><div class="hud" style="left:16px;top:${top+52}px">LAP ${lapNo(k)}/${lapsTotal}</div><div class="hud" style="right:16px;top:${top+12}px">${Math.round(k.v*3.2)} KM/H</div><div class="item" style="right:16px;top:${top+40}px;border-color:${k.itemT>0?'#ffcf3f':'#fff'}">${k.itemT>0?ITEMS[Math.floor(performance.now()/60)%ITEMS.length]:(k.item||'')}</div>`;
+  if(v===0){const tl=Math.max(0,Math.ceil(RACECAP-Math.max(0,raceT)));html+=`<div class="hud" style="left:50%;transform:translateX(-50%);top:${top+12}px;color:${tl<=20?'#ff3f5a':'#fff3d6'}">TIME ${(tl/60|0)}:${String(tl%60).padStart(2,'0')}</div>`;}html+=`<div class="hud big" style="left:16px;top:${top+12}px;color:#ffcf3f">${pos}<span style="font-size:.8rem">${sfx}</span></div><div class="hud" style="left:16px;top:${top+52}px">LAP ${lapNo(k)}/${lapsTotal}</div><div class="hud" style="right:16px;top:${top+12}px">${Math.round(k.v*3.2)} KM/H</div><div class="item" style="right:16px;top:${top+40}px;border-color:${k.itemT>0?'#ffcf3f':'#fff'}">${k.itemT>0?ITEMS[Math.floor(performance.now()/60)%ITEMS.length]:(k.item||'')}</div>`;
   if(k.shield>0)html+=`<div class="hud" style="right:16px;top:${top+104}px;color:#4dabff">SHIELD</div>`;if(k.fin)html+=`<div class="msg" style="top:${top+vh*.4}px">FINISHED ${pos}${sfx}</div>`;
   if(raceT<0)html+=`<div class="msg" style="top:${top+vh*.4}px">${Math.ceil(-raceT)}</div>`;else if(raceT<1)html+=`<div class="msg" style="top:${top+vh*.4}px;color:#3dff8b">GO!</div>`;
   if(k.lap===lapsTotal&&k.prog<.05&&!k.fin)html+=`<div class="hud" style="left:50%;transform:translateX(-50%);top:${top+vh*.2}px;color:#ff3f8e;font-size:1rem">FINAL LAP</div>`;});
@@ -158,5 +160,5 @@ document.querySelectorAll('#players .opt').forEach(b=>b.onclick=()=>{humans=+b.d
 document.querySelectorAll('#skill .opt').forEach(b=>b.onclick=()=>{skill=+b.dataset.s;document.querySelectorAll('#skill .opt').forEach(x=>x.classList.toggle('on',x===b));});
 document.getElementById('go').onclick=startRace;document.getElementById('post').onclick=()=>{const me=karts.find(k=>k.human===0);if(!me||!me.fin)return alert('Finish a race first.');const ms=Math.round(me.fin*1000);let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}const body='Game: Critter Kart\nTime: '+(ms/1000).toFixed(2)+'s as '+me.ch.n+'\nPlace: '+me.pos+' of 8\nCPU: '+['easy','normal','hard'][skill]+'\n\nPosted from Pixel Arcade'+(u?' as @'+u:'')+'. Do not edit the title.';open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] kart '+ms)+'&body='+encodeURIComponent(body),'_blank');};document.getElementById('again').onclick=startRace;
 let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render(dt);requestAnimationFrame(loop);}
-window.KART={startRace,get karts(){return karts;},get state(){return state;},get raceT(){return raceT;},set humans(v){humans=v;},step};
+window.KART={set raceT(v){raceT=v;},startRace,get karts(){return karts;},get state(){return state;},get raceT(){return raceT;},set humans(v){humans=v;},step};
 requestAnimationFrame(loop);

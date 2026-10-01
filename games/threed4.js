@@ -50,5 +50,6 @@ A.add({id:'sniper',name:'SNIPER ALLEY 3D',cat:'RETRO 3D',hd:1,mouse:1,how:'MOUSE
 window.A.add({id:'strike3d',name:'STRIKE ZONE',cat:'ACTION',href:'strike/',img:'docs/strike.png',how:'WAVE SHOOTER. MOUSE AIM.'});
 window.A.add({id:'drive3d',name:'NIGHT DRIVE',cat:'RETRO 3D',href:'drive/',img:'docs/drive.png',how:'OPEN CITY. TAXI FARES. BEAT THE CLOCK.'});
 window.A.add({id:'petbrawl',name:'PET BRAWL',cat:'BOARD',href:'pets/',img:'docs/pets.png',how:'TEAM AUTO-BATTLER. BUY, MERGE, WIN 10.'});
-window.A.add({id:'voxel3d',name:'VOXEL FRONTIER',cat:'RETRO 3D',href:'voxel/',img:'docs/voxel.png',how:'BLOCK SANDBOX. MINE, BUILD, SURVIVE THE NIGHT.'});
-window.A.add({id:'abyss3d',name:'ABYSS DIVER',cat:'ACTION',href:'abyss/',img:'docs/abyss.png',how:'OCEAN SURVIVAL. SCAN, COLLECT, DIVE DEEPER.'});
+window.A.add({id:'rocket3d',name:'ROCKET ARENA',cat:'SPORTS',href:'rocket/',img:'docs/rocket.png',how:'ROCKET-CAR SOCCER 1V1 TO 3V3. BOOST, JUMP, FLIP, SCORE.',tags:'rocket league rocketleague car soccer cars football boost 3d split screen'});
+window.A.add({id:'voxel3d',name:'VOXEL FRONTIER',cat:'RETRO 3D',href:'voxel/',img:'docs/voxel.png',how:'MINECRAFT-STYLE BLOCK SANDBOX. MINE, CRAFT, BUILD, SURVIVE THE NIGHT.',tags:'minecraft mine craft minecraft-style sandbox blocks block game crafting survival voxel mining building creative'});
+window.A.add({id:'abyss3d',name:'ABYSS DIVER',cat:'ACTION',href:'abyss/',img:'docs/abyss.png',how:'SUBNAUTICA-STYLE OCEAN SURVIVAL. SCAN, COLLECT, DIVE DEEPER.',tags:'subnautica sub nautica subnautica-style ocean underwater diving survival sea scuba'});
