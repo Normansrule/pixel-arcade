@@ -4,16 +4,62 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pet Brawl · Pixel Arcade</title>
+<meta name="description" content="Pet Brawl: a 3D team auto-battler. Build a team of 66 original pets with abilities, feed them, merge them, and win 10 trophies against ghost teams.">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-<style>
-html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:'JetBrains Mono',monospace;color:#f2f2f2}
-#c{display:block;margin:0 auto;max-width:100%;max-height:100vh;aspect-ratio:16/9;width:100%;cursor:pointer}
-a.back{position:fixed;left:14px;bottom:12px;font:.72rem 'JetBrains Mono',monospace;color:#f2f2f2;text-decoration:none;border:1px solid #333;border-radius:999px;padding:7px 13px;background:rgba(0,0,0,.6)}
-</style>
+<link rel="stylesheet" href="pets.css">
 </head>
 <body>
-<canvas id="c" width="1920" height="1080"></canvas>
+<canvas id="c"></canvas>
+<div id="badges"></div>
+<div id="fxl"></div>
+<div id="hud" hidden>
+  <div id="top">
+    <div class="st gold"><i>GOLD</i><b id="h-gold">10</b></div>
+    <div class="st lives"><i>LIVES</i><b id="h-lives">6</b></div>
+    <div class="st troph"><i>TROPHIES</i><b id="h-wins">0</b><s>/10</s></div>
+    <div class="st turn"><i>TURN</i><b id="h-turn">1</b><s id="h-tier">TIER 1</s></div>
+    <div class="timer" id="h-timer"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" class="bg"/><circle cx="22" cy="22" r="19" class="fg" id="h-ring"/></svg><b id="h-time">60</b></div>
+    <div class="tbtn"><button id="b-index" class="ghost sm" title="Pet index (I)">INDEX</button><button id="b-menu" class="ghost sm">MENU</button></div>
+  </div>
+  <div id="shopbar">
+    <div id="info"><p class="eye" id="i-eye">YOUR SHOP</p><h3 id="i-name">Drag pets onto your team</h3><p id="i-tx">Front pet fights first. Drop a pet on the same kind to level it up. Drop food on a pet to feed it.</p></div>
+    <div class="btns"><button id="b-roll" class="ghost">ROLL <small>1 GOLD · R</small></button><button id="b-freeze" class="ghost">FREEZE <small>F</small></button><button id="b-sell" class="ghost">SELL <small id="sellv">S</small></button><button id="b-end" class="go">END TURN <small>SPACE</small></button></div>
+  </div>
+  <div id="battlebar" hidden><div id="vs"><span class="me">YOUR TEAM</span><em>VS</em><span id="foe" class="foe"></span></div><div class="seg" id="speed"><button data-v="1" class="on">1×</button><button data-v="2">2×</button><button data-v="4">4×</button><button data-v="99">SKIP</button></div></div>
+  <div id="labels"><span class="l-front">FRONT ▸</span></div>
+</div>
+<div id="tip" hidden></div>
+<div id="banner"><b></b><span></span></div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · TEAM AUTO-BATTLER</p>
+  <h1>PET<br>BRAWL<em>.</em></h1>
+  <p class="how">Shop for critters, feed them, merge three of a kind, then watch them brawl on their own. Sixty-six pets, six tiers, one goal: ten trophies before your lives run out.</p>
+  <div class="opts"><label>GHOSTS</label><div class="seg" id="o-diff"><button data-v="0">CASUAL</button><button data-v="1" class="on">NORMAL</button><button data-v="2">TOUGH</button></div></div>
+  <p class="prog" id="m-best"></p>
+  <div class="row"><button id="go" class="go">NEW RUN ▸</button><button id="m-index" class="ghost">PET INDEX</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>HOW TO PLAY<em>.</em></h3>
+  <table>
+    <tr><td>Buy / place / merge</td><td>drag, or click item then slot</td></tr>
+    <tr><td>Shop items · team slots</td><td><kbd>1</kbd>–<kbd>7</kbd> · <kbd>Z</kbd><kbd>X</kbd><kbd>C</kbd><kbd>V</kbd><kbd>B</kbd></td></tr>
+    <tr><td>Roll · freeze · sell</td><td><kbd>R</kbd> <kbd>F</kbd> <kbd>S</kbd></td></tr>
+    <tr><td>End turn · skip battle</td><td><kbd>Space</kbd> <kbd>Enter</kbd></td></tr>
+    <tr><td>Battle speed</td><td><kbd>[</kbd> <kbd>]</kbd></td></tr>
+    <tr><td>Pet index · graphics</td><td><kbd>I</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>10 gold per turn, pets and food cost 3, rolling costs 1. Sell a pet for its level in gold. Every 2 turns a new tier unlocks. Each shop turn has a 60-second timer. Losses cost lives (2 after turn 4).</p>
+</div>
+<div id="index" hidden><div class="ihead"><h2>PET INDEX<em>.</em></h2><div class="seg" id="itabs"></div><button id="i-close" class="ghost sm">CLOSE ✕</button></div><div id="igrid"></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">RUN COMPLETE</p>
+  <p class="res" id="ores">CHAMPIONS!</p>
+  <div class="ostats" id="ostats"></div>
+  <div id="oteam"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEW RUN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
 <a class="back" href="../">← ARCADE</a>
-<script src="game.js"></script>
+<script type="module" src="game.js"></script>
 </body>
 </html>

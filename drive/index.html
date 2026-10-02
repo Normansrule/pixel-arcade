@@ -4,26 +4,66 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Night Drive · Pixel Arcade</title>
+<meta name="description" content="Night Drive: a full 3D open-city driving game in the browser. Work an 8-minute shift from sunset into a rainy neon night: taxi fares with stunt tips, deliveries, street races, getaways with the police on your tail, stunt jumps and five unlockable cars.">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="drive.css">
+<link rel="stylesheet" href="drive2.css">
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="hitov"></div><div id="nitroov"></div>
 <div id="hud" hidden>
-  <div class="tl"><b id="cash">$0</b><span id="fare">FIND A PASSENGER</span></div>
-  <div class="tc"><b id="time">60</b><span>SECONDS</span></div>
-  <canvas id="mini" width="180" height="180"></canvas>
-  <div class="bl"><b id="spd">0</b><span>KM/H</span><div id="dmg"><i></i></div></div>
+  <div id="cashw"><b id="cash">$0</b><span id="cashd"></span><div class="tgt"><i id="tgtb"></i></div><p id="tgtt">SHIFT TARGET $2,200</p></div>
+  <div id="clockw"><div class="clk"><b id="shift">8:00</b><span id="tod">17:30 · CLEAR</span></div></div>
+  <div id="mapw"><canvas id="mini" width="440" height="440"></canvas><p id="dist">DOWNTOWN</p><p id="stars"></p></div>
+  <div id="jobw" hidden><p class="jt" id="jt">FARE</p><b id="jn">DRIVE TO THE GREEN BEACON</b><div class="jr"><span id="jtime">0:45</span><span id="jx"></span></div><div class="jbar"><i id="jbar"></i></div></div>
+  <div id="board"><p>DISPATCH</p><div id="offers"></div></div>
+  <div id="speedw"><b id="kmh">0</b><span>KM/H</span><div class="bars"><label>BODY</label><div class="bar"><i id="dmgb"></i></div><label>NITRO</label><div class="bar n"><i id="nitb"></i></div></div></div>
+  <div id="radiow"><b id="rname">NEON 88.1</b><span id="rtag">SYNTHWAVE</span></div>
   <div id="pop"></div>
+  <div id="toast"></div>
+  <div id="prompt"></div>
+  <div id="bust" hidden><span>BUSTED IN</span><div class="bar"><i id="bustb"></i></div></div>
 </div>
-<div id="menu">
-  <p class="eye">[ PIXEL ARCADE ] FULL 3D</p>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · OPEN CITY</p>
   <h1>NIGHT<br>DRIVE<em>.</em></h1>
-  <p class="how">Pick up passengers. Drop them off. Beat the clock.</p>
-  <button id="go">CLICK TO DRIVE</button>
-  <p class="keys"><kbd>W A S D</kbd> / <kbd>Arrows</kbd> drive · <kbd>Space</kbd> handbrake drift · <kbd>C</kbd> camera · <kbd>G</kbd> graphics</p>
+  <p class="how">One shift, sunset to the small hours. Pick up fares and get tips for driving like a maniac, run deliveries, race the street crews, take getaway jobs with the cops on your bumper and hit every stunt jump. Make the target before the shift ends.</p>
+  <div class="opts">
+    <label>SHIFT</label><div class="seg" id="o-len"><button data-v="4">4 MIN · $1,000 TARGET</button><button data-v="8">8 MIN · $2,200 TARGET</button></div>
+    <label>TRAFFIC</label><div class="seg" id="o-traffic"><button data-v="0">LIGHT</button><button data-v="1">NORMAL</button><button data-v="2">RUSH HOUR</button></div>
+    <label>COPS</label><div class="seg" id="o-diff"><button data-v="0">CHILL</button><button data-v="1">NORMAL</button><button data-v="2">RELENTLESS</button></div>
+  </div>
+  <div id="garage"></div>
+  <div class="row"><button id="go" class="go">START SHIFT</button></div>
+  <p class="best" id="career"></p>
 </div>
-<div id="over" hidden><p class="eye">SHIFT OVER</p><h1 id="ototal">$0</h1><p id="ostats"></p><div class="row"><button id="again">DRIVE AGAIN</button><button id="post" class="ghost">POST SCORE</button></div></div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Throttle · brake / reverse</td><td><kbd>W</kbd> <kbd>S</kbd> / <kbd>↑</kbd> <kbd>↓</kbd></td></tr>
+    <tr><td>Steer</td><td><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></td></tr>
+    <tr><td>Handbrake drift</td><td><kbd>Space</kbd></td></tr>
+    <tr><td>Nitro</td><td><kbd>Shift</kbd></td></tr>
+    <tr><td>Horn · camera · look back</td><td><kbd>H</kbd> <kbd>C</kbd> <kbd>B</kbd></td></tr>
+    <tr><td>Radio station · cancel job</td><td><kbd>R</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Reset car on the road</td><td><kbd>Backspace</kbd></td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Stop inside a beacon to take a job. Follow the GPS line. Drifts, big air and near misses earn tips from your passenger. Patch &amp; Paint garages fix the car and lose the cops — for a price. Gamepad works too.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HAZARD<br>LIGHTS<em>.</em></h1><p class="how">The meter is stopped.</p>
+  <div class="opts"><label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>RADIO</label><div class="seg" id="o-rvol"><button data-v="0">OFF</button><button data-v="0.3">LOW</button><button data-v="0.5">MED</button><button data-v="0.8">LOUD</button></div>
+  <label>CAMERA</label><div class="seg" id="o-cam"><button data-v="0">CHASE</button><button data-v="1">FAR</button><button data-v="2">HOOD</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">END SHIFT</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">SHIFT OVER</p>
+  <p class="res" id="ores">TARGET MET</p>
+  <p class="fs" id="ototal">$0</p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEXT SHIFT</button><button id="omenu" class="ghost">GARAGE</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
 <a class="back" href="../">← ARCADE</a>
 <script type="module" src="game.js"></script>
 </body>

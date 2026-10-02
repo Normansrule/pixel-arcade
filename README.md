@@ -2,11 +2,11 @@
 
 # 🕹️ Pixel Arcade
 
-**463 original games. One click to play. Build your own.**
+**464 original games. One click to play. Build your own.**
 
 [![Play](https://img.shields.io/badge/▶_PLAY-normansrule.github.io%2Fpixel--arcade-ff3f8e?style=for-the-badge)](https://normansrule.github.io/pixel-arcade/)
 [![test](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml/badge.svg)](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml)
-![games](https://img.shields.io/badge/games-463-ff4d00)
+![games](https://img.shields.io/badge/games-464-ff4d00)
 ![license](https://img.shields.io/badge/license-MIT-2fe8d0)
 
 [![Pixel Arcade](docs/screenshot.png)](https://normansrule.github.io/pixel-arcade/)
@@ -30,7 +30,7 @@
 - **Voxel Frontier**: block sandbox. Punch trees, craft (**E**) planks, sticks, torches and wood → stone → iron → diamond pickaxes; rock needs a pickaxe. Torches cast real flickering light. Sheep drop mutton (right click to eat). Craft **TNT** (4 sand + 2 coal), hit it to light the fuse; blasts carve craters and chain-react. At night, watch for **Bloaters**: they swell and explode. Animated reflective water, wind-blown leaves, drifting clouds and block debris. A 9-step goal chain guides new players.
 - **Abyss Diver**: ocean survival. **R** sonar ping marks deposits and predators, **B** drops a beacon you can navigate back to, **Tab** opens the survey tablet, **Shift** runs the scooter on battery (recharge at the lifepod). Breath bubbles rise to the surface; below 45 m, plankton glows when you swim through it.
 - **20 full-3D flagships**, all original games inspired by famous ones (search the hub for the inspiration's name):
-  Frontline Ops (Call of Duty-style), Breach Point (CS:GO-style tactical 5v5), Kart Grand Prix (Mario Kart-style), Penguin Plaza (Club Penguin-style), Block Beasts (Pixelmon/Pokémon-style), Storm Royale (Fortnite-style), Tumble Royale (Fall Guys-style), Platform Brawl (Smash-style), Wild Quest (Zelda-style), Striker 11 (FIFA-style), Skate City (Tony Hawk-style), Starship Suspects (Among Us-style), Rocket Arena (Rocket League-style), Voxel Frontier (Minecraft-style), Abyss Diver (Subnautica-style), Strike Zone, Night Drive, Critter Kart, Pet Brawl.
+  Frontline Ops (Call of Duty-style), Breach Point (CS:GO-style tactical 5v5), Kart Grand Prix (Mario Kart-style), Penguin Plaza (Club Penguin-style), Block Beasts (Pixelmon/Pokémon-style), Storm Royale (Fortnite-style), Tumble Royale (Fall Guys-style), Platform Brawl (Smash-style), Wild Quest (Zelda-style), Striker 11 (FIFA-style), Skate City (Tony Hawk-style), Starship Suspects (Among Us-style), Rocket Arena (Rocket League-style), Voxel Frontier (Minecraft-style), Abyss Diver (Subnautica-style), Strike Zone (DOOM/Quake-style arena shooter), Night Drive (Crazy Taxi/GTA-style open city), Critter Kart (Diddy Kong Racing-style kart/hover/plane adventure), Pet Brawl (Super Auto Pets-style 3D auto-battler).
 - **Rocket Arena** ([play](https://normansrule.github.io/pixel-arcade/rocket/)): full-3D rocket-car soccer, 1v1 to 3v3 vs CPU or split-screen 2P. Boost, jump, double-jump, flips, air roll, demolitions, ball cam, kickoffs, 5-minute clock with golden-goal overtime, goal replays.
 - **Game Builder** ([open](https://normansrule.github.io/pixel-arcade/builder/)): a Unity-style 2D and 3D editor in the browser. 2D templates (platformer, top-down, shooter, maze) and 3D templates (obstacle course, coin island, maze run, arena survival) with move/rotate/scale gizmos, drag-and-drop scene, inspector with components, WHEN → DO rules, 16x16 sprite painter, play-test, undo/redo, share links and publish to the arcade.
 - **Round clock**: every game has a time limit (shown as a bar, final 10-second countdown); VS games decide the winner on points when time runs out.
@@ -370,7 +370,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 </details>
 
-<details><summary><b>Retro 3D</b> · 43</summary>
+<details><summary><b>Retro 3D</b> · 44</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -378,6 +378,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Canyon Run 3d](https://normansrule.github.io/pixel-arcade/#canyon) | solo | [src](games/threed3.js) |
 | [City Cruiser 3d](https://normansrule.github.io/pixel-arcade/#city) | solo | [src](games/threed2.js) |
 | [Coin Dash 3d](https://normansrule.github.io/pixel-arcade/#coindash) | solo | [src](games/more.js) |
+| [Critter Kart](https://normansrule.github.io/pixel-arcade/kart/) | full 3D | [src](kart/game.js) |
 | [Crossy 3d](https://normansrule.github.io/pixel-arcade/#crossy3d) | solo | [src](games/finale.js) |
 | [Cube Field 3d](https://normansrule.github.io/pixel-arcade/#cubes) | solo | [src](games/threed2.js) |
 | [Deep Sub 3d](https://normansrule.github.io/pixel-arcade/#sub3d) | solo | [src](games/threed5.js) |

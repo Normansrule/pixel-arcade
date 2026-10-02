@@ -47,9 +47,10 @@ A.add({id:'sniper',name:'SNIPER ALLEY 3D',cat:'RETRO 3D',hd:1,mouse:1,how:'MOUSE
   T('HITS '+hits+'/15',6,4,K.y,2);T('AMMO '+ammo,W-6,4,ammo<5?K.r:K.w,2,'r');T('HOLD B TO ZOOM',160,226,K.gr,1,'c');};
  return g;}});
 })();
-window.A.add({id:'strike3d',name:'STRIKE ZONE',cat:'ACTION',href:'strike/',img:'docs/strike.png',how:'WAVE SHOOTER. MOUSE AIM.'});
-window.A.add({id:'drive3d',name:'NIGHT DRIVE',cat:'RETRO 3D',href:'drive/',img:'docs/drive.png',how:'OPEN CITY. TAXI FARES. BEAT THE CLOCK.'});
-window.A.add({id:'petbrawl',name:'PET BRAWL',cat:'BOARD',href:'pets/',img:'docs/pets.png',how:'TEAM AUTO-BATTLER. BUY, MERGE, WIN 10.'});
+window.A.add({id:'strike3d',name:'STRIKE ZONE',cat:'ACTION',href:'strike/',img:'docs/strike.png',how:'FAST ARENA SHOOTER. STRAFE-JUMP, ROCKET-JUMP, SIX GUNS, FINISHERS, A COLOSSAL BOSS.',tags:'doom quake boomer shooter arena fps demons'});
+window.A.add({id:'drive3d',name:'NIGHT DRIVE',cat:'RETRO 3D',href:'drive/',img:'docs/drive.png',how:'OPEN NEON CITY. TAXI FARES, DELIVERIES, RACES, GETAWAYS AND POLICE CHASES.',tags:'gta grand theft auto crazy taxi open world city driving police chase'});
+window.A.add({id:'critterkart',name:'CRITTER KART',cat:'RETRO 3D',href:'kart/',img:'docs/kart.png',how:'ADVENTURE RACING. KARTS, HOVERCRAFT AND PLANES ACROSS AN ISLAND OF BALLOONS AND BOSSES.',tags:'diddy kong racing kart hovercraft plane adventure racing split screen'});
+window.A.add({id:'petbrawl',name:'PET BRAWL',cat:'BOARD',href:'pets/',img:'docs/pets.png',how:'3D AUTO-BATTLER. 66 PETS, SIX TIERS. BUY, MERGE AND BRAWL TO 10 TROPHIES.',tags:'super auto pets auto battler autobattler team builder'});
 window.A.add({id:'blockbeasts',name:'BLOCK BEASTS',cat:'SIM',href:'monsters/',img:'docs/blockbeasts.png',how:'CREATURE-CATCHING VOXEL ADVENTURE. CATCH 24 BEASTS, BATTLE TRAINERS, WIN 3 BADGES.',tags:'pixelmon pokemon minecraft creature catching monster collector rpg'});
 window.A.add({id:'breachpoint',name:'BREACH POINT',cat:'ACTION',href:'breach/',img:'docs/breachpoint.png',how:'TACTICAL 5V5. BUY, BREACH, PLANT OR DEFUSE. ONE LIFE PER ROUND.',tags:'counter strike counterstrike csgo cs2 cs:go valorant tactical shooter bomb defuse'});
 window.A.add({id:'frontline',name:'FRONTLINE OPS',cat:'ACTION',href:'frontline/',img:'docs/frontline.png',how:'MILITARY FPS. CAMPAIGN, TEAM DEATHMATCH, SURVIVAL. LOADOUTS AND STREAKS.',tags:'call of duty cod military fps shooter battlefield modern warfare'});
