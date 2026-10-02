@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Brawl · Pixel Arcade</title>
+<meta name="description" content="Platform Brawl: a full 3D platform fighter in the browser. Eight original fighters, five stages, percent-based knockback, up to four players with CPUs from level 1 to 9.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="brawl.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bars"></div>
+<div id="flashv"></div>
+<div id="hud" hidden>
+  <div id="clockw"><b id="clock">3:00</b><span id="mode">TIME</span></div>
+  <div id="tags"></div>
+  <div id="edges"></div>
+  <div id="pops"></div>
+  <div id="feed"></div>
+  <div id="ann"><b id="annt"></b><span id="anns"></span></div>
+  <div id="cards"></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · PLATFORM FIGHTER</p>
+  <h1>PLATFORM<br>BRAWL<em>.</em></h1>
+  <p class="how">Rack up damage, then launch them past the blast zone. The higher their percent, the farther they fly.</p>
+  <div class="roster"><label>P1</label><div class="seg chips" id="r1"></div><label id="r2l">P2</label><div class="seg chips" id="r2"></div></div>
+  <div class="info" id="info"></div>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0" class="on">TIME</button><button data-v="1">STOCK</button></div>
+    <label>TIME</label><div class="seg" id="o-time"><button data-v="2">2 MIN</button><button data-v="3" class="on">3 MIN</button><button data-v="5">5 MIN</button></div>
+    <label>STOCKS</label><div class="seg" id="o-stock"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3" class="on">3</button><button data-v="5">5</button></div>
+    <label>FIGHTERS</label><div class="seg" id="o-n"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4" class="on">4</button></div>
+    <label>PLAYERS</label><div class="seg" id="o-pl"><button data-v="1" class="on">1P</button><button data-v="2">2P LOCAL</button></div>
+    <label>CPU LEVEL</label><div class="seg lv" id="o-lv"></div>
+    <label>STAGE</label><div class="seg" id="o-st"></div>
+    <label>ITEMS</label><div class="seg" id="o-it"><button data-v="1">ON</button><button data-v="0" class="on">OFF</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">FIGHT!</button><span class="best" id="best"></span></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim</td><td><kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>S</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Jump · double jump</td><td><kbd>Space</kbd> <kbd>W</kbd> <span class="pad">X Y</span></td></tr>
+    <tr><td>Attack (tilt / aerial)</td><td><kbd>J</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Special (± direction)</td><td><kbd>K</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Smash · hold to charge</td><td><kbd>L</kbd> <span class="pad">R-stick</span></td></tr>
+    <tr><td>Shield · dodge</td><td><kbd>I</kbd> <kbd>Shift</kbd> <span class="pad">RB LT RT</span></td></tr>
+    <tr><td>Grab · throw (+dir)</td><td><kbd>U</kbd> <span class="pad">LB</span></td></tr>
+    <tr><td>Pause · mute · gfx</td><td><kbd>Esc</kbd> <kbd>M</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Up + special recovers to the ledge. Shield + direction rolls; shield before landing techs.<br>2P: <kbd>Arrows</kbd> <kbd>,</kbd> atk <kbd>.</kbd> spec <kbd>/</kbd> smash <kbd>R-Shift</kbd> shield <kbd>Enter</kbd> grab, or gamepad 2.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>TIME<br>OUT<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">GAME</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="sub" id="osub"></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">REMATCH</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="loading">LOADING ARENA…</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

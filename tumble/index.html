@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tumble Royale · Pixel Arcade</title>
+<meta name="description" content="Tumble Royale: a full 3D wobbly-bean game show in the browser. 30 jelly-bean contestants race, survive and team up through elimination rounds until one takes the crown.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tumble.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="top"><div id="rname"><i id="rtag">RACE</i><b id="rtitle"></b></div><div id="clock">2:00</div></div>
+  <div id="count"><i id="clab">QUALIFIED</i><b id="cnum">0</b><span id="csub"></span></div>
+  <div id="teams" hidden><div class="t0"><i id="tn0">SUNSET</i><b id="ts0">0</b></div><div class="t1"><b id="ts1">0</b><i id="tn1">LAGOON</i></div></div>
+  <div id="feed"></div>
+  <div id="cd"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="status"></div>
+  <div id="tag"></div>
+</div>
+<div id="intro" hidden>
+  <p class="eye" id="iround">ROUND 1 OF 5</p>
+  <div class="chips" id="ichips"></div>
+  <p class="itag" id="itag">RACE</p>
+  <h2 id="iname"></h2>
+  <p class="idesc" id="idesc"></p>
+  <p class="iq" id="iq"></p>
+  <p class="iskip">SPACE · SKIP</p>
+</div>
+<div id="summary" hidden>
+  <p class="eye" id="sround">ROUND 1 RESULTS</p>
+  <h2 id="sres"></h2>
+  <p class="sdet" id="sdet"></p>
+  <div class="sbar" id="sbar"></div>
+  <p class="skud" id="skud"></p>
+  <p class="iskip" id="snext"></p>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · PARTY GAME SHOW</p>
+  <h1>TUMBLE<br>ROYALE<em>.</em></h1>
+  <p class="how">Thirty wobbly beans. Races, survival brawls and team rounds knock the field down, show after show, until one bean takes the crown.</p>
+  <div class="opts">
+    <label>SHOW</label><div class="seg" id="o-show"><button data-v="0">QUICK · 3</button><button data-v="1" class="on">FULL · 5</button><button data-v="2">PRACTICE</button></div>
+    <label id="l-round">ROUND</label><div class="seg" id="o-round"></div>
+    <label>BOTS</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>COLOUR</label><div class="sw" id="o-c1"></div>
+    <label>ACCENT</label><div class="sw" id="o-c2"></div>
+    <label>PATTERN</label><div class="seg sm" id="o-pat"></div>
+    <label>HAT</label><div class="seg sm" id="o-hat"></div>
+  </div>
+  <p class="prof" id="prof"></p>
+  <div class="row"><button id="go" class="go">START THE SHOW</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Camera (click to lock mouse)</td><td><kbd>Mouse</kbd> <kbd>←</kbd><kbd>→</kbd> <span class="pad">R-stick</span></td></tr>
+    <tr><td>Jump</td><td><kbd>Space</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Dive</td><td><kbd>Ctrl</kbd> <kbd>C</kbd> <kbd>RMB</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Grab (hold)</td><td><kbd>Shift</kbd> <kbd>E</kbd> <kbd>LMB</kbd> <span class="pad">RT</span></td></tr>
+    <tr><td>Spectate next / prev</td><td><kbd>←</kbd> <kbd>→</kbd> <span class="pad">D-pad</span></td></tr>
+    <tr><td>Skip card · leave when out</td><td><kbd>Enter</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Pause · music · graphics</td><td><kbd>Esc</kbd> <kbd>M</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Dive through a crowd or across a gap, grab to slow rivals (and steal tails). Big hits send you tumbling: you get back up, but only the fastest beans qualify.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>BREAK<br>TIME<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">SHOW OVER</p>
+  <p class="res" id="ores">CROWNED</p>
+  <p class="fs" id="ofs"></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEW SHOW</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

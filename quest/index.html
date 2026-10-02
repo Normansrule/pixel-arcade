@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wild Quest · Pixel Arcade</title>
+<meta name="description" content="Wild Quest: a full 3D open-world adventure on a wild island. Climb anything, glide from peaks, cook at campfires, clear four shrine trials and storm Thornhold Keep before the Crimson Moon rises.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="quest.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="tl"><div id="hearts"></div><div id="buffs"></div><div id="obj"></div></div>
+  <div id="moon"><svg viewBox="0 0 64 64"><defs><clipPath id="mc"><circle cx="32" cy="32" r="20"/></clipPath></defs><circle cx="32" cy="32" r="29" class="ring"/><circle cx="32" cy="32" r="29" class="prog" id="mprog"/><circle cx="32" cy="32" r="20" class="disc" id="mdisc"/><circle cx="40" cy="27" r="19" class="shade" id="mshade" clip-path="url(#mc)"/></svg><div><b id="mtime">20:00</b><span id="tod">DAY 1 · 07:12</span><i id="wx"></i></div></div>
+  <div id="stam"><svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="24" class="bg"/><circle cx="30" cy="30" r="24" class="fg" id="stfg"/><circle cx="30" cy="30" r="28" class="bg2" id="stbg2"/><circle cx="30" cy="30" r="28" class="fg2" id="stfg2"/></svg></div>
+  <canvas id="mini" width="180" height="180"></canvas><div id="minicap"><b>N</b></div>
+  <div id="gear"><div class="slot" id="gsw"><i></i><span>BLADE</span></div><div class="slot" id="gsh"><i></i><span>SHIELD</span></div><div class="slot" id="gbo"><i></i><span id="garr">20</span></div><div class="slot" id="gsd"><i></i><span id="gseed">0/20</span></div><div class="slot" id="gfd"><i></i><span id="gfood">0</span></div></div>
+  <div id="marks"></div>
+  <div id="cross"></div><div id="lockr"></div>
+  <div id="prompt"></div>
+  <div id="toasts"></div>
+  <div id="loc"><span></span><b></b><span></span></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="boss" hidden><b id="bname">RUNE COLOSSUS</b><div class="bar"><i id="bhp"></i><em id="bhp2"></em></div></div>
+  <div id="vign"></div><div id="flurry"></div>
+</div>
+<div id="fade"></div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · OPEN-WORLD ADVENTURE</p>
+  <h1>WILD<br>QUEST<em>.</em></h1>
+  <p class="how">Wake on a wild island. Climb anything, glide from the peaks, cook at campfires and clear the four Lumen Shrines to break the seal on Thornhold Keep. Defeat its Warden before the Crimson Moon rises.</p>
+  <div class="opts">
+    <label>CHALLENGE</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>CRIMSON MOON</label><div class="seg" id="o-len"><button data-v="10">10 MIN</button><button data-v="20" class="on">20 MIN</button><button data-v="30">30 MIN</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">BEGIN THE QUEST</button><span class="best" id="best"></span></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · sprint</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <span class="pad">L-stick B</span></td></tr>
+    <tr><td>Camera</td><td><kbd>Mouse</kbd> <kbd>Arrows</kbd> <span class="pad">R-stick</span></td></tr>
+    <tr><td>Jump · climb-jump · glide (in air)</td><td><kbd>Space</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Sword combo · hold to charge spin</td><td><kbd>LMB</kbd> <kbd>J</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Bow: hold to aim, click to fire</td><td><kbd>RMB</kbd> <kbd>K</kbd> <span class="pad">RT · RB</span></td></tr>
+    <tr><td>Shield · parry right before a hit</td><td><kbd>F</kbd> <span class="pad">LB</span></td></tr>
+    <tr><td>Lock on · dodge while locked</td><td><kbd>Q</kbd> <kbd>Space</kbd> <span class="pad">LT</span></td></tr>
+    <tr><td>Roll · let go of a wall</td><td><kbd>C</kbd> <kbd>R</kbd> <span class="pad">R3 · B</span></td></tr>
+    <tr><td>Interact · cook · enter shrine</td><td><kbd>E</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Eat · bag · map</td><td><kbd>H</kbd> <kbd>Tab</kbd> <kbd>M</kbd> <span class="pad">L3 · Back</span></td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd> <span class="pad">Start</span></td></tr>
+  </table>
+  <p>Aim the bow in mid-air to slow time. Dodge an attack at the last instant for a flurry rush. Sleeping foes take a sneak strike.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>REST<br>A WHILE<em>.</em></h1><p class="how">Press <b>Esc</b> or click Resume. The Crimson Moon waits.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div class="panel" id="cook" hidden><div class="box"><h2>CAMPFIRE<em>.</em></h2><p class="sub">PICK UP TO THREE INGREDIENTS · <kbd>1</kbd>–<kbd>7</kbd> ADD · <kbd>BKSP</kbd> REMOVE · <kbd>ENTER</kbd> COOK · <kbd>ESC</kbd> LEAVE</p><div class="pot" id="pot"></div><div class="grid" id="ings"></div><p class="preview" id="cprev"></p><div class="row"><button class="go" id="cookgo">COOK</button><button class="ghost" id="cookx">LEAVE</button></div></div></div>
+<div class="panel" id="inv" hidden><div class="box"><h2>TRAVELER'S BAG<em>.</em></h2><p class="sub">CLICK OR PRESS A NUMBER TO EAT · <kbd>TAB</kbd> CLOSE</p><div class="grid" id="invg"></div><div class="stats" id="invs"></div></div></div>
+<div class="panel" id="map" hidden><div class="box mapbox"><h2>ISLAND MAP<em>.</em></h2><p class="sub">CLICK A CLEARED SHRINE TO WARP · <kbd>M</kbd> CLOSE</p><canvas id="mapc" width="640" height="640"></canvas><div class="legend"><span><i class="lg sh"></i>SHRINE</span><span><i class="lg dn"></i>CLEARED</span><span><i class="lg cp"></i>CAMP</span><span><i class="lg ca"></i>KEEP</span><span><i class="lg me"></i>YOU</span></div></div></div>
+<div class="panel" id="bless" hidden><div class="box"><p class="eye">TRIAL COMPLETE</p><h2 id="blt">BLESSING<em>.</em></h2><p class="sub">CHOOSE YOUR BLESSING</p><div class="row"><button class="go" id="bh">HEART CONTAINER <kbd>1</kbd></button><button class="go alt" id="bs2">STAMINA VESSEL <kbd>2</kbd></button></div></div></div>
+<div id="dead" hidden><b>YOU FELL</b><span id="deads">The Crimson Moon draws nearer…</span></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">THE CRIMSON MOON ROSE</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="fs" id="ofs"></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

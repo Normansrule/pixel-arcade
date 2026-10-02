@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STRIKER 11 · Pixel Arcade</title>
+<meta name="description" content="STRIKER 11: full 3D eleven-a-side football in the browser. Broadcast camera, sixteen original clubs, quick matches, an eight-team cup, local 2P versus.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="striker.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bars"></div>
+<div id="hud" hidden>
+  <div id="sb">
+    <div class="tm" id="t0"><canvas id="cr0" width="64" height="64"></canvas><b id="n0">HOM</b></div>
+    <div class="sc"><b id="s0">0</b><i></i><b id="s1">0</b></div>
+    <div class="tm r" id="t1"><b id="n1">AWY</b><canvas id="cr1" width="64" height="64"></canvas></div>
+    <div class="clk"><b id="clk">00:00</b><span id="per">1ST</span></div>
+  </div>
+  <div id="so" hidden></div>
+  <div id="bug">STRIKER<em>11</em></div>
+  <div id="feed"></div>
+  <div id="labels"></div>
+  <div id="cap"></div>
+  <canvas id="radar" width="240" height="156"></canvas>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="prompt"></div>
+  <div id="help"></div>
+  <div id="replay" hidden><i></i>REPLAY<span>SPACE · ENTER · A TO SKIP</span></div>
+  <div id="ht" hidden></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · FOOTBALL</p>
+  <h1>STRIKER<br>11<em>.</em></h1>
+  <p class="how">Eleven-a-side football under the floodlights. Pass, press, curl it in the top corner. Quick matches, an eight-team knockout cup, or a local 2P derby on one keyboard.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0">QUICK MATCH</button><button data-v="1">CUP</button></div>
+    <label id="r-pll">PLAYERS</label><div class="seg" id="r-pl"><span class="seg" id="o-pl"><button data-v="1">1P VS CPU</button><button data-v="2">2P VERSUS</button></span></div>
+    <label>YOUR CLUB</label><div class="pick" id="p-club"><button class="l" aria-label="previous club">◀</button><canvas width="96" height="96"></canvas><div><b></b><span></span></div><button class="r" aria-label="next club">▶</button></div>
+    <label id="r-oppl"><span id="l-opp">OPPONENT</span></label><div id="r-opp"><div class="pick" id="p-opp"><button class="l" aria-label="previous club">◀</button><canvas width="96" height="96"></canvas><div><b></b><span></span></div><button class="r" aria-label="next club">▶</button></div></div>
+    <label>SIDE</label><div class="seg" id="o-size"><button data-v="11">11 V 11</button><button data-v="5">5 V 5 QUICK</button></div>
+    <label>FORMATION</label><div class="seg" id="o-form"><button data-v="4-4-2">4-4-2</button><button data-v="4-3-3">4-3-3</button><button data-v="3-5-2">3-5-2</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">AMATEUR</button><button data-v="1">PRO</button><button data-v="2">WORLD CLASS</button></div>
+    <label>HALVES</label><div class="seg" id="o-half"><button data-v="120">2 MIN</button><button data-v="180">3 MIN</button><button data-v="300">5 MIN</button></div>
+    <label>OFFSIDE</label><div class="seg" id="o-off"><button data-v="1">ON</button><button data-v="0">OFF</button></div>
+    <label>KICK-OFF</label><div class="seg" id="o-night"><button data-v="1">NIGHT</button><button data-v="0">DAY</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">KICK OFF</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · sprint</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Shift</kbd> <span class="pad">L-stick RT</span></td></tr>
+    <tr><td>Short pass · <i>standing tackle</i></td><td><kbd>F</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Shoot (hold = power) · <i>slide</i></td><td><kbd>Space</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Lob / cross · <i>hold to press</i></td><td><kbd>R</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Through ball · <i>keeper rush</i></td><td><kbd>T</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Skill move · <i>teammate press</i></td><td><kbd>E</kbd> <span class="pad">RB</span></td></tr>
+    <tr><td>Switch player</td><td><kbd>Q</kbd> <span class="pad">LB</span></td></tr>
+    <tr><td>Camera · sound · pause</td><td><kbd>C</kbd> <kbd>M</kbd> <kbd>Esc</kbd> <span class="pad">Start</span></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p><i>Italics</i> apply when defending. Aim shots with the stick while holding shoot; overhit it and it flies over. Press pass or shoot before the ball arrives for a first-time finish or header.<br>2P: P2 uses <kbd>Arrows</kbd> <kbd>R-Shift</kbd> <kbd>.</kbd> pass <kbd>/</kbd> shoot <kbd>;</kbd> lob <kbd>L</kbd> through <kbd>,</kbd> skill <kbd>Enter</kbd> switch, or gamepad 2.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>TIME<br>OUT<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">FULL TIME</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="fs" id="ofs"></p>
+  <div class="scr" id="oscr"></div>
+  <div class="ostats"><div id="stats"></div><div class="mvp" id="mvp"></div></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="cupv" hidden>
+  <p class="eye">STRIKER 11 · KNOCKOUT CUP</p>
+  <h1 id="cuph">QUARTER<br>FINAL<em>.</em></h1>
+  <div id="bracket"></div>
+  <p class="how" id="cupmsg"></p>
+  <div class="row"><button id="cupgo" class="go">PLAY</button><button id="cupmenu" class="ghost">MENU</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

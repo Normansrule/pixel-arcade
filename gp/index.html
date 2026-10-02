@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kart Grand Prix · Pixel Arcade</title>
+<meta name="description" content="Kart Grand Prix: a full 3D kart racer in the browser. Eight drivers, kart customization, two cups of four courses, drifting mini-turbos, items, time trial ghosts, balloon battle and 2-player split screen.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="gp.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="hud" hidden>
+  <div id="views"></div>
+  <div id="clock">0:00</div>
+  <div id="ranks"></div>
+  <div id="feed"></div>
+</div>
+<div id="card"><b id="ct"></b><span id="cs"></span></div>
+<div id="skip" hidden>ENTER / A · SKIP</div>
+
+<div id="menu">
+  <section class="step" data-step="mode">
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · KART RACING</p>
+    <h1>KART<br>GRAND PRIX<em>.</em></h1>
+    <p class="how">Twelve racers, eight courses, one cup to lift. Drift for sparks, chain mini-turbos, launch off ramps and glide across the gaps.</p>
+    <div class="opts">
+      <label>MODE</label><div class="seg" id="o-mode"><button data-v="gp">GRAND PRIX</button><button data-v="vs">VS RACE</button><button data-v="tt">TIME TRIAL</button><button data-v="battle">BALLOON BATTLE</button></div>
+      <label></label><p class="info" id="modeinfo"></p>
+      <label>PLAYERS</label><div class="seg" id="o-pl"><button data-v="1">1P</button><button data-v="2">2P SPLIT</button></div>
+      <label>ENGINE</label><div class="seg" id="o-cc"><button data-v="0">50CC</button><button data-v="1">100CC</button><button data-v="2">150CC</button></div>
+      <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    </div>
+    <div class="row"><button id="go1" class="go">CHOOSE DRIVER →</button></div>
+  </section>
+  <section class="step" data-step="driver" hidden>
+    <p class="eye">STEP 2 OF 3 · DRIVER &amp; KART</p>
+    <div class="seg tabs" id="ptabs"><button>PLAYER 1</button><button>PLAYER 2</button></div>
+    <div id="chars"></div>
+    <p class="blurb" id="blurb"></p>
+    <div class="parts">
+      <div class="pb" id="pb-body"><label>BODY</label><button data-d="-1">‹</button><b></b><button data-d="1">›</button></div>
+      <div class="pb" id="pb-wheel"><label>WHEELS</label><button data-d="-1">‹</button><b></b><button data-d="1">›</button></div>
+      <div class="pb" id="pb-glider"><label>GLIDER</label><button data-d="-1">‹</button><b></b><button data-d="1">›</button></div>
+    </div>
+    <div id="stats"></div>
+    <div class="row"><button id="back2" class="ghost">← BACK</button><button id="go2" class="go">CHOOSE COURSE →</button></div>
+  </section>
+  <section class="step" data-step="course" hidden>
+    <p class="eye">STEP 3 OF 3 · COURSE</p>
+    <div id="courses"></div>
+    <div class="row"><button id="back3" class="ghost">← BACK</button><button id="go3" class="go">START YOUR ENGINES</button></div>
+  </section>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Accelerate / brake</td><td><kbd>W</kbd> <kbd>S</kbd> <span class="pad">A B · RT LT</span></td></tr>
+    <tr><td>Steer</td><td><kbd>A</kbd> <kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Hop · drift · trick in air</td><td><kbd>Space</kbd> <kbd>Shift</kbd> <span class="pad">RB X</span></td></tr>
+    <tr><td>Use item (hold <kbd>S</kbd> to aim the other way)</td><td><kbd>E</kbd> <kbd>F</kbd> <span class="pad">LB</span></td></tr>
+    <tr><td>Look behind</td><td><kbd>Q</kbd> <kbd>C</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Pause · music · graphics</td><td><kbd>Esc</kbd> <kbd>M</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p><b>Drift</b>: hold hop while steering; sparks go blue → orange → purple, release for a mini-turbo. <b>Rocket start</b>: hold accelerate as the 2 fades. Press hop off a ramp for a trick boost.<br>2P: P2 uses <kbd>Arrows</kbd>, <kbd>/</kbd> or right <kbd>Shift</kbd> drift, <kbd>Enter</kbd> or <kbd>.</kbd> item, <kbd>,</kbd> look, or gamepad 2.</p>
+</div>
+
+<div id="results" hidden>
+  <p class="eye" id="reye"></p>
+  <p class="res" id="rtitle"></p>
+  <table id="rtable" class="tbl"></table>
+  <p class="tok" id="rtok"></p>
+  <div class="row"><button id="rnext" class="go">NEXT RACE</button><button id="rstand" class="ghost">STANDINGS</button><button id="rpost" class="ghost">POST SCORE</button><button id="rmenu" class="ghost">MENU</button></div>
+</div>
+<div id="standings" hidden>
+  <p class="eye">CUP STANDINGS</p><p class="res sm" id="stitle"></p>
+  <table id="stable" class="tbl"></table>
+  <div class="row"><button id="sclose" class="ghost">CLOSE</button></div>
+</div>
+<div id="podium" hidden>
+  <p class="eye" id="peye"></p>
+  <p class="res" id="ptitle"></p>
+  <table id="ptable" class="tbl"></table>
+  <p class="tok" id="ptok"></p>
+  <div class="row"><button id="pagain" class="go">RACE THE CUP AGAIN</button><button id="ppost" class="ghost">POST SCORE</button><button id="pmenu" class="ghost">MENU</button></div>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>PIT<br>STOP<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="restart" class="ghost">RESTART RACE</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="loading" hidden><b>LOADING COURSE</b></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Storm Royale · Pixel Arcade</title>
+<meta name="description" content="Storm Royale: a full 3D third-person battle royale in the browser. Drop from the Sky Barge, loot, harvest, build and outlast 24 bots as the storm closes in.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="royale.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="stormfx"></div><div id="dmg"></div>
+  <div id="hdir"><i></i></div>
+  <div id="cross"><i></i><i></i><i></i><i></i><b></b></div><div id="hitm"></div>
+  <div id="scope" hidden><i></i></div>
+  <div id="dnums"></div>
+  <div id="feed"></div>
+  <div id="radar"><canvas id="mini" width="200" height="200"></canvas>
+    <div id="info"><div><span>ALIVE</span><b id="alive">25</b></div><div><span>ELIMS</span><b id="kills">0</b></div><div><span>TIME</span><b id="clock">10:00</b></div></div>
+    <div id="stormt"></div></div>
+  <div id="vitals"><div class="bar sh"><i id="shi"></i><b id="shn">0</b></div><div class="bar hp"><i id="hpi"></i><b id="hpn">100</b></div></div>
+  <div id="right">
+    <div id="ammobox" hidden><p id="wname"></p><b id="ammo">0</b><span id="ammor"></span></div>
+    <div id="mats"><div><i class="w"></i><b id="m0">0</b></div><div><i class="s"></i><b id="m1">0</b></div><div><i class="m"></i><b id="m2">0</b></div></div>
+    <div id="hotbar"></div>
+  </div>
+  <div id="buildbar" hidden><div id="bp-wall"><kbd>Q</kbd>WALL</div><div id="bp-floor"><kbd>F</kbd>FLOOR</div><div id="bp-ramp"><kbd>C</kbd>RAMP</div><div id="bp-roof"><kbd>V</kbd>ROOF</div><div class="mat"><kbd>Z</kbd><span id="bmat">WOOD</span></div></div>
+  <div id="prompt"></div>
+  <div id="use"><span id="uset"></span><div><i id="usei"></i></div></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="toast"></div>
+  <div id="spec" hidden><p class="eye">SPECTATING</p><b id="specn"></b><span><kbd>SPACE</kbd> NEXT PLAYER · HOLD <kbd>F</kbd> FAST-FORWARD · <kbd>ENTER</kbd> RESULTS</span><button id="specres" class="ghost">SKIP TO RESULTS</button></div>
+</div>
+<div id="fullmap" hidden><canvas id="fullmapc" width="640" height="640"></canvas><p><kbd>M</kbd> CLOSE MAP</p></div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · BATTLE ROYALE</p>
+  <h1>STORM<br>ROYALE<em>.</em></h1>
+  <p class="how">Twenty-five players. One island. Jump from the Sky Barge, loot the houses, harvest and build your way to cover, and be the last one standing when the storm closes. Ten-minute matches.</p>
+  <div class="opts">
+    <label>BOTS</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>MODE</label><div class="seg" id="o-build"><button data-v="1" class="on">BUILD</button><button data-v="0">NO BUILD</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">DROP IN</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · sprint · jump</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>Space</kbd></td></tr>
+    <tr><td>Aim · fire · aim down sights</td><td><kbd>Mouse</kbd> <kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Hotbar · pickaxe</td><td><kbd>1</kbd>–<kbd>5</kbd> <kbd>Wheel</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Wall · floor · ramp · roof</td><td><kbd>Q</kbd> <kbd>F</kbd> <kbd>C</kbd> <kbd>V</kbd></td></tr>
+    <tr><td>Material · place more</td><td><kbd>Z</kbd> <kbd>LMB</kbd></td></tr>
+    <tr><td>Open / pick up · reload</td><td><kbd>E</kbd> <kbd>R</kbd></td></tr>
+    <tr><td>Map · emote · pause</td><td><kbd>M</kbd> <kbd>B</kbd> <kbd>Esc</kbd></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+    <tr><td>Gamepad</td><td><span class="pad">sticks · RT fire · LT aim · A jump · B build · X use</span></td></tr>
+  </table>
+  <p>Space jumps from the Sky Barge and opens your glider. Build keys drop a piece instantly and enter build mode: keep clicking to place more, press a hotbar key to fight again.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLD<br>TIGHT<em>.</em></h1><p class="how">Click resume to recapture the mouse.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">MATCH COMPLETE</p>
+  <p class="place" id="oplace">#1</p>
+  <p class="res" id="ores">STORM CHAMPION</p>
+  <div class="grid"><div id="stats"></div><div id="top"></div></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block Beasts · Pixel Arcade</title>
+<meta name="description" content="Block Beasts: a full 3D creature-collecting adventure on a voxel island. Catch 24 original beasts, battle trainers, climb three spires and earn every badge.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="beasts.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"></div>
+<div id="hud" hidden>
+  <div id="tl"><div class="clk"><b id="clock">20:00</b><span id="daytime">DAY 1 · 08:00</span></div><div class="coins"><i></i><b id="coins">0</b></div><div id="badges"></div></div>
+  <div id="obj"></div>
+  <canvas id="mini" width="150" height="150"></canvas>
+  <div id="cross"></div><div id="mine"></div>
+  <div id="tag" hidden></div>
+  <div id="prompt" hidden></div>
+  <div id="partyStrip"></div>
+  <div id="throwBar"></div>
+  <div id="toast"></div>
+  <div id="lockHint" hidden>CLICK TO LOOK AROUND</div>
+</div>
+<div id="bui" hidden>
+  <div class="card foe" id="foeCard"></div>
+  <div class="card me" id="meCard"></div>
+  <div id="bbar"><div id="bmsg"></div><div id="bmenu"></div></div>
+</div>
+<div id="dlg" hidden><div class="who" id="dwho"></div><div class="txt" id="dtxt"></div><div class="ch" id="dch"></div><div class="more">ENTER ▸</div></div>
+<div id="panel" hidden><div class="box"><div class="ph"><h2 id="ptitle"></h2><span id="psub"></span><button class="x" id="pclose" data-nav>ESC ✕</button></div><div id="pbody"></div></div></div>
+<div id="badgeFx" hidden><div class="bd"></div><b></b><span></span></div>
+<div id="fade"></div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · CREATURE ADVENTURE</p>
+  <h1>BLOCK<br>BEASTS<em>.</em></h1>
+  <p class="how">A voxel island full of wild beasts. Pick a partner, catch a team of six, beat the trainers of three spires and earn every badge before the clock runs out.</p>
+  <div class="opts">
+    <label>TIME</label><div class="seg" id="o-time"><button data-v="1200" class="on">20 MIN</button><button data-v="2400">40 MIN</button><button data-v="0">ENDLESS</button></div>
+    <label>TRAINERS</label><div class="seg" id="o-diff"><button data-v="0">CHILL</button><button data-v="1" class="on">NORMAL</button><button data-v="2">TOUGH</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">NEW ADVENTURE</button><button id="cont" class="ghost">CONTINUE</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card keys" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · sprint · jump / swim</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>Space</kbd></td></tr>
+    <tr><td>Look</td><td><kbd>Mouse</kbd></td></tr>
+    <tr><td>Throw cube (start battle / catch)</td><td><kbd>Right</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Pick what to throw</td><td><kbd>Q</kbd> <kbd>Wheel</kbd></td></tr>
+    <tr><td>Mine (wood, stone, crystal)</td><td><kbd>Left</kbd> hold</td></tr>
+    <tr><td>Talk · heal · shop · craft</td><td><kbd>E</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Ride your lead (Lv 10+)</td><td><kbd>R</kbd></td></tr>
+    <tr><td>Party · dex · lead slot</td><td><kbd>Tab</kbd> <kbd>C</kbd> <kbd>1-6</kbd></td></tr>
+    <tr><td>Menus &amp; battle</td><td><kbd>Arrows</kbd> <kbd>Enter</kbd> <kbd>Esc</kbd> <kbd>1-4</kbd></td></tr>
+    <tr><td>Graphics · sound</td><td><kbd>G</kbd> <kbd>M</kbd></td></tr>
+  </table>
+  <p>Weaken a wild beast, then throw a Capture Cube from your BAG. Sleep and freeze make catching much easier.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>TAKE A<br>BREATHER<em>.</em></h1><p class="how">Your progress is saved.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">SAVE &amp; QUIT</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">TIME UP</p>
+  <p class="res" id="ores">ADVENTURE OVER</p>
+  <p class="fs" id="ofs"></p>
+  <table id="stats"></table>
+  <div id="oteam"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEW ADVENTURE</button><button id="keep" class="ghost">KEEP EXPLORING</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

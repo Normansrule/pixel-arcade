@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penguin Plaza · Pixel Arcade</title>
+<meta name="description" content="Penguin Plaza: a cosy snowy island hangout in full 3D. Dress up your penguin, chat, throw snowballs, play seven minigames for coins, adopt pomlet pets and decorate your igloo.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="plaza.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bubbles"></div>
+<div id="fade"></div>
+
+<!-- overworld HUD -->
+<div id="hud" hidden>
+  <div id="where"><b id="room">TOWN SQUARE</b><span id="party"></span></div>
+  <div id="clockw"><i id="sunico"></i><b id="clock">7:00 AM</b><div class="bar"><div id="daybar"></div></div><span id="dayn">DAY 1</span></div>
+  <div id="coinw"><i>❄</i><b id="coins">0</b><span>COINS</span></div>
+  <div id="dock">
+    <button data-a="map" title="Map (M)"><i>◎</i><span>MAP</span><kbd>M</kbd></button>
+    <button data-a="chat" title="Safe chat (Enter)"><i>❝</i><span>CHAT</span><kbd>↵</kbd></button>
+    <button data-a="emote" title="Emotes (X)"><i>☺</i><span>EMOTE</span><kbd>X</kbd></button>
+    <button data-a="wave" title="Wave (1)"><i>✋</i><span>WAVE</span><kbd>1</kbd></button>
+    <button data-a="dance" title="Dance (2)"><i>♪</i><span>DANCE</span><kbd>2</kbd></button>
+    <button data-a="sit" title="Sit (3)"><i>▾</i><span>SIT</span><kbd>3</kbd></button>
+    <button data-a="throw" title="Snowball (T / right-click)"><i>●</i><span>SNOWBALL</span><kbd>T</kbd></button>
+    <button data-a="shop" title="Catalog (B)"><i>✦</i><span>CATALOG</span><kbd>B</kbd></button>
+    <button data-a="home" title="My igloo (H)"><i>⌂</i><span>IGLOO</span><kbd>H</kbd></button>
+  </div>
+  <div id="prompt" hidden></div>
+  <div id="toasts"></div>
+  <div id="editbar" hidden><b>IGLOO EDITOR</b><span>Click an item, click the floor to place · click placed furniture to move · <kbd>R</kbd>/wheel rotate · <kbd>Del</kbd> store</span><button id="editdone" class="go sm">DONE</button></div>
+  <div id="edinv" hidden></div>
+  <div id="tip"></div>
+</div>
+
+<!-- popup menus -->
+<div id="chatm" class="pop" hidden></div>
+<div id="emotem" class="pop" hidden></div>
+
+<!-- map -->
+<div id="mapw" class="modal" hidden><div class="mbox"><h2>ISLAND MAP<em>.</em></h2><svg id="map" viewBox="0 0 100 100"></svg><p class="hint">Click a place to travel there · <kbd>M</kbd> or <kbd>Esc</kbd> to close</p></div></div>
+
+<!-- catalog -->
+<div id="shopw" class="modal" hidden><div class="mbox wide"><div class="shead"><h2>SNOW &amp; CO. CATALOG<em>.</em></h2><div class="coinpill">❄ <b id="scoins">0</b></div><button class="x" id="shopx">✕</button></div>
+  <div class="tabs" id="stabs"><button data-t="hat" class="on">HATS</button><button data-t="neck">NECK</button><button data-t="face">FACE</button><button data-t="color">COLOURS</button><button data-t="furn">FURNITURE</button><button data-t="pet">PETS</button></div>
+  <div class="grid" id="sgrid"></div></div></div>
+
+<!-- minigame HUD -->
+<div id="mghud" hidden>
+  <div id="mgbar"><b id="mgname">GAME</b><div class="mgclock"><b id="mgtime">1:00</b><div class="bar"><div id="mgtbar"></div></div></div><div class="mgscore"><span>SCORE</span><b id="mgscore">0</b></div></div>
+  <div id="mgx"></div>
+  <div id="mgcd"></div>
+  <div id="mgmsg"></div>
+</div>
+<div id="mgintro" hidden><p class="eye" id="mgieye">MINIGAME</p><h1 id="mgititle">GAME</h1><p class="how" id="mgidesc"></p><table id="mgikeys"></table><div class="row"><button id="mgigo" class="go">START <kbd>ENTER</kbd></button><button id="mgiback" class="ghost">BACK</button></div></div>
+<div id="mgres" hidden><p class="eye" id="mgreye">RESULTS</p><p class="res" id="mgrres">GOLD!</p><div id="medal"></div><table id="mgrstats"></table><p class="tok" id="mgrcoins"></p><div class="row"><button id="mgragain" class="go">PLAY AGAIN</button><button id="mgrback" class="ghost">BACK TO ISLAND</button></div></div>
+
+<!-- main menu -->
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · ISLAND HANGOUT</p>
+  <h1>PENGUIN<br>PLAZA<em>.</em></h1>
+  <p class="how">A cosy snowy island for penguins. Waddle around, chat, throw snowballs and play seven minigames for coins. Spend them on outfits, igloo furniture and fluffy pomlet pets. Each island day lasts fifteen minutes.</p>
+  <div class="opts">
+    <label>NAME</label><div><input id="o-name" maxlength="14" placeholder="Your penguin name" autocomplete="off"></div>
+    <label>COLOUR</label><div class="seg sw" id="o-col"></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">START ISLAND DAY</button><button id="reset" class="ghost">NEW SAVE</button></div>
+  <p class="tok" id="msave"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Walk</td><td>Click ground · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Interact · play · talk</td><td>Click · <kbd>Space</kbd> <kbd>F</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Snowball</td><td>Right-click · <kbd>T</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Wave · dance · sit</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <span class="pad">Y B</span></td></tr>
+    <tr><td>Safe chat · emotes</td><td><kbd>Enter</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Map · catalog · igloo</td><td><kbd>M</kbd> <kbd>B</kbd> <kbd>H</kbd></td></tr>
+    <tr><td>Rotate · zoom camera</td><td><kbd>Q</kbd> <kbd>E</kbd> · wheel</td></tr>
+    <tr><td>Music · pause · graphics</td><td><kbd>N</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Walk onto a glowing <b style="color:#ff8a4a">★ ring</b> to start a minigame. Golden snowflakes hidden around the island are worth 5 coins. At the end of each day you get a summary and a new party begins.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>SNOW<br>DAY<em>.</em></h1><p class="how">Press <b>Esc</b> to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">END OF DAY 1</p>
+  <p class="res">SWEET<br>DREAMS<em>.</em></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEXT DAY</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

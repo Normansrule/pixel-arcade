@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Breach Point · Pixel Arcade</title>
+<meta name="description" content="Breach Point: a full 3D tactical round-based 5v5 shooter in the browser. Plant or defuse the breach charge, manage your economy, learn every spray pattern. One life per round.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="breach.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="smokeov"></div><div id="hurtov"></div><div id="flashov"></div>
+<div id="scope" hidden><div class="ring"></div><i class="h"></i><i class="v"></i></div>
+<div id="hud" hidden>
+  <div id="top">
+    <div class="side l"><div class="pips" id="alL"></div><b id="scL">0</b><i id="tL">ATK</i></div>
+    <div class="clk"><b id="clock">1:55</b><span id="phase">BUY PHASE</span></div>
+    <div class="side r"><i id="tR">DEF</i><b id="scR">0</b><div class="pips" id="alR"></div></div>
+  </div>
+  <div id="mmw"><canvas id="mini" width="480" height="480"></canvas><p id="loc"></p><div id="radio"></div></div>
+  <div id="feed"></div>
+  <div id="money"><b id="cash">$800</b><span id="cashd"></span></div>
+  <div id="vitals"><div class="hp"><i>✚</i><b id="hp">100</b></div><div class="ar"><i>⬢</i><b id="ar">0</b><em id="helm">HELMET</em><em id="kit" class="kit">KIT</em></div></div>
+  <div id="wpn"><div id="slots"></div><p class="nm" id="wname"></p><p class="am"><b id="amag"></b><span id="ares"></span></p></div>
+  <div id="cross"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><em></em></div>
+  <div id="hit"><i></i><i></i><i></i><i></i></div>
+  <div id="dmgind"></div>
+  <div id="prog" hidden><span id="progt">PLANTING</span><div class="bar"><i id="progb"></i></div></div>
+  <div id="hint"></div>
+  <div id="toast"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="dead" hidden><span id="deadby"></span></div>
+  <div id="spec" hidden><span>SPECTATING</span><p id="specn"></p><em>CLICK / SPACE · NEXT TEAMMATE</em></div>
+  <div id="board" hidden></div>
+  <div id="buy" hidden>
+    <div class="bhd"><h2>ARMORY<em>.</em></h2><b id="buycash">$800</b><span id="buytime"></span><button id="autobuy" class="ghost sm">AUTO BUY</button><button id="buyclose" class="ghost sm">CLOSE · B</button></div>
+    <div id="buylist"></div>
+    <div class="sprayw"><canvas id="spray" width="150" height="190"></canvas><p id="sprayi"></p></div>
+  </div>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · TACTICAL 5V5</p>
+  <h1>BREACH<br>POINT<em>.</em></h1>
+  <p class="how">Attackers plant the breach charge, defenders hold the sites. One life per round, money carries over, every rifle has a spray pattern you can learn. First to 7.</p>
+  <div class="opts">
+    <label>MAP</label><div class="seg" id="o-map"><button data-v="0">SANDGATE · NOON</button><button data-v="1">DRYDOCK · DUSK RAIN</button></div>
+    <label>SIDE</label><div class="seg" id="o-side"><button data-v="atk">ATTACK FIRST</button><button data-v="def">DEFEND FIRST</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>LENGTH</label><div class="seg" id="o-len"><button data-v="0">QUICK · FIRST TO 4</button><button data-v="1">FULL · FIRST TO 7</button></div>
+    <label>OVERTIME</label><div class="seg" id="o-ot"><button data-v="1">ON</button><button data-v="0">OFF</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">DEPLOY</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · walk (quiet) · crouch</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>Ctrl</kbd>/<kbd>C</kbd></td></tr>
+    <tr><td>Fire · scope / heavy knife / lob</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Jump · reload · inspect</td><td><kbd>Space</kbd> <kbd>R</kbd> <kbd>F</kbd></td></tr>
+    <tr><td>Weapons · grenades · charge</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> <kbd>5</kbd> <kbd>Wheel</kbd></td></tr>
+    <tr><td>Last weapon · drop</td><td><kbd>Q</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Plant / defuse / pick up (hold)</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Buy menu (spawn, buy time)</td><td><kbd>B</kbd></td></tr>
+    <tr><td>Scores · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Stop before you shoot: moving, jumping and long sprays wreck accuracy. Headshots deal 4×; helmets and vests soak damage. Rifles punch through thin walls, crates and containers. Smokes block sight for everyone, flashes white out anyone facing them.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>ANGLE<em>.</em></h1><p class="how">The match keeps its state. Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.8">MED-</button><button data-v="1">MED</button><button data-v="1.5">HIGH</button><button data-v="2.2">MAX</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">MATCH OVER</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="fs" id="ofs"></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

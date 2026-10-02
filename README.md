@@ -2,11 +2,11 @@
 
 # 🕹️ Pixel Arcade
 
-**431 original games. One click to play. Build your own.**
+**463 original games. One click to play. Build your own.**
 
 [![Play](https://img.shields.io/badge/▶_PLAY-normansrule.github.io%2Fpixel--arcade-ff3f8e?style=for-the-badge)](https://normansrule.github.io/pixel-arcade/)
 [![test](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml/badge.svg)](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml)
-![games](https://img.shields.io/badge/games-431-ff4d00)
+![games](https://img.shields.io/badge/games-463-ff4d00)
 ![license](https://img.shields.io/badge/license-MIT-2fe8d0)
 
 [![Pixel Arcade](docs/screenshot.png)](https://normansrule.github.io/pixel-arcade/)
@@ -29,6 +29,8 @@
 
 - **Voxel Frontier**: block sandbox. Punch trees, craft (**E**) planks, sticks, torches and wood → stone → iron → diamond pickaxes; rock needs a pickaxe. Torches cast real flickering light. Sheep drop mutton (right click to eat). Craft **TNT** (4 sand + 2 coal), hit it to light the fuse; blasts carve craters and chain-react. At night, watch for **Bloaters**: they swell and explode. Animated reflective water, wind-blown leaves, drifting clouds and block debris. A 9-step goal chain guides new players.
 - **Abyss Diver**: ocean survival. **R** sonar ping marks deposits and predators, **B** drops a beacon you can navigate back to, **Tab** opens the survey tablet, **Shift** runs the scooter on battery (recharge at the lifepod). Breath bubbles rise to the surface; below 45 m, plankton glows when you swim through it.
+- **20 full-3D flagships**, all original games inspired by famous ones (search the hub for the inspiration's name):
+  Frontline Ops (Call of Duty-style), Breach Point (CS:GO-style tactical 5v5), Kart Grand Prix (Mario Kart-style), Penguin Plaza (Club Penguin-style), Block Beasts (Pixelmon/Pokémon-style), Storm Royale (Fortnite-style), Tumble Royale (Fall Guys-style), Platform Brawl (Smash-style), Wild Quest (Zelda-style), Striker 11 (FIFA-style), Skate City (Tony Hawk-style), Starship Suspects (Among Us-style), Rocket Arena (Rocket League-style), Voxel Frontier (Minecraft-style), Abyss Diver (Subnautica-style), Strike Zone, Night Drive, Critter Kart, Pet Brawl.
 - **Rocket Arena** ([play](https://normansrule.github.io/pixel-arcade/rocket/)): full-3D rocket-car soccer, 1v1 to 3v3 vs CPU or split-screen 2P. Boost, jump, double-jump, flips, air roll, demolitions, ball cam, kickoffs, 5-minute clock with golden-goal overtime, goal replays.
 - **Game Builder** ([open](https://normansrule.github.io/pixel-arcade/builder/)): a Unity-style 2D and 3D editor in the browser. 2D templates (platformer, top-down, shooter, maze) and 3D templates (obstacle course, coin island, maze run, arena survival) with move/rotate/scale gizmos, drag-and-drop scene, inspector with components, WHEN → DO rules, 16x16 sprite painter, play-test, undo/redo, share links and publish to the arcade.
 - **Round clock**: every game has a time limit (shown as a bar, final 10-second countdown); VS games decide the winner on points when time runs out.
@@ -44,7 +46,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 ## Games
 
-<details><summary><b>Action</b> · 33</summary>
+<details><summary><b>Action</b> · 43</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -53,31 +55,41 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Beat Jumper](https://normansrule.github.io/pixel-arcade/#beatjumper) | solo | [src](games/action3.js) |
 | [Boomerang](https://normansrule.github.io/pixel-arcade/#boomerang) | solo | [src](games/action3.js) |
 | [Boss Rush](https://normansrule.github.io/pixel-arcade/#bossrush) | solo | [src](games/action2.js) |
+| [Breach Point](https://normansrule.github.io/pixel-arcade/breach/) | full 3D | [src](breach/game.js) |
 | [Broadside](https://normansrule.github.io/pixel-arcade/#broadside) | solo | [src](games/action3.js) |
 | [Bullet Hell](https://normansrule.github.io/pixel-arcade/#bullethell) | solo | [src](games/action3.js) |
 | [Castle Defense](https://normansrule.github.io/pixel-arcade/#castletd) | solo | [src](games/popular2.js) |
+| [Cavern Quest](https://normansrule.github.io/pixel-arcade/#cavernquest) | solo | [src](games/advanced1.js) |
 | [Cell Grow](https://normansrule.github.io/pixel-arcade/#cellgrow) | solo | [src](games/action3.js) |
 | [Chopper Rescue](https://normansrule.github.io/pixel-arcade/#chopper) | solo | [src](games/action2.js) |
 | [Dash Peak](https://normansrule.github.io/pixel-arcade/#dashpeak) | solo | [src](games/action3.js) |
 | [Depth Charge](https://normansrule.github.io/pixel-arcade/#depth) | solo | [src](games/action2.js) |
 | [Dungeon Brawl](https://normansrule.github.io/pixel-arcade/#brawl) | solo | [src](games/action.js) |
+| [Frontline Ops](https://normansrule.github.io/pixel-arcade/frontline/) | full 3D | [src](frontline/game.js) |
 | [Grapple Hook](https://normansrule.github.io/pixel-arcade/#grapple) | solo | [src](games/action3.js) |
 | [Gun Dungeon](https://normansrule.github.io/pixel-arcade/#gundungeon) | solo | [src](games/action3.js) |
+| [Hero Quest](https://normansrule.github.io/pixel-arcade/#heroquest) | solo | [src](games/advanced1.js) |
 | [Horde Survivor](https://normansrule.github.io/pixel-arcade/#survivors) | solo | [src](games/action3.js) |
+| [Lane Defense](https://normansrule.github.io/pixel-arcade/#lanedefense) | solo | [src](games/advanced1.js) |
 | [Last Bot Standing](https://normansrule.github.io/pixel-arcade/#royale) | solo | [src](games/action.js) |
 | [Lava Rise](https://normansrule.github.io/pixel-arcade/#lavarise) | solo | [src](games/action3.js) |
 | [Maze Bots](https://normansrule.github.io/pixel-arcade/#mazebots) | solo | [src](games/retro5.js) |
 | [Neon Fighters](https://normansrule.github.io/pixel-arcade/#fighters) | vs CPU · 2P | [src](games/action.js) |
 | [Neon Hit](https://normansrule.github.io/pixel-arcade/#neonhit) | solo | [src](games/action3.js) |
+| [Pop Defense](https://normansrule.github.io/pixel-arcade/#popdefense) | solo | [src](games/advanced1.js) |
 | [Robo Riot](https://normansrule.github.io/pixel-arcade/#roboriot) | solo | [src](games/retro4.js) |
 | [Run N Gun](https://normansrule.github.io/pixel-arcade/#runngun) | solo | [src](games/action3.js) |
 | [Samurai Slash](https://normansrule.github.io/pixel-arcade/#samuraislash) | solo | [src](games/action3.js) |
 | [Smash City](https://normansrule.github.io/pixel-arcade/#smashcity) | solo | [src](games/retro5.js) |
 | [Spell Caster](https://normansrule.github.io/pixel-arcade/#spellcaster) | solo | [src](games/action3.js) |
+| [Storm Royale](https://normansrule.github.io/pixel-arcade/royale/) | full 3D | [src](royale/game.js) |
 | [Strike Zone](https://normansrule.github.io/pixel-arcade/strike/) | full 3D | [src](strike/game.js) |
 | [Strike Zone 3d](https://normansrule.github.io/pixel-arcade/#fps) | solo | [src](games/action.js) |
+| [Summit Leap](https://normansrule.github.io/pixel-arcade/#jumpking) | solo | [src](games/advanced2.js) |
 | [Territory](https://normansrule.github.io/pixel-arcade/#territory) | solo | [src](games/popular3.js) |
 | [Tower Line](https://normansrule.github.io/pixel-arcade/#towers) | solo | [src](games/action.js) |
+| [Underworld Run](https://normansrule.github.io/pixel-arcade/#underworld) | solo | [src](games/advanced2.js) |
+| [Wild Quest](https://normansrule.github.io/pixel-arcade/quest/) | full 3D | [src](quest/game.js) |
 | [Worm Arena](https://normansrule.github.io/pixel-arcade/#wormarena) | solo | [src](games/popular2.js) |
 | [Zombie Night](https://normansrule.github.io/pixel-arcade/#zombies) | solo | [src](games/action.js) |
 | [Zombie Road](https://normansrule.github.io/pixel-arcade/#zombieroad) | solo | [src](games/action3.js) |
@@ -128,7 +140,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 </details>
 
-<details><summary><b>Cards</b> · 19</summary>
+<details><summary><b>Cards</b> · 20</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -146,6 +158,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Hold'em Heads-Up](https://normansrule.github.io/pixel-arcade/#holdem) | solo | [src](games/misc6.js) |
 | [Klondike](https://normansrule.github.io/pixel-arcade/#klondike) | solo | [src](games/cards.js) |
 | [Last Card](https://normansrule.github.io/pixel-arcade/#lastcard) | solo | [src](games/misc6.js) |
+| [Poker Rogue](https://normansrule.github.io/pixel-arcade/#pokerrogue) | solo | [src](games/advanced1.js) |
 | [Pyramid](https://normansrule.github.io/pixel-arcade/#pyramid) | solo | [src](games/tabletop.js) |
 | [Snap](https://normansrule.github.io/pixel-arcade/#snap) | vs CPU · 2P | [src](games/versus4.js) |
 | [Spider Solitaire](https://normansrule.github.io/pixel-arcade/#spider) | solo | [src](games/tabletop.js) |
@@ -154,7 +167,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 </details>
 
-<details><summary><b>Classics</b> · 88</summary>
+<details><summary><b>Classics</b> · 89</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -209,6 +222,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Lane Dodge](https://normansrule.github.io/pixel-arcade/#lanes) | solo | [src](games/arcade4.js) |
 | [Laser Dodge](https://normansrule.github.io/pixel-arcade/#laserdodge) | solo | [src](games/arcade4.js) |
 | [Marble Chain](https://normansrule.github.io/pixel-arcade/#marblechain) | solo | [src](games/popular5.js) |
+| [Maze Royale](https://normansrule.github.io/pixel-arcade/#mazeroyale) | solo | [src](games/advanced2.js) |
 | [Meteor Shower](https://normansrule.github.io/pixel-arcade/#meteors) | solo | [src](games/arcade4.js) |
 | [Millipede](https://normansrule.github.io/pixel-arcade/#millipede) | solo | [src](games/classics3.js) |
 | [Missile Dodge](https://normansrule.github.io/pixel-arcade/#missiles) | solo | [src](games/arcade5.js) |
@@ -249,7 +263,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 </details>
 
-<details><summary><b>Party</b> · 18</summary>
+<details><summary><b>Party</b> · 21</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -262,6 +276,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Dodgeball](https://normansrule.github.io/pixel-arcade/#dodgeball) | vs CPU · 2P | [src](games/party.js) |
 | [Freeze Dance](https://normansrule.github.io/pixel-arcade/#freezedance) | vs CPU · 2P | [src](games/misc6.js) |
 | [Golf Duel](https://normansrule.github.io/pixel-arcade/#golfduel) | vs CPU · 2P | [src](games/party.js) |
+| [Kitchen Chaos](https://normansrule.github.io/pixel-arcade/#kitchenchaos) | vs CPU · 2P | [src](games/advanced2.js) |
 | [Musical Chairs](https://normansrule.github.io/pixel-arcade/#musicchairs) | vs CPU · 2P | [src](games/misc6.js) |
 | [Plinko](https://normansrule.github.io/pixel-arcade/#plinko) | solo | [src](games/popular3.js) |
 | [Pool Shark](https://normansrule.github.io/pixel-arcade/#pool) | vs CPU · 2P | [src](games/party.js) |
@@ -269,12 +284,14 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Quad Pong](https://normansrule.github.io/pixel-arcade/#quadpong) | vs CPU · 2P | [src](games/party.js) |
 | [Rhythm Duel](https://normansrule.github.io/pixel-arcade/#rhythmduel) | vs CPU · 2P | [src](games/party.js) |
 | [Shuffleboard](https://normansrule.github.io/pixel-arcade/#shuffle) | vs CPU · 2P | [src](games/party.js) |
+| [Starship Suspects](https://normansrule.github.io/pixel-arcade/suspects/) | full 3D | [src](suspects/game.js) |
 | [Trivia Night](https://normansrule.github.io/pixel-arcade/#trivia) | vs CPU · 2P | [src](games/misc6.js) |
+| [Tumble Royale](https://normansrule.github.io/pixel-arcade/tumble/) | full 3D | [src](tumble/game.js) |
 | [Turf Tag](https://normansrule.github.io/pixel-arcade/#tag) | vs CPU · 2P | [src](games/party.js) |
 
 </details>
 
-<details><summary><b>Puzzle</b> · 70</summary>
+<details><summary><b>Puzzle</b> · 72</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -282,11 +299,13 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Balance](https://normansrule.github.io/pixel-arcade/#balance) | solo | [src](games/puzzle3.js) |
 | [Binary Grid](https://normansrule.github.io/pixel-arcade/#binarygrid) | solo | [src](games/puzzle5.js) |
 | [Blob Drop](https://normansrule.github.io/pixel-arcade/#blobdrop) | solo | [src](games/retro4.js) |
+| [Block 99](https://normansrule.github.io/pixel-arcade/#block99) | solo | [src](games/advanced1.js) |
 | [Block Blast](https://normansrule.github.io/pixel-arcade/#blockblast) | solo | [src](games/puzzle5.js) |
 | [Block Fit](https://normansrule.github.io/pixel-arcade/#blockfit) | solo | [src](games/puzzle2.js) |
 | [Bridges](https://normansrule.github.io/pixel-arcade/#bridges) | solo | [src](games/puzzle5.js) |
 | [Candy Rope](https://normansrule.github.io/pixel-arcade/#candyrope) | solo | [src](games/popular5.js) |
 | [Chain Reaction](https://normansrule.github.io/pixel-arcade/#chain) | solo | [src](games/arcade4.js) |
+| [Checkpoint](https://normansrule.github.io/pixel-arcade/#checkpoint) | solo | [src](games/advanced2.js) |
 | [Code Breaker](https://normansrule.github.io/pixel-arcade/#codebreaker) | solo | [src](games/tabletop.js) |
 | [Color Flood](https://normansrule.github.io/pixel-arcade/#flood) | solo | [src](games/puzzle2.js) |
 | [Color Wheel](https://normansrule.github.io/pixel-arcade/#colorwheel) | solo | [src](games/arcade4.js) |
@@ -351,7 +370,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 </details>
 
-<details><summary><b>Retro 3D</b> · 42</summary>
+<details><summary><b>Retro 3D</b> · 43</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -369,6 +388,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Hoverboard 3d](https://normansrule.github.io/pixel-arcade/#hoverboard3d) | solo | [src](games/threed5.js) |
 | [Jet Ski 3d](https://normansrule.github.io/pixel-arcade/#jetski3d) | solo | [src](games/threed5.js) |
 | [Kart Cup 3d](https://normansrule.github.io/pixel-arcade/#kart) | solo | [src](games/threed4.js) |
+| [Kart Grand Prix](https://normansrule.github.io/pixel-arcade/gp/) | full 3D | [src](gp/game.js) |
 | [Lava Escape 3d](https://normansrule.github.io/pixel-arcade/#lavaescape3d) | solo | [src](games/threed5.js) |
 | [Mech Walker 3d](https://normansrule.github.io/pixel-arcade/#mech3d) | solo | [src](games/threed5.js) |
 | [Mesh Drift 3d](https://normansrule.github.io/pixel-arcade/#drift) | solo | [src](games/threed2.js) |
@@ -400,13 +420,14 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 </details>
 
-<details><summary><b>Sim</b> · 18</summary>
+<details><summary><b>Sim</b> · 23</summary>
 
 | Game | Mode | |
 |---|---|---|
 | [Air Traffic](https://normansrule.github.io/pixel-arcade/#airtraffic) | solo | [src](games/tabletop.js) |
 | [Ant Farm](https://normansrule.github.io/pixel-arcade/#antfarm) | solo | [src](games/misc6.js) |
 | [Bee Keeper](https://normansrule.github.io/pixel-arcade/#beekeeper) | solo | [src](games/action2.js) |
+| [Block Beasts](https://normansrule.github.io/pixel-arcade/monsters/) | full 3D | [src](monsters/game.js) |
 | [Burger Rush](https://normansrule.github.io/pixel-arcade/#burger) | solo | [src](games/popular5.js) |
 | [Cafe Tycoon](https://normansrule.github.io/pixel-arcade/#cafetycoon) | solo | [src](games/misc6.js) |
 | [Coin Tycoon](https://normansrule.github.io/pixel-arcade/#coinclicker) | solo | [src](games/popular1.js) |
@@ -415,17 +436,21 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Fire Fighter](https://normansrule.github.io/pixel-arcade/#firefighter) | solo | [src](games/action2.js) |
 | [Lemonade Stand](https://normansrule.github.io/pixel-arcade/#lemonade) | solo | [src](games/action2.js) |
 | [Mars Colony](https://normansrule.github.io/pixel-arcade/#marscolony) | solo | [src](games/misc6.js) |
+| [Monster Tamer](https://normansrule.github.io/pixel-arcade/#monstertamer) | solo | [src](games/advanced2.js) |
+| [Penguin Plaza](https://normansrule.github.io/pixel-arcade/plaza/) | full 3D | [src](plaza/game.js) |
+| [Pixel Farm](https://normansrule.github.io/pixel-arcade/#pixelfarm) | solo | [src](games/advanced1.js) |
 | [Pixel Zoo](https://normansrule.github.io/pixel-arcade/#zoo) | solo | [src](games/sim.js) |
 | [Pizza Maker](https://normansrule.github.io/pixel-arcade/#pizzamaker) | solo | [src](games/misc6.js) |
 | [Pocket Pet](https://normansrule.github.io/pixel-arcade/#pet) | solo | [src](games/sim.js) |
 | [Reef Keeper](https://normansrule.github.io/pixel-arcade/#reef) | solo | [src](games/sim.js) |
 | [Safari Snap](https://normansrule.github.io/pixel-arcade/#safari) | solo | [src](games/sim.js) |
+| [Terra Block](https://normansrule.github.io/pixel-arcade/#terrablock) | solo | [src](games/advanced1.js) |
 | [Tiny City](https://normansrule.github.io/pixel-arcade/#tinycity) | solo | [src](games/misc6.js) |
 | [Traffic Control](https://normansrule.github.io/pixel-arcade/#traffic) | solo | [src](games/action2.js) |
 
 </details>
 
-<details><summary><b>Sports</b> · 69</summary>
+<details><summary><b>Sports</b> · 74</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -458,11 +483,13 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Frisbee Dog](https://normansrule.github.io/pixel-arcade/#frisbee) | solo | [src](games/finale.js) |
 | [Goalkeeper](https://normansrule.github.io/pixel-arcade/#goalie) | solo | [src](games/sports4.js) |
 | [Golf Tour](https://normansrule.github.io/pixel-arcade/#golftour) | solo | [src](games/tabletop.js) |
+| [Gridiron Pro](https://normansrule.github.io/pixel-arcade/#gridironpro) | solo | [src](games/advanced2.js) |
 | [Halfpipe](https://normansrule.github.io/pixel-arcade/#halfpipe) | solo | [src](games/sports3.js) |
 | [Hammer Throw](https://normansrule.github.io/pixel-arcade/#hammer) | solo | [src](games/sports5.js) |
 | [High Dive](https://normansrule.github.io/pixel-arcade/#dive) | solo | [src](games/sports3.js) |
 | [Home Run Derby](https://normansrule.github.io/pixel-arcade/#homerun) | solo | [src](games/sports2.js) |
 | [Hoops 1 On 1](https://normansrule.github.io/pixel-arcade/#hoops) | vs CPU · 2P | [src](games/sports1.js) |
+| [Hoops Jam](https://normansrule.github.io/pixel-arcade/#hoopsjam) | vs CPU · 2P | [src](games/advanced2.js) |
 | [Horse Race](https://normansrule.github.io/pixel-arcade/#horserace) | vs CPU · 2P | [src](games/sports4.js) |
 | [Hurdles](https://normansrule.github.io/pixel-arcade/#hurdles) | vs CPU · 2P | [src](games/sports3.js) |
 | [Javelin](https://normansrule.github.io/pixel-arcade/#javelin) | solo | [src](games/sports4.js) |
@@ -483,6 +510,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Rowing](https://normansrule.github.io/pixel-arcade/#rowing) | vs CPU · 2P | [src](games/sports4.js) |
 | [Rugby Breakaway](https://normansrule.github.io/pixel-arcade/#rugbyrun) | solo | [src](games/sports6.js) |
 | [Shot Put](https://normansrule.github.io/pixel-arcade/#shotput) | solo | [src](games/sports5.js) |
+| [Skate City](https://normansrule.github.io/pixel-arcade/skate/) | full 3D | [src](skate/game.js) |
 | [Skate Park](https://normansrule.github.io/pixel-arcade/#skatepark) | solo | [src](games/popular5.js) |
 | [Skee Ball](https://normansrule.github.io/pixel-arcade/#skee) | solo | [src](games/more.js) |
 | [Ski Jump](https://normansrule.github.io/pixel-arcade/#skijump) | solo | [src](games/finale.js) |
@@ -490,10 +518,12 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Slopestyle](https://normansrule.github.io/pixel-arcade/#slopestyle) | solo | [src](games/sports6.js) |
 | [Speed Climb](https://normansrule.github.io/pixel-arcade/#climb) | vs CPU · 2P | [src](games/sports5.js) |
 | [Speed Skate](https://normansrule.github.io/pixel-arcade/#skate) | vs CPU · 2P | [src](games/sports4.js) |
+| [Striker 11](https://normansrule.github.io/pixel-arcade/striker/) | full 3D | [src](striker/game.js) |
 | [Surf](https://normansrule.github.io/pixel-arcade/#surf) | solo | [src](games/sports5.js) |
 | [Swim Sprint](https://normansrule.github.io/pixel-arcade/#swim) | vs CPU · 2P | [src](games/sports3.js) |
 | [Table Kick](https://normansrule.github.io/pixel-arcade/#foos) | vs CPU · 2P | [src](games/sports3.js) |
 | [Table Tennis](https://normansrule.github.io/pixel-arcade/#tabletennis) | vs CPU · 2P | [src](games/sports4.js) |
+| [Tiny Racers](https://normansrule.github.io/pixel-arcade/#tinyracers) | solo | [src](games/advanced2.js) |
 | [Track Cycling](https://normansrule.github.io/pixel-arcade/#trackcycle) | solo | [src](games/sports6.js) |
 | [Vault](https://normansrule.github.io/pixel-arcade/#gymvault) | solo | [src](games/sports6.js) |
 | [Water Polo](https://normansrule.github.io/pixel-arcade/#waterpolo) | solo | [src](games/sports6.js) |
@@ -501,7 +531,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 
 </details>
 
-<details><summary><b>Versus</b> · 37</summary>
+<details><summary><b>Versus</b> · 41</summary>
 
 | Game | Mode | |
 |---|---|---|
@@ -513,6 +543,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Blast Maze](https://normansrule.github.io/pixel-arcade/#blast) | vs CPU · 2P | [src](games/versus2.js) |
 | [Bumper Cars](https://normansrule.github.io/pixel-arcade/#bumper) | vs CPU · 2P | [src](games/versus4.js) |
 | [Capture Flag](https://normansrule.github.io/pixel-arcade/#ctf) | vs CPU · 2P | [src](games/versus4.js) |
+| [Combo Kings](https://normansrule.github.io/pixel-arcade/#combokings) | vs CPU · 2P | [src](games/advanced1.js) |
 | [Cup Stack Race](https://normansrule.github.io/pixel-arcade/#cupstack) | vs CPU · 2P | [src](games/versus5.js) |
 | [Deflect](https://normansrule.github.io/pixel-arcade/#deflect) | vs CPU · 2P | [src](games/versus5.js) |
 | [Flipper Duel](https://normansrule.github.io/pixel-arcade/#flipperduel) | vs CPU · 2P | [src](games/versus5.js) |
@@ -520,10 +551,12 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Heli Duel](https://normansrule.github.io/pixel-arcade/#heliduel) | vs CPU · 2P | [src](games/versus4.js) |
 | [King Of The Hill](https://normansrule.github.io/pixel-arcade/#kingofhill) | vs CPU · 2P | [src](games/versus5.js) |
 | [Knock Off](https://normansrule.github.io/pixel-arcade/#knockoff) | vs CPU · 2P | [src](games/versus5.js) |
+| [Lane Rush](https://normansrule.github.io/pixel-arcade/#lanerush) | vs CPU · 2P | [src](games/advanced1.js) |
 | [Laser Paint](https://normansrule.github.io/pixel-arcade/#paint) | vs CPU · 2P | [src](games/versus2.js) |
 | [Laser Tag](https://normansrule.github.io/pixel-arcade/#lasertag) | vs CPU · 2P | [src](games/finale.js) |
 | [Marble Munch](https://normansrule.github.io/pixel-arcade/#marblemunch) | vs CPU · 2P | [src](games/versus5.js) |
 | [Neon Trails](https://normansrule.github.io/pixel-arcade/#trails) | vs CPU · 2P | [src](games/classics2.js) |
+| [Platform Brawl](https://normansrule.github.io/pixel-arcade/brawl/) | full 3D | [src](brawl/game.js) |
 | [Pogo Joust](https://normansrule.github.io/pixel-arcade/#pogojoust) | vs CPU · 2P | [src](games/versus5.js) |
 | [Quick Draw](https://normansrule.github.io/pixel-arcade/#quickdraw) | vs CPU · 2P | [src](games/classics2.js) |
 | [Race Duel](https://normansrule.github.io/pixel-arcade/#raceduel) | vs CPU · 2P | [src](games/versus4.js) |
@@ -536,6 +569,7 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 | [Spin Tops](https://normansrule.github.io/pixel-arcade/#spintop) | vs CPU · 2P | [src](games/versus5.js) |
 | [Squash](https://normansrule.github.io/pixel-arcade/#squash) | vs CPU · 2P | [src](games/versus5.js) |
 | [Star Duel](https://normansrule.github.io/pixel-arcade/#spacewar) | vs CPU · 2P | [src](games/versus5.js) |
+| [Stick Brawl](https://normansrule.github.io/pixel-arcade/#stickbrawl) | vs CPU · 2P | [src](games/advanced2.js) |
 | [Sumo Bump](https://normansrule.github.io/pixel-arcade/#sumo) | vs CPU · 2P | [src](games/classics2.js) |
 | [Sword Duel](https://normansrule.github.io/pixel-arcade/#swordduel) | vs CPU · 2P | [src](games/versus4.js) |
 | [Tank Duel](https://normansrule.github.io/pixel-arcade/#tanks) | vs CPU · 2P | [src](games/classics2.js) |
@@ -550,6 +584,9 @@ Click the profile chip → enter your GitHub username. Game over → **U** posts
 Every cabinet passes the same automated gate on every push: it must respond to input, keep all text on screen, never throw, and have a one-line how-to. See the [quality report](docs/QUALITY.md).
 
 ## Develop
+
+After adding or restyling canvas games, refresh the hub thumbnails: `python3 -m http.server 8765 &` then `python3 thumbs.py` (resumes; `--all` redoes every image).
+
 
 ```bash
 git clone https://github.com/Normansrule/pixel-arcade.git && cd pixel-arcade

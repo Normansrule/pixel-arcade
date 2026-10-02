@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skate City · Pixel Arcade</title>
+<meta name="description" content="Skate City: arcade 3D skateboarding in the browser. Two-minute runs through three original parks: ollies, flips, grabs, grinds, manuals, lip tricks and big combos. Collect S-K-A-T-E, find the secret tape, unlock parks and level up your skater.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="skate.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="lines"></canvas>
+<div id="hud" hidden>
+  <div id="tl"><span class="lbl">SCORE</span><b id="score">0</b><span id="lvl"></span></div>
+  <div id="clockW"><b id="clock">2:00</b><span id="clockS">TIME</span></div>
+  <div id="tr"><div id="letters"><i>S</i><i>K</i><i>A</i><i>T</i><i>E</i><em id="tapeI" title="Secret tape">▣</em></div>
+    <div id="spec"><div id="specF"></div><span>SPECIAL</span></div><div id="rival" hidden></div></div>
+  <div id="pops"></div>
+  <div id="tname"></div>
+  <div id="combo"><div id="ctricks"></div><div id="cscore"></div></div>
+  <div id="bal"><i></i><b></b></div>
+  <div id="intro" hidden><p class="eye" id="iEye"></p><h2 id="iName"></h2><ul id="iGoals"></ul><p class="tap">SPACE / A TO DROP IN</p></div>
+  <div id="cd"></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SKATEBOARDING</p>
+  <h1>SKATE<br>CITY<em>.</em></h1>
+  <p class="how">Two-minute runs. Chain ollies, flips, grabs, grinds, manuals and lip tricks into monster combos, clear gaps, grab the S-K-A-T-E letters and hunt the secret tape. Finish goals to unlock new parks and level up your skater.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0" class="on">CAREER</button><button data-v="1">VS RIVAL</button></div>
+    <label>PARK</label><div class="parks" id="parks"></div>
+    <label id="diffL">RIVAL</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">DROP IN</button><button id="edit" class="ghost">SKATER</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Steer · push · brake</td><td><kbd>A</kbd><kbd>D</kbd> <kbd>W</kbd> <kbd>S</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Ollie (hold = higher)</td><td><kbd>Space</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Flip trick + direction</td><td><kbd>J</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Grab (hold) + direction</td><td><kbd>K</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Grind · lip trick (hold)</td><td><kbd>L</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Spin in the air</td><td><kbd>A</kbd> <kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Manual · nose manual</td><td><kbd>W</kbd>→<kbd>S</kbd> · <kbd>S</kbd>→<kbd>W</kbd> or <kbd>I</kbd> <span class="pad">RT</span></td></tr>
+    <tr><td>Revert on ramp landing · lip transfer</td><td><kbd>Q</kbd> <kbd>E</kbd> <span class="pad">LB RB</span></td></tr>
+    <tr><td>Special trick (meter full)</td><td><kbd>Shift</kbd> + trick <span class="pad">LT</span></td></tr>
+    <tr><td>Balance grinds · manuals</td><td>arrows / <kbd>WASD</kbd></td></tr>
+    <tr><td>Respawn · camera · music · pause</td><td><kbd>R</kbd> <kbd>C</kbd> <kbd>N</kbd> <kbd>Esc</kbd></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p>Land straight or the board wins. Link tricks with manuals and reverts: every trick adds to the multiplier. Tap revert as you launch off a ramp lip to air out onto the deck.</p>
+</div>
+<div id="goalsCard" class="card2"><h3 id="gcName">GOALS</h3><ul id="gcList"></ul><p id="gcInfo"></p></div>
+<div id="skater" hidden>
+  <div class="box"><h2>YOUR SKATER<em>.</em></h2>
+    <div class="ed"><label>NAME</label><input id="sName" maxlength="10" spellcheck="false"></div>
+    <div id="sColors"></div>
+    <h4>STATS <span id="sPts"></span></h4><div id="sStats"></div>
+    <p class="note">Every goal you complete earns one stat point.</p>
+    <div class="row"><button id="sDone" class="go">DONE</button></div></div>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLD<br>UP<em>.</em></h1><ul id="pGoals"></ul><div class="row"><button id="resume" class="go">RESUME</button><button id="restart" class="ghost">RESTART RUN</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">TIME'S UP</p>
+  <p class="res" id="ores">SICK RUN</p>
+  <p class="fs" id="ofs">0</p>
+  <p class="vs" id="ovs"></p>
+  <div class="ogrid"><table id="stats"></table><ul id="oGoals"></ul></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">RUN IT BACK</button><button id="next" class="ghost">NEXT PARK</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starship Suspects · Pixel Arcade</title>
+<meta name="description" content="Starship Suspects: full 3D social deduction aboard a starship. Do tasks or play the saboteur against nine bots that remember what they saw, argue in meetings and vote.">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="suspects.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"></div>
+<div id="flash"></div>
+<div id="hud" hidden>
+  <div id="tl">
+    <div id="bar"><i></i><span>CREW TASKS</span></div>
+    <div id="role"></div>
+    <ul id="tasks"></ul>
+  </div>
+  <div id="top"><b id="clock">12:00</b><span id="alive"></span><div id="alert" hidden></div></div>
+  <canvas id="mini" width="232" height="140"></canvas>
+  <div id="prompt"></div>
+  <div id="prog" hidden><i></i><span></span></div>
+  <div id="acts">
+    <button data-a="sab" class="a s">SABOTAGE<kbd>TAB</kbd></button>
+    <button data-a="vent" class="a s">VENT<kbd>V</kbd></button>
+    <button data-a="kill" class="a s k">KILL<kbd>Q</kbd><em></em></button>
+    <button data-a="report" class="a r">REPORT<kbd>R</kbd></button>
+    <button data-a="use" class="a u">USE<kbd>E</kbd></button>
+  </div>
+  <div id="banner"><b></b><span></span></div>
+  <div id="ghost" hidden>YOU ARE A GHOST · <span>finish your tasks to help the crew</span> <button id="ff">FAST-FORWARD ▸▸</button></div>
+</div>
+<div id="map" hidden><div class="mbox"><div class="mhead"><b>SHIP MAP</b><span id="mtip"></span><button class="tx">✕</button></div><div id="sabs"></div><canvas id="bigmap" width="840" height="492"></canvas></div></div>
+<div id="meet" hidden>
+  <div class="mtop"><b id="mtitle">EMERGENCY MEETING</b><span id="msub"></span><i id="mclock"></i></div>
+  <div class="mgrid">
+    <div class="mleft"><div id="tiles"></div><div class="vrow"><button id="vskip" class="ghost sm">SKIP VOTE</button><span id="skips"></span></div></div>
+    <div class="mright">
+      <div id="chat"></div>
+      <div id="tgt"><span id="tname">Select a crewmate</span><button data-t="accuse" class="sm">SUS</button><button data-t="clear" class="sm">SAFE</button><button data-t="saw" class="sm">WHERE I SAW THEM</button><button data-t="vote" class="sm go2">VOTE</button></div>
+      <div id="quick"></div>
+      <form id="say"><select id="claim"><option value="">CLAIM A ROOM…</option></select><input id="msg" maxlength="140" placeholder="Type: 'DAX vented in storage', 'I was in comms', 'skip'…" autocomplete="off"><button class="sm">SEND</button></form>
+    </div>
+  </div>
+</div>
+<div id="eject" hidden><p id="etext"></p><p id="esub"></p></div>
+<div id="intro" hidden><p class="eye" id="ieye"></p><h2 id="irole"></h2><p id="idesc"></p><div id="imates"></div></div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SOCIAL DEDUCTION</p>
+  <h1>STARSHIP<br>SUSPECTS<em>.</em></h1>
+  <p class="how">Ten spacers, one ship, and somebody aboard is not who they say. Finish your tasks before the clock runs out, or be the saboteur and thin the crew without getting caught. Every bot remembers what it saw.</p>
+  <div class="opts">
+    <label>ROLE</label><div class="seg" id="o-role"><button data-v="0" class="on">CREWMATE</button><button data-v="1">SABOTEUR</button><button data-v="2">RANDOM</button></div>
+    <label>SABOTEURS</label><div class="seg" id="o-sabs"><button data-v="1">1</button><button data-v="2" class="on">2</button></div>
+    <label>BOTS</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>CLOCK</label><div class="seg" id="o-clock"><button data-v="480">8 MIN</button><button data-v="720" class="on">12 MIN</button><button data-v="960">16 MIN</button></div>
+    <label>EJECTS</label><div class="seg" id="o-conf"><button data-v="1" class="on">REVEAL ROLE</button><button data-v="0">HIDDEN</button></div>
+    <label>SUIT</label><div class="seg" id="o-color"></div>
+  </div>
+  <div class="row"><button id="go" class="go">LAUNCH</button><span id="mstats"></span></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim your lamp</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd> <span class="pad">L / R stick</span></td></tr>
+    <tr><td>Use · task · button · fix</td><td><kbd>E</kbd> <kbd>Space</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Report body</td><td><kbd>R</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Kill (saboteur)</td><td><kbd>Q</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Vent in / out · travel</td><td><kbd>V</kbd> · <kbd>A</kbd> <kbd>D</kbd> <span class="pad">RT · LB RB</span></td></tr>
+    <tr><td>Map · sabotage</td><td><kbd>M</kbd> <kbd>Tab</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Crew win by finishing every task or ejecting all saboteurs. Saboteurs win by matching the crew's numbers, a reactor or oxygen meltdown, or when the clock runs out. Report bodies or hit the button in the Cafeteria to call a meeting, then argue, accuse and vote.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLD<br>POSITION<em>.</em></h1><p class="how">Press <b>Esc</b> to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye"></p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="why" id="owhy"></p>
+  <div id="roster"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
