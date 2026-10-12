@@ -309,13 +309,23 @@ setSeg('o-vol',prefs.vol??.8,v=>{snd.setVol(+v);prefs.vol=+v;savePrefs();});setS
 const SKEY='voxel_world2';let saveT=0;const saveSoon=()=>{if(saveT<=0)saveT=4;};
 function save(){if(state==='menu'||result==='lose')return;try{localStorage.setItem(SKEY,JSON.stringify({v:2,seed:Wd.getSeed(),edits:[...Wd.edits.entries()],mode,diff,inv,hot,slot,score,dayT,nights,goal,crafted,got,lives,stats,spawn:spawnPt,P:{x:P.x,y:P.y,z:P.z,hp:P.hp,food:P.food,yaw:P.yaw},timeLeft,timeMode,clock}));}catch(e){}}
 function load(){try{const s=JSON.parse(localStorage.getItem(SKEY));return s&&s.v===2?s:null;}catch(e){return null;}}
+// v1 saves ('voxel_world', before the rebuild): the generator, chunk layout and edit keys all changed, so seed and edits can't carry over (a fresh world starts at morning);
+// score, nights and inventory do (block ids 1-22 and items 100-103 kept their meaning, tools were renumbered). The v1 key is left as-is.
+const V1KEY='voxel_world',V1IDS={110:120,111:121,112:122,113:123,120:132};let migrated=false;
+function migrateV1(){try{if(localStorage.getItem(SKEY)||localStorage.getItem(V1KEY+'_moved'))return;const o=JSON.parse(localStorage.getItem(V1KEY));if(!o||typeof o!=='object')return;
+ const mapId=k=>V1IDS[k]||(k>=1&&k<=22||k>=100&&k<=103?k:0),inv1={},cr={},h=Array(9).fill(0);
+ for(const k in o.inv||{}){const id=mapId(+k),n=Math.floor(+o.inv[k]);if(id&&n>0)inv1[id]=(inv1[id]||0)+n;}for(const k in o.crafted||{}){const id=mapId(+k);if(id)cr[id]=1;}
+ for(const id of Object.keys(inv1).map(Number))if(hotable(id)){const e=h.indexOf(0);if(e>=0)h[e]=id;}
+ const m=o.mode==='creative'?'creative':'survival';
+ localStorage.setItem(SKEY,JSON.stringify({v:2,from:1,seed:(Math.random()*1e9)|0,edits:[],mode:m,diff,inv:inv1,hot:h,slot:0,score:Math.max(0,+o.score||0),dayT:.05,nights:Math.max(0,o.nights|0),goal:0,crafted:cr,got:{},lives:DIFF[diff].lives,stats:{mined:0,ores:0,kills:0,placed:0,crafted:0,deaths:0},spawn:null,P:null,timeLeft:0,timeMode,clock:0}));
+ localStorage.setItem(V1KEY+'_moved','1');migrated=Object.keys(inv1).length;$('mig').textContent=migrated?'OLD WORLD FOUND · ITEMS CARRIED OVER':'OLD WORLD FOUND · SCORE CARRIED OVER';$('mig').hidden=false;}catch(e){}}
 function resetWorld(seed){Wd.clearAll(scene);mobs.clear();for(const d of drops)scene.remove(d.mesh);drops.length=0;primed.splice(0).forEach(p=>scene.remove(p.m));Wd.init(seed);Wd.setEdits(new Map());beam.visible=false;}
 function newWorld(seed){resetWorld(typeof seed==='number'?seed:(Math.random()*1e9)|0);inv={};hot=Array(9).fill(0);slot=0;goal=0;crafted={};got={};score=0;dayT=.04;nights=0;wasNight=false;lives=D().lives;stats={mined:0,ores:0,kills:0,placed:0,crafted:0,deaths:0};clock=0;won=false;result=null;
  spawnPt=spawnPoint();placePlayer(spawnPt);P.hp=20;P.food=20;P.air=10;P.fly=false;P.yaw=Math.random()*6.28;P.pitch=-.12;timeLeft=timeMode;start(true);}
-function contWorld(){const s=load();if(!s){newWorld();return;}resetWorld(s.seed);Wd.setEdits(new Map(s.edits||[]));mode=s.mode;diff=s.diff??1;inv=s.inv||{};hot=s.hot||Array(9).fill(0);slot=s.slot||0;score=s.score||0;dayT=s.dayT??.05;nights=s.nights||0;goal=s.goal||0;crafted=s.crafted||{};got=s.got||{};lives=s.lives??3;stats=s.stats||stats;spawnPt=s.spawn||spawnPoint();
- timeMode=s.timeMode??timeMode;timeLeft=s.timeLeft>5?s.timeLeft:timeMode;clock=s.clock||0;won=false;result=null;placePlayer(s.P);P.y=s.P.y+.1;P.hp=s.P.hp||20;P.food=s.P.food??20;P.yaw=s.P.yaw||0;P.pitch=0;wasNight=Math.sin(dayT*Math.PI*2)<-.05;start(true);}
-function start(fresh){snd.init();snd.playing=true;state='play';document.body.classList.remove('over','paused');dead=false;$('dead').hidden=true;['menu','over','pause'].forEach(i=>$(i).hidden=true);$('keys').style.display='';$('hud').hidden=false;document.body.classList.add('playing');barDirty=true;heldId=-1;
- for(const k in hc)delete hc[k];if(fresh){Wd.stream(P.x,P.z,2,mats,scene,1e9);banner(mode==='creative'?'CREATIVE':'DAY 1',mode==='creative'?'BUILD ANYTHING':BIO[Wd.column(Math.floor(P.x),Math.floor(P.z)).bio]+' · '+D().n,2.4);}
+function contWorld(){const s=load();if(!s){newWorld();return;}resetWorld(s.seed);Wd.setEdits(new Map(s.edits||[]));mode=s.mode;diff=s.diff??1;inv=s.inv||{};hot=s.hot||Array(9).fill(0);slot=s.slot||0;score=s.score||0;dayT=s.dayT??.05;nights=s.nights||0;goal=s.goal||0;crafted=s.crafted||{};got=s.got||{};lives=s.lives??3;stats=s.stats||stats;spawnPt=s.spawn||spawnPoint();const q=s.P||spawnPt;
+ timeMode=s.timeMode??timeMode;timeLeft=s.timeLeft>5?s.timeLeft:timeMode;clock=s.clock||0;won=false;result=null;placePlayer(q);P.y=q.y+.1;P.hp=q.hp||20;P.food=q.food??20;P.yaw=q.yaw||0;P.pitch=0;wasNight=Math.sin(dayT*Math.PI*2)<-.05;start(true);}
+function start(fresh){snd.init();snd.playing=true;state='play';$('mig').hidden=true;document.body.classList.remove('over','paused');dead=false;$('dead').hidden=true;['menu','over','pause'].forEach(i=>$(i).hidden=true);$('keys').style.display='';$('hud').hidden=false;document.body.classList.add('playing');barDirty=true;heldId=-1;
+ for(const k in hc)delete hc[k];if(fresh){Wd.stream(P.x,P.z,2,mats,scene,1e9);banner(mode==='creative'?'CREATIVE':'DAY '+(nights+1),mode==='creative'?'BUILD ANYTHING':BIO[Wd.column(Math.floor(P.x),Math.floor(P.z)).bio]+' · '+D().n,2.4);}
  if(!usingPad)try{canvas.requestPointerLock();}catch(e){}}
 let pausedAt=0;function pause(on){if(on){if(state!=='play')return;state='paused';pausedAt=performance.now();try{document.exitPointerLock();}catch(e){}$('pause').hidden=false;document.body.classList.remove('playing');document.body.classList.add('paused');save();}else{state='play';$('pause').hidden=true;document.body.classList.add('playing');document.body.classList.remove('paused');if(!usingPad)try{canvas.requestPointerLock();}catch(e){}}}
 function toMenu(){save();state='menu';document.body.classList.remove('over','paused');$('hud').hidden=true;['over','pause'].forEach(i=>$(i).hidden=true);$('menu').hidden=false;$('keys').style.display='';document.body.classList.remove('playing');craftOpen=false;$('craft').hidden=true;snd.playing=false;$('cont').style.display=load()?'':'none';showBest();try{document.exitPointerLock();}catch(e){}}
@@ -394,7 +404,7 @@ let last=performance.now();
 /* ================= boot ================= */
 applyQuality(gfxQ);bindQualityKey(()=>gfxQ,q=>applyQuality(q));
 Wd.init(20241);spawnPt=spawnPoint();P.x=spawnPt.x;P.y=spawnPt.y;P.z=spawnPt.z;dayT=.43;
-$('cont').style.display=load()?'':'none';showBest();toMenu();requestAnimationFrame(loop);
+migrateV1();$('cont').style.display=load()?'':'none';showBest();toMenu();requestAnimationFrame(loop);
 
 // test hooks (kept from the original cabinet, extended)
 window.VOXEL={step,stream:(n=4)=>Wd.stream(state==='menu'?spawnPt.x:P.x,state==='menu'?spawnPt.z:P.z,state==='menu'?Math.min(RD,5):RD,mats,scene,1e9,n),P,get,set:(x,y,z,id)=>setBlock(x,y,z,id),raycast,eye,look,terrain:(x,z)=>Wd.column(x,z),get state(){return state;},newWorld,contWorld,
