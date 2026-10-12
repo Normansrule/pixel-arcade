@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starfall Vanguard · Pixel Arcade</title>
+<meta name="description" content="Starfall Vanguard: a three-mission sci-fi story campaign in full 3D. Fight the Kyrr across a ring-world with a CPU marine squad: recharging shields, energy weapons that overheat, a turret buggy and a hover tank.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="campaign.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div><div id="flash"></div>
+<div id="hud" hidden>
+  <div id="objc"><p class="eye2"><span id="mname">MISSION 1 · LANDFALL</span><b id="clock">12:00</b></p><div class="ob"><i></i><span id="objt">REGROUP WITH THE SQUAD</span></div><div class="prog" id="prog" hidden><em></em></div></div>
+  <div id="vit"><div class="sh" id="shw"><em id="shb"></em></div><div class="hp"><em id="hpb"></em></div><div id="boss" hidden><p id="bossn">OVERSEER VASH</p><div class="bb"><em id="bossS"></em><s id="bossH"></s></div></div></div>
+  <div id="squad"></div>
+  <div id="radio"><div class="rh"><i></i><b id="rwho"></b></div><p id="rtxt"></p></div>
+  <div id="tags"></div>
+  <div id="cross"><div class="ring"></div><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><em></em></div>
+  <div id="hitm"><i></i><i></i><i></i><i></i></div>
+  <div id="dmg"></div>
+  <div id="scope" hidden><i></i></div>
+  <div id="prompt"></div>
+  <div id="toast"></div>
+  <div id="title"><p id="tt1"></p><b id="tt2"></b><span id="tt3"></span></div>
+  <canvas id="radar" width="200" height="200"></canvas>
+  <div id="wpn">
+    <div class="nades"><span id="nf">◆ 2</span><span id="np">● 1</span></div>
+    <div class="cur"><p id="wname">MK7 ASSAULT RIFLE</p><b id="mag">36</b><span id="res">/ 216</span></div>
+    <div class="heat" id="heat" hidden><em></em></div>
+    <div class="alt" id="walt"></div>
+    <div class="rl" id="rl"><em></em></div>
+  </div>
+  <div id="veh" hidden><p id="vname">JACKRABBIT LRV</p><div class="vb"><em id="vhp"></em></div><span id="vinfo"></span></div>
+  <div id="dead" hidden><b>YOU DIED</b><span id="dtxt">REVERTING TO CHECKPOINT</span></div>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SCI-FI STORY CAMPAIGN</p>
+  <h1>STARFALL<br>VANGUARD<em>.</em></h1>
+  <p class="how">The Kyrr have taken Halcyon Verge, a ring-world the size of a star system. You are Vanguard-09, the last armoured trooper of the Resolute. Lead a marine squad through three missions: the Ember Gorge, the Spire and the Verdant Reach.</p>
+  <div class="opts">
+    <label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HEROIC</button><button data-v="3">LEGENDARY</button></div>
+    <label>START AT</label><div class="seg" id="o-mis"><button data-v="0">1 · LANDFALL</button><button data-v="1">2 · THE SPIRE</button><button data-v="2">3 · HAMMERFALL</button></div>
+  </div>
+  <p class="mapdesc" id="mapdesc"></p>
+  <div class="row"><button id="go" class="go">BEGIN CAMPAIGN</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
+    <tr><td>Fire (hold or spam) · zoom</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Jump · crouch · sprint</td><td><kbd>Space</kbd> <kbd>C</kbd> <kbd>Shift</kbd></td></tr>
+    <tr><td>Reload · swap weapon</td><td><kbd>R</kbd> <kbd>1</kbd><kbd>2</kbd>/<kbd>Wheel</kbd></td></tr>
+    <tr><td>Melee · grenade · switch type</td><td><kbd>F</kbd> <kbd>Q</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Pick up · enter vehicle · interact</td><td><kbd>E</kbd> (hold)</td></tr>
+    <tr><td>Vehicle: drive · fire · boost</td><td><kbd>WASD</kbd> <kbd>LMB</kbd> <kbd>Shift</kbd></td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Shields recharge out of fire, then health. Kyrr weapons never reload but overheat — let them vent. Checkpoints save your progress; each mission has a time limit. Gamepad supported.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>FIRE<em>.</em></h1><p class="how" id="pobj"></p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.75">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="80">80</button><button data-v="90">90</button><button data-v="100">100</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.35">LOW</button><button data-v="0.6">MED</button><button data-v="0.9">LOUD</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="restart" class="ghost">RESTART MISSION</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="mres" class="scr" hidden>
+  <p class="eye" id="meye">MISSION 1 OF 3</p>
+  <h2 id="mres1">MISSION COMPLETE</h2>
+  <p class="fs" id="mres2"></p>
+  <div class="grid" id="mstats"></div>
+  <div class="row"><button id="mnext" class="go">CONTINUE</button><button id="mretry" class="ghost">RETRY MISSION</button><button id="mend" class="ghost">END CAMPAIGN</button></div>
+</div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">CAMPAIGN COMPLETE</p>
+  <div class="rk"><b id="orank">A</b><div><p class="res" id="ores">HALCYON VERGE SECURED</p><p class="fs" id="ofs"></p></div></div>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="lock" hidden><b>CLICK TO PLAY</b><span>mouse is captured · Esc to pause</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
