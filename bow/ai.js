@@ -59,6 +59,8 @@ export function think(b,G,dt){const ai=b.ai,D=G.diff,inp=b.inp,W=G.W;if(G.idleTe
     const p0=ai.path[0],p1=ai.path[1];if(dist2(b.pos,p1)<dist2(p0,p1))ai.pi=1;}}
   const P=ai.path;let node=P&&P[ai.pi];
   while(node){const lad=node.tag==='lb'&&P[ai.pi+1]&&P[ai.pi+1].tag==='lt';const r=lad?.55:1.15;if(dist2(b.pos,node)<r&&Math.abs(b.pos.y-node.y)<(lad?1:2.2)){ai.pi++;node=P[ai.pi];}else break;}
+  if(node&&!ai.chop){// the planned route goes through a barricade (no detour was short enough): hack it down once we reach it
+   for(const[u,v]of[[P[ai.pi-1],node],[node,P[ai.pi+1]]]){const e=u&&v&&G.nav.edge(u,v),o=e&&e[3];if(o&&!o.dead&&Math.hypot(Math.max(o.x0-b.pos.x,0,b.pos.x-o.x1),Math.max(o.z0-b.pos.z,0,b.pos.z-o.z1))<2.2){ai.chop=o;break;}}}
   if(node){const prev=P[ai.pi-1];if(prev&&prev.tag==='lb'&&node.tag==='lt'){const l=prev.ladder;ladderFace=l;mx=-l.nx;mz=-l.nz;want=1;}else{mx=node.x-b.pos.x;mz=node.z-b.pos.z;want=1;}}
   else if(dist2(b.pos,ai.goal)>1.4){mx=ai.goal.x-b.pos.x;mz=ai.goal.z-b.pos.z;want=1;}
   const ml=Math.hypot(mx,mz);if(ml>0){mx/=ml;mz/=ml;}}
@@ -66,8 +68,8 @@ export function think(b,G,dt){const ai=b.ai,D=G.diff,inp=b.inp,W=G.W;if(G.idleTe
   const l=b.ladder;mx=-l.nx;mz=-l.nz;want=1;ladderFace=l;}
  // ---------- combat ----------
  const near=T?dist3(T.pos,b.pos):1e9;let aimYaw=null,aimPitch=0;
- const dash=(ai.goalKind==='take'||ai.goalKind==='return')&&ai.goal&&dist3(b.pos,ai.goal)<22&&!G.W.solidAt(ai.goal.x,ai.goal.y+1,ai.goal.z);
- const busy=(ai.goalKind==='cap'&&near>9)||(dash&&near>2.5);
+ const dash=(ai.goalKind==='take'||ai.goalKind==='return')&&ai.goal&&dist3(b.pos,ai.goal)<(ai.goalKind==='take'?34:22)&&!G.W.solidAt(ai.goal.x,ai.goal.y+1,ai.goal.z);
+ const busy=(ai.goalKind==='cap'&&near>4)||(dash&&near>2.5)||(ai.goalKind==='take'&&ai.role==='attack'&&T&&near>10&&!T.carrying);
  if(T&&!busy){ai.aimT+=dt;ai.react-=dt;
   if(near<3.4||(b.weapon==='sword'&&near<6)||(b.ammo<=0&&near<30)){// sword duel
    if(b.weapon!=='sword')inp.slot='sword';const dx=T.pos.x-b.pos.x,dz=T.pos.z-b.pos.z;aimYaw=Math.atan2(-dx,-dz);aimPitch=Math.atan2(T.pos.y-b.pos.y,near)*.5;
@@ -97,8 +99,8 @@ export function think(b,G,dt){const ai=b.ai,D=G.diff,inp=b.inp,W=G.W;if(G.idleTe
   if(b.weapon==='sword'&&b.ammo<=0)inp.slot=null;}
  // ---------- stuck handling ----------
  ai.stuckChk-=dt;if(ai.stuckChk<=0){const moved=Math.hypot(b.pos.x-ai.lastP.x,b.pos.z-ai.lastP.z);ai.stuckChk=.8;if(want>.5&&moved<.35&&!b.ladder){ai.stuck++;if(ai.stuck>=1&&ai.jumpCD<=0){inp.jump=true;ai.jumpCD=.6;}
-   if(ai.stuck>=3){// chop through a barricade, or try another route
-    const blk=G.dynNear(b.pos,2.6);if(blk){ai.chop=blk;}ai.path=null;ai.replan=0;ai.pi=0;if(ai.stuck>5){ai.stuck=0;ai.goal={x:b.pos.x+(rnd()-.5)*10,y:b.pos.y,z:b.pos.z+(rnd()-.5)*10};ai.goalKind='unstick';ai.decide=1.5;}}}else ai.stuck=0;ai.lastP.x=b.pos.x;ai.lastP.z=b.pos.z;}
+   if(ai.stuck>=3){// boxed in by a barricade with no route at all: chop it; otherwise try another route
+    const blk=G.dynNear(b.pos,2.6);if(blk&&!ai.path)ai.chop=blk;ai.path=null;ai.replan=0;ai.pi=0;if(ai.stuck>5){ai.stuck=0;ai.goal={x:b.pos.x+(rnd()-.5)*10,y:b.pos.y,z:b.pos.z+(rnd()-.5)*10};ai.goalKind='unstick';ai.decide=1.5;}}}else ai.stuck=0;ai.lastP.x=b.pos.x;ai.lastP.z=b.pos.z;}
  if(ai.chop){if(ai.chop.dead||dist2(b.pos,{x:(ai.chop.x0+ai.chop.x1)/2,z:(ai.chop.z0+ai.chop.z1)/2})>4)ai.chop=null;else if(!T||near>12){inp.slot=b.weapon==='sword'?null:'sword';const cx=(ai.chop.x0+ai.chop.x1)/2,cz=(ai.chop.z0+ai.chop.z1)/2;aimYaw=Math.atan2(-(cx-b.pos.x),-(cz-b.pos.z));aimPitch=-.1;mx=cx-b.pos.x;mz=cz-b.pos.z;const l=Math.hypot(mx,mz)||1;mx/=l;mz/=l;want=.6;if(ai.swingCD<=0&&b.weapon==='sword'){inp.fire=true;ai.swingCD=.5;}else if(b.weapon==='sword')inp.fire=false;}}
  // sky islands: never walk off an edge on purpose
  if(want>0&&!ladderFace&&W.voidY>-100){tmp.x=b.pos.x+mx*1.2;tmp.z=b.pos.z+mz*1.2;if(W.groundAt(tmp.x,tmp.z,b.pos.y+1)<b.pos.y-6&&!(ai.path&&ai.path[ai.pi]&&ai.path[ai.pi].y<b.pos.y-1)){want=0;ai.replan=0;}}
@@ -106,5 +108,5 @@ export function think(b,G,dt){const ai=b.ai,D=G.diff,inp=b.inp,W=G.W;if(G.idleTe
  const moveYaw=want>0?Math.atan2(-mx,-mz):b.yaw;let ty=aimYaw!==null?aimYaw:ladderFace?Math.atan2(ladderFace.nx,ladderFace.nz):moveYaw,tpch=aimYaw!==null?aimPitch:ladderFace?.5:(b.carrying?0:-.05);
  const turn=D.turn*(aimYaw!==null?1:.8)*dt;const dyaw=wrap(ty-b.yaw);inp.yaw=b.yaw+Math.max(-turn,Math.min(turn,dyaw));inp.pitch=b.pitch+Math.max(-turn,Math.min(turn,tpch-b.pitch));
  if(want>0){const fx=-Math.sin(inp.yaw),fz=-Math.cos(inp.yaw),rx=Math.cos(inp.yaw),rz=-Math.sin(inp.yaw);inp.f=(mx*fx+mz*fz)*want;inp.s=(mx*rx+mz*rz)*want;if(ladderFace)inp.f=1;
-  inp.sprint=!T&&want>.9&&b.weapon!=='bow'||(!T&&b.draw===0&&want>.9);}
+  inp.sprint=aimYaw===null&&want>.9&&b.draw===0;}
  if(T&&near<26&&ai.dodgeT<=0&&rnd()<D.strafe*.004){inp.jump=true;ai.dodgeT=2;}ai.dodgeT-=dt;}

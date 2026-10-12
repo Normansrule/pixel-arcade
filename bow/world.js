@@ -63,7 +63,7 @@ const _nb=[],_nr=[],_ray={},_ray2={},_tn={},_d={},_res={};
 
 /* ================= navigation graph + A* ================= */
 export class Nav{
- constructor(W){this.W=W;this.nodes=[];this.cell=4;this.grid=new Map();}
+ constructor(W){this.W=W;this.nodes=[];this.cell=4;this.grid=new Map();this.wallCost=45;}
  add(x,y,z,tag){const n={x,y,z,e:[],i:this.nodes.length,tag:tag||''};this.nodes.push(n);const k=this.k(x,z);let l=this.grid.get(k);if(!l)this.grid.set(k,l=[]);l.push(n);return n;}
  k(x,z){return(Math.floor(x/this.cell)+512)*4096+Math.floor(z/this.cell)+512;}
  link(a,b,type,oneway){const d=Math.hypot(a.x-b.x,(a.y-b.y)*1.5,a.z-b.z);const w=this.W.waterAt((a.x+b.x)/2,(a.z+b.z)/2)>(a.y+b.y)/2?2.2:1;const c=d*w*(type==='ladder'?1.6:1);
@@ -98,6 +98,11 @@ export class Nav{
   const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){let i=0;const n=heap.length;for(;;){let l=i*2+1,r=l+1,m=i;if(l<n&&this.f[heap[l].i]<this.f[last.i])m=l;if(r<n&&this.f[heap[r].i]<this.f[m===i?last.i:heap[m].i])m=r;if(m===i)break;heap[i]=heap[m];i=m;}heap[i]=last;}return top;};
   seen[from.i]=run;g[from.i]=0;par[from.i]=-1;this.f[from.i]=h(from);push(from);let it=0;
   while(heap.length&&it++<6000){const a=pop();if(a===to){const out=[];let n=a.i;while(n>=0){out.push(this.nodes[n]);n=par[n];}return out.reverse();}
-   for(const[b,c]of a.e){const ng=g[a.i]+c;if(seen[b.i]===run&&ng>=g[b.i])continue;seen[b.i]=run;g[b.i]=ng;par[b.i]=a.i;this.f[b.i]=ng+h(b);push(b);}}
+   for(const[b,c,,x]of a.e){const ng=g[a.i]+c+(x&&!x.dead?this.wallCost:0);if(seen[b.i]===run&&ng>=g[b.i])continue;seen[b.i]=run;g[b.i]=ng;par[b.i]=a.i;this.f[b.i]=ng+h(b);push(b);}}
   return null;}
- edge(a,b){for(const e of a.e)if(e[0]===b)return e;return null;}}
+ edge(a,b){for(const e of a.e)if(e[0]===b)return e;return null;}
+ // a built barricade: tag every edge whose walking body (radius PR) would cross it, so A* walks around it unless no other way is short enough
+ block(o){const m=PR+.08,x0=o.x0-m,x1=o.x1+m,z0=o.z0-m,z1=o.z1+m,cx=(o.x0+o.x1)/2,cz=(o.z0+o.z1)/2,r=Math.hypot(o.x1-o.x0,o.z1-o.z0)/2+4;
+  const hit=(a,b)=>{let t0=0,t1=1;const dx=b.x-a.x,dz=b.z-a.z;for(const[p,q]of[[-dx,a.x-x0],[dx,x1-a.x],[-dz,a.z-z0],[dz,z1-a.z]]){if(Math.abs(p)<1e-9){if(q<0)return false;continue;}const t=q/p;if(p<0){if(t>t1)return false;if(t>t0)t0=t;}else{if(t<t0)return false;if(t<t1)t1=t;}}
+   const y=a.y+(b.y-a.y)*(t0+t1)/2;return o.y0<y+PH-.1&&o.y1>y+STEP;};
+  for(const a of this.around(cx,cz,r))for(const e of a.e)if((!e[3]||e[3].dead)&&hit(a,e[0])){e[3]=o;const r2=this.edge(e[0],a);if(r2&&(!r2[3]||r2[3].dead))r2[3]=o;}}}

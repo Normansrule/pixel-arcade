@@ -223,7 +223,7 @@ function placeBuild(p){const s=placement(p);if(!s.ok){snd.play('click');hud.msg(
  const W=G.W;let b;if(s.type==='wall')b=W.addBlock({x0:s.x0,x1:s.x1,z0:s.z0,z1:s.z1,y0:s.y-.2,y1:s.y+2.3,kind:'wood',dyn:true});
  else b=W.addBlock({x0:s.x0,x1:s.x1,z0:s.z0,z1:s.z1,y0:s.y-.15,y1:s.y+2.5,kind:'wood',dyn:true,ramp:{axis:s.dx?'x':'z',dir:s.dx||s.dz,lo:s.y+.05}});
  b.hp=BUILD[s.type].hp;b.team=p.team;const m=new THREE.Mesh(s.type==='wall'?BG.wall:BG.ramp,woodMat);m.castShadow=true;m.receiveShadow=true;m.position.set(s.cx,s.y,s.cz);m.rotation.y=Math.atan2(s.dx,s.dz);m.scale.set(1,.05,1);scene.add(m);b.mesh=m;b.grow=0;
- G.dyn.push(b);p.planks-=BUILD[s.type].cost;snd.play('hammer',m.position);dust.burst(new V(s.cx,s.y+.3,s.cz),14,2,new C(.75,.68,.55),.6,.8,{up:true,grav:1,drag:2,alpha:.7,grow:1.4,jit:2});
+ G.dyn.push(b);G.nav.block(b);p.planks-=BUILD[s.type].cost;snd.play('hammer',m.position);dust.burst(new V(s.cx,s.y+.3,s.cz),14,2,new C(.75,.68,.55),.6,.8,{up:true,grav:1,drag:2,alpha:.7,grow:1.4,jit:2});
  if(G.dyn.length>BUILD.limit)breakDyn(G.dyn[0],true);return true;}
 function damageDyn(b,amt,by){if(b.dead)return;b.hp-=amt;if(b.mesh){b.mesh.position.x+=(rnd()-.5)*.04;}if(b.hp<=0)breakDyn(b);}
 function breakDyn(b,quiet){if(b.dead)return;G.W.removeBlock(b);scene.remove(b.mesh);const i=G.dyn.indexOf(b);if(i>=0)G.dyn.splice(i,1);const c=new V((b.x0+b.x1)/2,(b.y0+b.y1)/2,(b.z0+b.z1)/2);
