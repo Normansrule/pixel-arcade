@@ -48,14 +48,37 @@ A.add({id:'gems',name:'GEM SWAP',cat:'PUZZLE',how:'A GRABS A GEM, ARROW SWAPS IT
 
 /* ---- MAZE DASH ---- */
 A.add({id:'maze',name:'MAZE DASH',cat:'PUZZLE',how:'FIND THE EXIT. EACH MAZE IS BIGGER. BEAT THE CLOCK.',make(){
- const g={over:null,score:0},fx=X.fx();let N,m,p,ex,lvl=0,time=0,mv=0,pp={x:1,y:1},trail=[];
- let mid=0;const build=()=>{lvl++;mid=Math.random()*1e9|0;N=Math.min(9+lvl*2,25);m=[];for(let y=0;y<N;y++)m.push(Array(N).fill(1));const st=[[1,1]];m[1][1]=0;while(st.length){const c=st[st.length-1],ds=[[2,0],[-2,0],[0,2],[0,-2]].filter(d=>{const x=c[0]+d[0],y=c[1]+d[1];return x>0&&y>0&&x<N-1&&y<N-1&&m[y][x];});if(!ds.length){st.pop();continue;}const d=ds[ri(ds.length)];m[c[1]+d[1]/2][c[0]+d[0]/2]=0;m[c[1]+d[1]][c[0]+d[0]]=0;st.push([c[0]+d[0],c[1]+d[1]]);}p={x:1,y:1};pp={x:1,y:1};trail=[];ex=[N-2,N-2];time=(20+N*2)*60;};build();
- g.update=()=>{time--;if(mv>0)mv--;const k=A.in(0);if(mv===0){pp={x:p.x,y:p.y};const dx=ax(k),dy=dx?0:ay(k);if((dx||dy)&&!m[p.y+dy][p.x+dx]){trail.push([p.x,p.y]);if(trail.length>30)trail.shift();p.x+=dx;p.y+=dy;mv=4;}}if(p.x===ex[0]&&p.y===ex[1]){const pts=100+(time/60|0)*5;g.score+=pts;S('win');fx.flash('#3ddc84',8);fx.pop(160,120,'+'+pts,K.y);build();}if(time<=0)g.over='LOST IN THE MAZE';};
- g.draw=()=>{const CS=Math.floor(200/N),OX=160-N*CS/2,OY=122-N*CS/2,c=A.c;X.cache('maze_bg'+lvl+'_'+mid,()=>{X.sky(['#1a1236','#0a0618']);m.forEach((row,y)=>row.forEach((v,x)=>{const X0=OX+x*CS,Y0=OY+y*CS;if(v){A.c.fillStyle=X.lg(0,Y0,0,Y0+CS,['#8a6ad8','#5a3ab0']);A.c.fillRect(X0,Y0,CS,CS);if(y+1<N&&!m[y+1][x]){A.c.fillStyle='#2a1a5a';A.c.fillRect(X0,Y0+CS-Math.max(1,CS*.25),CS,Math.max(1,CS*.25));}}else{A.c.fillStyle=(x+y)%2?'#18122e':'#1c1534';A.c.fillRect(X0,Y0,CS,CS);}}));});
-  trail.forEach((q,i)=>{c.globalAlpha=.4*(i/trail.length);X.disc(OX+q[0]*CS+CS/2,OY+q[1]*CS+CS/2,CS*.18,'#ffcf3f');});c.globalAlpha=1;
-  const pu=.5+.5*Math.sin(A.t*.15);X.glow(OX+ex[0]*CS+CS/2,OY+ex[1]*CS+CS/2,CS*1.5,'#3ddc84',.3+pu*.2);X.rr(OX+ex[0]*CS+1,OY+ex[1]*CS+1,CS-2,CS-2,2,'#3ddc84');
-  const t=mv?1-mv/4:1,px=OX+(pp.x+(p.x-pp.x)*t)*CS+CS/2,py=OY+(pp.y+(p.y-pp.y)*t)*CS+CS/2;X.glow(px,py,CS,'#ffcf3f',.4);X.orb(px,py,Math.max(2,CS*.38),'#ffcf3f');
-  fx.draw();X.bar('MAZE '+lvl,''+Math.ceil(time/60),'',K.w,time<300?K.r:K.w);};
+ const g={over:null,score:0},fx=X.fx();let N,m,p,ex,lvl=0,time=0,tmax=1,mv=0,pp={x:1,y:1},trail=[],gems=[],dir=[1,0],sq=0,intro=0;
+ let mid=0;const build=()=>{lvl++;mid=Math.random()*1e9|0;N=Math.min(9+lvl*2,25);m=[];for(let y=0;y<N;y++)m.push(Array(N).fill(1));const st=[[1,1]];m[1][1]=0;while(st.length){const c=st[st.length-1],ds=[[2,0],[-2,0],[0,2],[0,-2]].filter(d=>{const x=c[0]+d[0],y=c[1]+d[1];return x>0&&y>0&&x<N-1&&y<N-1&&m[y][x];});if(!ds.length){st.pop();continue;}const d=ds[ri(ds.length)];m[c[1]+d[1]/2][c[0]+d[0]/2]=0;m[c[1]+d[1]][c[0]+d[0]]=0;st.push([c[0]+d[0],c[1]+d[1]]);}p={x:1,y:1};pp={x:1,y:1};trail=[];ex=[N-2,N-2];time=tmax=(20+N*2)*60;intro=24;
+  const de=[];for(let y=1;y<N-1;y+=2)for(let x=1;x<N-1;x+=2)if((x>1||y>1)&&(x!==ex[0]||y!==ex[1])&&[m[y][x-1],m[y][x+1],m[y-1][x],m[y+1][x]].filter(v=>v).length===3)de.push([x,y]);gems=[];for(let k=Math.min(2+lvl,6);k>0&&de.length;k--)gems.push(de.splice(ri(de.length),1)[0].concat(rnd(6)));};build();
+ g.update=()=>{time--;if(mv>0)mv--;if(sq>0)sq--;if(intro>0)intro--;const k=A.in(0);if(mv===0){pp={x:p.x,y:p.y};const dx=ax(k),dy=dx?0:ay(k);if((dx||dy)&&!m[p.y+dy][p.x+dx]){trail.push([p.x,p.y]);if(trail.length>30)trail.shift();p.x+=dx;p.y+=dy;mv=4;dir=[dx,dy];sq=4;}}
+  const CS=Math.floor(200/N),OX=160-N*CS/2,OY=122-N*CS/2,cx=q=>OX+q*CS+CS/2,cy=q=>OY+q*CS+CS/2;
+  for(let i=gems.length-1;i>=0;i--){const q=gems[i];if(q[0]===p.x&&q[1]===p.y){gems.splice(i,1);g.score+=25;S('coin');fx.spark(cx(q[0]),cy(q[1]),'#7ff6ff',10,2);fx.ring(cx(q[0]),cy(q[1]),'#7ff6ff',CS*1.4,14);fx.pop(cx(q[0]),cy(q[1])-CS,'+25','#7ff6ff');}}
+  if(A.t%5===0)fx.spark(cx(ex[0]),cy(ex[1]),'#7dffb0',1,.7);
+  if(p.x===ex[0]&&p.y===ex[1]){const pts=100+(time/60|0)*5;g.score+=pts;S('win');fx.flash('#3ddc84',8);fx.ring(cx(ex[0]),cy(ex[1]),'#7dffb0',60,22);A.burst(cx(ex[0]),cy(ex[1]),'#7dffb0',24,3);A.shake=6;fx.pop(160,120,'+'+pts,K.y);build();}if(time<=0)g.over='LOST IN THE MAZE';};
+ g.draw=()=>{const CS=Math.floor(200/N),OX=160-N*CS/2,OY=122-N*CS/2,c=A.c,MW=N*CS;
+  X.cache('maze_bg'+lvl+'_'+mid,()=>{const c=A.c;X.sky(['#170e34','#0b0720','#05030e']);X.stars(70,lvl,0,0,H,.7);X.glow(160,122,180,'#6a3aff',.22);X.glow(60,40,90,'#ff4f9a',.08);
+   X.rr(OX-6,OY-3,MW+12,MW+12,6,'rgba(0,0,0,.55)');X.rr(OX-6,OY-7,MW+12,MW+12,6,X.lg(0,OY-7,0,OY+MW+5,['#4a3a86','#2a1e58','#160f34']));X.rrs(OX-5.5,OY-6.5,MW+11,MW+11,6,'rgba(200,180,255,.35)',1);
+   const wg=X.lg(OX,OY,OX+MW,OY+MW,['#b49cf8','#8a68e0','#6a48c8','#5232a8']),w=(x,y)=>x>=0&&y>=0&&x<N&&y<N&&m[y][x],d=Math.max(1.5,CS*.32);
+   m.forEach((row,y)=>row.forEach((v,x)=>{if(v)return;const X0=OX+x*CS,Y0=OY+y*CS,h=((x*73856093)^(y*19349663))>>>0;c.fillStyle=(x+y)%2?'#231a44':'#271d4c';c.fillRect(X0,Y0,CS,CS);c.fillStyle='rgba(255,255,255,.035)';c.fillRect(X0,Y0,CS,1);c.fillStyle='rgba(0,0,0,.28)';c.fillRect(X0,Y0+CS-.6,CS,.6);c.fillRect(X0+CS-.6,Y0,.6,CS);if(CS>9){c.fillStyle='rgba(160,140,255,.07)';c.fillRect(X0+h%(CS-3)+1,Y0+(h>>5)%(CS-3)+1,1.5,1);c.fillStyle='rgba(0,0,0,.18)';c.fillRect(X0+(h>>9)%(CS-3)+1,Y0+(h>>13)%(CS-3)+1,1,1);}
+    if(w(x-1,y)){c.fillStyle='rgba(0,0,0,.32)';c.fillRect(X0,Y0,CS*.3,CS);}if(w(x,y-1)){c.fillStyle='rgba(0,0,0,.25)';c.fillRect(X0,Y0,CS,CS*.22);}}));
+   m.forEach((row,y)=>row.forEach((v,x)=>{if(!v)return;const X0=OX+x*CS,Y0=OY+y*CS,fb=!w(x,y+1)&&y+1<N,th=fb?CS-d:CS;
+    if(fb){c.fillStyle=X.lg(0,Y0+th,0,Y0+CS,['#3a2478','#1c1040']);c.fillRect(X0,Y0+th,CS,d);c.fillStyle='rgba(0,0,0,.35)';c.fillRect(X0,Y0+CS-.7,CS,.7);if(CS>10){c.fillStyle='rgba(0,0,0,.25)';c.fillRect(X0+((x%2)?CS/2:CS/4),Y0+th,.6,d);}}
+    c.fillStyle=wg;c.fillRect(X0,Y0,CS,th);
+    if(!w(x,y-1)&&y>0){c.fillStyle='rgba(225,210,255,.75)';c.fillRect(X0,Y0,CS,.9);}if(!w(x-1,y)&&x>0){c.fillStyle='rgba(225,210,255,.45)';c.fillRect(X0,Y0,.9,th);}if(!w(x+1,y)&&x<N-1){c.fillStyle='rgba(20,8,60,.55)';c.fillRect(X0+CS-.9,Y0,.9,th);}
+    if(fb){c.fillStyle='rgba(190,160,255,.55)';c.fillRect(X0,Y0+th-.8,CS,.8);}}));
+   X.vignette(.35);});
+  const t=mv?1-mv/4:1,px=OX+(pp.x+(p.x-pp.x)*t)*CS+CS/2,py=OY+(pp.y+(p.y-pp.y)*t)*CS+CS/2,LR=Math.max(46,CS*4);
+  c.fillStyle=X.rg(px,py,LR*.35,px,py,LR*2.3,['rgba(4,2,14,0)','rgba(4,2,14,.35)','rgba(4,2,14,.7)']);c.fillRect(0,0,W,H);
+  trail.forEach((q,i)=>{const f=i/trail.length;X.glow(OX+q[0]*CS+CS/2,OY+q[1]*CS+CS/2,CS*.5,'#ffcf3f',.25*f);X.disc(OX+q[0]*CS+CS/2,OY+q[1]*CS+CS/2,CS*.12*(.4+f),X.rgba('#ffe08a',.55*f));});
+  gems.forEach(q=>{const gx=OX+q[0]*CS+CS/2,gy=OY+q[1]*CS+CS/2,bb=Math.sin(A.t*.1+q[2])*CS*.08;X.glow(gx,gy,CS*1.1,'#4ff0ff',.3+.12*Math.sin(A.t*.15+q[2]));X.shadow(gx,gy+CS*.3,CS*.22,CS*.08,.4);X.gem(gx,gy-CS*.05+bb,Math.max(4,CS*.62),'#4fd8ff');if((A.t+q[2]*10|0)%40<6)X.disc(gx+CS*.18,gy-CS*.22+bb,.8,'#ffffff');});
+  const exx=OX+ex[0]*CS+CS/2,exy=OY+ex[1]*CS+CS/2,pu=.5+.5*Math.sin(A.t*.15),pr=CS*.46;X.glow(exx,exy,CS*2.2,'#3ddc84',.35+pu*.2);X.disc(exx,exy,pr,X.rg(exx,exy,0,exx,exy,pr,['#eafff0','#5dffa0','#0f6a3a','#03200f']));
+  for(let k=0;k<3;k++){c.strokeStyle=X.rgba(k===1?'#b0ffcf':'#3ddc84',.75);c.lineWidth=k===1?1.2:.8;c.beginPath();const a0=A.t*(.08+k*.03)*(k%2?-1:1)+k*2;c.arc(exx,exy,pr*(.5+k*.22),a0,a0+3.6);c.stroke();}
+  for(let k=0;k<5;k++){const a=A.t*.05+k*1.2566;X.disc(exx+Math.cos(a)*pr*1.15,exy+Math.sin(a)*pr*1.15,.9,'#d8ffe6');}
+  const s=sq/4,sx=1+(dir[0]?s*.3:-s*.15),sy=1+(dir[1]?s*.3:-s*.15),r=Math.max(2.4,CS*.38);X.glow(px,py,CS*1.6,'#ffcf3f',.45);X.shadow(px+1,py+r*.75,r*.9,r*.3,.45);c.save();c.translate(px,py);c.scale(sx,sy);X.orb(0,0,r,'#ffc23a');if(r>3.5){const ex2=dir[0]*r*.28,ey2=dir[1]*r*.28;X.disc(ex2-r*.28,ey2-r*.05,r*.17,'#2a1600');X.disc(ex2+r*.28,ey2-r*.05,r*.17,'#2a1600');}c.restore();
+  if(time<300&&(A.t>>3)%2)X.vg(0,0,W,H,['rgba(255,40,60,.12)','rgba(255,40,60,0)','rgba(255,40,60,.12)']);
+  if(intro>0){c.globalAlpha=Math.min(1,intro/12);X.panel(110,104,100,26,'#a58cf0');X.ot('MAZE '+lvl,160,112,'#ffffff',2,'c');c.globalAlpha=1;}
+  fx.draw();X.bar('MAZE '+lvl,''+Math.ceil(time/60),'SCORE '+g.score,K.w,time<300?K.r:K.w);X.meter(110,13,100,3,time/tmax,time<300?'#ff4f6d':'#3ddc84');};
  return g;}});
 
 /* ---- TOWER OF HANOI ---- */
