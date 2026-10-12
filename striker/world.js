@@ -13,10 +13,10 @@ export function makeEnv(R2,night){const s=new THREE.Scene();
  const pm=new THREE.PMREMGenerator(R2);const rt=pm.fromScene(s,.03);pm.dispose();return rt.texture;}
 
 // rounded-rectangle perimeter at half sizes (a,b) + offset `off`, corner radius rc; points carry outward normals
-function perimeter(a,b,rc,off,step){const pts=[],cx=a-rc,cz=b-rc,r=rc+off;let u=0,last=null;
- const add=(x,z,ox,oz)=>{if(last)u+=Math.hypot(x-last.x,z-last.z);last={x,z,ox,oz,u};pts.push(last);};
- const line=(x0,z0,x1,z1,ox,oz)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,z1-z0)/step));for(let i=0;i<n;i++){const t=i/n;add(x0+(x1-x0)*t,z0+(z1-z0)*t,ox,oz);}};
- const arc=(ccx,ccz,a0)=>{const n=Math.max(3,Math.ceil(r*Math.PI/2/step));for(let i=0;i<n;i++){const t=a0+i/n*Math.PI/2;add(ccx+Math.cos(t)*r,ccz+Math.sin(t)*r,Math.cos(t),Math.sin(t));}};
+function perimeter(a,b,rc,off,step){const pts=[],cx=a-rc,cz=b-rc,r=rc+off;let u=0,ub=0,k=1,last=null;
+ const add=(x,z,ox,oz)=>{if(last){const d=Math.hypot(x-last.x,z-last.z);u+=d;ub+=d*k;}last={x,z,ox,oz,u,ub};pts.push(last);};
+ const line=(x0,z0,x1,z1,ox,oz)=>{k=1;const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,z1-z0)/step));for(let i=0;i<n;i++){const t=i/n;add(x0+(x1-x0)*t,z0+(z1-z0)*t,ox,oz);}};
+ const arc=(ccx,ccz,a0)=>{k=rc/r;const n=Math.max(3,Math.ceil(r*Math.PI/2/step));for(let i=0;i<n;i++){const t=a0+i/n*Math.PI/2;add(ccx+Math.cos(t)*r,ccz+Math.sin(t)*r,Math.cos(t),Math.sin(t));}};
  line(a+off,-cz,a+off,cz,1,0);arc(cx,cz,0);line(cx,b+off,-cx,b+off,0,1);arc(-cx,cz,Math.PI/2);line(-(a+off),cz,-(a+off),-cz,-1,0);arc(-cx,-cz,Math.PI);line(-cx,-(b+off),cx,-(b+off),0,-1);arc(cx,-cz,Math.PI*1.5);
  const f=pts[0];add(f.x,f.z,f.ox,f.oz);return pts;}
 function sweep(per,prof,skip,tint){const nP=prof.length,pos=[],uv=[],col=[],idx=[];
@@ -75,19 +75,25 @@ export function buildWorld(scene,o){// o: {night, crowd(0..1), kits:[home,away],
  else{const f=new THREE.DirectionalLight(0xbfd4ff,.35);f.position.set(-50,40,-30);G.add(f);}
  // ----- pitch -----
  const a=W+7,b=L+8;// grass extends to the stand fronts
- const stripes=ctex(64,1024,(x,w,h)=>{const n=P.size===5?10:18,band=h/(n);for(let i=0;i<n;i++){x.fillStyle=i%2?(night?'#2f7a34':'#3a8a3a'):(night?'#287030':'#317d33');x.fillRect(0,i*band,w,band+1);}
+ const stripes=ctex(64,1024,(x,w,h)=>{const n=P.size===5?10:18,band=h/(n);for(let i=0;i<n;i++){x.fillStyle=i%2?(night?'#2d7833':'#378739'):(night?'#2a7331':'#338036');x.fillRect(0,i*band,w,band+1);}
   for(let i=0;i<3000;i++){x.fillStyle=`rgba(${rnd()<.5?'20,40,10':'120,160,60'},${rnd(.05)})`;x.fillRect(rnd(w),rnd(h),1,2);}},{});
  stripes.wrapS=THREE.ClampToEdgeWrapping;stripes.wrapT=THREE.ClampToEdgeWrapping;
  const detail=ctex(256,256,(x,w,h)=>{const id=x.createImageData(w,h);for(let i=0;i<w*h;i++){const v=150+rnd(105)|0;id.data[i*4]=v;id.data[i*4+1]=v;id.data[i*4+2]=v;id.data[i*4+3]=255;}x.putImageData(id,0,0);},{srgb:false});
  const wear=ctex(256,512,(x,w,h)=>{x.fillStyle='#000';x.fillRect(0,0,w,h);const blob=(cx,cy,rx,ry,al)=>{const g=x.createRadialGradient(cx,cy,0,cx,cy,1);g.addColorStop(0,`rgba(255,255,255,${al})`);g.addColorStop(1,'rgba(255,255,255,0)');x.save();x.translate(cx,cy);x.scale(rx,ry);x.translate(-cx,-cy);x.fillStyle=g;x.beginPath();x.arc(cx,cy,1,0,7);x.fill();x.restore();};
   const ex=w/(2*a),ez=h/(2*b);for(const s of[-1,1]){blob(w/2,h/2+s*L*ez,P.GW*2.2*ex,P.SD*1.4*ez,.75);blob(w/2,h/2+s*(L-P.SPOT)*ez,2*ex,2*ez,.6);}blob(w/2,h/2,3*ex,3*ez,.35);
   for(let i=0;i<60;i++)blob(w/2+(rnd()-.5)*w*.6,h/2+(rnd()-.5)*h*.8,rnd(12),rnd(18),.12);},{srgb:false,clamp:true});
- const grassM=new THREE.MeshStandardMaterial({map:stripes,roughness:.93,metalness:0,envMapIntensity:.35});
- grassM.onBeforeCompile=sh=>{sh.uniforms.tDet={value:detail};sh.uniforms.tWear={value:wear};sh.uniforms.uRep={value:new THREE.Vector2(a*2/1.1,b*2/1.1)};
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D tDet,tWear;uniform vec2 uRep;')
+ // blade bump: a finer copy of the noise, own repeat (bumpMap keeps its own uv transform)
+ const blades=detail.clone();blades.repeat.set(a*2/.45,b*2/.45);blades.needsUpdate=true;
+ const grassM=new THREE.MeshStandardMaterial({map:stripes,roughness:.93,metalness:0,envMapIntensity:.35,bumpMap:blades,bumpScale:night?1.2:1.6});
+ const nStr=P.size===5?10:18,nX=Math.round(nStr*a/b*.9);
+ grassM.onBeforeCompile=sh=>{sh.uniforms.tDet={value:detail};sh.uniforms.tWear={value:wear};sh.uniforms.uRep={value:new THREE.Vector2(a*2/1.1,b*2/1.1)};sh.uniforms.uStr={value:new THREE.Vector2(nX,nStr)};
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D tDet,tWear;uniform vec2 uRep,uStr;varying vec3 vWP;')
    .replace('#include <map_fragment>',`#include <map_fragment>
    float d1=texture2D(tDet,vMapUv*uRep).r,d2=texture2D(tDet,vMapUv*uRep*.13+.37).r,d3=texture2D(tDet,vMapUv*uRep*3.1).r;
-   diffuseColor.rgb*=.78+.22*d1*.6+.25*d2*.5+d3*.08;float wr=texture2D(tWear,vMapUv).r;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.36,.32,.2)*(.7+.4*d1),wr*.55);`);};
+   diffuseColor.rgb*=.78+.22*d1*.6+.25*d2*.5+d3*.08;
+   vec3 vd=normalize(cameraPosition-vWP);float sz=1.-mod(floor(vMapUv.y*uStr.y),2.)*2.,sx=mod(floor(vMapUv.x*uStr.x),2.)*2.-1.;float graze=1.-vd.y;
+   diffuseColor.rgb*=1.+sz*(.035+.1*graze*graze+.06*vd.z)+sx*(.018+.035*graze*graze);float wr=texture2D(tWear,vMapUv).r;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.36,.32,.2)*(.7+.4*d1),wr*.55);`);};
  grassM.customProgramCacheKey=()=>'grass';
  const grass=new THREE.Mesh(new THREE.PlaneGeometry(2*a,2*b),grassM);grass.rotation.x=-Math.PI/2;grass.rotation.z=0;grass.receiveShadow=true;G.add(grass);
  const under=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshStandardMaterial({color:night?0x0a0b0e:0x3b3d3a,roughness:1}));under.rotation.x=-Math.PI/2;under.position.y=-.05;G.add(under);
@@ -138,8 +144,12 @@ export function buildWorld(scene,o){// o: {night, crowd(0..1), kits:[home,away],
  prof.push({s:s1+1.6,y:y1,v:N1+1},{s:s1+1.6,y:y1+2.6,v:N1+2});const y2=y1+2.6,s2=s1+2.2;for(let i=0;i<N2;i++){prof.push({s:s2+i*d2,y:y2+i*r2,v:N1+3+i},{s:s2+i*d2,y:y2+(i+1)*r2,v:N1+3.5+i});}
  const sTop=s2+N2*d2,yTop=y2+N2*r2;prof.push({s:sTop+.8,y:yTop,v:N1+N2+4},{s:sTop+.8,y:yTop+4,v:N1+N2+5});
  const per=perimeter(a,b,rc,0,3);const near=(p)=>p.x<-a+1&&Math.abs(p.z)<b-rc*.2;
- const seatT=ctex(64,64,(x,w,h)=>{x.fillStyle='#3a3f4a';x.fillRect(0,0,w,h);x.fillStyle='#2a2e36';x.fillRect(0,h*.55,w,h*.45);for(let i=0;i<200;i++){x.fillStyle=`rgba(0,0,0,${rnd(.15)})`;x.fillRect(rnd(w),rnd(h),2,2);}});
- const standM=new THREE.MeshStandardMaterial({color:0x8b93a4,map:seatT,roughness:.85,side:THREE.DoubleSide});
+ // one texture tile = AISLE metres of one row: concrete riser (bottom half), tread with tip-up seats (top half), and a stepped aisle
+ const AISLE=24,AW=1.4,seatT=ctex(768,64,(x,w,h)=>{const pm=w/AISLE;x.fillStyle='#5a5f68';x.fillRect(0,h/2,w,h/2);x.fillStyle='#43474f';x.fillRect(0,0,w,h/2);
+  for(let i=0;i<AISLE/.52;i++){const sx=AW*pm+i*.52*pm;if(sx>w-8)break;const c=['#1d3a6e','#22427a','#1a3363'][i%7?0:i%3];x.fillStyle=c;x.fillRect(sx+2,4,.44*pm,h*.36);x.fillStyle='rgba(255,255,255,.12)';x.fillRect(sx+2,4,.44*pm,3);x.fillStyle='#14161b';x.fillRect(sx+4,h*.36+4,.36*pm,3);}
+  x.fillStyle='#8d9098';x.fillRect(0,0,AW*pm,h);x.fillStyle='#6c6f77';x.fillRect(0,h/2-3,AW*pm,6);x.fillRect(0,h-4,AW*pm,4);x.fillStyle='#e8c040';x.fillRect(0,h/2-2,AW*pm,2);x.fillStyle='#b8bcc4';x.fillRect(2,0,3,h);x.fillRect(AW*pm-5,0,3,h);
+  for(let i=0;i<1400;i++){x.fillStyle=`rgba(0,0,0,${rnd(.12)})`;x.fillRect(rnd(w),rnd(h),2,2);}});seatT.repeat.set(4/AISLE,1);
+ const standM=new THREE.MeshStandardMaterial({color:night?0x9ea4b0:0xc4c8d0,map:seatT,roughness:.82,side:THREE.DoubleSide});
  const stands=new THREE.Mesh(sweep(per,prof),standM);stands.receiveShadow=true;G.add(stands);
  // hospitality boxes band (glowing windows)
  {const win=ctex(256,32,(x,w,h)=>{x.fillStyle='#0b0d12';x.fillRect(0,0,w,h);for(let i=0;i<8;i++){const g=x.createLinearGradient(0,4,0,h-4);g.addColorStop(0,'#ffe3b0');g.addColorStop(1,'#a07040');x.fillStyle=g;x.fillRect(i*32+3,6,26,h-12);}});
@@ -148,21 +158,28 @@ export function buildWorld(scene,o){// o: {night, crowd(0..1), kits:[home,away],
  {const rp=[{s:sTop+1,y:yTop+4.2,v:0},{s:8,y:yTop+6.5,v:1}];const g=sweep(per,rp,(p0,p1)=>near(p0)||near(p1));
   const roof=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x3a3e48,roughness:.6,metalness:.5,side:THREE.DoubleSide}));roof.castShadow=!night;roof.receiveShadow=false;G.add(roof);
   const lip=sweep(per,[{s:7.8,y:yTop+6.2,v:0},{s:7.8,y:yTop+6.75,v:1}],(p0,p1)=>near(p0)||near(p1));G.add(new THREE.Mesh(lip,new THREE.MeshBasicMaterial({color:night?new THREE.Color(5,4.8,4.4):new THREE.Color(.85,.86,.9),side:THREE.DoubleSide})));
+  {const ribs=[],up=new V(0,1,0);let nxt=0;for(const p of per){if(p.ub<nxt||near(p))continue;nxt=p.ub+9;const A=new V(p.x+p.ox*(sTop+1),yTop+4.1,p.z+p.oz*(sTop+1)),B=new V(p.x+p.ox*8.4,yTop+6.15,p.z+p.oz*8.4),m=new THREE.Matrix4().lookAt(A,B,up);
+    m.setPosition(A.clone().add(B).multiplyScalar(.5));ribs.push([new THREE.BoxGeometry(.32,.8,A.distanceTo(B)),m]);const C=new V(p.x+p.ox*(sTop+.9),(yTop+4.2)/2,p.z+p.oz*(sTop+.9));ribs.push([new THREE.BoxGeometry(.5,yTop+4.2,.5),M4(C.x,C.y,C.z)]);}
+   const rm=new THREE.Mesh(mergeG(ribs),new THREE.MeshStandardMaterial({color:night?0x4a4f5a:0xd8dce2,roughness:.45,metalness:.7}));rm.castShadow=!night;G.add(rm);}
   // gantry over the near side: a thin truss that the TV cameras sit on
   const gt=new THREE.Mesh(new THREE.BoxGeometry(2.4,1.2,2*b*.55),new THREE.MeshStandardMaterial({color:0x22252c,roughness:.7,metalness:.4}));gt.position.set(-a-sTop*.7,yTop+3,0);G.add(gt);}
  // crowd
  {const geo=crowdGeo();const kits=o.kits;const mat=new THREE.MeshLambertMaterial({color:0xffffff});
   mat.onBeforeCompile=sh=>{sh.uniforms.uT=out.time;sh.uniforms.uH=out.hypeH;sh.uniforms.uA=out.hypeA;sh.uniforms.uN=out.hype;
-   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uT,uH,uA,uN;attribute float arm;attribute float fan;attribute float head;varying float vHead,vPh;')
+   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uT,uH,uA,uN;attribute float arm;attribute float fan;attribute float head;varying float vHead,vPh,vArm;varying vec3 vLoc;')
     .replace('#include <begin_vertex>',`#include <begin_vertex>
     vec3 ip=vec3(instanceMatrix[3][0],instanceMatrix[3][1],instanceMatrix[3][2]);float ph=fract(sin(dot(ip.xz,vec2(12.9898,78.233)))*43758.5453);
-    vHead=head;vPh=ph;float hy=fan>1.5?uA:fan>.5?uH:uN*.5;float ex=clamp(hy+uN*.35,0.,1.);
+    vHead=head;vPh=ph;vArm=arm;vLoc=position;float hy=fan>1.5?uA:fan>.5?uH:uN*.5;float ex=clamp(hy+uN*.35,0.,1.);
     float jb=max(0.,sin(uT*(5.+ph*4.)+ph*40.));float up=smoothstep(.15,.6,ex)*step(.25,ph+ex*.6);
     float raise=clamp(ex*1.4-ph*.5,0.,1.)*arm*up;transformed.y=mix(transformed.y,1.16-transformed.y,raise);transformed.x*=1.+raise*.2;
     transformed.y+=jb*jb*(.04+ex*.5)*(.5+ph)*up+up*.3;`);
-   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vHead,vPh;').replace('#include <color_fragment>',`#include <color_fragment>
-    if(vHead>.5){float k=fract(vPh*7.31);diffuseColor.rgb=mix(vec3(.93,.72,.56),vec3(.32,.2,.13),k*k);}`);};
-  const den=o.crowd??1,pts=[];const ring=(s,y,t,step)=>{for(const p of perimeter(a,b,rc,s,step)){if(rnd()>den*.92)continue;if(near(p)&&y>y2+6)continue;pts.push([p.x+rnd(.15),y,p.z+rnd(.15),Math.atan2(-p.ox,-p.oz),p]);}};
+   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vHead,vPh,vArm;varying vec3 vLoc;').replace('#include <color_fragment>',`#include <color_fragment>
+    float k=fract(vPh*7.31);vec3 skin=mix(vec3(.93,.72,.56),vec3(.32,.2,.13),k*k);
+    if(vHead>.5){float hr=fract(vPh*3.17);diffuseColor.rgb=vLoc.y>.745-step(.8,hr)*.2?mix(vec3(.05,.04,.03),vec3(.55,.4,.22),step(.7,hr)):skin;if(vLoc.z<-.05&&vLoc.y>.62)diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.06,.05,.04),step(.4,hr));}
+    else if(vArm>.5){if(vLoc.y<.36-step(.5,fract(vPh*5.3))*.12)diffuseColor.rgb=skin;}
+    else if(vLoc.y<.11)diffuseColor.rgb=vec3(.1,.11,.14)*(1.+k);
+    diffuseColor.rgb*=.82+.18*smoothstep(.05,.6,vLoc.y);`);};
+  const den=o.crowd??1,pts=[];const ring=(s,y,t,step)=>{for(const p of perimeter(a,b,rc,s,step)){if(rnd()>den*.92||p.ub%AISLE<AW+.2)continue;if(near(p)&&y>y2+6)continue;pts.push([p.x+rnd(.15),y,p.z+rnd(.15),Math.atan2(-p.ox,-p.oz),p]);}};
   for(let i=0;i<N1;i++)ring(.4+i*d1+.45,1.3+(i+1)*r1,0,.72);for(let i=0;i<N2;i++)ring(s2+i*d2+.45,y2+(i+1)*r2,1,.72);
   const mesh=new THREE.InstancedMesh(geo,mat,pts.length);const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),c=new THREE.Color();const fanA=new Float32Array(pts.length);
   const pal=['#e8e8e8','#2a2a2e','#c8c8d0','#6a6a74','#3d5a8a','#8a3d3d','#d8c060','#5a8a5a','#3a3a44','#b06a3a','#204060'];

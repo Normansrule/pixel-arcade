@@ -47,7 +47,7 @@ let app='menu',attract=true,cup=null,acc=0,timeScale=1,camMode=1,lastAward=null,
 /* ================= world + post ================= */
 function applyQuality(q){gfx=q;Rd.setPixelRatio(Math.min(devicePixelRatio,q===0?1:1.5));if(world&&world.key){world.key.castShadow=true;const s=q===2?4096:q===1?2048:1024;if(world.key.shadow.mapSize.x!==s){world.key.shadow.mapSize.set(s,s);if(world.key.shadow.map){world.key.shadow.map.dispose();world.key.shadow.map=null;}}}fxp=null;}
 bindQualityKey(()=>gfx,q=>applyQuality(q));
-function post(){const n=opt.night;return n?{exposure:1.02,bloom:.55,bloomThreshold:.9,bloomRadius:.5,vignette:.3,saturation:1.1,grain:.02,ao:false}:{exposure:.92,bloom:.22,bloomThreshold:.97,bloomRadius:.4,vignette:.26,saturation:1.08,grain:.015,ao:false};}
+function post(){const n=opt.night;return n?{exposure:1.02,bloom:.55,bloomThreshold:.9,bloomRadius:.5,vignette:.3,saturation:1.1,grain:.02,ao:gfx>=2,aoStrength:.55}:{exposure:.92,bloom:.22,bloomThreshold:.97,bloomRadius:.4,vignette:.26,saturation:1.08,grain:.015,ao:gfx>=2,aoStrength:.65};}
 function rebuildWorld(){if(world)world.dispose();world=buildWorld(scene,{night:!!opt.night,crowd:[.38,.62,.88][gfx],kits:[S.teams[0].kit,S.teams[1].kit]});scene.environment=env(!!opt.night);
  scene.fog=opt.night?new THREE.FogExp2(0x080a12,.0012):new THREE.FogExp2(0xa8c0d8,.0011);applyQuality(gfx);drawScreen(true);}
 /* ================= matches ================= */
