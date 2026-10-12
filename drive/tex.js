@@ -4,7 +4,7 @@ import {rng} from './city.js';
 const R=rng(99);
 function ctex(w,h,draw,o={}){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');draw(x,w,h);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;if(o.srgb!==false)t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=o.aniso??8;return t;}
 function grain(x,w,h,a,n,s=2){for(let i=0;i<n;i++){const v=(R()-.5)*a;x.fillStyle=v>0?`rgba(255,255,255,${v})`:`rgba(0,0,0,${-v})`;x.fillRect(R()*w,R()*h,s,s);}}
-const LIT=['#ffd9a0','#ffe8c0','#fff2dc','#bfe0ff','#ffc890','#ffb0d8','#a0ffe8'];
+const LIT=['#ffd9a0','#ffe2b8','#fff0d8','#ffcf90','#d8e8ff','#ffe8c8','#ffc070','#c8dcff'];
 // facade: a 16 m x 16 m tile = 4 floors x cols windows
 function facade(kind){const cols=kind==='glass'?8:kind==='brick'?5:kind==='ind'?4:6;const W=512,H=512,fh=H/4,cw=W/cols;const win=[];
  const base=ctex(W,H,(x)=>{
@@ -17,10 +17,15 @@ function facade(kind){const cols=kind==='glass'?8:kind==='brick'?5:kind==='ind'?
    for(let c=0;c<cols;c++){x.fillStyle='#1a1e22';x.fillRect(c*cw+20,fh*.3,cw-40,fh*.35);}}
   else if(kind==='house'){x.fillStyle='#d8d0c0';x.fillRect(0,0,W,H);for(let y=0;y<H;y+=12){x.fillStyle='rgba(0,0,0,.12)';x.fillRect(0,y,W,2);}for(let r=0;r<4;r++)for(let c=0;c<cols;c++){x.fillStyle='#ffffff';x.fillRect(c*cw+16,r*fh+22,cw-32,fh*.5+6);x.fillStyle='#22262e';x.fillRect(c*cw+20,r*fh+26,cw-40,fh*.5-2);}}
  });
- const em=ctex(W,H,(x)=>{x.fillStyle='#000';x.fillRect(0,0,W,H);const p=kind==='glass'?.42:kind==='office'?.38:kind==='brick'?.34:kind==='house'?.35:.18;
-  for(let r=0;r<4;r++)for(let c=0;c<cols;c++){if(R()>p)continue;const col=LIT[(R()*LIT.length)|0];const lvl=.55+R()*.45;x.fillStyle=col;x.globalAlpha=lvl;
-   if(kind==='glass'){x.fillRect(c*cw+3,r*fh+4,cw-6,fh-10);x.globalAlpha=lvl*.4;x.fillStyle='#000';x.fillRect(c*cw+3+R()*(cw-10),r*fh+4,4,fh-10);}
-   else if(kind==='office')x.fillRect(c*cw+8,r*fh+14,cw-16,fh*.55);else if(kind==='brick'){x.fillRect(c*cw+22,r*fh+22,cw-44,fh*.62-4);}else if(kind==='house')x.fillRect(c*cw+20,r*fh+26,cw-40,fh*.5-2);else x.fillRect(c*cw+20,fh*.3,cw-40,fh*.35);x.globalAlpha=1;}});
+ // lit windows: warm/cool interiors with a ceiling-light gradient, blinds, furniture silhouettes; office floors often lit as a whole
+ const em=ctex(W,H,(x)=>{x.fillStyle='#000';x.fillRect(0,0,W,H);const p=kind==='glass'?.26:kind==='office'?.3:kind==='brick'?.32:kind==='house'?.34:.16;
+  const lw=(X,Y,w,h,col,lvl)=>{const g=x.createLinearGradient(0,Y,0,Y+h);g.addColorStop(0,col);g.addColorStop(.18,col);g.addColorStop(1,'#2a1c10');x.globalAlpha=lvl;x.fillStyle=g;x.fillRect(X,Y,w,h);x.fillStyle='#000';
+   if(R()<.35){x.globalAlpha=.6;const bh=h*(.15+R()*.55);for(let yy=Y;yy<Y+bh;yy+=5)x.fillRect(X,yy,w,2.5);}
+   if(R()<.45){x.globalAlpha=.75;x.fillRect(X+R()*w*.6,Y+h*(.5+R()*.2),w*(.15+R()*.3),h);}if(R()<.2){x.globalAlpha=.8;x.fillRect(X+w*(.3+R()*.4),Y+h*.35,w*.08,h*.4);x.beginPath();x.arc(X+w*(.34+R()*.3),Y+h*.32,w*.05,0,7);x.fill();}x.globalAlpha=1;};
+  for(let r=0;r<4;r++){const floor=(kind==='glass'||kind==='office')&&R()<.2;const fcol=R()<.5?'#e8f0ff':'#fff0d0';for(let c=0;c<cols;c++){if(!floor&&R()>p)continue;const col=floor?fcol:LIT[(R()*LIT.length)|0];const lvl=floor?.7+R()*.2:.5+R()*.5;
+   if(kind==='glass'){lw(c*cw+3,r*fh+4,cw-6,fh-10,col,lvl*.85);x.fillStyle='#000';x.fillRect(c*cw+cw/2-2,r*fh+4,4,fh-10);}
+   else if(kind==='office')lw(c*cw+8,r*fh+14,cw-16,fh*.55,col,lvl);else if(kind==='brick')lw(c*cw+22,r*fh+22,cw-44,fh*.62-4,col,lvl);else if(kind==='house')lw(c*cw+20,r*fh+26,cw-40,fh*.5-2,col,lvl);else lw(c*cw+20,fh*.3,cw-40,fh*.35,col,lvl*.8);
+   if(R()<.06){x.globalAlpha=.5;x.fillStyle='#6080ff';x.fillRect(c*cw+cw*.3,r*fh+fh*.3,cw*.4,fh*.3);x.globalAlpha=1;}}}});
  return{map:base,em};}
 
 export function makeTextures(){const T={};
@@ -47,4 +52,18 @@ export function makeTextures(){const T={};
  T.streak=ctex(64,256,(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.25,'rgba(255,255,255,.9)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,w,h);const g2=x.createLinearGradient(0,0,w,0);g2.addColorStop(0,'rgba(0,0,0,1)');g2.addColorStop(.5,'rgba(0,0,0,0)');g2.addColorStop(1,'rgba(0,0,0,1)');x.globalCompositeOperation='destination-out';x.fillStyle=g2;x.fillRect(0,0,w,h);},{srgb:false});
  T.ring=ctex(128,128,(x,w,h)=>{x.strokeStyle='#fff';x.lineWidth=8;x.beginPath();x.arc(64,64,54,0,7);x.stroke();x.lineWidth=3;x.beginPath();x.arc(64,64,40,0,7);x.stroke();});
  T.arrow=ctex(64,128,(x,w,h)=>{x.fillStyle='#000';x.fillRect(0,0,w,h);x.fillStyle='#fff';for(let k=0;k<2;k++){const y=k*64+10;x.beginPath();x.moveTo(8,y+30);x.lineTo(32,y+6);x.lineTo(56,y+30);x.lineTo(48,y+38);x.lineTo(32,y+22);x.lineTo(16,y+38);x.fill();}},{srgb:false});
+ // street-level shopfronts: a 16 m x 4 m strip of 4 bays (albedo + lit-interior emissive)
+ {const SC=['#ff3fa0','#30e0ff','#ffd040','#40ff80','#ff8020','#a050ff'];const bays=[];for(let k=0;k<4;k++)bays.push({door:R()<.4,col:SC[(R()*SC.length)|0],warm:R()<.85,shelves:R()<.6});
+  const draw=(x,w,h,em)=>{x.fillStyle=em?'#000':'#2c2a28';x.fillRect(0,0,w,h);const bw=w/4;bays.forEach((b,k)=>{const X=k*bw;
+   if(!em){x.fillStyle='#3a3836';x.fillRect(X,0,bw,22);x.fillStyle='#141618';x.fillRect(X+8,30,bw-16,h-34);x.fillStyle='#55585c';x.fillRect(X+6,h-8,bw-12,8);x.fillStyle='#1a1a1c';x.fillRect(X,22,bw,4);}
+   else{x.fillStyle=b.col;x.globalAlpha=.9;x.fillRect(X+10,8,bw-20,6);x.globalAlpha=1;const g=x.createLinearGradient(0,30,0,h-6);g.addColorStop(0,b.warm?'#ffd8a0':'#c8e0ff');g.addColorStop(1,b.warm?'#5a3016':'#203450');x.fillStyle=g;x.fillRect(X+8,30,bw-16,h-36);
+    x.fillStyle='rgba(0,0,0,.65)';if(b.shelves)for(let yy=52;yy<h-10;yy+=20)x.fillRect(X+12,yy,bw-24,4);for(let i=0;i<5;i++)x.fillRect(X+12+R()*(bw-40),h-10-R()*40,10+R()*18,6+R()*30);}
+   x.fillStyle=em?'rgba(0,0,0,.85)':'#202224';x.fillRect(X+bw/2-2,30,4,h-36);if(b.door){x.fillStyle=em?'rgba(0,0,0,.4)':'#0c0c0e';x.fillRect(X+bw-46,34,32,h-40);}});};
+  T.shopfront={map:ctex(512,128,(x,w,h)=>draw(x,w,h,false)),em:ctex(512,128,(x,w,h)=>draw(x,w,h,true))};}
+ // asphalt normal map (aggregate + cracks), for wet highlights that break up
+ {const S=256,hgt=new Float32Array(S*S);for(let i=0;i<S*S;i++)hgt[i]=R()*.25;for(let k=0;k<260;k++){const cx=R()*S|0,cy=R()*S|0,rr=3+R()*9,a=(R()-.5)*1.6;for(let y=-12;y<=12;y++)for(let xx=-12;xx<=12;xx++){const d=Math.hypot(xx,y);if(d<rr)hgt[((cy+y+S)%S)*S+(cx+xx+S)%S]+=(.5+.5*Math.cos(Math.PI*d/rr))*a;}}
+  for(let k=0;k<10;k++){let a=R()*S,b=R()*S;for(let s=0;s<60;s++){a+=(R()-.5)*4;b+=(R()-.5)*4;hgt[((b|0)%S+S)%S*S+((a|0)%S+S)%S]-=1.5;}}
+  T.asphaltN=ctex(S,S,(x)=>{const im=x.createImageData(S,S);for(let y=0;y<S;y++)for(let xx=0;xx<S;xx++){const h=(a,b)=>hgt[((b+S)%S)*S+(a+S)%S];const dx=(h(xx+1,y)-h(xx-1,y))*.5,dy=(h(xx,y+1)-h(xx,y-1))*.5;const l=Math.hypot(dx,dy,1);const i=(y*S+xx)*4;im.data[i]=(-dx/l*.5+.5)*255;im.data[i+1]=(dy/l*.5+.5)*255;im.data[i+2]=(1/l*.5+.5)*255;im.data[i+3]=255;}x.putImageData(im,0,0);},{srgb:false});}
+ // radial light pool + soft vertical cone gradient (lamps)
+ T.pool=ctex(128,128,(x,w,h)=>{const g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,w,h);},{srgb:false});
  return T;}
