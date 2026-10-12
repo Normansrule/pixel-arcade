@@ -2,6 +2,8 @@
 import * as THREE from '../vendor/three.module.min.js';
 const V=THREE.Vector3;
 export const DIFF=[{n:'RECRUIT',err:4.2,react:.95,turn:3.5,dmg:.3,burst:[2,4],pause:[.7,1.3],nade:.2,flank:.2},{n:'REGULAR',err:2.9,react:.62,turn:5.5,dmg:.48,burst:[3,5],pause:[.5,.9],nade:.4,flank:.35},{n:'VETERAN',err:1.9,react:.38,turn:8,dmg:.72,burst:[3,6],pause:[.35,.65],nade:.6,flank:.5}];
+// bot-vs-bot gunfights in versus modes (mode.skirm) run on one fixed profile so match pace does not depend on the chosen difficulty; difficulty only sets how bots treat the player
+export const SKIRM={n:'SKIRM',err:2.35,react:.48,turn:7,burst:[3,6],pause:[.4,.72]};
 const rr=(a,b)=>a+Math.random()*(b-a),ang=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const tv=new V(),tv2=new V(),eye=new V(),tgt=new V();
 export const EYE=1.58,CEYE=1.08;
@@ -32,7 +34,7 @@ export function think(a,W){const ai=a.ai,L=W.level,D=W.diff,me=a.pos;ai.think=rr
  // --- perception
  let best=null,bd=1e9;for(const b of W.actors){if(!b.alive||b.team===a.team||b.ghost)continue;const d=me.distanceTo(b.pos);if(d>80)continue;
   const known=ai.target===b&&ai.seen>0;if(!canSee(a,b,W)){continue;}let s=d;if(b===ai.lastAttacker&&W.time-ai.hurtT<4)s*=.5;if(known)s*=.7;if(b.vip)s*=1.8;if(s<bd){bd=s;best=b;}}
- if(best){if(ai.target!==best||ai.seen<=0){ai.react=D.react*rr(.8,1.3)*(W.night&&!best.firingT?1.4:1);ai.onT=0;if(!ai.alerted&&a.team===0)W.callout(a,'contact',best);ai.alerted=true;}
+ if(best){if(ai.target!==best||ai.seen<=0){ai.react=(!best.isPlayer&&W.mode&&W.mode.skirm?SKIRM:D).react*rr(.8,1.3)*(W.night&&!best.firingT?1.4:1);ai.onT=0;if(!ai.alerted&&a.team===0)W.callout(a,'contact',best);ai.alerted=true;}
   ai.target=best;ai.seen=1;ai.last=best.pos.clone();ai.lastT=W.time;}
  else{if(ai.seen>0&&ai.target&&!ai.target.alive)ai.target=null;ai.seen=0;}
  // hearing
@@ -73,8 +75,8 @@ export function think(a,W){const ai=a.ai,L=W.level,D=W.diff,me=a.pos;ai.think=rr
   if(!p){const h=L.hot[Math.random()*L.hot.length|0];p=[h[0]+rr(-5,5),h[1]+rr(-5,5)];}setPath(a,p[0],p[1],W);}}}
 
 // per-frame: aim, move, shoot. returns desired move vector in a.move (x,z) and speed
-export function drive(a,W,dt){const ai=a.ai,D=W.diff;ai.think-=dt;if(ai.think<=0)think(a,W);
- const tgtA=ai.seen&&ai.target&&ai.target.alive?ai.target:null;let mx=0,mz=0,speed=0;a.crouch=false;
+export function drive(a,W,dt){const ai=a.ai;ai.think-=dt;if(ai.think<=0)think(a,W);
+ const tgtA=ai.seen&&ai.target&&ai.target.alive?ai.target:null,D=tgtA&&!tgtA.isPlayer&&W.mode&&W.mode.skirm?SKIRM:W.diff;let mx=0,mz=0,speed=0;a.crouch=false;
  // follow path
  if(ai.path&&ai.path.length){const wp=ai.path[0];const dx=wp[0]-a.pos.x,dz=wp[1]-a.pos.z,d=Math.hypot(dx,dz);if(d<.55){ai.path.shift();if(!ai.path.length)ai.path=null;}else{mx=dx/d;mz=dz/d;}
   speed=tgtA?(ai.state==='tocover'?5.2:3.0):(ai.state==='hunt'?4.6:ai.role==='follow'||ai.role==='vip'?(a.pos.distanceTo(ai.fol?.pos||a.pos)>12?6:4.2):ai.role==='patrol'?1.8:4.4);

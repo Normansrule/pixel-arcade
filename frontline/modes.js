@@ -17,11 +17,15 @@ const mmss=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padSta
 function teams(G,role,o={}){const L=G.level,s=L.spawns.a[0];G.makePlayer(s[0],s[1],yawTo(s[0],s[1]));const an=G.names(0,5),en=G.names(1,6);
  an.forEach((n,i)=>{const p=L.spawns.a[(i+1)%L.spawns.a.length];G.spawnBot({team:0,x:p[0]+rr(-1,1),z:p[1]+rr(-1,1),yaw:yawTo(p[0],p[1]),role,squad:i<2?0:1,weapon:G.pickWeapon(0),name:n});});
  en.forEach((n,i)=>{const p=L.spawns.b[i%L.spawns.b.length];G.spawnBot({team:1,x:p[0]+rr(-1,1),z:p[1]+rr(-1,1),yaw:yawTo(p[0],p[1]),role,squad:i<3?2:3,weapon:G.pickWeapon(1),name:n,att:Math.random()<.3?{supp:1}:{}});});void o;}
-function respawnLoop(G,M,dt){for(const a of G.actors){if(a.alive||a.isPlayer)continue;a.respT=(a.respT??4)-dt;if(a.respT<=0){a.respT=undefined;const s=G.spawnPoint(a.team);G.respawnActor(a,s.x,s.z,yawTo(s.x,s.z));}}
- const P=G.player;if(P&&!P.alive){M.pT-=dt;if(M.pT<=0){const s=G.spawnPoint(0);G.respawnPlayer(s.x,s.z,yawTo(s.x,s.z));}}}
+function respawnLoop(G,M,dt){const sp=t=>M.fwd?fwdSpawn(G,t):G.spawnPoint(t);for(const a of G.actors){if(a.alive||a.isPlayer)continue;a.respT=(a.respT??(M.resp||4))-dt;if(a.respT<=0){a.respT=undefined;const s=sp(a.team);G.respawnActor(a,s.x,s.z,yawTo(s.x,s.z));}}
+ const P=G.player;if(P&&!P.alive){M.pT-=dt;if(M.pT<=0){const s=sp(0);G.respawnPlayer(s.x,s.z,yawTo(s.x,s.z));}}}
+// forward spawns: base points plus the map's hot spots, picking one ~M.fwd metres from the nearest enemy (never closer than 24 m) so respawns rejoin the fight instead of walking across the whole map
+function fwdSpawn(G,team){const L=G.level,M=G.mode,foes=G.actors.filter(b=>b.alive&&b.team!==team&&!b.ghost);if(!foes.length)return G.spawnPoint(team);let best=null,bs=-1e9;
+ for(const p of(team===0?L.spawns.a:L.spawns.b).concat(L.hot)){let md=1e9;for(const b of foes)md=Math.min(md,Math.hypot(b.pos.x-p[0],b.pos.z-p[1]));if(md<24)continue;const s=-Math.abs(md-M.fwd)+Math.random()*8;if(s>bs){bs=s;best=p;}}
+ return best?{x:best[0]+rr(-1.5,1.5),z:best[1]+rr(-1.5,1.5)}:G.spawnPoint(team);}
 
 /* ================= TEAM DEATHMATCH ================= */
-function tdm(G,opt){const M={kind:'tdm',map:opt.map||'sandgate',clock:480,limit:75,score:[0,0],label:'TEAM DEATHMATCH',corpse:6,pT:0,warned:false,
+function tdm(G,opt){const M={kind:'tdm',map:opt.map||'sandgate',clock:480,limit:75,score:[0,0],label:'TEAM DEATHMATCH',corpse:6,skirm:1,resp:4,fwd:48,pT:0,warned:false,
  init(){teams(G,'tdm');HUD.banner(G,'TEAM DEATHMATCH',`FIRST TO ${M.limit} · ${G.level.name}`,'#ff4d00',2.6);},
  update(dt){M.clock-=dt*G.clockScale;if(M.clock<=60&&!M.warned){M.warned=true;HUD.ann(G,'ONE MINUTE REMAINING',3);G.snd.play('beep',1);}if(M.clock<=0){M.clock=0;M.end();return;}respawnLoop(G,M,dt);},
  onKill(v,k){if(G.over)return;const t=k&&k.team!==v.team?k.team:1-v.team;M.score[t]++;if(M.score[t]>=M.limit)M.end();},
