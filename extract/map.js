@@ -37,7 +37,7 @@ export function buildMap(mats){const geo=new Geo();geo.uvs=UVS;const W=new World
   if(hz0>z0)S(x0,y0,z0,x1,y1,hz0,m,t,o);if(hz1<z1)S(x0,y0,hz1,x1,y1,z1,m,t,o);if(hx0>x0)S(x0,y0,hz0,hx0,y1,hz1,m,t,o);if(hx1<x1)S(hx1,y0,hz0,x1,y1,hz1,m,t,o);}
  function stairs(x,z,ax,dir,w,y0,y1,m='conc',t=0xa8a49c){const n=Math.ceil((y1-y0)/.24),rise=(y1-y0)/n,run=.3;for(let i=0;i<n;i++){const a=i*run*dir,b=(i+1)*run*dir;const yt=y0+rise*(i+1);
    if(ax==='x')S(x+Math.min(a,b),y0,z,x+Math.max(a,b),yt,z+w,m,t,{ind:.85});else S(x,y0,z+Math.min(a,b),x+w,yt,z+Math.max(a,b),m,t,{ind:.85});}
-  const L=n*run;return ax==='x'?[Math.min(x,x+L*dir),z,Math.max(x,x+L*dir),z+w]:[x,Math.min(z,z+L*dir),x+w,Math.max(z,z+L*dir)];}
+  const L=n*run;W.sw.push({x,z,ax,dir,w,y0,y1,L,rise});return ax==='x'?[Math.min(x,x+L*dir),z,Math.max(x,x+L*dir),z+w]:[x,Math.min(z,z+L*dir),x+w,Math.max(z,z+L*dir)];}
  // generic building
  function bld(d){const{x0,z0,x1,z1}=d,h=d.h??3.2,fl=d.fl??1,t=.3,by=d.by??0;const ext=d.ext??'brick',et=d.et??0xffffff,inm=d.inm??'plaster',it=d.it??0xddd6c8;foot.push([x0,z0,x1,z1]);
   let st=null;if(d.st){const s=d.st;st={...s,fp:null};}

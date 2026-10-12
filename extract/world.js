@@ -18,7 +18,7 @@ export function waterDepth(x,z,y){return WATER-y;}
 // flags: 1 = blocks movement, 2 = blocks bullets + sight, 4 = door (dynamic), 8 = ladder-free walkable top
 const CS=4,GX0=-140,GZ0=-120,GW=72,GH=62;
 export class World{
- constructor(){this.b=[];this.n=0;this.doors=[];}
+ constructor(){this.b=[];this.n=0;this.doors=[];this.sw=[];}
  add(x0,y0,z0,x1,y1,z1,flags=3,mat=0){if(x0>x1)[x0,x1]=[x1,x0];if(y0>y1)[y0,y1]=[y1,y0];if(z0>z1)[z0,z1]=[z1,z0];this.b.push([x0,y0,z0,x1,y1,z1,flags,mat]);return this.n++;}
  finalize(){const n=this.n;this.B=new Float32Array(n*6);this.F=new Uint8Array(n);this.M=new Uint8Array(n);this.on=new Uint8Array(n).fill(1);this.stamp=new Uint32Array(n);this.st=1;
   const cells=Array.from({length:GW*GH},()=>[]);
@@ -69,42 +69,71 @@ export class World{
  los(ax,ay,az,bx,by,bz){const dx=bx-ax,dy=by-ay,dz=bz-az,d=Math.hypot(dx,dy,dz);if(d<.01)return true;return this.ray(ax,ay,az,dx/d,dy/d,dz/d,d-.05,2)===Infinity;}
 }
 
-/* ================= navigation grid (1 m) ================= */
-export const NX0=-128,NZ0=-110,NW=260,NH=210;
+/* ================= navigation grid (1 m, up to NL stacked floors per cell + stair links) ================= */
+export const NX0=-128,NZ0=-110,NW=260,NH=210,NL=4,NN=NW*NH;
 export class Nav{
- constructor(world){this.w=world;this.g=new Float32Array(NW*NH);this.bl=new Uint8Array(NW*NH);for(let z=0;z<NH;z++)for(let x=0;x<NW;x++)this.cell(x,z);
-  this.open=new Int32Array(NW*NH);this.came=new Int32Array(NW*NH);this.gs=new Float32Array(NW*NH);this.seen=new Uint32Array(NW*NH);this.mark=1;this.heap=[];}
- cell(x,z){const w=this.w,B=w.B,i=z*NW+x,cx=NX0+x+.5,cz=NZ0+z+.5;const th=H(cx,cz);let g=th;let under=th<WATER-.55;
-  // lowest walkable box top with clearance (handles piers + floor slabs)
+ constructor(world){this.w=world;this.lg=new Float32Array(NN*NL);this.lb=new Uint8Array(NN*NL).fill(1);this.ew=new Uint8Array(NN*NL);this.nl=new Uint8Array(NN).fill(1);this.g=this.lg.subarray(0,NN);this.bl=this.lb.subarray(0,NN);for(let z=0;z<NH;z++)for(let x=0;x<NW;x++)this.cell(x,z);
+  this.open=new Int32Array(NN);this.came=new Int32Array(NN*NL);this.gs=new Float32Array(NN*NL);this.seen=new Uint32Array(NN*NL);this.mark=1;this.heap=[];this.links();}
+ cell(x,z){const w=this.w,B=w.B,i=z*NW+x,cx=NX0+x+.5,cz=NZ0+z+.5;const th=H(cx,cz);let under=th<WATER-.55;for(let l=1;l<NL;l++)this.lb[l*NN+i]=1;this.nl[i]=1;
+  // walkable box tops with clearance: layer 0 = lowest (terrain, piers, ground floors), layers 1.. = upper floors, mezzanines, decks
   let cand=[];w.query(cx-.1,cz-.1,cx+.1,cz+.1,k=>{if(!(w.F[k]&1)||(w.F[k]&4))return;const o=k*6;if(cx<B[o]||cx>B[o+3]||cz<B[o+2]||cz>B[o+5])return;cand.push(B[o+4]);});
-  cand.sort((a,b)=>a-b);let base=under?null:th;for(const top of cand){if(top<th-.05)continue;if(base!==null&&top>base+STEP)break;if(base===null||top>base)base=top;}
-  if(base===null){this.bl[i]=1;this.g[i]=th;return;}g=base;this.g[i]=g;
-  let blk=0;const r=.32;w.query(cx-.5-r,cz-.5-r,cx+.5+r,cz+.5+r,k=>{if(blk||!(w.F[k]&1))return;if((w.F[k]&4)&&!w.locked(k))return;const o=k*6;if(B[o+4]<=g+.5||B[o+1]>=g+1.75)return;if(cx+r<B[o]||cx-r>B[o+3]||cz+r<B[o+2]||cz-r>B[o+5])return;blk=1;});
-  if(H(cx+.6,cz)-H(cx-.6,cz)>1||H(cx,cz+.6)-H(cx,cz-.6)>1)blk=1;this.bl[i]=blk;}
- refresh(x0,z0,x1,z1){for(let z=Math.max(0,Math.floor(z0-NZ0)-1);z<=Math.min(NH-1,Math.floor(z1-NZ0)+1);z++)for(let x=Math.max(0,Math.floor(x0-NX0)-1);x<=Math.min(NW-1,Math.floor(x1-NX0)+1);x++)this.cell(x,z);}
+  cand.sort((a,b)=>a-b);let base=under?null:th,k=0;for(;k<cand.length;k++){const top=cand[k];if(top<th-.05)continue;if(base!==null&&top>base+STEP)break;if(base===null||top>base)base=top;}
+  if(base===null){this.bl[i]=1;this.g[i]=th;return;}this.g[i]=base;
+  let blk=this.blk(cx,cz,base);if(H(cx+.6,cz)-H(cx-.6,cz)>1||H(cx,cz+.6)-H(cx,cz-.6)>1)blk=1;this.bl[i]=blk;this.ew[i]=blk?0:this.edges(cx,cz,base);
+  for(let l=1;l<NL&&k<cand.length;l++){let y=cand[k++];while(k<cand.length&&cand[k]<=y+STEP)y=Math.max(y,cand[k++]);const j=l*NN+i;this.nl[i]=l+1;this.lg[j]=y;this.lb[j]=this.blk(cx,cz,y);this.ew[j]=this.lb[j]?0:this.edges(cx,cz,y);}}
+ // thin walls between two cell centres (bit 1: +x edge, bit 2: +z edge)
+ edges(cx,cz,g){const w=this.w,B=w.B;let e=0;w.query(cx,cz,cx+1,cz+1,k=>{if(e===3||!(w.F[k]&1))return;if((w.F[k]&4)&&!w.locked(k))return;const o=k*6;if(B[o+4]<=g+.5||B[o+1]>=g+1.75)return;if(B[o]<=cx+1&&B[o+3]>=cx&&B[o+2]<=cz&&B[o+5]>=cz)e|=1;if(B[o+2]<=cz+1&&B[o+5]>=cz&&B[o]<=cx&&B[o+3]>=cx)e|=2;});return e;}
+ blk(cx,cz,g,r=.32){const w=this.w,B=w.B;let blk=0;w.query(cx-.5-r,cz-.5-r,cx+.5+r,cz+.5+r,k=>{if(blk||!(w.F[k]&1))return;if((w.F[k]&4)&&!w.locked(k))return;const o=k*6;if(B[o+4]<=g+.5||B[o+1]>=g+1.75)return;if(cx+r<B[o]||cx-r>B[o+3]||cz+r<B[o+2]||cz-r>B[o+5])return;blk=1;});return blk;}
+ // stairways (W.sw) become graph edges: foot (axial or side entry, whichever is clear) -> first step -> landing past the top
+ links(){this.lk=new Map();this.sl=[];const add=(a,b,c,p)=>{let L=this.lk.get(a);if(!L)this.lk.set(a,L=[]);L.push({to:b,c,p});};
+  for(const s of this.w.sw||[]){const hw=s.w/2,P=(u,v)=>s.ax==='x'?[s.x+u*s.dir,s.z+hw+v]:[s.x+hw+v,s.z+u*s.dir];const top=P(s.L+.55,0),s1=P(.2,0);
+   // nodes on the flight itself are too steep to link cell to cell: drop them, the stair link covers the flight
+   const[a0,b0]=P(0,-hw),[a1,b1]=P(s.L,hw);for(let z=Math.max(0,Math.floor(Math.min(b0,b1)-NZ0));z<=Math.min(NH-1,Math.floor(Math.max(b0,b1)-NZ0));z++)for(let x=Math.max(0,Math.floor(Math.min(a0,a1)-NX0));x<=Math.min(NW-1,Math.floor(Math.max(a0,a1)-NX0));x++)for(let l=0;l<NL;l++){const j=l*NN+z*NW+x;if(this.lg[j]>s.y0+.3&&this.lg[j]<s.y1-.3)this.lb[j]=1;}
+   if(!this.clear(top[0],top[1],s.y1))continue;const tN=this.near(top[0],top[1],s.y1,2,.6);if(tN<0)continue;
+   for(const[u,v]of[[-.5,0],[.25,-hw-.45],[.25,hw+.45]]){const e=P(u,v);if(!this.clear(e[0],e[1],s.y0))continue;const bN=this.near(e[0],e[1],s.y0,2,.6);if(bN<0)continue;
+    const up=[[e[0],s.y0,e[1]],[s1[0],s.y0+s.rise,s1[1]],[top[0],s.y1,top[1]]],c=Math.hypot(top[0]-e[0],top[1]-e[1])*1.1+1.5;add(bN,tN,c,up);add(tN,bN,c,up.slice().reverse());this.sl.push({s,bN,tN,up});break;}}}
+ clear(x,z,y){return Math.abs(this.w.groundAt(x,z,y+STEP,.2)-y)<.2&&!this.blk(x,z,y,.3);}
+ refresh(x0,z0,x1,z1){for(let z=Math.max(0,Math.floor(z0-NZ0)-1);z<=Math.min(NH-1,Math.floor(z1-NZ0)+1);z++)for(let x=Math.max(0,Math.floor(x0-NX0)-1);x<=Math.min(NW-1,Math.floor(x1-NX0)+1);x++)this.cell(x,z);this.links();}
  idx(x,z){const ix=Math.floor(x-NX0),iz=Math.floor(z-NZ0);if(ix<0||iz<0||ix>=NW||iz>=NH)return -1;return iz*NW+ix;}
  free(i){return i>=0&&!this.bl[i];}
+ pt(i){const c=i%NN;return[NX0+c%NW+.5,this.lg[i],NZ0+((c/NW)|0)+.5];}
  nearestFree(x,z,R=6){let i=this.idx(x,z);if(this.free(i))return i;const ix=Math.floor(x-NX0),iz=Math.floor(z-NZ0);for(let r=1;r<=R;r++)for(let dz=-r;dz<=r;dz++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==r)continue;const a=ix+dx,b=iz+dz;if(a<0||b<0||a>=NW||b>=NH)continue;const j=b*NW+a;if(!this.bl[j])return j;}return -1;}
- pass(a,b){return !this.bl[b]&&Math.abs(this.g[a]-this.g[b])<.6;}
- // A* -> array of [x,y,z] waypoints (smoothed) or null
- path(sx,sz,tx,tz,maxN=24000){const s=this.nearestFree(sx,sz),t=this.nearestFree(tx,tz,8);if(s<0||t<0)return null;if(s===t)return[[tx,this.g[t],tz]];
-  const mk=++this.mark,gs=this.gs,came=this.came,seen=this.seen,heap=this.heap;heap.length=0;const tX=t%NW,tZ=(t/NW)|0;
-  const hfn=i=>{const dx=Math.abs(i%NW-tX),dz=Math.abs(((i/NW)|0)-tZ);return Math.max(dx,dz)+.414*Math.min(dx,dz);};
+ // nearest free node on the floor closest to height y (any layer; height error weighs 3x distance)
+ near(x,z,y,R=6,tol=1.2){if(y===undefined)return this.nearestFree(x,z,R);const ix=Math.floor(x-NX0),iz=Math.floor(z-NZ0);let best=-1,bs=1e9;for(let r=0;r<=R&&r<bs;r++){for(let dz=-r;dz<=r;dz++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dz))!==r)continue;const a=ix+dx,b=iz+dz;if(a<0||b<0||a>=NW||b>=NH)continue;
+   for(let l=0;l<NL;l++){const j=l*NN+b*NW+a;if(this.lb[j])continue;const d=Math.abs(this.lg[j]-y);if(d<tol&&d*3+r<bs){bs=d*3+r;best=j;}}}}return best;}
+ pass(a,b){return !this.lb[b]&&Math.abs(this.lg[a]-this.lg[b])<.6;}
+ // node of cell c reachable from node a (closest height), or -1
+ to(a,c){let best=-1,bd=.6;for(let l=0,m=this.nl[c];l<m;l++){const j=l*NN+c;if(this.lb[j])continue;const d=Math.abs(this.lg[a]-this.lg[j]);if(d<bd){bd=d;best=j;}}return best;}
+ // orthogonal or diagonal step from node a at cell (x,z), honouring thin-wall edges
+ st(a,x,z,dx,dz){const ew=this.ew;if(dx&&dz){const s1=this.st(a,x,z,dx,0);if(s1<0)return -1;const s2=this.st(a,x,z,0,dz);if(s2<0)return -1;const j=this.to(a,(z+dz)*NW+x+dx);if(j<0||(dz>0?ew[s1]&2:ew[j]&2)||(dx>0?ew[s2]&1:ew[j]&1))return -1;return j;}
+  const j=this.to(a,(z+dz)*NW+x+dx);if(j<0)return -1;if(dx>0?ew[a]&1:dx<0?ew[j]&1:dz>0?ew[a]&2:ew[j]&2)return -1;return j;}
+ // A* -> array of [x,y,z] waypoints (smoothed) or null; sy/ty pick the floor at each end
+ path(sx,sz,tx,tz,sy,ty,maxN=24000){const on=(x,z,y)=>{if(y===undefined)return null;for(const q of this.sl){const s=q.s,u=(s.ax==='x'?x-s.x:z-s.z)*s.dir,v=s.ax==='x'?z-s.z:x-s.x;if(u>-.1&&u<s.L+.1&&v>-.2&&v<s.w+.2&&y>s.y0+.15&&y<s.y1+.3)return{q,u};}return null;};
+  // on a flight: start/end at the landing that leads the right way, plus the flight's own waypoints
+  const so=on(sx,sz,sy),te=on(tx,tz,ty);let pre=[],post=[],s,t;
+  if(so){const up=ty!==undefined&&ty>(so.q.s.y0+so.q.s.y1)/2;s=up?so.q.tN:so.q.bN;pre=up?[so.q.up[2]]:[so.q.up[1],so.q.up[0]];}else s=this.near(sx,sz,sy,6);
+  if(te){const up=te.u>te.q.s.L/2;t=up?te.q.tN:te.q.bN;post=up?[te.q.up[2],[tx,ty,tz]]:[te.q.up[0],te.q.up[1],[tx,ty,tz]];}else t=this.near(tx,tz,ty,8);
+  if(s<0)s=this.nearestFree(sx,sz);if(t<0)t=this.nearestFree(tx,tz,8);if(s<0||t<0)return null;if(s===t)return[...pre,...(post.length?post:[[tx,this.lg[t],tz]])];
+  const mk=++this.mark,gs=this.gs,came=this.came,seen=this.seen,heap=this.heap;heap.length=0;const tc=t%NN,tX=tc%NW,tZ=(tc/NW)|0;
+  const hfn=i=>{const c=i%NN,dx=Math.abs(c%NW-tX),dz=Math.abs(((c/NW)|0)-tZ);return Math.max(dx,dz)+.414*Math.min(dx,dz);};
   const push=(i,f)=>{heap.push([f,i]);let k=heap.length-1;while(k>0){const p=(k-1)>>1;if(heap[p][0]<=heap[k][0])break;[heap[p],heap[k]]=[heap[k],heap[p]];k=p;}};
   const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let k=0;for(;;){const l=2*k+1,r=l+1;let m=k;if(l<heap.length&&heap[l][0]<heap[m][0])m=l;if(r<heap.length&&heap[r][0]<heap[m][0])m=r;if(m===k)break;[heap[m],heap[k]]=[heap[k],heap[m]];k=m;}}return top;};
   seen[s]=mk;gs[s]=0;came[s]=-1;push(s,hfn(s));let n=0,found=false;const D=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[1,-1,1.414],[-1,1,1.414],[-1,-1,1.414]];
-  while(heap.length&&n++<maxN){const[f,i]=pop();if(i===t){found=true;break;}const x=i%NW,z=(i/NW)|0;if(f-hfn(i)>gs[i]+1e-4)continue;
-   for(const[dx,dz,c]of D){const nx=x+dx,nz=z+dz;if(nx<0||nz<0||nx>=NW||nz>=NH)continue;const j=nz*NW+nx;if(!this.pass(i,j))continue;if(dx&&dz&&(!this.pass(i,z*NW+nx)||!this.pass(i,nz*NW+x)))continue;
-    const ng=gs[i]+c;if(seen[j]!==mk||ng<gs[j]){seen[j]=mk;gs[j]=ng;came[j]=i;push(j,ng+hfn(j));}}}
+  const rl=(i,j,c)=>{const ng=gs[i]+c;if(seen[j]!==mk||ng<gs[j]){seen[j]=mk;gs[j]=ng;came[j]=i;push(j,ng+hfn(j));}};
+  while(heap.length&&n++<maxN){const[f,i]=pop();if(i===t){found=true;break;}const ci=i%NN,x=ci%NW,z=(ci/NW)|0;if(f-hfn(i)>gs[i]+1e-4)continue;
+   for(const[dx,dz,c]of D){const nx=x+dx,nz=z+dz;if(nx<0||nz<0||nx>=NW||nz>=NH)continue;const j=this.st(i,x,z,dx,dz);if(j<0)continue;rl(i,j,c);}
+   const L=this.lk.get(i);if(L)for(const k of L)rl(i,k.to,k.c);}
   if(!found)return null;const cells=[];for(let i=t;i!==-1;i=came[i])cells.push(i);cells.reverse();
-  // string pulling
-  const out=[];let a=0;while(a<cells.length-1){let b=cells.length-1;while(b>a+1&&!this.walk(cells[a],cells[b]))b--;out.push(cells[b]);a=b;}
-  return out.map(i=>[NX0+i%NW+.5,this.g[i],NZ0+((i/NW)|0)+.5]);}
- walk(a,b){let x0=a%NW,z0=(a/NW)|0;const x1=b%NW,z1=(b/NW)|0;const dx=Math.abs(x1-x0),dz=Math.abs(z1-z0),sx=x0<x1?1:-1,sz=z0<z1?1:-1;let err=dx-dz,prev=a;
-  for(let g=0;g<400;g++){if(x0===x1&&z0===z1)return true;const e2=2*err;if(e2>-dz&&e2<dx){// diagonal: require both sides
-    const c1=z0*NW+x0+sx,c2=(z0+sz)*NW+x0;if(!this.pass(prev,c1)||!this.pass(prev,c2))return false;}
-   if(e2>-dz){err-=dz;x0+=sx;}if(e2<dx){err+=dx;z0+=sz;}const c=z0*NW+x0;if(!this.pass(prev,c))return false;prev=c;}return false;}
- randomNear(x,z,r,rnd=Math.random){for(let k=0;k<20;k++){const a=rnd()*Math.PI*2,d=rnd()*r;const i=this.idx(x+Math.cos(a)*d,z+Math.sin(a)*d);if(this.free(i))return[NX0+i%NW+.5,this.g[i],NZ0+((i/NW)|0)+.5];}return null;}
+  // stair links between consecutive nodes stay as fixed waypoints; string pulling within each floor run
+  const lk=cells.map((a,k)=>k<cells.length-1&&(this.lk.get(a)||[]).find(q=>q.to===cells[k+1])||null);
+  const out=[];let a=0;while(a<cells.length-1){if(lk[a]){for(const p of lk[a].p)out.push(p);a++;out.push(this.pt(cells[a]));continue;}
+   let e=a+1;while(e<cells.length-1&&!lk[e])e++;let b=e;while(b>a+1&&!this.walk(cells[a],cells[b]))b--;out.push(this.pt(cells[b]));a=b;}
+  return[...pre,...out,...post];}
+ walk(a,b){const ca=a%NN,cb=b%NN;let x0=ca%NW,z0=(ca/NW)|0;const x1=cb%NW,z1=(cb/NW)|0;const dx=Math.abs(x1-x0),dz=Math.abs(z1-z0),sx=x0<x1?1:-1,sz=z0<z1?1:-1;let err=dx-dz,prev=a;
+  for(let g=0;g<400;g++){if(x0===x1&&z0===z1)return prev===b;const e2=2*err;const mx=e2>-dz?sx:0,mz=e2<dx?sz:0;// diagonal steps require both sides
+   if(mx)err-=dz;if(mz)err+=dx;const c=this.st(prev,x0,z0,mx,mz);if(c<0)return false;x0+=mx;z0+=mz;prev=c;}return false;}
+ randomNear(x,z,r,rnd=Math.random,y){for(let k=0;k<20;k++){const a=rnd()*Math.PI*2,d=rnd()*r;const i=this.idx(x+Math.cos(a)*d,z+Math.sin(a)*d);if(i<0)continue;
+   if(y===undefined){if(this.free(i))return this.pt(i);continue;}let j=-1,bd=1.2;for(let l=0;l<NL;l++){const n=l*NN+i;if(!this.lb[n]&&Math.abs(this.lg[n]-y)<bd){bd=Math.abs(this.lg[n]-y);j=n;}}if(j>=0)return this.pt(j);}return null;}
 }
 
 /* ================= merged geometry builder ================= */

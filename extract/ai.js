@@ -28,13 +28,13 @@ export class Bot{
  yell(){if(this.voiceT<2)return;this.voiceT=0;if(this.fac==='patrol')this.G.snd.radio(this.pos);else this.G.snd.voice(this.pos,this.fac);}
  /* ---------- navigation ---------- */
  setGoal(p,force){if(!force&&this.goal&&this.goal.distanceTo(p)<1.5&&this.path)return;this.goal=p.clone?p.clone():new V(p[0],p[1],p[2]);this.path=null;this.pi=0;this.repathT=0;}
- follow(dt,speed){if(!this.goal)return false;if(!this.path){if(this.repathT>0)return false;const p=this.G.nav.path(this.pos.x,this.pos.z,this.goal.x,this.goal.z);this.repathT=.6+R()*.4;if(!p){this.goal=null;return false;}this.path=p;this.pi=0;}
+ follow(dt,speed){if(!this.goal)return false;if(!this.path){if(this.repathT>0)return false;const p=this.G.nav.path(this.pos.x,this.pos.z,this.goal.x,this.goal.z,this.pos.y,this.goal.y);this.repathT=.6+R()*.4;if(!p){this.goal=null;return false;}this.path=p;this.pi=0;}
   const w=this.path[this.pi];if(!w){this.path=null;this.goal=null;return false;}const dx=w[0]-this.pos.x,dz=w[2]-this.pos.z,d=Math.hypot(dx,dz);
   if(d<.6){this.pi++;if(this.pi>=this.path.length){this.path=null;this.goal=null;return false;}return true;}
   this.vel.x=dx/d*speed;this.vel.z=dz/d*speed;this.moveYaw=Math.atan2(dx,dz);return true;}
  /* ---------- cover ---------- */
  findCover(from){const G=this.G;let best=null,bs=-1e9;const pref=this.prefRange();const n=G.lowCpu?8:14;
-  for(let k=0;k<n;k++){const a=R()*TAU,r=2.5+R()*12;const c=G.nav.randomNear(this.pos.x+Math.cos(a)*r,this.pos.z+Math.sin(a)*r,1.5);if(!c)continue;const cx=c[0],cy=c[1],cz=c[2];
+  for(let k=0;k<n;k++){const a=R()*TAU,r=2.5+R()*12;const c=G.nav.randomNear(this.pos.x+Math.cos(a)*r,this.pos.z+Math.sin(a)*r,1.5,undefined,this.pos.y);if(!c)continue;const cx=c[0],cy=c[1],cz=c[2];
    const lowBlocked=!G.W.los(from.x,from.y,from.z,cx,cy+.95,cz);if(!lowBlocked)continue;const peek=G.W.los(from.x,from.y,from.z,cx,cy+1.6,cz);const dT=Math.hypot(cx-from.x,cz-from.z);
    const s=(peek?1.2:0)-Math.hypot(cx-this.pos.x,cz-this.pos.z)*.06-Math.abs(dT-pref)*.03-(dT<5?2:0);if(s>bs){bs=s;best={x:cx,y:cy,z:cz,peek};}}
   return best;}
@@ -69,10 +69,10 @@ export class Bot{
    if(this.coverT<=0){this.coverT=2.4+R()*2.5;const from=t?t.aimPoint(new V(),false):this.lastSeen.clone().setY(this.lastSeen.y+1.4);
     const aggressive=this.st&&(this.st.cls==='SHOTGUN'||this.st.cls==='SMG')&&this.fac==='drifter';
     if(lowHp&&this.healed<2&&!vis){this.cover=this.findCover(from);if(this.cover){this.setGoal(new V(this.cover.x,this.cover.y,this.cover.z),true);this.wantHeal=true;}}
-    else if(!vis&&G.time-this.seenT>3&&!this.flank&&this.squad&&R()<D.flank){const a=Math.atan2(this.pos.x-this.lastSeen.x,this.pos.z-this.lastSeen.z)+(R()<.5?1:-1)*(1.1+R()*.6);const f=G.nav.randomNear(this.lastSeen.x+Math.sin(a)*12,this.lastSeen.z+Math.cos(a)*12,4);if(f){this.flank=new V(f[0],f[1],f[2]);this.setGoal(this.flank,true);this.cover=null;}}
+    else if(!vis&&G.time-this.seenT>3&&!this.flank&&this.squad&&R()<D.flank){const a=Math.atan2(this.pos.x-this.lastSeen.x,this.pos.z-this.lastSeen.z)+(R()<.5?1:-1)*(1.1+R()*.6);const f=G.nav.randomNear(this.lastSeen.x+Math.sin(a)*12,this.lastSeen.z+Math.cos(a)*12,4,undefined,this.lastSeen.y);if(f){this.flank=new V(f[0],f[1],f[2]);this.setGoal(this.flank,true);this.cover=null;}}
     else if(!vis&&G.time-this.seenT>4.5){this.setGoal(this.lastSeen.clone().add(new V((R()-.5)*4,0,(R()-.5)*4)),true);this.cover=null;}
-    else if(vis&&(aggressive&&d>7||d>this.prefRange()*1.8)){const c=this.findCover(from);if(c&&Math.hypot(c.x-t.pos.x,c.z-t.pos.z)<d){this.cover=c;this.setGoal(new V(c.x,c.y,c.z),true);}else{const n=G.nav.randomNear(this.pos.x+(t.pos.x-this.pos.x)*.3,this.pos.z+(t.pos.z-this.pos.z)*.3,3);if(n)this.setGoal(new V(n[0],n[1],n[2]),true);}}
-    else if(!this.cover||R()<.25){this.cover=this.findCover(from);if(this.cover)this.setGoal(new V(this.cover.x,this.cover.y,this.cover.z),true);else if(vis){const a=this.yaw+Math.PI/2*(R()<.5?1:-1);const n=G.nav.randomNear(this.pos.x+Math.sin(a)*4,this.pos.z+Math.cos(a)*4,2);if(n)this.setGoal(new V(n[0],n[1],n[2]),true);}}}
+    else if(vis&&(aggressive&&d>7||d>this.prefRange()*1.8)){const c=this.findCover(from);if(c&&Math.hypot(c.x-t.pos.x,c.z-t.pos.z)<d){this.cover=c;this.setGoal(new V(c.x,c.y,c.z),true);}else{const n=G.nav.randomNear(this.pos.x+(t.pos.x-this.pos.x)*.3,this.pos.z+(t.pos.z-this.pos.z)*.3,3,undefined,this.pos.y);if(n)this.setGoal(new V(n[0],n[1],n[2]),true);}}
+    else if(!this.cover||R()<.25){this.cover=this.findCover(from);if(this.cover)this.setGoal(new V(this.cover.x,this.cover.y,this.cover.z),true);else if(vis){const a=this.yaw+Math.PI/2*(R()<.5?1:-1);const n=G.nav.randomNear(this.pos.x+Math.sin(a)*4,this.pos.z+Math.cos(a)*4,2,undefined,this.pos.y);if(n)this.setGoal(new V(n[0],n[1],n[2]),true);}}}
    const moving=this.follow(dt,(this.goal&&this.goal.distanceTo(this.pos)>5?runS:walkS*1.1)*legF);
    if(moving){speed=Math.hypot(this.vel.x,this.vel.z);if(!vis)this.aimYaw=this.moveYaw;}
    else{// in cover / holding
@@ -92,6 +92,8 @@ export class Bot{
   // move
   this.vel.x*=legF;this.vel.z*=legF;if(this.crouch>.5){this.vel.x*=.55;this.vel.z*=.55;}
   this.vel.y-=20*dt;const res=G.W.move(this.pos,this.vel,dt,.3,this.crouch>.5?1.2:1.75,this.onGround,2);this.onGround=res.ground;
+  // hop onto a stair's first step when entering it from the side (next waypoint is higher and a step blocks)
+  const wp=this.path&&this.path[this.pi];if(wp&&res.wall&&this.onGround&&speed>.2&&wp[1]>this.pos.y+.15&&wp[1]<this.pos.y+.6)this.vel.y=3.8;
   // doors
   if(speed>.2){for(const d of G.doors){if(d.open||Math.abs(d.x-this.pos.x)>1.8||Math.abs(d.z-this.pos.z)>1.8)continue;if(d.lock&&!d.unlocked)continue;if(Math.hypot(d.x-this.pos.x,d.z-this.pos.z)<1.6)G.toggleDoor(d,this);}}
   // stuck
