@@ -5,16 +5,17 @@ import {segBox,rayObs,rayTerrain,breakOb} from './maps.js';
 import {G as GRAV} from './tanks.js';
 const R=(a=1)=>Math.random()*a;
 const TB={talon:{hx:.95,hz:1.15,h:.62,cz:-.1},maul:{hx:1.3,hz:1.7,h:.86,cz:-.25},lance:{hx:1.15,hz:1.45,h:.98,cz:-.15}};
-const _b={},_t={};
-// hull & turret boxes of a tank, as segBox-compatible objects
-function boxes(t){const d=t.d,c=Math.cos(t.yaw),s=Math.sin(t.yaw);Object.assign(_b,{x:t.p.x,z:t.p.z,hx:d.W/2,hz:d.L/2,c,s,y0:t.p.y+.22,h:d.y1-.22});
- const tb=TB[t.lo.turret],sc=d.sc,ty=t.yaw+t.tRel,cz=d.turZ;Object.assign(_t,{x:t.p.x+s*cz+Math.sin(ty)*tb.cz*sc,z:t.p.z+c*cz+Math.cos(ty)*tb.cz*sc,hx:tb.hx*sc,hz:tb.hz*sc,c:Math.cos(ty),s:Math.sin(ty),y0:t.p.y+d.y1-.02,h:tb.h*sc});return[_b,_t];}
-// nearest tank hit along a segment
+const _b={},_t={},_q=new THREE.Quaternion(),_qi=new THREE.Quaternion(),_e=new THREE.Euler(),_a=new V3(),_c=new V3(),_n=new V3();
+// hull & turret boxes of a tank in the hull's local frame (pitch/roll/yaw as drawn), as segBox-compatible objects
+function boxes(t){const d=t.d;Object.assign(_b,{x:0,z:0,hx:d.W/2,hz:d.L/2,c:1,s:0,y0:.22,h:d.y1-.22});
+ const tb=TB[t.lo.turret],sc=d.sc,r=t.tRel,cz=d.turZ;Object.assign(_t,{x:Math.sin(r)*tb.cz*sc,z:cz+Math.cos(r)*tb.cz*sc,hx:tb.hx*sc,hz:tb.hz*sc,c:Math.cos(r),s:Math.sin(r),y0:d.y1-.02,h:tb.h*sc});return[_b,_t];}
+// nearest tank hit along a segment (tested in each hull's tilted frame; n = world normal, ln = hull-local normal)
 export function rayTanks(tanks,p0,p1,skip){let best=null;for(const t of tanks){if(!t.alive||t===skip)continue;const dx=t.p.x-p0.x,dz=t.p.z-p0.z,ex=p1.x-p0.x,ez=p1.z-p0.z,L2=ex*ex+ez*ez||1,u=cl((dx*ex+dz*ez)/L2,0,1);
   if(Math.hypot(p0.x+ex*u-t.p.x,p0.z+ez*u-t.p.z)>t.d.L*.6+2)continue;const[hb,tb]=boxes(t);
-  for(let k=0;k<2;k++){const h=segBox(k?tb:hb,p0,p1);if(h&&(!best||h.t<best.t))best={t:h.t,tank:t,part:k?'turret':'hull',n:new V3(h.nx,h.ny,h.nz),axis:h.axis,inside:h.inside};}}return best;}
+  _q.setFromEuler(_e.set(-t.pitch,t.yaw,t.roll,'YXZ'));_qi.copy(_q).invert();_a.subVectors(p0,t.p).applyQuaternion(_qi);_c.subVectors(p1,t.p).applyQuaternion(_qi);
+  for(let k=0;k<2;k++){const h=segBox(k?tb:hb,_a,_c);if(h&&(!best||h.t<best.t)){_n.set(h.nx,h.ny,h.nz);best={t:h.t,tank:t,part:k?'turret':'hull',ln:_n.clone(),n:_n.clone().applyQuaternion(_q),axis:h.axis,inside:h.inside};}}}return best;}
 // classify the face that was hit (front/side/rear/top) from the normal in the hit part's frame
-function facing(h){const t=h.tank,yaw=h.part==='turret'?t.yaw+t.tRel:t.yaw;if(h.n.y>.5)return'top';const fx=Math.sin(yaw),fz=Math.cos(yaw);const d=h.n.x*fx+h.n.z*fz;return d>.6?'front':d<-.6?'rear':'side';}
+function facing(h){const t=h.tank,n=h.ln||h.n,yaw=h.part==='turret'?t.tRel:0;if(n.y>.5)return'top';const fx=Math.sin(yaw),fz=Math.cos(yaw);const d=n.x*fx+n.z*fz;return d>.6?'front':d<-.6?'rear':'side';}
 const MUL={hull:{front:.7,side:1,rear:1.45,top:1.3},turret:{front:.85,side:1.05,rear:1.35,top:1.3}};
 const CRIT={front:.05,side:.09,rear:.22,top:.15};
 const MODS=['TRACKS','TURRET RING','ENGINE','AMMO RACK'];
