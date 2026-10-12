@@ -66,13 +66,13 @@ const _o={};
 
 /* ================= police / heat ================= */
 export const ESCAPE=[0,7,9,12,15,18];
-export class Police{constructor(G){this.G=G;this.heat=0;this.lostT=0;this.bustT=0;this.cops=[];this.blocks=[];this.rbT=20;this.seen=false;this.maxStars=0;this.flash=0;this.spawnT=0;this.R=rng(911);}
+export class Police{constructor(G){this.G=G;this.heat=0;this.lostT=0;this.bustT=0;this.cops=[];this.blocks=[];this.rbT=20;this.seen=false;this.maxStars=0;this.flash=0;this.spawnT=0;this.R=rng(911);this.foot=[];}
  get stars(){return Math.min(5,Math.floor(this.heat+1e-6));}
  witness(x,z){for(const v of this.G.vehicles){if(!v.cop||v.wrecked)continue;const d=Math.hypot(v.x-x,v.z-z);if(d<26||(d<80&&this.G.W.los(v.x,v.z,x,z,2)))return v;}return null;}
  crime(kind,x,z,amt,force){if(this.G.app!=='play')return false;const w=force?true:this.witness(x,z);if(!w)return false;const before=this.stars;this.heat=cl(Math.max(this.heat+amt,1),0,5.2);this.lostT=0;
   if(this.stars>before){this.G.onStars(this.stars,kind);}this.maxStars=Math.max(this.maxStars,this.stars);if(w.cop&&w.cop.patrol)this.enlist(w);return true;}
  set(n){this.heat=n;this.lostT=0;if(n>0)this.maxStars=Math.max(this.maxStars,this.stars);}
- clear(){this.heat=0;this.lostT=0;this.bustT=0;for(const c of this.cops){c.cop.chase=false;c.siren=false;c.cop.leave=true;}this.cops=[];for(const b of this.blocks)b.forEach(v=>{v.keep=false;});this.blocks=[];}
+ clear(){this.heat=0;this.lostT=0;this.bustT=0;for(const c of this.cops){c.cop.chase=false;c.siren=false;c.cop.leave=true;}this.cops=[];for(const b of this.blocks)b.forEach(v=>{v.keep=false;});this.blocks=[];for(const o of this.foot)this.standDown(o);this.foot=[];}
  enlist(v){if(v.cop.chase)return;v.cop.chase=true;v.cop.patrol=false;v.mode='chase';v.siren=true;v.keep=true;v.cop.role=this.cops.length%3;v.cop.rt=0;v.stuck=0;this.cops.push(v);}
  spawnCop(){const G=this.G,P=G.player;const px=P.x,pz=P.z;for(let k=0;k<14;k++){const a=this.R()*Math.PI*2,d=130+this.R()*80;const tx=px+Math.cos(a)*d,tz=pz+Math.sin(a)*d;const ne=G.W.nearestEdge(tx,tz,60);if(!ne)continue;const p=polyAt(ne.e.pts,ne.s,{});
    if(G.vehicles.some(v=>Math.hypot(v.x-p.x,v.z-p.z)<10))continue;if(G.W.los(p.x,p.z,px,pz,2)&&d<170)continue;
@@ -81,6 +81,28 @@ export class Police{constructor(G){this.G=G;this.heat=0;this.lostT=0;this.bustT=
   const p=polyAt(ahead.e.pts,ahead.s,{});if(Math.hypot(p.x-P.x,p.z-P.z)<80||W.los(p.x,p.z,P.x,P.z,2)&&Math.hypot(p.x-P.x,p.z-P.z)<100)return;const a=Math.atan2(p.tx,p.tz);const cars=[];
   for(const[off,rot]of[[-3.2,1.2],[3.2,-1.2]]){const x=p.x-p.tz*off,z=p.z+p.tx*off;const c=new Vehicle('police',{mode:'parked',driver:'npc'});c.attach(G.scene,G.U);c.place(x,z,a+rot,W,(p.y||0)+1);c.cop={block:true};c.siren=true;c.keep=true;c.traffic=true;G.traffic.cars.push(c);G.vehicles.push(c);cars.push(c);}
   this.blocks.push(cars);G.hud.toast('ROADBLOCK AHEAD');}
+ // officers get out of a stopped cruiser and chase an on-foot player
+ footOut(car){const G=this.G,o=G.peds.spawn(car.x,car.z,0,1e9);if(!o)return;const sa=Math.sin(car.a),ca=Math.cos(car.a);o.x=car.x+ca*(car.wid/2+.7);o.z=car.z-sa*(car.wid/2+.7);o.y=G.W.groundAt(o.x,o.z,car.y+1);
+  o.look={skin:o.look.skin,hair:0x141a2a,shirt:0x1b2a4a,pants:0x141a2a,sc:1.02,cap:true};o.keep=true;o.officer={car,hitT:0};o.custom=this.footAI;o.police=this;
+  car.cop.out=o;car.mode='parked';car.driver=null;car.ctrl.thr=0;car.ctrl.steer=0;car.ctrl.hb=true;this.cops=this.cops.filter(c=>c!==car);this.foot.push(o);this.G.snd.play('door');}
+ footAI(c,dt){const PO=c.police,G=PO.G,P=G.player,W=G.W,f=c.officer,car=f.car;
+  // a moving car knocks the officer down; Peds handles the ragdoll and footRecover() picks them up again
+  for(const v of G.vehicles){if(v.speed<6||v.wrecked)continue;if(Math.hypot(c.x-v.x,c.z-v.z)<v.r+.6&&Math.abs(c.y-v.y)<2){G.peds.knock(c,v);c.custom=null;G.snd.play('yelp');if(v===P.veh)PO.crime('ped',v.x,v.z,1,true);return;}}
+  const back=!!P.veh&&P.veh!==car;const tx=back?car.x:P.x,tz=back?car.z:P.z;const dx=tx-c.x,dz=tz-c.z,d=Math.hypot(dx,dz);
+  const stop=back?2.2:1.1;const sp=d>stop?[5.2,6,6.8][G.opt.cops]:0;c.spd+=(sp-c.spd)*Math.min(1,dt*5);
+  if(d>1e-3){const k=c.spd*dt/d;c.x+=dx*k;c.z+=dz*k;c.yaw+=wrapA(Math.atan2(dx,dz)-c.yaw)*Math.min(1,dt*9);}
+  W.collide(c.x,c.z,.34,c.y+.3,c.y+1.4,_fc);if(_fc.hit){c.x+=_fc.px;c.z+=_fc.pz;}c.y=W.groundAt(c.x,c.z,c.y+.6);
+  c.state=c.spd>.3?'walk':(back?'idle':'fist');}
+ standDown(o){o.custom=null;o.keep=false;o.officer=null;o.state='walk';o.idle=1;}
+ footUpdate(dt,st){const G=this.G,P=G.player,pv=P.veh;
+  // a cruiser that has pulled up near an on-foot player lets an officer out
+  if(!pv&&this.foot.length<Math.min(4,st+1))for(const c of this.cops){if(c.cop.out||c.wrecked||c.speed>3)continue;if(Math.hypot(c.x-P.x,c.z-P.z)<22&&Math.abs(c.y-P.y)<3){this.footOut(c);break;}}
+  for(const o of this.foot.slice()){const car=o.officer.car;
+   if(!o.custom&&o.state==='walk'){o.custom=this.footAI;o.keep=true;}// back on their feet after a knock-down
+   const gone=!G.peds.list.includes(o);const home=!!pv&&pv!==car&&o.custom&&Math.hypot(o.x-car.x,o.z-car.z)<2.6;const lost=Math.hypot(o.x-P.x,o.z-P.z)>90;
+   if(gone||home||lost||car.wrecked||!G.vehicles.includes(car)){this.foot.splice(this.foot.indexOf(o),1);const ok=!car.wrecked&&G.vehicles.includes(car);
+    if(home){const i=G.peds.list.indexOf(o);if(i>=0)G.peds.list.splice(i,1);}else if(!gone)this.standDown(o);
+    car.cop.out=null;if(car===pv){}else if(home&&ok){car.driver='npc';car.cop.chase=false;this.enlist(car);}else car.keep=false;}}}
  update(dt){const G=this.G,P=G.player,diff=G.opt.cops;const st=this.stars;this.flash+=dt;
   // release cops that are no longer needed
   for(const v of G.vehicles){if(!v.cop)continue;if(v.cop.leave&&Math.hypot(v.x-P.x,v.z-P.z)>140&&!v.keep){G.traffic.remove(v);}}
@@ -88,11 +110,12 @@ export class Police{constructor(G){this.G=G;this.heat=0;this.lostT=0;this.bustT=
   this.cops=this.cops.filter(c=>G.vehicles.includes(c)&&!c.wrecked);
   const want=[0,1,2,3,5,6][st]+(diff===2?1:0)-(diff===0&&st>1?1:0);if((this.spawnT-=dt)<=0&&this.cops.length<want){this.spawnT=diff===2?2.5:4.5;this.spawnCop();}
   // sight
-  this.seen=false;for(const c of this.cops.concat(...this.blocks)){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<30||(d<125&&G.W.los(c.x,c.z,P.x,P.z,2.2))){this.seen=true;break;}}
+  this.seen=false;this.footUpdate(dt,st);for(const c of this.cops.concat(...this.blocks,this.foot)){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<30||(d<125&&G.W.los(c.x,c.z,P.x,P.z,2.2))){this.seen=true;break;}}
   if(this.seen)this.lostT=0;else{this.lostT+=dt;if(this.lostT>ESCAPE[st]*(diff===2?1.25:diff===0?.75:1)){G.onEscape(st);this.clear();return;}}
   // busted
   const pv=P.veh;const slow=pv?pv.speed<2.8:P.w.spd<2.5||P.w.state==='prone';let near=false;for(const c of this.cops.concat(...this.blocks)){if(Math.hypot(c.x-P.x,c.z-P.z)<(pv?7.5:6.5)&&c.speed<10)near=true;}
-  if(slow&&near&&!(pv&&pv.water)){this.bustT+=dt;if(this.bustT>2.4){this.bustT=0;G.onBusted();return;}}else this.bustT=Math.max(0,this.bustT-dt*1.4);
+  let grab=false;if(!pv)for(const o of this.foot)if(o.custom&&Math.hypot(o.x-P.x,o.z-P.z)<1.6)grab=true;
+  if(grab||slow&&near&&!(pv&&pv.water)){this.bustT+=dt*(grab&&!slow?.8:1);if(this.bustT>2.4){this.bustT=0;G.onBusted();return;}}else this.bustT=Math.max(0,this.bustT-dt*1.4);
   // roadblocks
   if(st>=(diff===2?2:3)){if((this.rbT-=dt)<=0){this.rbT=diff===2?18:28;this.roadblock();}}
   for(const b of this.blocks.slice()){if(b.every(c=>Math.hypot(c.x-P.x,c.z-P.z)>260)){b.forEach(c=>{c.keep=false;G.traffic.remove(c);});this.blocks.splice(this.blocks.indexOf(b),1);}}
@@ -114,3 +137,4 @@ export class Police{constructor(G){this.G=G;this.heat=0;this.lostT=0;this.bustT=
   if(c.speed<1.4&&c.ctrl.thr>0)c.stuck=(c.stuck||0)+dt;else if(c.stuck>0&&c.stuck<1.3)c.stuck=Math.max(0,c.stuck-dt*2);
   if(c.stuck>1.3){c.ctrl.thr=-1;c.ctrl.steer=c.ctrl.steer>0?-1:1;c.stuck+=dt;if(c.stuck>2.6)c.stuck=0;return;}
   aiDrive(c,tx,tz,want,{dt});}}
+const _fc={};

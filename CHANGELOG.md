@@ -11,6 +11,9 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 - **Manifest:** `games/index.json` lists the engine modules and game packs in load order; `index.html`'s script tags, the tests and the docs generator all read it.
 - **Docs:** `tools/gen_docs.py` regenerates README counts and tables, `docs/GAMES.md` and the README art. New `docs/ARCHITECTURE.md`, `THIRD_PARTY.md`, this changelog, issue and pull request templates.
 - **CI (continuous integration):** the canvas game test runs in four parallel slices and checks that generated docs are current.
+- **3D performance:** **F3** shows frames per second (FPS), draw calls and triangles in every world; graphics quality steps down on its own when a world stays under 45 FPS (pressing **G** turns that off).
+- **Neon Bay:** see-through car windows with a driver at the wheel; police officers get out of their cruisers and chase you on foot, then return to their cars when you drive off.
+- **Voxel Frontier:** leaves and glass cast cut-out shadows instead of solid blocks.
 
 ## v29 (12 Oct 2026)
 

@@ -34,14 +34,14 @@ function extrude(prof,w){const s=new THREE.Shape();prof.forEach(([z,y],i)=>i?s.l
 function taper(g,y0,k){const p=g.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i);if(y>y0)p.setX(i,p.getX(i)*(1-(y-y0)*k));}g.computeVertexNormals();return g;}
 const B=(w,h,d,x,y,z,rx=0,ry=0,rz=0)=>{const g=new THREE.BoxGeometry(w,h,d);g.applyMatrix4(M(x,y,z,rx,ry,rz));return g;};
 const modelCache={};
-export function buildModel(id){if(modelCache[id])return modelCache[id];const s=SH[id];const body=[],glow=[];const P=1;// [geo,color,paint]
+export function buildModel(id){if(modelCache[id])return modelCache[id];const s=SH[id];const body=[],glow=[];let glass=null;const P=1;// [geo,color,paint]
  const b=(g,c,paint=0)=>body.push([g,c,paint]),gl=(g,c,k)=>glow.push([g,c,k]);
  if(s.bike){// motorbike
   b(B(.18,.3,1.1,0,.55,0,.25),DARK);b(B(.34,.32,.62,0,.72,.12),GREY);b(B(.42,.26,.6,0,1.0,.2,-.12),null,P);b(B(.34,.12,.7,0,.98,-.38,.08),BLACK);b(B(.5,.42,.32,0,1.12,.72,-.5),null,P);
   b(B(.06,.7,.06,-.14,.72,.78,-.35),CHROME);b(B(.06,.7,.06,.14,.72,.78,-.35),CHROME);b(B(.7,.05,.05,0,1.18,.66),DARK);b(B(.1,.1,.75,.2,.48,-.45,.1),CHROME);b(B(.26,.12,.5,0,.84,-.72,-.2),null,P);
   gl(B(.22,.14,.06,0,1.08,.9,-.5),WHITE,0);gl(B(.2,.08,.05,0,.9,-.98),new THREE.Color(1,.08,.08),1);}
  else{const W=s.W,L=s.L;
-  b(extrude(s.low,W),null,P);const cab=taper(extrude(s.cab,W*s.cw),s.cab[0][1]+.05,.32);b(cab,GLASS);
+  b(extrude(s.low,W),null,P);glass=taper(extrude(s.cab,W*s.cw),s.cab[0][1]+.05,.32);// see-through greenhouse (separate mesh) so drivers show
   // roof plate in paint on top of the greenhouse
   const top=s.cab.slice(1,3),rl=Math.abs(top[1][0]-top[0][0]),ry=Math.max(top[0][1],top[1][1]);b(B(W*s.cw*(1-(ry-s.cab[0][1])*.32)-.04,.06,rl+.05,0,ry+.02,(top[0][0]+top[1][0])/2),null,P);
   const fz=L/2,rz=-L/2,bh=s.low[0][1]+.12;b(B(W+.04,.22,.22,0,bh,fz-.02),DARK);b(B(W+.04,.22,.22,0,bh,rz+.02),DARK);b(B(W*.5,.16,.04,0,bh+.26,fz+.02),DARK);
@@ -58,7 +58,13 @@ export function buildModel(id){if(modelCache[id])return modelCache[id];const s=S
  // build merged body: vertex colour + paint mask
  const bg=merge(body.map(([g,c,p])=>[g,null,c||new THREE.Color(1,1,1),p?1:0]),{k:true});bg.setAttribute('aP',bg.getAttribute('aK'));bg.deleteAttribute('aK');
  const gg=merge(glow.map(([g,c,k])=>[g,null,c,k]),{k:true});
- return modelCache[id]={body:bg,glow:gg,s};}
+ return modelCache[id]={body:bg,glow:gg,glass,s};}
+// shared tinted glass and a seated driver (torso + head), drawn when someone is at the wheel
+let glassMat=null;const DRV={torso:new THREE.BoxGeometry(.42,.5,.3),head:new THREE.SphereGeometry(.13,12,8),skin:[0xf1c9a5,0xd9a27a,0xa86f4c,0x6e4630].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.7})),shirt:[0x2a3b5c,0x8a1c2b,0x2f6b3a,0xd8d8d8,0x222226,0xc77b1a].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.85})),cop:new THREE.MeshStandardMaterial({color:0x1b2a4a,roughness:.8})};
+function getGlassMat(){return glassMat||(glassMat=new THREE.MeshPhysicalMaterial({color:0x0b121b,roughness:.06,metalness:.2,transparent:true,opacity:.62,envMapIntensity:1.4,depthWrite:false}));}
+function makeDriver(v){const s=v.shape,g=new THREE.Group(),r=(v.uid*2654435761>>>0);const tz=(s.cab[1][0]+s.cab[2][0])/2+.1,y0=s.cab[0][1];
+ g.add(new THREE.Mesh(DRV.torso,v.id==='police'?DRV.cop:DRV.shirt[r%DRV.shirt.length]));g.children[0].position.set(0,y0-.08,tz-.05);
+ g.add(new THREE.Mesh(DRV.head,DRV.skin[(r>>>4)%DRV.skin.length]));g.children[1].position.set(0,y0+.3,tz);g.position.x=s.W*.22;g.visible=false;return g;}
 
 /* ---------- materials ---------- */
 export function paintMat(color){const m=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.32,metalness:.25,clearcoat:.8,clearcoatRoughness:.1,envMapIntensity:1});m.userData.paint={value:new THREE.Color(color)};m.userData.dirt={value:0};
@@ -87,7 +93,7 @@ export class Vehicle{
   this.dmg=0;this.wrecked=false;this.water=0;this.ctrl={thr:0,steer:0,hb:false};this.mode=o.mode||'parked';this.driver=o.driver||null;this.siren=false;this.sirenT=0;this.brakeT=0;this.slip=0;this.lastHit=0;this.deck=null;this.surf='road';this.events=[];this.age=0;this.owned=!!o.owned;
   this.len=this.shape.L;this.wid=this.shape.W;this.r=this.bike?.42:this.wid/2;this.mass=this.spec.mass;this.hp=this.spec.hp;this.airStart=null;this.maxAirY=0;this.stunt=null;}
  attach(scene,U){const md=buildModel(this.id);this.group=new THREE.Group();this.mat=paintMat(this.paint);this.body=new THREE.Mesh(md.body,this.mat);this.body.castShadow=true;this.body.receiveShadow=true;this.gmat=glowMatV(U);this.glow=new THREE.Mesh(md.glow,this.gmat);
-  this.bodyPivot=new THREE.Group();this.bodyPivot.add(this.body,this.glow);this.group.add(this.bodyPivot);scene.add(this.group);this.scene=scene;this.shared=true;return this;}
+  this.bodyPivot=new THREE.Group();this.bodyPivot.add(this.body,this.glow);if(md.glass){this.glassMesh=new THREE.Mesh(md.glass,getGlassMat());this.glassMesh.renderOrder=2;this.drv=makeDriver(this);this.bodyPivot.add(this.glassMesh,this.drv);}this.group.add(this.bodyPivot);scene.add(this.group);this.scene=scene;this.shared=true;return this;}
  detach(){if(!this.group)return;this.scene.remove(this.group);if(!this.shared)this.body.geometry.dispose();this.mat.dispose();this.gmat.dispose();this.group=null;}
  setPaint(c){this.paint=c;if(this.mat)this.mat.userData.paint.value.set(c);}
  get speed(){return Math.hypot(this.vx,this.vz);}
@@ -152,7 +158,7 @@ export class Vehicle{
   const vf=this.vf;const lat=-this.w*vf;const acc=(vf-(this.pvf??vf))/Math.max(dt,1e-3);this.pvf=vf;
   this.suspV+=(-this.susp*180-this.suspV*12)*dt;this.susp=cl(this.susp+this.suspV*dt,-.2,.12);
   g.rotation.set(this.vpitch,this.a,this.vroll,'YXZ');if(!this.bike)this.bodyPivot.rotation.set(cl(-acc*.004,-.05,.05),0,cl(lat*.0018,-.06,.06));this.bodyPivot.position.y=this.susp;
-  this.mat.userData.dirt.value=Math.min(1,this.dmg/this.hp);
+  this.mat.userData.dirt.value=Math.min(1,this.dmg/this.hp);if(this.drv)this.drv.visible=!!this.driver&&!this.wrecked;
   const gu=this.gmat.userData.g.value;gu.x=this.wrecked?0:.35+night*2.6;gu.y=this.wrecked?0:(this.braking?2.6:.25+night*.9);gu.z=this.siren?this.sirenT:0;gu.w=.6+night*2;
   if(wheels){const s=this.shape;const q=g.quaternion;const list=this.bike?[[0,s.wf],[0,s.wr]]:[[-s.W/2+.12,s.wf],[s.W/2-.12,s.wf],[-s.W/2+.12,s.wr],[s.W/2-.12,s.wr]];
    for(const[x,z]of list){_w.set(x,s.r,z).applyQuaternion(q).add(g.position);wheels.add(_w,q,z>0?this.steerVis*.6:0,this.spin,s.r,this.bike?.16:.26);}}}}

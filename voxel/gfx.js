@@ -29,7 +29,8 @@ export function makeMaterials(){
  cut.onBeforeCompile=sh=>lightPatch(sh,false);cut.customProgramCacheKey=()=>'vxcut';
  const water=new THREE.MeshPhongMaterial({color:0x1d6fb8,specular:0xffffff,shininess:90,transparent:true,opacity:.74,depthWrite:false,vertexColors:false});
  water.onBeforeCompile=sh=>lightPatch(sh,true);water.customProgramCacheKey=()=>'vxwater';
- const leafDepth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});
+ // shadows of leaves and glass use the atlas alpha, so light falls through the gaps instead of a solid block shadow
+ const leafDepth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:AT.map,alphaTest:.5});
  return{solid,cut,water,leafDepth};}
 
 /* ---------------- sky dome ---------------- */
