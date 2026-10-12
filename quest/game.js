@@ -25,6 +25,8 @@ const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,2600);
 const hemi=new THREE.HemisphereLight(0xbcd4ff,0x3a3020,2.2);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff0dc,3);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:400});sun.shadow.bias=-.0004;sun.shadow.normalBias=.06;scene.add(sun,sun.target);
 const lamps=[0,1].map(()=>{const l=new THREE.PointLight(0xff9a4a,0,16,1.6);scene.add(l);return l;});
+// image-based light: reflections at full strength, diffuse sky fill scaled down (the hemisphere light keeps the painted ambient)
+THREE.ShaderChunk.lights_fragment_maps=THREE.ShaderChunk.lights_fragment_maps.replace('iblIrradiance += getIBLIrradiance( geometryNormal );','iblIrradiance += getIBLIrradiance( geometryNormal )*.45;');
 const phys=new Phys();
 const world=new World(scene,phys);
 const S=buildStructures(scene,phys);
@@ -341,7 +343,7 @@ function ambient(dt,menu){const cp=camera.position;const night=G.night;
 function envUpdate(dt,menu){let tod,rain,blood;if(menu||!run){tod=app==='over'&&run?run.tod:.355+Math.sin(menuT*.02)*.01;rain=0;blood=0;}else{tod=run.tod;rain=G.rain;blood=Math.pow(cl(1-run.clock/120,0,1),1.5);}
  G.blood=blood;U.uTime.value=G.time+menuT;U.uRain.value=rain;U.uBlood.value=blood;U.uPlayer.value.copy(P.p);U.uWind.value.set(.6+rain*.8+(P.mode==='glide'?.3:0),.3+rain*.4);
  if(G.room){hemi.color.setRGB(.2,.28,.36);hemi.groundColor.setRGB(.05,.05,.07);hemi.intensity=1.5;sun.intensity=.55;sun.color.setRGB(.55,.8,1);scene.fog.color.setRGB(.015,.04,.055);scene.fog.density=.022;sun.position.set(P.p.x+20,P.p.y+60,P.p.z+30);sun.target.position.copy(P.p);G.night=0;return;}
- const r=lighting(tod,rain,blood,sun,hemi,scene.fog);G.night=r.night;
+ const r=lighting(tod,rain,blood,sun,hemi,scene.fog);G.night=r.night;if(scene.environment)hemi.intensity*=.72;
  if(G.flash>0){G.flash-=dt*3;hemi.intensity+=Math.max(0,G.flash)*6;}
  // shadow box follows the player (texel-snapped)
  const fp=app==='play'?P.p:camera.position;const dir=sun.position.clone().normalize();const snap=110/sun.shadow.mapSize.x;const tx=Math.round(fp.x/snap)*snap,tz=Math.round(fp.z/snap)*snap;sun.target.position.set(tx,fp.y,tz);sun.position.copy(sun.target.position).addScaledVector(dir,180);}
@@ -423,7 +425,11 @@ function getFx(){if(!fx){fx=cinematic(R,scene,camera,{...POST,quality:gfx});fx.w
 function render(){const f=getFx();const cp=camera.position;for(const e of G.enemies){if(e.gone)continue;const d=Math.abs(e.p.x-cp.x)+Math.abs(e.p.z-cp.z);e.rig.root.visible=d<(e.kind==='golem'?190:120)&&!(e.kind==='boss'&&e.state==='intro')&&(!G.room);}parts.U.uScale.value=sparks.U.uScale.value=smoke.U.uScale.value=innerHeight*R.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360));
  if(godPass){const sd=U.uSunDir.value;const s=tv.copy(camera.position).addScaledVector(sd,1000).project(camera);const facing=new V();camera.getWorldDirection(facing);const k=facing.dot(sd);
   godPass.uniforms.uSun.value.set(s.x*.5+.5,s.y*.5+.5);godPass.uniforms.uStr.value=G.room?0:cl(k,0,1)*ss(-.02,.15,sd.y)*(1-U.uNight.value)*(1-G.rain)*.6*(gfx>=1?1:0);}
- f.render();}
+ updateEnv();f.render();}
+/* environment map: PMREM of the painterly sky, refreshed as the sun moves (medium and ultra) */
+const pmrem=new THREE.PMREMGenerator(R),envScene=new THREE.Scene(),envSky=new THREE.Mesh(new THREE.SphereGeometry(50,32,16),world.sky.material);envSky.frustumCulled=false;envScene.add(envSky);let envRT=null,envKey='';
+function updateEnv(){if(gfx<1){if(scene.environment){scene.environment=null;envKey='';}return;}const sd=U.uSunDir.value,k=G.room?'room':[sd.y*30|0,sd.x*12|0,G.rain*4|0,(G.blood||0)*4|0].join();if(k===envKey)return;envKey=k;
+ envSky.visible=!G.room;envScene.background=G.room?new THREE.Color(0x0a2630):null;const rt=pmrem.fromScene(envScene,0,.1,200);if(envRT)envRT.dispose();envRT=rt;scene.environment=rt.texture;}
 addEventListener('resize',()=>{if(fx)fx.w=0;});
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 
