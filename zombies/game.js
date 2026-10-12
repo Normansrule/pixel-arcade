@@ -15,7 +15,7 @@ import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,TAU=Math.PI*2,smooth=(a,b,x)=>{const t=cl((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const DIFFS=[{n:'CASUAL',hp:.75,dmg:.6,count:.8,spd:.92,run:.7,alive:16,spawn:1.25,start:750,boss:.75},{n:'SURVIVOR',hp:1,dmg:1,count:1,spd:1,run:1,alive:22,spawn:1,start:500,boss:1},{n:'NIGHTMARE',hp:1.3,dmg:1.35,count:1.2,spd:1.07,run:1.35,alive:26,spawn:.8,start:500,boss:1.35}];
-const MV={walk:4.4,sprint:6.7,ads:2.7,down:.8,accel:12,jump:5.4,grav:16,eye:1.62,r:.3};
+const MV={walk:4.4,sprint:6.7,ads:2.7,down:.8,accel:12,jump:5.4,grav:16,eye:1.62,r:.3,step:.45,mantle:.5,head:1.8};
 const ZDMG=45,CRATE_COST=950,FORGE_COST=5000;
 
 /* ================= boot ================= */
@@ -68,7 +68,7 @@ G.reviveTime=byAlly=>byAlly?(G.player.perks.has('wind')?1.6:3):(G.player.perks.h
 G.speedMul=1;G.allySkill=ALLY_SKILL[1];G.timers=[];G.after=(t,f)=>G.timers.push({t,f});G.noLoop=!!window.__NF_MANUAL;
 function newStats(){return{kills:0,heads:0,knife:0,shots:0,hits:0,earned:0,downs:0,revivesGiven:0,revivedBy:0,doors:0,perks:0,boards:0,boxes:0,time:0,allyKills:0,bosses:0,maxRound:0};}
 function newPlayer(){return{pos:map.start.clone(),vel:new V(),y:0,vy:0,onGround:true,yaw:map.yaw0,pitch:0,hp:100,maxHp:100,regenT:9,downed:false,dead:false,bleed:0,selfRevive:0,invuln:0,
- weapons:[newWeapon('warden')],cur:0,nextFire:0,trigPrev:false,reload:null,swapT:0,ads:false,sprint:false,sprintLock:0,bloom:0,recoil:0,grenades:2,knifeT:0,knifeCD:0,nadeT:0,drinkT:0,drinkPerk:null,perks:new Set(),points:500,flashOn:true,lastStand:null,useHold:0,landDip:0};}
+ weapons:[newWeapon('warden')],cur:0,nextFire:0,trigPrev:false,reload:null,swapT:0,ads:false,sprint:false,sprintLock:0,bloom:0,recoil:0,grenades:2,knifeT:0,knifeCD:0,nadeT:0,drinkT:0,drinkPerk:null,perks:new Set(),points:500,flashOn:true,lastStand:null,useHold:0,landDip:0,stepS:0};}
 function newWeapon(id,up=false){const s=stats(id,up);return{id,up,mag:s.mag,res:s.res};}
 G.player=newPlayer();const P=()=>G.player;
 
@@ -197,7 +197,7 @@ function throwNade(){const p=P();if(p.grenades<=0||p.nadeT>0||p.downed||p.drinkT
  G.after(.22,()=>{const d=aimDir(new V());const v=d.clone().multiplyScalar(14).add(new V(0,3,0)).add(new V(P().vel.x*.5,0,P().vel.z*.5));launch('nade',cam.position.clone().addScaledVector(d,.4).add(new V(0,-.15,0)),v);snd.throw();});}
 function knife(){const p=P();if(p.knifeCD>0||p.drinkT>0||p.nadeT>0)return;p.knifeCD=.62;p.knifeT=.38;vm.knifeT=.38;p.reload=null;
  const eye=cam.position.clone(),d=aimDir(new V());let best=null,bd=3.2;for(const z of G.zombies){if(!z.alive||z.state==='rise')continue;const c=z.center(new V());const to=c.clone().sub(eye);const dist=Math.hypot(to.x,to.z);if(dist>bd)continue;to.y=0;const f=new V(d.x,0,d.z).normalize();if(to.normalize().dot(f)<.55)continue;bd=dist;best=z;}
- G.after(.12,()=>{let hit=false;if(best&&best.alive){const dist=Math.hypot(best.pos.x-p.pos.x,best.pos.z-p.pos.z);if(dist<2.1+(best.def.r)){const c=best.center(new V());if(dist>1.2){const k=(dist-1)/dist;p.pos.x+=(best.pos.x-p.pos.x)*k*.6;p.pos.z+=(best.pos.z-p.pos.z)*k*.6;map.collide(p.pos,MV.r);}
+ G.after(.12,()=>{let hit=false;if(best&&best.alive){const dist=Math.hypot(best.pos.x-p.pos.x,best.pos.z-p.pos.z);if(dist<2.1+(best.def.r)){const c=best.center(new V());if(dist>1.2){const k=(dist-1)/dist;p.pos.x+=(best.pos.x-p.pos.x)*k*.6;p.pos.z+=(best.pos.z-p.pos.z)*k*.6;map.collide(p.pos,MV.r,p.y+MV.step);}
      hitZombie(best,150*(1+G.round*.05),'body','knife',d,c);hit=true;G.shake=Math.max(G.shake,.15);}}snd.knife(hit);});}
 function startReload(){const p=P(),w=p.weapons[p.cur];if(!w||w.forging||p.reload)return;const s=G.wstats(w);if(w.mag>=s.mag||w.res<=0)return;const k=p.perks.has('hand')?.5:1;
  if(s.shell){p.reload={shell:true,t:s.reload*k*1.3,step:s.reload*k};vm.startReload(s.reload*k,true);}else{p.reload={shell:false,t:s.reload*k,dur:s.reload*k,stage:0};vm.startReload(s.reload*k,false);}snd.reload(0);p.ads=false;}
@@ -321,12 +321,18 @@ function readInput(){const p=P();const f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.Key
 function movePlayer(dt,inp){const p=P();const v=p.vel;const sy=Math.sin(p.yaw),cy=Math.cos(p.yaw);let wx=-sy*inp.f+cy*inp.s,wz=-cy*inp.f-sy*inp.s;const wl=Math.hypot(wx,wz);if(wl>0){wx/=wl;wz/=wl;}
  const w=p.weapons[p.cur];const wm=w?WPN[w.id].move:1;p.sprint=inp.sprint&&inp.f>0&&!p.downed&&!p.ads&&p.sprintLock<=0&&!p.reload&&p.drinkT<=0;
  const max=(p.downed?MV.down:p.ads?MV.ads:p.sprint?MV.sprint:MV.walk)*wm;const acc=p.onGround?MV.accel:2.5;v.x+=(wx*max-v.x)*Math.min(1,dt*acc);v.z+=(wz*max-v.z)*Math.min(1,dt*acc);
- if(inp.jump&&p.onGround&&!p.downed){p.vy=MV.jump;p.onGround=false;}p.vy-=MV.grav*dt;p.y+=p.vy*dt;if(p.y<=0){if(!p.onGround&&p.vy<-4)p.landDip=Math.min(.12,-p.vy*.015);p.y=0;p.vy=0;p.onGround=true;}
+ if(inp.jump&&p.onGround&&!p.downed){p.vy=MV.jump;p.onGround=false;}
  p.pos.x+=v.x*dt;p.pos.z+=v.z*dt;
  // the dead body-block you
- for(const z of G.zombies){if(!z.alive||z.state==='rise'||z.state==='climb'||z.win&&z.state!=='attack')continue;const dx=p.pos.x-z.pos.x,dz=p.pos.z-z.pos.z,d=Math.hypot(dx,dz),m=MV.r+z.def.r;if(d<m&&d>1e-4){const o=(m-d);p.pos.x+=dx/d*o*.6;p.pos.z+=dz/d*o*.6;z.pos.x-=dx/d*o*.4;z.pos.z-=dz/d*o*.4;}}
+ for(const z of G.zombies){if(!z.alive||z.state==='rise'||z.state==='climb'||z.win&&z.state!=='attack')continue;const dx=p.pos.x-z.pos.x,dz=p.pos.z-z.pos.z,d=Math.hypot(dx,dz),m=MV.r+z.def.r;if(d<m&&d>1e-4&&Math.abs(p.y-z.pos.y)<1){const o=(m-d);p.pos.x+=dx/d*o*.6;p.pos.z+=dz/d*o*.6;z.pos.x-=dx/d*o*.4;z.pos.z-=dz/d*o*.4;}}
  if(G.ally&&!G.solo&&!G.ally.dead){const A=G.ally;const dx=p.pos.x-A.pos.x,dz=p.pos.z-A.pos.z,d=Math.hypot(dx,dz);if(d<.6&&d>1e-4){p.pos.x+=dx/d*(.6-d)*.5;p.pos.z+=dz/d*(.6-d)*.5;A.pos.x-=dx/d*(.6-d)*.5;A.pos.z-=dz/d*(.6-d)*.5;}}
- map.collide(p.pos,MV.r);}
+ map.collide(p.pos,MV.r,p.y+(p.onGround?MV.step:MV.mantle));vertical(p,dt);}
+// real vertical body: gravity, landing on prop tops, step-up/mantle (eased via stepS), walking off edges, head vs ceilings
+function vertical(p,dt){const gy=map.floorAt(p.pos.x,p.pos.z,MV.r*.6);p.stepS*=Math.exp(-dt*12);
+ if(p.onGround&&gy<p.y-.02){p.onGround=false;p.vy=Math.min(p.vy,0);}
+ if(!p.onGround){p.vy-=MV.grav*dt;p.y+=p.vy*dt;const rf=map.roof[map.idx(p.pos.x,p.pos.z)]||0;if(rf&&p.y+MV.head>rf){p.y=rf-MV.head;p.vy=Math.min(p.vy,0);}
+  if(p.y<=gy){if(p.vy<-4)p.landDip=Math.min(.12,-p.vy*.015);p.stepS+=Math.max(0,gy-p.y);p.y=gy;p.vy=0;p.onGround=true;}}
+ else if(gy>p.y){p.stepS+=gy-p.y;p.y=gy;p.vy=0;}}
 function crowd(){const zs=G.zombies;for(let i=0;i<zs.length;i++){const a=zs[i];if(!a.alive||a.state==='climb'||a.state==='rise')continue;for(let j=i+1;j<zs.length;j++){const b=zs[j];if(!b.alive||b.state==='climb'||b.state==='rise')continue;const dx=a.pos.x-b.pos.x,dz=a.pos.z-b.pos.z;const m=a.def.r+b.def.r;if(Math.abs(dx)>m||Math.abs(dz)>m)continue;const d=Math.hypot(dx,dz);if(d<m&&d>1e-4){const o=(m-d)*.5;const ka=b.type==='boss'?1.6:a.type==='boss'?.2:1,kb=2-ka;a.pos.x+=dx/d*o*ka;a.pos.z+=dz/d*o*ka;b.pos.x-=dx/d*o*kb;b.pos.z-=dz/d*o*kb;}}
   if(G.ally&&!G.solo&&!G.ally.dead&&!G.ally.downed){const A=G.ally;const dx=A.pos.x-a.pos.x,dz=A.pos.z-a.pos.z,d=Math.hypot(dx,dz),m=.3+a.def.r;if(d<m&&d>1e-4){A.pos.x+=dx/d*(m-d)*.6;A.pos.z+=dz/d*(m-d)*.6;a.pos.x-=dx/d*(m-d)*.4;a.pos.z-=dz/d*(m-d)*.4;}}}}
 function computeFields(force){G.fieldT-=force?99:0;const p=P();map.bfs(Math.floor(p.pos.x),Math.floor(p.pos.z),false,G.fieldP);if(G.ally&&!G.solo&&!G.ally.dead)map.bfs(Math.floor(G.ally.pos.x),Math.floor(G.ally.pos.z),false,G.fieldA);else G.fieldA.fill(-1);G.fieldT=.25;}
@@ -403,7 +409,7 @@ function visuals(dt){const p=P();const dk=dawnK();skyU.uDawn.value=dk;
  if(G.app==='over'){menuA+=dt*.04;const c=p.pos;cam.position.set(c.x+Math.cos(menuA)*6,3.2,c.z+Math.sin(menuA)*6);cam.lookAt(c.x,1,c.z);fovFor(60);vm.root.visible=false;flashlight.intensity=0;return;}
  const sp=Math.hypot(p.vel.x,p.vel.z);const bob=p.onGround?Math.sin(G.time*(p.sprint?13:9.5))*Math.min(1,sp/4.4)*(p.sprint?.045:.025)*(1-vm.ads*.8):0;
  const eyeH=p.downed?.55:MV.eye;const dead=G.phase==='overrun';const s=G.shake*G.shake*.12;
- cam.position.set(p.pos.x,p.y+eyeH-p.landDip+bob-(dead?Math.min(.4,G.endT*.3):0),p.pos.z);cam.rotation.set(p.pitch+p.recoil+(R()-.5)*s,p.yaw+(R()-.5)*s,(p.downed?.18:0)+(dead?G.endT*.15:0)+(R()-.5)*s*.5);
+ cam.position.set(p.pos.x,p.y+eyeH-p.landDip-p.stepS+bob-(dead?Math.min(.4,G.endT*.3):0),p.pos.z);cam.rotation.set(p.pitch+p.recoil+(R()-.5)*s,p.yaw+(R()-.5)*s,(p.downed?.18:0)+(dead?G.endT*.15:0)+(R()-.5)*s*.5);
  const w=p.weapons[p.cur];const adsF=w?G.wstats(w).adsFov:1;fovFor(G.opt.fov*(1-vm.ads*(1-adsF))+(p.sprint?6:0));
  snd.listener(cam.position.x,cam.position.y,cam.position.z,p.yaw);
  flashlight.intensity=p.flashOn&&!dead?(55*(1-dk*.8)):0;

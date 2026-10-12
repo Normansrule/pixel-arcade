@@ -60,11 +60,11 @@ const mtx=(x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1)=>M4.compose(S4.set(x,y,z),Q4.set
 
 /* ================= the map ================= */
 export class GameMap{
- constructor(){sd=99;const g=this.g=layout();const N=W*H;this.solid=new Uint8Array(N);this.hgt=new Float32Array(N);this.oLo=new Float32Array(N);this.oHi=new Float32Array(N);this.area=new Int8Array(N).fill(-1);this.roof=new Float32Array(N);this.door=new Int8Array(N);
+ constructor(){sd=99;const g=this.g=layout();const N=W*H;this.solid=new Uint8Array(N);this.hgt=new Float32Array(N);this.oLo=new Float32Array(N);this.oHi=new Float32Array(N);this.area=new Int8Array(N).fill(-1);this.roof=new Float32Array(N);this.door=new Int8Array(N);this.climb=new Uint8Array(N);
   for(let z=0;z<H;z++)for(let x=0;x<W;x++){const c=g[z][x],i=z*W+x;
    if(WALLH[c]){this.solid[i]=1;this.hgt[i]=WALLH[c];}
    else if(c==='O'||/[1-5]/.test(c)){this.solid[i]=1;this.hgt[i]=this.nbWallH(x,z);if(c==='O'){this.oLo[i]=.9;this.oHi[i]=2.15;}else this.door[i]=+c;}
-   else if(PROPH[c]){this.solid[i]=1;this.hgt[i]=PROPH[c];}}
+   else if(PROPH[c]){this.solid[i]=1;this.hgt[i]=PROPH[c];if('cbiekst'.includes(c))this.climb[i]=1;}}
   // areas by flood fill
   const isOpen=(x,z)=>{const c=g[z][x];return!(WALLH[c]||c==='O'||/[1-5]/.test(c));};
   this.areas=AREAS.map((a,id)=>({...a,id,open:id===0,cells:[]}));
@@ -96,10 +96,15 @@ export class GameMap{
  idx(x,z){const cx=Math.floor(x),cz=Math.floor(z);return cx<0||cz<0||cx>=W||cz>=H?-1:cz*W+cx;}
  areaAt(x,z){const i=this.idx(x,z);return i<0?-1:this.area[i];}
  openDoor(d){d.open=true;for(const i of d.cells){this.solid[i]=0;this.oLo[i]=0;this.oHi[i]=2.6;}for(const a of d.areas)if(a>=0)this.areas[a].open=true;}
- blocked(cx,cz){return cx<0||cz<0||cx>=W||cz>=H||this.solid[cz*W+cx]===1;}
+ // fy (optional) = highest top a body can step/climb onto from where its feet are: low props under it stop blocking
+ blocked(cx,cz,fy){if(cx<0||cz<0||cx>=W||cz>=H)return true;const i=cz*W+cx;if(this.solid[i]!==1)return false;if(fy===undefined)return true;const t=this.top(i);return!(t&&t<=fy);}
+ // stand-on height of a cell (0 = floor or not climbable); props too tall for the ceiling above them stay walls
+ top(i){return i>=0&&this.climb[i]&&this.solid[i]&&(!this.roof[i]||this.hgt[i]+1.85<=this.roof[i])?this.hgt[i]:0;}
+ // ground height under a circle (feet support), ignoring tops above max
+ floorAt(x,z,r,max=99){let g=0;const x0=Math.floor(x-r),x1=Math.floor(x+r),z0=Math.floor(z-r),z1=Math.floor(z+r);for(let cz=z0;cz<=z1;cz++)for(let cx=x0;cx<=x1;cx++){if(cx<0||cz<0||cx>=W||cz>=H)continue;const t=this.top(cz*W+cx);if(t<=g||t>max)continue;const dx=x-Math.max(cx,Math.min(x,cx+1)),dz=z-Math.max(cz,Math.min(z,cz+1));if(dx*dx+dz*dz<r*r)g=t;}return g;}
  // circle vs blocking cells; returns true if pushed
- collide(p,r){let hit=false;for(let it=0;it<2;it++){const x0=Math.floor(p.x-r),x1=Math.floor(p.x+r),z0=Math.floor(p.z-r),z1=Math.floor(p.z+r);
-  for(let cz=z0;cz<=z1;cz++)for(let cx=x0;cx<=x1;cx++){if(!this.blocked(cx,cz))continue;const nx=Math.max(cx,Math.min(p.x,cx+1)),nz=Math.max(cz,Math.min(p.z,cz+1));let dx=p.x-nx,dz=p.z-nz;const d2=dx*dx+dz*dz;
+ collide(p,r,fy){let hit=false;for(let it=0;it<2;it++){const x0=Math.floor(p.x-r),x1=Math.floor(p.x+r),z0=Math.floor(p.z-r),z1=Math.floor(p.z+r);
+  for(let cz=z0;cz<=z1;cz++)for(let cx=x0;cx<=x1;cx++){if(!this.blocked(cx,cz,fy))continue;const nx=Math.max(cx,Math.min(p.x,cx+1)),nz=Math.max(cz,Math.min(p.z,cz+1));let dx=p.x-nx,dz=p.z-nz;const d2=dx*dx+dz*dz;
    if(d2<r*r){if(d2<1e-8){const ex=[p.x-cx,cx+1-p.x,p.z-cz,cz+1-p.z];const m=Math.min(...ex);if(m===ex[0])p.x=cx-r;else if(m===ex[1])p.x=cx+1+r;else if(m===ex[2])p.z=cz-r;else p.z=cz+1+r;}else{const d=Math.sqrt(d2);p.x+=dx/d*(r-d);p.z+=dz/d*(r-d);}hit=true;}}}return hit;}
  // 3D ray vs tiles + ground + ceilings. out:{t,nx,ny,nz,i,kind}
  ray(ox,oy,oz,dx,dy,dz,maxT,out={}){out.t=maxT;out.i=-1;out.kind='';
@@ -176,7 +181,7 @@ export class GameMap{
   return G;}
  buildProps(gb,mats,T){const g=this.g;const done=new Set();
   for(let z=0;z<H;z++)for(let x=0;x<W;x++){const c=g[z][x],i=z*W+x;if(done.has(i))continue;
-   if(c==='c'){const h=rr()<.4?2:1;for(let k=0;k<h;k++){const s=.92-k*.08,o=(1-s)/2,j=(rr()-.5)*.08;gb.box('wood',x+o+j,k*1,z+o-j,x+1-o+j,k+.98*s+.02,z+1-o-j,63,1);}this.hgt[i]=h*1.0;}
+   if(c==='c'){const h=rr()<.4?2:1;for(let k=0;k<h;k++){const s=.92-k*.08,o=(1-s)/2,j=(rr()-.5)*.08;gb.box('wood',x+o+j,k*1,z+o-j,x+1-o+j,k+.98*s+.02,z+1-o-j,63,1);}this.hgt[i]=h>1?1.84:.92;}
    else if(c==='b'){const cy=new THREE.CylinderGeometry(.34,.34,1.05,14,1);gb.geo('rust',cy,mtx(x+.5,.525,z+.5),1);const r=new THREE.TorusGeometry(.345,.025,6,16);gb.geo('rust',r.clone(),mtx(x+.5,.35,z+.5,Math.PI/2));gb.geo('rust',r,mtx(x+.5,.72,z+.5,Math.PI/2));}
    else if(c==='e'){// table / sofa block spans area: emit once for each cell (tables are 2x2)
     gb.box('wood',x+.05,.72,z+.05,x+.95,.8,z+.95,63,1);gb.box('dark',x+.1,0,z+.1,x+.2,.72,z+.2,63,1);gb.box('dark',x+.8,0,z+.8,x+.9,.72,z+.9,63,1);}
@@ -194,7 +199,7 @@ export class GameMap{
     gb.box('paint',x0,.55,z0,x1,1.05,z1,63,2);gb.box('paint',x+2.7,1.05,z0+.05,x+4.1,1.85,z1-.05,63,2);gb.box('dark',x+2.75,1.15,z0,x+4.05,1.75,z0+.02,63,1);gb.box('dark',x+2.75,1.15,z1-.02,x+4.05,1.75,z1,63,1);gb.box('dark',x+4.08,1.12,z0+.15,x+4.12,1.75,z1-.15,63,1);
     gb.box('paint',x+4.1,.55,z0,x1,1.15,z1,63,2);gb.box('paint',x0,1.05,z0,x+2.65,1.35,z0+.08,63,2);gb.box('paint',x0,1.05,z1-.08,x+2.65,1.35,z1,63,2);gb.box('paint',x0,1.05,z0,x0+.08,1.35,z1,63,2);
     gb.box('steel',x1-.02,.6,z0+.1,x1+.08,.8,z1-.1,63,1);for(const[wx,wz]of[[x+1,z0],[x+1,z1],[x+3.9,z0],[x+3.9,z1]])gb.geo('dark',new THREE.CylinderGeometry(.38,.38,.28,14),mtx(wx,.38,wz,Math.PI/2),1);
-    gb.geo('rust',new THREE.BoxGeometry(.5,.25,.5),mtx(x+1.2,1.15,z+.9,.2,.4,0),1);}
+    gb.geo('rust',new THREE.BoxGeometry(.5,.25,.5),mtx(x+1.2,1.15,z+.9,.2,.4,0),1);for(let zz=z;zz<z+2;zz++)for(let k=0;k<5;k++)this.hgt[zz*W+x+k]=k<3?1.1:k<4?1.85:1.2;}
    else if(c==='i'){gb.geo('rust',new THREE.CylinderGeometry(.36,.32,1.0,14,1,true),mtx(x+.5,.5,z+.5),1);gb.geo('dark',new THREE.CircleGeometry(.34,14),mtx(x+.5,.85,z+.5,-Math.PI/2),1);
     for(let k=0;k<5;k++){const a=k/5*TAU;gb.geo('dark',new THREE.BoxGeometry(.12,.12,.4),mtx(x+.5+Math.cos(a)*.12,.92,z+.5+Math.sin(a)*.12,0,a,.4),1);}}}
   // compound wall coping + lamp poles etc. are cheap extras

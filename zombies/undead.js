@@ -4,6 +4,7 @@ import * as THREE from '../vendor/three.module.min.js';
 import {buildHumanoid,outfit,hitSpheres} from './rig.js';
 const V=THREE.Vector3,R=Math.random,TAU=Math.PI*2,cl=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
 const angDiff=(a,b)=>((b-a+Math.PI*3)%TAU)-Math.PI;
+const ZTOP=1.25,ZCLAW=1.3;// undead clamber onto props up to ZTOP m and claw at feet up to ZCLAW m above their own
 
 export const ZT={
  walker:{name:'SHAMBLER',r:.32,reach:1.25,dmg:1,atk:.95,hit:.48,tear:1.15},
@@ -70,9 +71,9 @@ export class Zombie{
    this.pos.x=lerp(w.outPos.x,w.inPos.x,e);this.pos.z=lerp(w.outPos.z,w.inPos.z,e);this.y=Math.sin(k*Math.PI)*.75;this.face(w.inPos.x,w.inPos.z,dt,8);
    if(w.boards>0&&k<.35){this.state='tear';this.st=0;this.y=0;}else if(k>=1){this.y=0;this.state='chase';this.st=0;if(w.busy===this)w.busy=null;this.win=null;G.fx.dirt(T0.set(this.pos.x,.1,this.pos.z),4);}}
   else if(s==='chase'){const tg=this.pickTarget(G);this.target=tg;
-   if(tg){const dx=tg.pos.x-this.pos.x,dz=tg.pos.z-this.pos.z,d=Math.hypot(dx,dz);this.losT-=dt;if(this.losT<=0){this.losT=.25+R()*.15;this.see=d<10&&map.los(this.pos.x,1.5,this.pos.z,tg.pos.x,1.2,tg.pos.z);}
+   if(tg){const dx=tg.pos.x-this.pos.x,dz=tg.pos.z-this.pos.z,d=Math.hypot(dx,dz);this.losT-=dt;if(this.losT<=0){this.losT=.25+R()*.15;this.see=d<10&&map.los(this.pos.x,this.pos.y+1.5,this.pos.z,tg.pos.x,(tg.y||0)+1.2,tg.pos.z);}
     if(this.type==='boss')this.bossThink(dt,G,tg,d);
-    if(d<this.def.reach*(this.type==='boss'?1:.92)&&this.atkT<=0&&!tg.downed&&Math.abs(angDiff(this.yaw,Math.atan2(dx,dz)))<.9&&(this.type!=='boss'||!this.charging)){this.state='attack';this.st=0;this.atkHit=false;this.atkFrom='chase';}
+    if(d<this.def.reach*(this.type==='boss'?1:.92)&&this.atkT<=0&&!tg.downed&&(tg.y||0)-this.pos.y<ZCLAW&&Math.abs(angDiff(this.yaw,Math.atan2(dx,dz)))<.9&&(this.type!=='boss'||!this.charging)){this.state='attack';this.st=0;this.atkHit=false;this.atkFrom='chase';}
     else if(this.charging>0){mx=Math.sin(this.yaw);mz=Math.cos(this.yaw);spd=6.2;}
     else if(this.see||d<1.5){mx=dx/(d||1);mz=dz/(d||1);}
     else{const f=tg===G.player?G.fieldP:G.fieldA;if(f&&map.descend(f,this.pos.x,this.pos.z,T1)&&(T1.x||T1.z)){mx=T1.x;mz=T1.z;}else{mx=dx/(d||1);mz=dz/(d||1);}}
@@ -80,14 +81,17 @@ export class Zombie{
    else{this.wanderT=(this.wanderT||0)-dt;if(this.wanderT<=0){this.wanderT=2+R()*3;this.wa=R()*TAU;}mx=Math.sin(this.wa)*.4;mz=Math.cos(this.wa)*.4;}}
   else if(s==='attack'){const D=this.def;const tg=this.target;if(tg)this.face(tg.pos.x,tg.pos.z,dt,this.type==='boss'?2.5:7);const hitAt=D.hit*(this.gait===2?.85:1),dur=D.atk*(this.gait===2?.85:1);
    if(!this.atkHit&&this.st>=hitAt){this.atkHit=true;if(this.type==='boss'){G.bossSlam(this);}
-    else if(tg&&!tg.downed){const dx=tg.pos.x-this.pos.x,dz=tg.pos.z-this.pos.z,d=Math.hypot(dx,dz);const reach=this.atkFrom==='tear'?2.1:D.reach*1.3;if(d<reach&&Math.abs(angDiff(this.yaw,Math.atan2(dx,dz)))<1.3)G.hurt(tg,this.dmg,this);else G.snd&&G.snd.whiff(this.pos);}}
+    else if(tg&&!tg.downed){const dx=tg.pos.x-this.pos.x,dz=tg.pos.z-this.pos.z,d=Math.hypot(dx,dz);const reach=this.atkFrom==='tear'?2.1:D.reach*1.3;if(d<reach&&(tg.y||0)-this.pos.y<ZCLAW+.25&&Math.abs(angDiff(this.yaw,Math.atan2(dx,dz)))<1.3)G.hurt(tg,this.dmg,this);else G.snd&&G.snd.whiff(this.pos);}}
    if(this.atkFrom!=='tear'&&this.st<hitAt+.1&&this.type!=='boss'){mx=Math.sin(this.yaw)*.35;mz=Math.cos(this.yaw)*.35;}
    if(this.st>=dur){this.atkT=this.type==='boss'?1.2:.15+R()*.25;this.state=this.atkFrom==='tear'&&this.win?'tear':'chase';this.st=0;}}
   this.atkT=Math.max(0,this.atkT-dt);
   // integrate
   const acc=this.gait===2||this.charging>0?10:6;this.vel.x+=(mx*spd-this.vel.x)*Math.min(1,dt*acc);this.vel.z+=(mz*spd-this.vel.z)*Math.min(1,dt*acc);
   if(s!=='climb'&&s!=='rise'){this.pos.x+=(this.vel.x+this.knock.x)*dt;this.pos.z+=(this.vel.z+this.knock.z)*dt;this.knock.multiplyScalar(Math.exp(-dt*6));
-   if(s!=='tear'&&s!=='approach'||!this.win)map.collide(this.pos,this.def.r);else this.collideOutside(map);
+   if(s!=='tear'&&s!=='approach'||!this.win){// climb low props (<=ZTOP) only while up on one or after a perched target, so normal pathing is untouched
+    const up=this.type!=='boss'&&(this.pos.y>.02||!!this.target&&(this.target.y||0)>.2);map.collide(this.pos,this.def.r,up?ZTOP:undefined);
+    const gy=up?map.floorAt(this.pos.x,this.pos.z,this.def.r*.6,ZTOP):0;this.pos.y=gy>this.pos.y?Math.min(gy,this.pos.y+dt*4.5):Math.max(gy,this.pos.y-dt*6);this.y=this.pos.y;}
+   else this.collideOutside(map);
    const v=Math.hypot(this.vel.x,this.vel.z);if(v>.2&&s!=='attack'&&s!=='tear')this.face(this.pos.x+this.vel.x,this.pos.z+this.vel.z,dt,this.gait===2?9:5);
    // stuck detection: nudge sideways
    this.stuckT+=dt;if(this.stuckT>1.2){this.stuckT=0;if(this.lastPos.distanceTo(this.pos)<.25&&(s==='chase'||s==='approach')&&v>.1){this.knock.x+=(R()-.5)*3;this.knock.z+=(R()-.5)*3;}this.lastPos.copy(this.pos);}}
@@ -128,7 +132,7 @@ export class Zombie{
   // buckle then topple
   const k=Math.min(1,dt*10);B.knL.rotation.x+=(1.2*Math.min(1,t*4)-B.knL.rotation.x)*k;B.knR.rotation.x+=(1.0*Math.min(1,t*4)-B.knR.rotation.x)*k;B.thL.rotation.x+=(-.6-B.thL.rotation.x)*k;B.thR.rotation.x+=(-.3-B.thR.rotation.x)*k;
   B.shL.rotation.x+=((this.fallDir<0?-2.6:-.4)-B.shL.rotation.x)*k*.6;B.shR.rotation.x+=((this.fallDir<0?-2.4:.3)-B.shR.rotation.x)*k*.6;B.head.rotation.x+=(this.fallDir*.4-B.head.rotation.x)*k;B.jaw.rotation.x+=(.5-B.jaw.rotation.x)*k;
-  this.root.rotation.order='YXZ';this.root.rotation.x=this.fallDir*-1.45*e;this.root.position.y=Math.max(0,this.y*(1-fall))+(.18*this.rig.scale)*e;
+  this.root.rotation.order='YXZ';this.root.rotation.x=this.fallDir*-1.45*e;this.root.position.y=Math.max(this.pos.y,this.y*(1-fall))+(.18*this.rig.scale)*e;
   const D=.9;if(t>D){const d=Math.min(1,(t-D)/1.3);this.U.uDis.value=d;if(!this.crumbled){this.crumbled=true;G.fx.crumble(this.pos,1.8*this.rig.scale*.6);}if(R()<.5)G.fx.smoke.emit(this.pos.x+(R()-.5)*.8,.2+R()*.4,this.pos.z+(R()-.5)*.8,(R()-.5)*.3,.3+R()*.4,(R()-.5)*.3,.3,.29,.28,.25,1.2,-.2,1,.3,.5);}
   if(t>D+1.35)this.gone=true;}
  dispose(){this.rig.mesh.geometry.dispose();this.rig.mat.dispose();}
