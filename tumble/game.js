@@ -3,7 +3,7 @@ import * as THREE from '../vendor/three.module.min.js';
 import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import * as PH from './physics.js';
 import {Bean,DT} from './physics.js';
-import {makeMats,makeEnv,buildStage,Beans,Particles,Confetti,COLORS,PATTERNS,HATS,randomLook,CZ} from './models.js';
+import {makeMats,makeEnv,buildStage,Beans,Particles,Confetti,COLORS,PATTERNS,HATS,randomLook,CZ,setGloss} from './models.js';
 import {ROUNDS,RACES,SURV,buildRound} from './rounds.js';
 import {DIFF,initBot,think} from './ai.js';
 import {Sound} from './sound.js';
@@ -18,10 +18,10 @@ const TAGCOL={RACE:'#3fd4ff',SURVIVAL:'#ff5fa2',TEAM:'#7cf05a',FINAL:'#ffd23a'};
 /* ================= renderer + scene ================= */
 const canvas=$('c');const RD=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});RD.setPixelRatio(Math.min(devicePixelRatio,1.5));
 RD.shadowMap.enabled=true;RD.shadowMap.type=THREE.PCFSoftShadowMap;
-const scene=new THREE.Scene();scene.environment=makeEnv(RD);scene.fog=new THREE.Fog(0xb4d4ff,240,1000);
-scene.add(new THREE.HemisphereLight(0xd6eaff,0xffb3d9,.9));
+const scene=new THREE.Scene();scene.environment=makeEnv(RD);scene.fog=new THREE.Fog(0x9cc4ff,260,1100);
+const hemi=new THREE.HemisphereLight(0xc4dcff,0xd890c0,.55);scene.add(hemi);
 const stage=buildStage(scene);
-const sun=new THREE.DirectionalLight(0xfff0d8,2.75);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+const sun=new THREE.DirectionalLight(0xfff0d8,3.1);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 Object.assign(sun.shadow.camera,{left:-38,right:38,top:38,bottom:-38,near:5,far:260});sun.shadow.bias=-.0004;sun.shadow.normalBias=.04;scene.add(sun,sun.target);
 const mats=makeMats(),vis=new Beans(scene,N),puffs=new Particles(scene,1600,false),sparks=new Particles(scene,1400,true),confetti=new Confetti(scene,1500),snd=new Sound();
 const cam=new THREE.PerspectiveCamera(60,1,.1,2600);
@@ -302,9 +302,9 @@ function hud(dt){if(banT>0){banT-=dt;if(banT<=0)$('banner').classList.remove('on
  setTxt('tag',tag);}
 
 /* ================= rendering ================= */
-const POST={exposure:.93,bloom:.26,bloomThreshold:.94,bloomRadius:.35,vignette:.2,saturation:1.14,grain:.012,aoStrength:.5};
+const POST={exposure:.84,bloom:.3,bloomThreshold:.9,bloomRadius:.4,vignette:.24,saturation:1.2,grain:.012,aoStrength:.65};
 let fx=null,gfx=quality();
-function applyQuality(q){gfx=q;sun.castShadow=q>0;const ms=q>=2?2048:1024;sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}RD.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));fx=null;}
+function applyQuality(q){gfx=q;sun.castShadow=q>0;setGloss(q);stage.lowGfx(q);const ms=q>=2?2048:1024;sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}RD.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));fx=null;}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(RD.domElement.width!==Math.floor(w*RD.getPixelRatio())||RD.domElement.height!==Math.floor(h*RD.getPixelRatio())){RD.setSize(w,h,false);if(fx)fx.w=0;}
  if(!fx){fx=cinematic(RD,scene,cam,{...POST,quality:gfx,ao:gfx>=2});fx.w=0;}if(fx.w!==w*9999+h){fx.w=w*9999+h;fx.setSize(w,h);}
