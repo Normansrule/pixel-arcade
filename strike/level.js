@@ -1,6 +1,7 @@
 // STRIKE ZONE — level runtime (no three.js, unit-testable in node): an axis-aligned box world with real interiors and storeys,
 // grid-accelerated raycasts, character collision, a 0.5 m occupancy grid (light baking + cover), and a multi-level nav graph with A*.
 export const STEP=.55,GS=4,NAV=1,VOX=.5;
+const NOSTAND={wall:1,parapet:1};
 const NONAV={bound:1,parapet:1,perimeter:1,rail:1,balrail:1,balustrade:1,post:1,trunk:1,tank:1,silo:1,column:1,lowwall:1,barrier:1,blockwall:1,wall:1,towerbody:0,machine:1,furnace:1,hvac:1,planter:1};
 
 /* ===================================================================== authoring kit */
@@ -39,6 +40,8 @@ export class Level{
   this.finalize();this.buildVox();this.buildNav();}
  finalize(){const S=this.boxes,n=S.length,B=this.B=new Float64Array(n*6);S.forEach((b,i)=>B.set([b.x0,b.y0,b.z0,b.x1,b.y1,b.z1],i*6));
   this.collOK=new Uint8Array(n);this.rayOK=new Uint8Array(n);S.forEach((b,i)=>{this.collOK[i]=b.coll?1:0;this.rayOK[i]=b.ray?1:0;});
+  // thin walls/parapets are never floors for CPU fighters: no standing on the top, and they block up to cap (top+1.5, or the underside of whatever sits above) so a jump cannot carry a bot onto or over them
+  this.ns=new Uint8Array(n);this.cap=new Float64Array(n);S.forEach((b,i)=>{if(!b.coll||!NOSTAND[b.kind]||Math.min(b.x1-b.x0,b.z1-b.z0)>.6||b.y1-b.y0<=STEP)return;let c=b.y1+1.5;for(const o of S)if(o!==b&&o.coll&&o.kind!=='bound'&&o.y0>=b.y1-.01&&o.y0<c&&o.x0<b.x1&&o.x1>b.x0&&o.z0<b.z1&&o.z1>b.z0)c=o.y0;this.ns[i]=1;this.cap[i]=c>b.y1+.05?c:b.y1-.02;});
   const GX=this.GX=Math.ceil((this.X1-this.X0)/GS)+2,GZ=this.GZ=Math.ceil((this.Z1-this.Z0)/GS)+2;this.gx0=this.X0-GS;this.gz0=this.Z0-GS;this.cells=Array.from({length:GX*GZ},()=>[]);
   S.forEach((b,i)=>{const i0=Math.max(0,Math.floor((b.x0-this.gx0)/GS)),i1=Math.min(GX-1,Math.floor((b.x1-this.gx0)/GS)),j0=Math.max(0,Math.floor((b.z0-this.gz0)/GS)),j1=Math.min(GZ-1,Math.floor((b.z1-this.gz0)/GS));for(let j=j0;j<=j1;j++)for(let k=i0;k<=i1;k++)this.cells[j*GX+k].push(i);});
   this.mk=new Uint32Array(n);this.st=0;this.nl=[];this.ymax=Math.max(8,...S.filter(b=>b.vis).map(b=>b.y1))+1;this.ymin=this.ground?-1:Math.min(-2,...S.filter(b=>b.vis).map(b=>b.y0));}
@@ -61,11 +64,11 @@ export class Level{
  los(ax,ay,az,bx,by,bz){const dx=bx-ax,dy=by-ay,dz=bz-az,l=Math.hypot(dx,dy,dz);if(l<1e-4)return true;return this.ray(ax,ay,az,dx/l,dy/l,dz/l,l-.05)===Infinity;}
 
  /* ---------- character collision (feet at p.y, cylinder radius r, height h) ---------- */
- groundAt(x,z,feet,r=.3){let g=this.ground?this.gy:-1e9;const B=this.B,L=this.near(x,z,r+.05);for(let q=0;q<L.length;q++){const i=L[q],k=i*6;if(!this.collOK[i])continue;const top=B[k+4];if(top>feet+STEP||top<=g||B[k+1]>feet+STEP)continue;
+ groundAt(x,z,feet,r=.3,ns=0){let g=this.ground?this.gy:-1e9;const B=this.B,L=this.near(x,z,r+.05);for(let q=0;q<L.length;q++){const i=L[q],k=i*6;if(!this.collOK[i]||ns&&this.ns[i])continue;const top=B[k+4];if(top>feet+STEP||top<=g||B[k+1]>feet+STEP)continue;
    if(x+r<=B[k]||x-r>=B[k+3]||z+r<=B[k+2]||z-r>=B[k+5])continue;g=top;}return g;}
  ceil(x,z,feet,r=.3){let c=Infinity;const B=this.B,L=this.near(x,z,r+.05);for(let q=0;q<L.length;q++){const i=L[q],k=i*6;if(!this.collOK[i])continue;const y0=B[k+1];if(y0<feet+1.0||y0>=c)continue;if(x+r*.8<=B[k]||x-r*.8>=B[k+3]||z+r*.8<=B[k+2]||z-r*.8>=B[k+5])continue;c=y0;}return c;}
- collide(p,r,h,step=STEP){const B=this.B,L=this.near(p.x,p.z,r+.6).slice();let hit=false;
-  for(let pass=0;pass<3;pass++){let moved=false;for(let q=0;q<L.length;q++){const i=L[q],k=i*6;if(!this.collOK[i])continue;if(B[k+4]<=p.y+step||B[k+1]>=p.y+h)continue;
+ collide(p,r,h,step=STEP,ns=0){const B=this.B,L=this.near(p.x,p.z,r+.6).slice();let hit=false;
+  for(let pass=0;pass<3;pass++){let moved=false;for(let q=0;q<L.length;q++){const i=L[q],k=i*6;if(!this.collOK[i])continue;if((ns&&this.ns[i]?p.y>=this.cap[i]:B[k+4]<=p.y+step)||B[k+1]>=p.y+h)continue;
     const cx=Math.max(B[k],Math.min(p.x,B[k+3])),cz=Math.max(B[k+2],Math.min(p.z,B[k+5]));let dx=p.x-cx,dz=p.z-cz;const d2=dx*dx+dz*dz;if(d2>=r*r)continue;hit=moved=true;
     if(d2>1e-10){const d=Math.sqrt(d2);p.x+=dx/d*(r-d+1e-4);p.z+=dz/d*(r-d+1e-4);}else{const l=p.x-B[k],rr=B[k+3]-p.x,u=p.z-B[k+2],dd=B[k+5]-p.z,m=Math.min(l,rr,u,dd);if(m===l)p.x=B[k]-r;else if(m===rr)p.x=B[k+3]+r;else if(m===u)p.z=B[k+2]-r;else p.z=B[k+5]+r;}}if(!moved)break;}
   return hit;}

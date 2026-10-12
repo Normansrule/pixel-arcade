@@ -211,8 +211,8 @@ function moveActor(a,dt){const c=a.ctl,v=a.vel,p=a.pos;const g=a.gun();const w=g
  else accel(v,dx,dz,ws,MV.airAccel,dt,MV.airCap);
  const h2=Math.hypot(v.x,v.z);if(h2>MV.max){v.x*=MV.max/h2;v.z*=MV.max/h2;}
  v.y-=MV.grav*dt;
- const H=MV.h-a.crouchV*(MV.h-MV.hc)-a.slideV*.7;const bx=p.x+v.x*dt,bz=p.z+v.z*dt;p.x=bx;p.z=bz;L.collide(p,MV.r,H,a.onGround?STEP:.28);const ddx=p.x-bx,ddz=p.z-bz,dl=Math.hypot(ddx,ddz);if(dl>1e-5){const nx=ddx/dl,nz=ddz/dl;const vn=v.x*nx+v.z*nz;if(vn<0){v.x-=vn*nx;v.z-=vn*nz;}}
- const feet0=p.y;p.y+=v.y*dt;const gnd=L.groundAt(p.x,p.z,Math.max(feet0,p.y),.3);const was=a.onGround;
+ const H=MV.h-a.crouchV*(MV.h-MV.hc)-a.slideV*.7;const bx=p.x+v.x*dt,bz=p.z+v.z*dt;p.x=bx;p.z=bz;const ns=a.isPlayer?0:1;L.collide(p,MV.r,H,a.onGround?STEP:.28,ns);const ddx=p.x-bx,ddz=p.z-bz,dl=Math.hypot(ddx,ddz);if(dl>1e-5){const nx=ddx/dl,nz=ddz/dl;const vn=v.x*nx+v.z*nz;if(vn<0){v.x-=vn*nx;v.z-=vn*nz;}}
+ const feet0=p.y;p.y+=v.y*dt;const gnd=L.groundAt(p.x,p.z,Math.max(feet0,p.y),.3,ns);const was=a.onGround;
  if(v.y<=0&&p.y<=gnd+.001){const imp=-v.y;p.y=gnd;v.y=0;a.onGround=true;if(!was&&imp>6){if(a.isPlayer){snd.land(Math.min(1,(imp-5)/10));VM.land(Math.min(.8,imp*.04));a.landDip=Math.min(.25,imp*.012);}}}
  else if(was&&v.y<=0&&p.y-gnd<STEP+.06){p.y=gnd;v.y=0;a.onGround=true;}
  else{if(gnd>p.y&&gnd-p.y<.3)p.y=gnd;a.onGround=false;}
