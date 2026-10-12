@@ -459,7 +459,7 @@ G.render=renderFrame;
 /* ================= boot ================= */
 HUD.init(G,{WEAPONS,PRIMARIES,ATT,RANKS,rankOf,rankXP,MISSIONS,DIFF});
 applyQuality(gfx);toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{step(dt);renderFrame();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{step(dt);renderFrame();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.FRONTLINE={get state(){return G.app==='play'?(G.over?'end':G.cine?'cine':G.player&&!G.player.alive?'dead':'live'):G.app;},get app(){return G.app;},step,render:renderFrame,start,toMenu,G,

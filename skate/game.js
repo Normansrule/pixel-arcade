@@ -259,7 +259,7 @@ $('edit').onclick=openEditor;$('sDone').onclick=closeEditor;
 
 /* ================= loop ================= */
 loadLevel(unlocked(save.opt.level)?save.opt.level:0);toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.SKATE={get state(){return app==='run'?run.phase:app;},get app(){return app;},step,render,start,toMenu,pause,

@@ -346,7 +346,7 @@ updateBest();
 /* ================= loop ================= */
 function frame(dt){step(dt);visuals(dt);if(G.app==='play'||G.app==='paused'){if(G.app==='play')hud.update(G,P,S,dt);}render();}
 $('loading').classList.add('done');
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!G.noLoop){try{frame(dt);}catch(e){console.error(e);}}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;if(!G.noLoop){try{frame(dt);}catch(e){console.error(e);}}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.ABYSS={get state(){return G.app;},get app(){return G.app;},get ui(){return G.ui;},G,P,S,life,world,scene,cam,R:RR,hud,snd,keys,mouse,pod,

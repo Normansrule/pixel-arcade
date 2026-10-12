@@ -446,7 +446,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= loop ================= */
 attract();$('loading').classList.add('done');
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(G.noLoop){requestAnimationFrame(loop);return;}try{step(dt);if(G.app==='play'||G.app==='paused')hud.update(G,dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;if(G.noLoop){requestAnimationFrame(loop);return;}try{step(dt);if(G.app==='play'||G.app==='paused')hud.update(G,dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.NIGHTFALL={get state(){return G.app;},manual(v=true){G.noLoop=v;},frame(dt=1/60){step(dt);if(G.app==='play'||G.app==='paused')hud.update(G,dt);render();},get app(){return G.app;},get phase(){return G.phase;},G,get player(){return G.player;},get zombies(){return G.zombies;},get ally(){return G.ally;},get round(){return G.round;},map,crate,scene,cam,R:RR,vm,fx,snd,hud,

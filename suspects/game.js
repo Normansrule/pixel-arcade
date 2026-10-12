@@ -331,7 +331,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
  postScore('suspects',a.pts||0,body);};
 
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.SUSPECTS={get state(){return app==='play'&&sim?sim.phase:app;},get app(){return app;},get sim(){return sim;},get player(){return sim&&sim.player;},step,render,start,toMenu,pause,M,AI,tasks,

@@ -318,7 +318,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= boot + loop ================= */
 let last=performance.now();
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}
+function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}
 async function boot(){try{await Promise.race([Promise.all([document.fonts.load("400 80px Anton"),document.fonts.load("700 30px 'JetBrains Mono'")]),new Promise(r=>setTimeout(r,1500))]);}catch(e){}
  toMenu();requestAnimationFrame(loop);}
 boot();

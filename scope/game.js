@@ -407,7 +407,7 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 /* ================= boot ================= */
 G.swayPh=Math.random()*100;
 loadMission(save.opt.mission);G.dirty=false;buildMenu();G.app='menu';
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 setTimeout(()=>$('loading').classList.add('off'),300);
 
 /* ================= test hooks ================= */

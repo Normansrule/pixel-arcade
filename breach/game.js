@@ -441,7 +441,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= loop ================= */
 attractMode();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.BREACH={get state(){return G.app==='match'?G.phase:G.app;},get app(){return G.app;},get phase(){return G.phase;},G,step,render,start,toMenu,pause,

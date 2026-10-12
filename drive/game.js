@@ -211,7 +211,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= boot ================= */
 traffic.spawnAll(null);jobs.reset();car.place(WORLD/2,WORLD/2,0,city);world.setTime(17.6,0,0);
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.DRIVE={get state(){return G.app;},G,R:Rr,scene,cam,get P(){return car;},get car(){return car;},step,render,start,toMenu,pause,endShift,updateCam:cameraUpdate,keys,city,world,hud,snd,

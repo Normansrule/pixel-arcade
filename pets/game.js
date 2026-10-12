@@ -241,7 +241,7 @@ function frame(){updateBadges();if(app==='shop'||app==='prebattle')updateTimer()
 function render(){const w=W(),h=H();if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);if(fxP)fxP.w=0;}D.cam.aspect=w/h;D.cam.updateProjectionMatrix();
  if(!fxP){fxP=cinematic(R,D.scene,D.cam,{exposure:1.02,bloom:.32,bloomThreshold:.92,bloomRadius:.4,vignette:.3,saturation:1.1,grain:.012,aoStrength:.7});fxP.w=0;}if(fxP.w!==w*9999+h){fxP.w=w*9999+h;fxP.setSize(w,h);}fxP.render();}
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);frame();render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);frame();render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.PETS={get state(){return app;},get app(){return app;},get G(){return G;},newRun,newGame:()=>newRun(),toMenu,step,frame,render,

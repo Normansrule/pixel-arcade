@@ -509,7 +509,7 @@ const G={world,build,get actors(){return actors;},get loot(){return loot;},get c
 
 /* ================= loop ================= */
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.ROYALE={get state(){return app==='match'?phase:app;},get app(){return app;},get phase(){return phase;},step,render,start,toMenu,pause,

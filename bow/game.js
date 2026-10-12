@@ -404,7 +404,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= boot + loop ================= */
 attract();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.LONGBOWKEEP={get state(){return G.app;},get app(){return G.app;},get phase(){return G.phase;},G,get me(){return G.me;},get players(){return G.players;},get flags(){return G.flags;},get caps(){return G.caps;},get score(){return G.caps;},

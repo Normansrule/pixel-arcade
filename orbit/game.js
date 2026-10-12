@@ -536,7 +536,7 @@ $('o-post').onclick=()=>{const a=lastAward||{};const u=userName();
 addEventListener('resize',()=>{fxS&&(fxS.w=0);fxV&&(fxV.w=0);});
 
 toMenu();
-let last=performance.now();function loop(now){const dt=(now-last)/1000;last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ===================== test hooks ===================== */
 window.ORBIT={get state(){return app==='flight'?(flightDone||(paused?'paused':'flying')):app;},get app(){return app;},step,render,start,toMenu,toHub,toVab,launch,

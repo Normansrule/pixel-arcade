@@ -438,7 +438,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= loop ================= */
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.QUEST={R,get state(){return app;},get app(){return app;},start,step,render,toMenu,pause,G,P,S,rooms,seeds,pickups,get run(){return run;},get enemies(){return G.enemies;},

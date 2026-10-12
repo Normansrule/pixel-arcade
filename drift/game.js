@@ -363,7 +363,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= boot + loop ================= */
 loadVenue(opt.track);buildPlayer();toMenu();setTimeout(()=>$('load').classList.add('off'),60);
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.SIDEWAYS={get state(){return app==='run'?phase:app;},get app(){return app;},get phase(){return phase;},step,render,start,toMenu,openGarage,closeGarage,

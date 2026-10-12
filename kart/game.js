@@ -383,7 +383,7 @@ addEventListener('keydown',e=>{if((app==='results'||app==='podium')&&!$('over').
 
 /* ================= loop ================= */
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(app!=='paused'){acc+=dt;let n=0;while(acc>=DT&&n<4){step(DT);acc-=DT;n++;}if(n===4)acc=0;}frame(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;if(app!=='paused'){acc+=dt;let n=0;while(acc>=DT&&n<4){step(DT);acc-=DT;n++;}if(n===4)acc=0;}frame(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.KART={get state(){return app==='race'?phase:app;},get app(){return app;},get phase(){return phase;},step,render,frame,

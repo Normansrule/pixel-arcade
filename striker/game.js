@@ -277,7 +277,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
  postScore('striker',a.pts||0,body);};
 /* ================= loop ================= */
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 /* ================= test hooks ================= */
 window.STRIKER={get state(){return app==='match'?S.phase:app;},get app(){return app;},get phase(){return S.phase;},step,render,start,toMenu,pause,S,get ball(){return S.ball;},get players(){return S.plist;},get teams(){return S.teams;},
  get score(){return S.score;},get period(){return S.period;},get clock(){return Math.max(0,(S.period<=2?S.per:S.per/3)-S.clock);},setClock(sec){S.clock=Math.max(0,(S.period<=2?S.per:S.per/3)-sec);},

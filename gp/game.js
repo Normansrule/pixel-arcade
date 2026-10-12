@@ -463,7 +463,7 @@ canvas.addEventListener('pointerdown',()=>{edge.click=true;});
 
 /* ================= loop ================= */
 console.time&&0;const _t0=performance.now();toMenu();window.__kgpBoot=performance.now()-_t0;
-let last=performance.now(),manual=!!window.__KGP_MANUAL;function loop(now){if(manual)return;const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now(),manual=!!window.__KGP_MANUAL;function loop(now){if(manual)return;const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.KARTGP={get state(){return app==='race'?phase:app;},get app(){return app;},get phase(){return phase;},step,render,start:startEvent,startRace,toMenu,

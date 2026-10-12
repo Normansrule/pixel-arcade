@@ -420,7 +420,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= loop ================= */
 attract();renderMenu();showPanel('menu');
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;frame(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;frame(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.SKYLANCERS={get state(){return G.app;},G,opts,step:frame,render,start(o={}){start(o);},brief(o={}){Object.assign(opts,o);brief();},launch,toMenu,pause,

@@ -444,7 +444,7 @@ addEventListener('pointerdown',()=>snd.init(),{once:true});
 
 /* ================= boot + loop ================= */
 applyVariant(VARIANTS[1]);toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.EXFIL={get state(){return G.app;},get app(){return G.app;},G,get P(){return P;},get player(){return P;},get bots(){return G.bots;},get raid(){return G.raid;},get prof(){return prof();},MAP,W,nav,scene,cam,R:Rr,

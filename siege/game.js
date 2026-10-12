@@ -417,7 +417,7 @@ $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=to
 $('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Fortress Breach\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\nMode: ${a.mode||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
  postScore('fortbreach',a.pts||0,body);};
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{if(world){step(dt);render();}}catch(e){console.error(e);}if(!window.__manual)requestAnimationFrame(loop);}
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{if(world){step(dt);render();}}catch(e){console.error(e);}if(!window.__manual)requestAnimationFrame(loop);}
 setTimeout(()=>{boot();requestAnimationFrame(loop);},30);
 
 /* ================= test hooks ================= */

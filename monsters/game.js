@@ -569,7 +569,7 @@ buildNpcs();buildPeds();
 P.x=W.SITES.spawn.x;P.z=W.SITES.spawn.z;P.y=W.SITES.villageY;
 toMenu();setNav($('menu'),99,null,6);
 let last=performance.now();
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);placeCamera(dt);render();requestAnimationFrame(loop);}
+function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);placeCamera(dt);render();requestAnimationFrame(loop);}
 requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */

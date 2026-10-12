@@ -330,7 +330,7 @@ $('post').onclick=()=>{const a=lastAward||{};const u=userName();
 
 /* ================= loop ================= */
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.TUMBLE={get state(){return app==='show'?phase:app;},get app(){return app;},get phase(){return phase;},step,render,start,toMenu,beans,me,get R(){return R;},get W(){return W;},get show(){return show;},
