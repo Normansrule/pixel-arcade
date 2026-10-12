@@ -26,6 +26,7 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 - **All 3D worlds:** a negative first-frame time no longer crashes the menu camera.
 - **Canvas art pass on the 16 plainest cabinets:** Stack 3D, Tilt Maze 3D, Tower Stack, Cloud Hop, Piano Tiles, Paper Plane, Laser Dodge, Bounce Ball, Ping Bounce, Paddle Duel, Triple Pong, Quad Pong, Flip Disks, Maze Dash, Mini Golf and Curling get new backdrops, lit objects, particles and feedback. Maze Dash and Tilt Maze 3D gain gem pickups (+25). Their hub thumbnails are re-rendered.
 - **New 3D game: HARDFALL** (`titans/`): pilots wall-run, slide and shoot, then call a war frame down from orbit and climb in. 6v6 Attrition with grunts, two maps, CPU on both teams. Titanfall-style.
+- **New 3D game: GLOSS RIOT** (`ink/`): 4v4 turf war in glossy ink. Paint the ground in your crew's colour, swim through it to refill and move fast, and out-cover the rival crew before the 3-minute whistle. CPU teammates and rivals. Splatoon-style.
 - **Online play (first step):** **⇄ Play online** in the hub footer links two browsers on the same network with a copy-paste or QR code, no server. Four in a Row is the first online game. See `docs/MULTIPLAYER.md`.
 - **Engine:** small automatic score pops show at most once every 36 frames, so fast-ticking scores no longer stack a cloud of +1s.
 

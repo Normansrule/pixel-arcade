@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="icon" href="data:,">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gloss Riot · Pixel Arcade</title>
+<meta name="description" content="Gloss Riot: a third-person ink team shooter in full 3D. 4v4 against CPU crews: paint the floors and walls, swim through your own colour, and own the most turf when the clock runs out.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="ink.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div><div id="flash"></div>
+<div id="hud" hidden>
+  <div id="top">
+    <div class="squad" id="sq0"></div>
+    <div class="clk"><b id="clock">3:00</b><span id="modeTag">TURF CONTROL</span></div>
+    <div class="squad" id="sq1"></div>
+  </div>
+  <div id="cov"><div class="a" id="covA"></div><div class="b" id="covB"></div><span class="pa" id="pA">0%</span><span class="pb" id="pB">0%</span></div>
+  <div id="zonebar" hidden><div class="zc a"><b id="zA">100</b><i>COUNT</i></div><div class="zs" id="zS">ZONE NEUTRAL</div><div class="zc b"><b id="zB">100</b><i>COUNT</i></div></div>
+  <div id="tags"></div>
+  <div id="feed"></div>
+  <div id="dmg"></div>
+  <div id="cross"><i class="ring"></i><em></em><svg class="chg" viewBox="0 0 60 60"><circle cx="30" cy="30" r="24"/></svg></div>
+  <div id="hitm"><i></i><i></i><i></i><i></i></div>
+  <div id="tank"><div class="tb"><em id="tankF"></em></div><span id="tankT">INK</span></div>
+  <div id="banner"><b></b><span></span></div>
+  <div id="prompt"></div>
+  <div id="sp"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="fg" id="spC" cx="50" cy="50" r="42"/></svg><b id="spT">0</b><span>INKQUAKE</span><em>E</em></div>
+  <div id="wpn"><p id="wname">GLOOP BLASTER</p><span id="wsub"><kbd>RMB</kbd> INK BOMB · <kbd>SHIFT</kbd> SWIM</span></div>
+  <canvas id="mini" width="240" height="320"></canvas>
+  <div id="dead" hidden><p>SPLATTED BY</p><b id="killer"></b><em id="rsp">RESPAWN 4</em></div>
+  <div id="board" hidden></div>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · INK TEAM SHOOTER · 4V4</p>
+  <h1>GLOSS<br><span>RIOT</span><em>!</em></h1>
+  <p class="how">Splat the town in your crew's colour. Shoot ink to coat floors and walls, dive in and swim through it to reload and sneak, and make sure your colour covers the most turf when the 3-minute clock runs out.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="turf">TURF CONTROL</button><button data-v="zone">ZONE CLASH · RANKED</button></div>
+    <label>ARENA</label><div class="seg" id="o-map"><button data-v="0">SPRINKLE PIER</button><button data-v="1">GUMDROP SKATEPARK</button></div>
+    <label>WEAPON</label><div class="seg" id="o-wpn"><button data-v="splatter">● GLOOP BLASTER</button><button data-v="charger">━ LONGSHOT</button><button data-v="roller">▬ SLAB ROLLER</button></div>
+    <label>CPU CREWS</label><div class="seg" id="o-diff"><button data-v="0">ROOKIE</button><button data-v="1">PRO</button><button data-v="2">ACE</button></div>
+    <label>COLOURS</label><div class="seg" id="o-pal"><button data-v="0">TANGERINE / COBALT</button><button data-v="1">BUBBLEGUM / LIME</button><button data-v="2">LEMON / GRAPE</button><button data-v="3">TEAL / CORAL</button></div>
+  </div>
+  <p class="mapdesc" id="mapdesc"></p>
+  <div class="row"><button id="go" class="go">INK UP!</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
+    <tr><td>Fire (hold or spam) · charge</td><td><kbd>LMB</kbd></td></tr>
+    <tr><td>Swim in your ink (hold)</td><td><kbd>Shift</kbd></td></tr>
+    <tr><td>Jump · climb painted walls</td><td><kbd>Space</kbd> · swim into wall</td></tr>
+    <tr><td>Ink bomb</td><td><kbd>RMB</kbd> / <kbd>Q</kbd></td></tr>
+    <tr><td>Special: INKQUAKE</td><td><kbd>E</kbd> / <kbd>F</kbd></td></tr>
+    <tr><td>Map · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Swimming in your own colour refills ink fast, heals you and hides you from foes. Enemy ink slows you and stings. Painting the floor charges your special. Gamepad supported.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>TAKE A<br><span>BREATHER</span><em>.</em></h1><p class="how">Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.75">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.35">LOW</button><button data-v="0.6">MED</button><button data-v="0.9">LOUD</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">TURF CONTROL</p>
+  <h2 id="ojudge">THE JUDGES ARE COUNTING…</h2>
+  <div id="tally"><div class="lane"><i class="a" id="tA"></i><i class="b" id="tB"></i><s></s></div>
+    <div class="nums"><div class="a"><b id="tAn">0.0%</b><span id="tAt">TANGERINE</span></div><div class="b"><b id="tBn">0.0%</b><span id="tBt">COBALT</span></div></div></div>
+  <div id="oafter">
+    <p class="res" id="ores">VICTORY!</p>
+    <table id="stats"></table>
+    <p class="tok" id="otok"></p>
+    <div class="row"><button id="again" class="go">REMATCH</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+  </div>
+  <div id="confetti"></div>
+</div>
+<div id="lock" hidden><b>CLICK TO PLAY</b><span>mouse is captured · Esc to pause</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
