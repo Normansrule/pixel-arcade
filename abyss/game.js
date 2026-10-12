@@ -12,6 +12,7 @@ import {buildPod,buildSub,buildCockpit,buildViewmodel,buildRocket} from './gear.
 import {ITEMS,RECIPES,SPECIES,DIFFS,DIVE,CARRY} from './data.js';
 import {Sound} from './sound.js';
 import {HUD,invHTML} from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,TAU=Math.PI*2;
 try{await Promise.race([Promise.all([document.fonts.load('64px Anton'),document.fonts.load('20px "JetBrains Mono"')]),new Promise(r=>setTimeout(r,2500))]);}catch(e){}
@@ -265,9 +266,8 @@ function end(reason){if(G.app!=='play'&&G.app!=='win')return;const won=reason===
  const cells=[['DEEPEST',Math.round(P.maxD)+' M'],['SPECIES',P.scanned.size+'/'+Object.keys(SPECIES).length],['GEAR PRINTED',Object.keys(P.tools).length+'/8'],['GATHERED',st.gathered],['FISH CAUGHT',st.fish],['TIME',mmss(DIVE-P.diveT)]];
  $('mystats').innerHTML=cells.map(c=>`<div><b>${c[1]}</b><span>${c[0]}</span></div>`).join('');const tok=awardTokens(score,won);$('otok').textContent=`+${tok} TOKENS · BEST ${best().toLocaleString()} PTS`;$('over').hidden=false;}
 function awardTokens(pts,won){lastAward={pts,won,depth:Math.round(P.maxD),species:P.scanned.size,diff:G.diff.n,reason:G.result.reason};const tok=5+Math.min(60,pts/150|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'abyss3d';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'abyss3d')||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest('abyss3d',pts);return tok;}
+function best(){return bestScore('abyss3d');}
 function updateBest(){const b=best();$('best').textContent=b?'BEST · '+b.toLocaleString()+' PTS':'';}
 
 /* ================= visuals ================= */
@@ -338,9 +338,9 @@ function render(){const w=innerWidth,h=innerHeight;if(RR.domElement.width!==Math
 const seg=(id,key,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===+v));if(!init){try{localStorage.setItem('abyss_opt',JSON.stringify(G.opt));}catch(e){}cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
 seg('o-diff','diff',v=>{$('dhint').textContent=DIFFS[v].hint;});seg('o-vol','vol',v=>{snd.init();snd.setVol(v);});seg('o-sens','sens');$('dhint').textContent=DIFFS[G.opt.diff].hint;
 $('go').onclick=start;$('again').onclick=start;$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='over';toMenu();};
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Abyss Diver\nScore: ${a.pts||0}\nResult: ${a.won?'rescued':a.reason==='time'?'stranded (time up)':'lost at sea'}\nDeepest: ${a.depth||0}m\nSpecies: ${a.species||0}/${Object.keys(SPECIES).length}\nMode: ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] abyss3d '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('abyss3d',a.pts||0,body);};
 updateBest();
 
 /* ================= loop ================= */

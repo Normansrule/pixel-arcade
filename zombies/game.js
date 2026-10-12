@@ -11,6 +11,7 @@ import {WPN,BOX_POOL,stats,gunModel,ViewModel,gunMats} from './weapons.js';
 import {FX} from './fx.js';
 import {Sound} from './sound.js';
 import {HUD,mmss,PUP} from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,TAU=Math.PI*2,smooth=(a,b,x)=>{const t=cl((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const DIFFS=[{n:'CASUAL',hp:.75,dmg:.6,count:.8,spd:.92,run:.7,alive:16,spawn:1.25,start:750,boss:.75},{n:'SURVIVOR',hp:1,dmg:1,count:1,spd:1,run:1,alive:22,spawn:1,start:500,boss:1},{n:'NIGHTMARE',hp:1.3,dmg:1.35,count:1.2,spd:1.07,run:1.35,alive:26,spawn:.8,start:500,boss:1.35}];
@@ -389,9 +390,8 @@ function endGame(reason){if(G.app!=='play')return;G.app='over';unlock();hud.show
  const rows=[['ROUND REACHED',G.round],['KILLS',S.kills+(S.heads?` · ${S.heads} HEADSHOTS`:'')+(S.knife?` · ${S.knife} KNIFE`:'')],['POINTS EARNED',Math.round(S.earned).toLocaleString()],['ACCURACY',acc+'%'],['TIME SURVIVED',mmss(S.time)],['DOORS · PERKS · CRATE SPINS',`${S.doors} · ${S.perks} · ${S.boxes}`],['BOARDS REBUILT',S.boards],['DOWNS',S.downs+(G.solo?'':` · ROOK REVIVED YOU ${S.revivedBy}×`)],...(G.solo?[]:[['ROOK',`${S.allyKills} KILLS · YOU REVIVED HIM ${S.revivesGiven}×`]]),...(S.bosses?[['GRAVEKEEPERS SLAIN',S.bosses]]:[]),...(won?[['DAWN BONUS','+'+(1000+G.round*250).toLocaleString()]]:[])];
  $('stats').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');const tok=awardTokens(score,won);$('otok').textContent=`+${tok} TOKENS · BEST ${best().toLocaleString()} PTS`;$('over').hidden=false;}
 function awardTokens(pts,won){lastAward={pts,won,round:G.round,kills:G.stats.kills,heads:G.stats.heads,len:G.opt.len,diff:G.diff.n,solo:G.solo};const tok=5+Math.min(60,pts/400|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'nightfall';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'nightfall')||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest('nightfall',pts);return tok;}
+function best(){return bestScore('nightfall');}
 function updateBest(){const b=best();$('best').textContent=b?'BEST · '+b.toLocaleString()+' PTS':'';}
 
 /* ================= visuals ================= */
@@ -434,9 +434,9 @@ function render(){const w=innerWidth,h=innerHeight;if(RR.domElement.width!==Math
 const seg=(id,key,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===+v));if(!init){saveOpt();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
 seg('o-len','len');seg('o-diff','diff');seg('o-ally','ally');seg('o-sens','sens');seg('o-vol','vol',v=>snd.setVol(v));seg('o-fov','fov');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='menu';toMenu();};
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Nightfall\nScore: ${a.pts||0}\nResult: ${a.won?'survived until dawn':'overrun'} · round ${a.round||0}\nKills: ${a.kills||0} (${a.heads||0} headshots)\nNight: ${a.len||0} min · ${a.diff||''} · ${a.solo?'solo':'with Rook'}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] nightfall '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('nightfall',a.pts||0,body);};
 
 /* ================= loop ================= */
 attract();$('loading').classList.add('done');

@@ -8,6 +8,7 @@ import {Actor,moveActor,makeNPCs,thinkNPC,arrive,LINES,EMOTES,SAFE,PSCALE} from 
 import {ALL,WEAR,BODY_COLORS,FURN,PETS,PARTIES,furnModel,wearModel,makePomlet} from './items.js';
 import {Penguin} from './penguin.js';
 import GAMES from './games/index.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const DAY_LEN=900,ID='penguinplaza',SAVE_KEY='pxd_plaza';
 const DIFFN=['EASY','NORMAL','HARD'];
@@ -258,9 +259,8 @@ function endDay(){pendingEnd=false;app='summary';closeUI();if(editing)endEdit();
  $('stats').innerHTML=[['Coins earned',day.earned],['Coins spent',day.spent],['Items bought',day.bought.length?day.bought.slice(0,4).join(', ')+(day.bought.length>4?` +${day.bought.length-4}`:''):'none'],['Minigames played',day.games.length],['Medals','🥇 '+medals[3]+' · 🥈 '+medals[2]+' · 🥉 '+medals[1]],['Golden snowflakes',`${flakes} / ${W.coins.length}`],['Snowballs thrown · hits',`${day.thrown} · ${day.hits}`],['Penguins chatted with',day.chats.size],['Coins in the bank',save.coins]].map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join('');
  const tok=award();$('otok').textContent=`+${tok} TOKENS · BEST DAY ${best()} COINS`;$('over').hidden=false;snd.play('chime');snd.music('night');save.day++;save.life.days++;persist();}
 function award(){const pts=day.earned,won=pts>=100;lastAward={pts,won,day:save.day,games:day.games.length,party:W.party.n};const tok=5+Math.min(60,pts/20|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 
 /* ================= app flow ================= */
 function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();snd.init();
@@ -365,9 +365,9 @@ $('mgigo').onclick=()=>beginGame(mg.id);$('mgiback').onclick=closeIntro;$('mgrag
 $('shopx').onclick=closeUI;$('mapw').onclick=e=>{if(e.target.id==='mapw')closeUI();};$('shopw').onclick=e=>{if(e.target.id==='shopw')closeUI();};$('editdone').onclick=endEdit;
 document.querySelectorAll('#stabs button').forEach(b=>b.onclick=()=>openShop(b.dataset.t));
 document.querySelectorAll('#dock button').forEach(b=>b.onclick=()=>{snd.init();const a=b.dataset.a;if(uiOpen===a){closeUI();return;}if(a==='map'||a==='chat'||a==='emote'||a==='shop')openUI(a);else if(a==='home')goHome();else if(a==='throw')throwForward();else doEmote(a);});
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Penguin Plaza\nPoints: ${a.pts||0} coins earned in one island day\nDay: ${a.day||1} · ${a.party||''}\nMinigames played: ${a.games||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 
 /* ================= loop ================= */
 buildIgloo();toMenu();camSnap=true;

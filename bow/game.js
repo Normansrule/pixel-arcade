@@ -10,6 +10,7 @@ import {DIFF,initBot,think,solveAim} from './ai.js';
 import {bannerTex} from './gfx.js';
 import {Sound} from './sound.js';
 import {HUD,mmss} from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=Math.random,TAU=Math.PI*2;
 export const WPN={long:{n:'LONGBOW',draw:1.0,spd:[26,72],dmg:[20,70],head:2.2,g:13,ammo:16,zoom:.7,sway:1},
@@ -105,9 +106,8 @@ function showOver(){G.app='over';unlock();hud.show(false);G.boardOn=false;docume
 let lastAward=null,overT=0;
 function award(won,draw){const me=G.me;const pts=me.stats.score+(won?300:draw?100:0);const acc=me.stats.shots?Math.round(me.stats.hits/me.stats.shots*100):0;
  lastAward={pts,won,draw,caps:me.stats.caps,kills:me.stats.kills,deaths:me.stats.deaths,heads:me.stats.heads,acc,score:`${G.caps[0]}-${G.caps[1]}`,map:MAPS[G.opt.map].name,diff:G.diff.n,load:WPN[G.opt.load].n};
- const tok=5+Math.min(60,pts/80|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'longbowkeep';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'longbowkeep')||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/80|0);addRound(tok,won);saveBest('longbowkeep',pts);return tok;}
+function best(){return bestScore('longbowkeep');}
 function updateBest(){const b=best();$('best').textContent=b?'BEST · '+b.toLocaleString()+' PTS':'';}
 
 /* ================= flags ================= */
@@ -398,9 +398,9 @@ const seg=(id,key,num=true,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=
 seg('o-map','map',true,()=>{if(G.app==='menu')attract();});seg('o-load','load',false);seg('o-diff','diff');seg('o-time','time');seg('o-sens','sens');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-fov','fov');
 document.querySelectorAll('#dload button').forEach(b=>b.onclick=e=>{if(G.me){G.me.nextLoadout=b.dataset.v;G.opt.load=b.dataset.v;saveOpt();}e.stopPropagation();});
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Longbow Keep\nPoints: ${a.pts||0}\nResult: ${a.won?'win':a.draw?'draw':'loss'} ${a.score||''} (captures)\nKills: ${a.kills||0} · Deaths: ${a.deaths||0} · Headshots: ${a.heads||0} · Accuracy: ${a.acc||0}%\nCaptures: ${a.caps||0}\nField: ${a.map||''} · ${a.load||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] longbowkeep '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('longbowkeep',a.pts||0,body);};
 
 /* ================= boot + loop ================= */
 attract();

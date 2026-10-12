@@ -8,6 +8,7 @@ import {buildWorld,makeEnv,ctex} from './world.js';
 import {S,setupMatch,fixed,afterGoal,minute,clockText,setCtl,skipBreak,beginSP,foul,fwdOf,shoot,humanPass,toPlay} from './match.js';
 import {active} from './ai.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=Math.random,hyp=Math.hypot;
 const DT=1/60;
 /* ================= renderer ================= */
@@ -256,9 +257,8 @@ function showOver(){app='over';overT=0;$('hud').hidden=true;$('ht').hidden=true;
  $('over').hidden=false;}
 function award(w){const won=w===0,draw=w<0;const g=S.score[0];const fin=S.cup&&cup&&cup.round===2&&won;const pts=g*100+(won?300:draw?100:0)+(S.score[1]===0?75:0)+(won&&S.humans.length===1?opt.diff*100:0)+(fin?500:0);
  lastAward={pts,won,score:`${S.score[0]}-${S.score[1]}`,club:S.teams[0].club.n,opp:S.teams[1].club.n,mode:S.cup?'cup '+RN[cup.round].toLowerCase():'quick',size:P.size+'v'+P.size,diff:DIFF[opt.diff].n.toLowerCase(),two:S.humans.length>1,goals:g};
- const tok=5+Math.min(60,pts/20|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'striker';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return+(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'striker')||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/20|0);addRound(tok,won);saveBest('striker',pts);return tok;}
+function best(){return bestScore('striker');}
 /* ================= rendering ================= */
 function render(){const w=innerWidth,h=innerHeight;if(Rd.domElement.width!==Math.floor(w*Rd.getPixelRatio())||Rd.domElement.height!==Math.floor(h*Rd.getPixelRatio())){Rd.setSize(w,h,false);fxp&&(fxp.w=0);}
  cam.aspect=w/h;cam.updateProjectionMatrix();if(!fxp||fxp.night!==opt.night){fxp=cinematic(Rd,scene,cam,{...post(),quality:gfx});fxp.night=opt.night;fxp.w=0;}if(fxp.w!==w*9999+h){fxp.w=w*9999+h;fxp.setSize(w,h);}
@@ -272,9 +272,9 @@ function picker(id,key){const el=$(id);const draw=()=>{const c=CLUBS[opt[key]],c
 function menuVis(){$('r-opp').hidden=opt.mode===1;$('o-pl').parentElement&&($('r-pl').hidden=opt.mode===1);$('r-oppl').hidden=$('r-opp').hidden;$('l-opp').textContent=opt.humans===2?'P2 CLUB':'OPPONENT';$('r-pll').hidden=$('r-pl').hidden;}
 seg('o-mode','mode');seg('o-pl','humans');seg('o-size','size');seg('o-form','form',false);seg('o-diff','diff');seg('o-half','half');seg('o-off','offside');seg('o-night','night');picker('p-club','club');picker('p-opp','opp');menuVis();
 $('go').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;$('cupmenu').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: STRIKER 11\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'no win'} ${a.score||''} · ${a.club||''} vs ${a.opp||''}\nGoals: ${a.goals||0}\nMode: ${a.mode||''} ${a.size||''}${a.two?' 2P versus':''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] striker '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('striker',a.pts||0,body);};
 /* ================= loop ================= */
 toMenu();
 let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);

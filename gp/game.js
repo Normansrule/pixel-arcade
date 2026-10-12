@@ -11,6 +11,7 @@ import {Items} from './items.js';
 import {thinkRace,thinkBattle} from './ai.js';
 import {Sound} from './sound.js';
 import {V,cl,lerp,wrapA,Particles,Skids,icon,rng} from './util.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id),rnd=(a=1)=>Math.random()*a;
 const LAPS=3,BATTLE_TIME=180,ID='kartgp';
@@ -287,9 +288,8 @@ function scoreFor(me){const ccM=[1,1.5,2][opt.cc];if(A)return Math.round((me.pop
  if(opt.mode==='gp'){const pts=gp.pts[me.id],rank=karts.slice().sort((a,b)=>gp.pts[b.id]-gp.pts[a.id]).indexOf(me)+1;return Math.round((pts*10+[300,200,100][rank-1]||0)*ccM);}
  return me.dnf?0:Math.round(((POINTS[me.place-1]||0)*10+(me.place===1?100:0))*ccM);}
 function award(pts,won){lastAward={pts,won,mode:opt.mode,cc:CC[opt.cc].n,track:A?ARENA.n:COURSES[courseIdx].n,place:karts.find(k=>k.human===0).place};const tok=5+Math.min(60,pts/20|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 function nextFromResults(){if(gp){if(gp.race<4){$('results').hidden=true;$('standings').hidden=true;startRace();}else startPodium();}else{startEvent();}}
 
 /* ================= podium ================= */
@@ -455,9 +455,9 @@ $('go1').onclick=()=>{snd.init();snd.play('uigo');setStep('driver');};$('go2').o
 $('go3').onclick=()=>{snd.play('uigo');startEvent();};
 $('rnext').onclick=()=>{snd.play('uigo');nextFromResults();};$('rmenu').onclick=toMenu;$('rstand').onclick=()=>{snd.play('ui');showStandings();};$('sclose').onclick=()=>{$('standings').hidden=true;};
 $('pmenu').onclick=toMenu;$('pagain').onclick=()=>{startEvent();};$('resume').onclick=()=>pause(false);$('restart').onclick=()=>{$('pause').hidden=true;if(gp)gp.race=Math.max(0,gp.race);startRace();};$('quit').onclick=toMenu;
-const post=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+const post=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Kart Grand Prix\nPoints: ${a.pts||0}\nMode: ${({gp:'Grand Prix',vs:'VS race',tt:'Time trial',battle:'Balloon battle'})[a.mode]||''} · ${a.cc||''}\nCourse: ${a.track||''}\nPlace: ${a.place||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 $('rpost').onclick=post;$('ppost').onclick=post;
 canvas.addEventListener('pointerdown',()=>{edge.click=true;});
 

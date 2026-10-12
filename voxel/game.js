@@ -8,6 +8,7 @@ import {CS,CH,SEA,LC,BIO} from './world.js';
 import {makeMaterials,sky,clouds,placeClouds,applyLighting,U,skyU} from './gfx.js';
 import {Mobs,KINDS} from './mobs.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id);
 const mmss=t=>{t=Math.max(0,Math.ceil(t));return (t/60|0)+':'+String(t%60).padStart(2,'0');};
@@ -326,15 +327,14 @@ function endSession(kind){if(state==='over')return;result=kind;state='over';mous
  $('ofs').textContent=score.toLocaleString()+' PTS · '+(mode==='creative'?'CREATIVE':D().n)+(mode==='survival'?' · OBJECTIVE '+Math.min(goal,GOALS.length)+'/'+GOALS.length:'');
  const st=[[stats.mined,'BLOCKS MINED'],[stats.ores,'ORES'],[stats.kills,'CREATURES'],[nights,'NIGHTS SURVIVED'],[stats.crafted,'ITEMS CRAFTED'],[mmss(clock),'TIME PLAYED']];$('ostats').innerHTML=st.map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join('');
  $('otok').textContent='+'+tok+' ARCADE TOKENS · BEST '+best().toLocaleString();$('keep').style.display=kind==='lose'?'none':'';lastAward={pts:score,kind,goal,mode,diff:D().n};if(kind==='lose'){try{localStorage.removeItem(SKEY);}catch(e){}}else save();}
-function award(won){const tok=5+Math.min(60,score/20|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
- const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'voxel3d';if(+(localStorage.getItem(k)||0)<score)localStorage.setItem(k,score);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'voxel3d')||0);}catch(e){return 0;}}
+function award(won){const tok=5+Math.min(60,score/20|0);addRound(tok,won);saveBest('voxel3d',score);return tok;}
+function best(){return bestScore('voxel3d');}
 function showBest(){const b=best();$('best').textContent=b?'BEST · '+b.toLocaleString():'';}
 $('go').onclick=()=>newWorld(window.__seed);$('cont').onclick=()=>contWorld();$('again').onclick=()=>newWorld(window.__seed);$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
 $('keep').onclick=()=>{timeMode=0;timeLeft=0;$('over').hidden=true;start(false);};
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Voxel Frontier\nPoints: ${a.pts||0}\nResult: ${a.kind||''}\nObjectives: ${a.goal||0}/${GOALS.length}\nMode: ${a.mode||''} · ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] voxel3d '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('voxel3d',a.pts||0,body);};
 
 /* ================= simulation step ================= */
 function step(dt){if(state!=='play')return;clock+=dt;

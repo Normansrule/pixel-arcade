@@ -10,6 +10,7 @@ import {DIFF,initBot,botStep,canSee} from './ai.js';
 import {Sound} from './sound.js';
 import {HUD} from './hud.js';
 import {crateTex} from './tex.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id),R=(a=1)=>Math.random()*a;
 const DT=1/60;
@@ -95,9 +96,8 @@ function showOver(){app='over';unlock();hud.show(false);document.body.classList.
  $('over').hidden=false;result={won,draw,credits:cr,pts:lastAward.pts,score:[...G.score]};}
 function score(t){return Math.round(t.stats.dmg+t.stats.k*100+t.stats.caps*300+t.stats.cp*2+t.stats.ret*50);}
 function award(won){const me=G.player,s=me.stats;const pts=score(me)+(won?500:0);lastAward={pts,won,k:s.k,d:s.d,dmg:Math.round(s.dmg),score:G.score.map(x=>x|0).join('-'),mode:MODES[G.mode].n,map:G.W.name,diff:DIFF[opt.diff].n,tank:me.H.n+' / '+me.T.n};
- const tok=5+Math.min(60,pts/40|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'ironclad';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'ironclad')||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/40|0);addRound(tok,won);saveBest('ironclad',pts);return tok;}
+function best(){return bestScore('ironclad');}
 function updateBest(){const b=best();$('best').textContent=b?`BEST ${b.toLocaleString()} PTS`:'';}
 
 /* ================= objectives: flags & control points ================= */
@@ -377,9 +377,9 @@ const seg=(id,key,num,cb)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySele
 seg('o-mode','mode',false);seg('o-diff','diff',true);seg('o-time','time',true);seg('o-sens','sens',true);
 seg('o-map','map',false,v=>{if(app==='menu'&&G.W&&G.W.id!==v){loadMap(v);toMenu();}});
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Ironclad\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0} · Damage: ${a.dmg||0}\nMode: ${a.mode||''} · Map: ${a.map||''} · CPU ${a.diff||''}\nTank: ${a.tank||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] ironclad '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('ironclad',a.pts||0,body);};
 
 /* ================= loop ================= */
 loadMap(opt.map);toMenu();

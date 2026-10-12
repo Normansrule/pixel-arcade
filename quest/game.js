@@ -11,6 +11,7 @@ import {Particles} from './fx.js';
 import {Enemy,Projectiles,Waves,KIND} from './actors.js';
 import {makePlayer,resetPlayer,updatePlayer,updateCamera,makeCam,upgradeSword,useStam} from './player.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const ID='wildquest';
@@ -406,9 +407,8 @@ function endRun(reason){if(run.end)return;run.end=true;run.overReason=reason;con
  $('stats').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]>0?'+':''}${r[2]}</td></tr>`).join('');
  const tok=award(total,won);$('otok').textContent=`+${tok} TOKENS · BEST ${best()} PTS · ${DIFF[opt.diff].n} · ${opt.len} MIN MOON`;$('over').hidden=false;menuT=0;}
 function award(pts,won){lastAward={pts,won,shrines:run.shrines,kills:P.kills,seeds:P.seeds,diff:DIFF[opt.diff].n.toLowerCase(),len:opt.len,time:fmt(run.len-run.clock)};const tok=5+Math.min(60,pts/150|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 
 /* ================= rendering ================= */
 const GodRays={uniforms:{tDiffuse:{value:null},uSun:{value:new THREE.Vector2(.5,.5)},uStr:{value:0}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
@@ -432,9 +432,9 @@ const seg=(id,key)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll
 seg('o-diff','diff');seg('o-len','len');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{if(run)run.end=true;toMenu();};
 $('cookgo').onclick=cook;$('cookx').onclick=closePanels;$('bh').onclick=()=>bless('heart');$('bs2').onclick=()=>bless('stamina');
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Wild Quest\nPoints: ${a.pts||0}\nResult: ${a.won?'victory':'defeat'} in ${a.time||''}\nShrines: ${a.shrines||0}/4 · Foes: ${a.kills||0} · Seeds: ${a.seeds||0}/20\nChallenge: ${a.diff||''} · Moon: ${a.len||20} min\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 
 /* ================= loop ================= */
 toMenu();

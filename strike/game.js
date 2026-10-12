@@ -13,6 +13,7 @@ import {buildViewmodel} from './viewmodel.js';
 import {Rig,hitActor,PALETTES} from './actors.js';
 import {Brain,DIFF,think,canSee} from './ai.js';
 import {HUD,mmss} from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,D2R=Math.PI/180,TAU=Math.PI*2;
 const MV={run:7.3,accel:11,friction:7.2,stop:2.4,airAccel:2.4,airCap:1.05,jump:7.1,grav:20,max:17,crouchMul:.5,adsMul:.66,slideBoost:3.8,slideFric:.85,slideT:.8,slideMin:5.2,slideMax:14,r:.38,h:1.8,hc:1.22,eye:1.62};
@@ -45,7 +46,7 @@ class Actor{constructor(id,name,team,isPlayer,pal,key){Object.assign(this,{id,na
   this.rig=new Rig(pal,key);this.rig.root.visible=false;scene.add(this.rig.root);if(!isPlayer)this.brain=new Brain(this);}
  eyeH(){return MV.eye-this.crouchV*.52-this.slideV*.62;}headH(){return 1.66-Math.max(this.crouchV,this.slideV)*.5;}
  gun(){return this.slots[this.cur];}}
-function roster(attract){for(const a of G.actors){scene.remove(a.rig.root);a.rig.dispose();}G.actors=[];const names=NAMES.slice().sort(()=>R()-.5);let user='';try{user=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+function roster(attract){for(const a of G.actors){scene.remove(a.rig.root);a.rig.dispose();}G.actors=[];const names=NAMES.slice().sort(()=>R()-.5);let user=userName();
  const tdm=G.mode==='tdm';const n=tdm?10:attract?7:8;let id=0;
  for(let i=0;i<n;i++){const human=!attract&&i===0;const team=tdm?(i<5?0:1):-1;let pal;
   if(tdm){const b=PALETTES[(i%5)+(team?4:0)]||PALETTES[i%PALETTES.length];pal={...b,acc:TEAM_ACC[team],suit:team?0x4e5c72:0x6e5e50};}else pal=PALETTES[i%PALETTES.length];
@@ -371,9 +372,8 @@ function endMatch(reason,winner){if(G.app!=='play')return;G.app='over';unlock();
  const accp=s.shots?Math.round(s.hits/s.shots*100):0;$('mystats').innerHTML=[['K / D',s.k+' / '+s.d],['ACCURACY',accp+'%'],['HEADSHOTS',s.hs],['BEST STREAK',s.best],['DAMAGE',Math.round(s.dmg)],['ASSISTS',s.a]].map(([k,v])=>`<div><b>${v}</b><span>${k}</span></div>`).join('');
  const tok=award(pts,won,place);$('otok').textContent=`+${tok} TOKENS · BEST ${best().toLocaleString()} PTS`;$('over').hidden=false;snd.music(0);snd.sting(won);menuA=0;}
 function award(pts,won,place){lastAward={pts,won,place,mode:G.mode,map:L.def.name,diff:DIFF[G.opt.diff].n,k:G.player.stats.k,d:G.player.stats.d,cls:CLASSES[G.opt.cls].name,team:G.mode==='tdm'?G.teamScore.join('-'):''};const tok=5+Math.min(60,pts/150|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'strike3d';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'strike3d')||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest('strike3d',pts);return tok;}
+function best(){return bestScore('strike3d');}
 function updateBest(){const b=best();$('best').textContent=b?'BEST · '+b.toLocaleString()+' PTS':'';}
 
 /* ================= HUD + menus ================= */
@@ -384,9 +384,9 @@ const clsDesc=()=>{$('clsd').textContent=G.opt.mode==='ladder'?'GUN LADDER: ever
 seg('o-mode','mode',false,clsDesc);seg('o-map','map',true,()=>{if(G.app==='menu')attractMode();});seg('o-cls','cls',true,clsDesc);seg('o-diff','diff');seg('o-len','len');
 seg('o-sens','sens');seg('o-asens','asens');seg('o-fov','fov');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-mus','mus',true,v=>snd.setMusic(v));clsDesc();
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Strike Zone\nScore: ${a.pts||0}\nResult: ${a.won?'win':'loss'}${a.place?' · place '+a.place:''}${a.team?' · '+a.team:''}\nMode: ${a.mode||''} · Map: ${a.map||''} · CPU ${a.diff||''} · Class ${a.cls||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] strike3d '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('strike3d',a.pts||0,body);};
 
 /* ================= boot + loop ================= */
 attractMode();

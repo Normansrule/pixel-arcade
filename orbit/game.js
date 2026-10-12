@@ -8,6 +8,7 @@ import {Coach,WARPS,PLANS} from './coach.js';
 import {MISSIONS,NOTEBOOK,DIAGRAMS,noteById} from './missions.js';
 import * as MD from './models.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id),V=THREE.Vector3,cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const {VERDA,LUNE,SUN}=P;const ID='orbitlab';
@@ -84,9 +85,8 @@ function endSession(){if(app==='results')return;if(F&&app==='flight')F=null;app=
  $('o-stats').innerHTML=[['Missions completed',s.done.map(id=>MISSIONS.find(m=>m.id===id).t).join(', ')||'—'],['Flights launched',s.flights],['Vessels lost',s.crashes],['Highest altitude',km(s.maxAlt)],['Top speed',nf(s.maxV)+' m/s'],['Career progress',`${career.done.length} / ${MISSIONS.length}`],['Funds',nf(career.funds)],['Notebook formulas',`${career.notes.length} / ${NOTEBOOK.length}`]].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
  $('o-tok').textContent=`+${tok} TOKENS · BEST ${best()} PTS`;}
 function award(s){const pts=s.pts;lastAward={pts,done:s.done.length,flights:s.flights,len:s.len,easy:opt.easy};const tok=5+Math.min(60,pts/20|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(s.done.length)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ addRound(tok,s.done.length);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 
 /* ===================== screens ===================== */
 const SCREENS=['menu','keys','hub','vab','hud','fover','pause','over'];
@@ -530,9 +530,9 @@ $('h-note').onclick=()=>openNote();$('h-end').onclick=()=>endSession();$('v-back
 $('v-grant').onclick=()=>{career.funds+=15000;sess.pts=Math.max(0,sess.pts-100);sess.grant++;save();refreshVab();toast('Emergency grant received (−100 pts)');};
 $('p-resume').onclick=()=>pause(false);$('p-revert').onclick=()=>{pause(false);revert();};$('p-vab').onclick=()=>{pause(false);toVab();};$('p-hub').onclick=()=>{pause(false);mode==='free'?toVab():toHub();};$('p-quit').onclick=()=>{pause(false);endSession();};
 $('o-again').onclick=()=>start();$('o-menu').onclick=toMenu;
-$('o-post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('o-post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Orbit Lab\nPoints: ${a.pts||0}\nMissions this session: ${a.done||0}\nFlights: ${a.flights||0}\nSession: ${a.len?a.len/60+' min':'endless'}${a.easy?' · easy physics':''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 addEventListener('resize',()=>{fxS&&(fxS.w=0);fxV&&(fxV.w=0);});
 
 toMenu();

@@ -12,6 +12,7 @@ import {DIFF,newBrain,drive,eyeOf,chestOf} from './ai.js';
 import {Sound} from './sound.js';
 import {makeMode,MISSIONS} from './modes.js';
 import * as HUD from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rr=(a,b)=>a+Math.random()*(b-a),ang=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const D2R=Math.PI/180,GRAV=16,PR=.35,EYE=1.62,CEYE=1.05,FOV=68,PI=Math.PI;
@@ -416,12 +417,11 @@ function finish(){const m=G.mode,me=P;const pts=Math.max(0,Math.round(m.points?m
  const before=prog.xp;prog.xp+=pts;try{localStorage.setItem('pxd_frontline_prog',JSON.stringify(prog));}catch(e){}
  const tok=award(pts,won);G.lastAward={pts,won,mode:m.kind,label:m.label,kills:me?me.stats.kills:0,deaths:me?me.stats.deaths:0,heads:me?me.stats.heads:0,diff:G.diff.n,res:G.over.res,xpBefore:before,xpAfter:prog.xp,tok,map:G.level.name};
  G.app='over';document.body.classList.remove('playing');if(document.exitPointerLock&&locked)document.exitPointerLock();HUD.showOver(G);}
-function award(pts,won){const tok=5+Math.min(60,pts/40|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
- const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'frontline';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-G.best=()=>{try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'frontline')||0);}catch(e){return 0;}};
-G.postScore=()=>{const a=G.lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+function award(pts,won){const tok=5+Math.min(60,pts/40|0);addRound(tok,won);saveBest('frontline',pts);return tok;}
+G.best=()=>bestScore('frontline');
+G.postScore=()=>{const a=G.lastAward||{};const u=userName();
  const body=`Game: Frontline Ops\nPoints: ${a.pts||0}\nResult: ${a.res||''}\nMode: ${a.label||a.mode||''} · ${a.map||''} · ${a.diff||''}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0} · Headshots: ${a.heads||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] frontline '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('frontline',a.pts||0,body);};
 
 /* ================= main step ================= */
 function step(dt){dt=Math.min(dt,.1);

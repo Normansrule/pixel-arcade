@@ -11,6 +11,7 @@ import {Sound} from './sound.js';
 import {sandbags} from './props.js';
 import {textures} from './tex.js';
 import {Rig,pose} from './actors.js';
+import {addRound,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id);
 const ID='longshot';
@@ -374,8 +375,7 @@ function showOver(){unlock();G.app='over';G.oa=0;$('hud').hidden=true;document.b
  const tok=award(pts,r.won,stars);$('otok').innerHTML=`+${tok} TOKENS · BEST ${(save.best[M.id]||0).toLocaleString()} · ★ ${after}/18`+(unl.length?` · <b>UNLOCKED: ${unl.join(', ')}</b>`:'');
  $('next').hidden=!r.won||G.mi>=MISSIONS.length-1;$('over').hidden=false;}
 function award(pts,won,stars){lastAward={pts,won,stars,mission:G.M.n,diff:DIFF[G.diff].n.toLowerCase(),rifle:G.rifle.n,longest:G.longest,acc:G.shots?Math.round(G.hits/G.shots*100):0};
- const tok=5+Math.min(60,pts/250|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
+ const tok=5+Math.min(60,pts/250|0);addRound(tok,won);saveBest(ID,pts);return tok;}
 
 /* ================= menu ================= */
 function buildMenu(){const o=save.opt,ts=totalStars();
@@ -392,9 +392,9 @@ function buildMenu(){const o=save.opt,ts=totalStars();
  $('tot').innerHTML=`<b>★ ${ts}</b> / 18 STARS`;}
 $('go').onclick=()=>start({reload:true});$('begin').onclick=()=>begin();$('again').onclick=()=>start({reload:true});$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='play';toMenu();};$('restart').onclick=()=>start({reload:true});
 $('next').onclick=()=>{if(G.mi<MISSIONS.length-1){save.opt.mission=G.mi+1;persist();start({reload:true});}else toMenu();};
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Long Shot\nPoints: ${a.pts||0}\nMission: ${a.mission||''} · ${a.won?'complete':'failed'} · ${a.stars||0} stars\nDifficulty: ${a.diff||''} · Rifle: ${a.rifle||''}\nLongest shot: ${a.longest||0} m · Accuracy: ${a.acc||0}%\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 
 /* ================= render ================= */
 function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio()))R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();

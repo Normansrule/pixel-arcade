@@ -15,6 +15,7 @@ import {FX} from './fx.js';
 import {Sound} from './sound.js';
 import {HUD,icon,drawMini} from './hud.js';
 import {V,cl,lerp,wrapA,ORD,fmtT,fmtClock,textSprite,sstep} from './util.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id);
 const DT=1/60,LIMIT=180,BOSS_LIMIT=165,INTRO=5;
@@ -241,9 +242,8 @@ function endRace(timeUp){phase='done';const ord=ranks();
 function award(me,timeUp){const n=racers.length,place=me.place,fin=!!me.fin;const table=n<=2?[1500,300]:[1000,800,650,500,400,300,200,100];
  const pts=Math.round((fin?(n<=1?800:table[place-1]||100):50)+me.berries*20+me.coins*50+(fin?Math.max(0,limit-me.fin)*4:0)+(me.stats.rings||0)*10+(me.stats.tricks||0)*15+(me.stats.mt||0)*5);
  const won=fin&&place===1;lastAward={pts,won,place,track:def.n,time:me.fin,driver:me.d.n,veh:def.veh,mode:raceMode,split:humansN()>1,diff:curDiff.n,cc:curCC.n};
- const tok=5+Math.min(60,pts/60|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return{pts,tok};}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/60|0);addRound(tok,won);saveBest(ID,pts);return{pts,tok};}
+function best(){return bestScore(ID);}
 
 function pause(on){if(on&&app==='race'){app='paused';$('pause').hidden=false;snd.stop();}else if(!on&&app==='paused'){app='race';$('pause').hidden=true;snd.startMusic(T.key);}}
 function toMenu(){clearWorld();gp=null;app='menu';views=[];document.body.classList.remove('playing','podium');show('menu');snd.stop();refreshMenu();menuScene();}
@@ -376,9 +376,9 @@ function retry(){if(raceMode==='gp'&&gp){const g=gp;g.idx=0;startGP(g.cup,{diff:
 $('cont').onclick=()=>{document.body.classList.remove('podium');if(app==='podium'){toMenu();return;}if(raceMode==='adventure')startHub(def.id);else if(raceMode==='gp'&&gp)nextGP();else toMenu();};
 $('again').onclick=()=>{document.body.classList.remove('podium');if(app==='podium'&&gp){startGP(gp.cup,{diff:gp.diff,cc:gp.cc,humans:gp.humans});return;}retry();};$('omenu').onclick=toMenu;
 $('d-go').onclick=()=>enterDoor(nearDoor);
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Critter Kart\nPoints: ${a.pts||0}\nTrack: ${a.track||''} (${a.veh||''})\nPlace: ${a.place?ORD(a.place):''}${a.time?' · '+fmtT(a.time):''}\nDriver: ${a.driver||''} · ${a.mode||''}${a.split?' split-screen':''} · ${a.cc||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 addEventListener('keydown',e=>{if((app==='results'||app==='podium')&&!$('over').hidden&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();$('cont').click();}});
 
 /* ================= loop ================= */

@@ -7,6 +7,7 @@ import {LEVELS,DISTRICTS,PACE} from './levels.js';
 import {buildLevel,setupDistrict,DPOST,HINT,Particles} from './world.js';
 import {Figure,Viewmodel} from './rig.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,TAU=Math.PI*2,rnd=(a=1)=>Math.random()*a;
 const DT=1/120,GHZ=20;
@@ -92,9 +93,8 @@ function endSession(){if(app==='over')return;if(!sess)newSession();unlock();app=
  startAttract(LI);const tok=award();$('otok').textContent=`+${tok} TOKENS · ${sess.medals.reduce((a,b)=>a+b,0)} MEDALS · ${sess.rivals} RIVAL WINS · BEST ${best().toLocaleString()} PTS`;showScr('over');}
 let lastAward=null;
 function award(){const pts=sess.score,won=sess.medals[2]+sess.medals[3]>0||sess.rivals>0;lastAward={pts,won,courses:Object.keys(sess.lv).length,medals:sess.medals.slice(),rivals:sess.rivals,len:opt.sess,tier:TIERS[opt.tier].n.toLowerCase()};
- const tok=5+Math.min(60,pts/150|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'runline';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'runline')||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/150|0);addRound(tok,won);saveBest('runline',pts);return tok;}
+function best(){return bestScore('runline');}
 
 /* ================= screens ================= */
 function showScr(id){for(const s of['menu','select','pause','done','over'])$(s).hidden=s!==id;$('keys').hidden=id!=='menu';if(id&&id!=='pause')$('hud').hidden=true;}
@@ -312,9 +312,9 @@ $('go').onclick=()=>{snd.init();newSession();toSelect();};$('endsess').onclick=(
 $('resume').onclick=()=>pause(false);$('prestart').onclick=()=>{pause(false);resetRun();};$('plevels').onclick=()=>toSelect();
 $('dnext').onclick=()=>startLevel(LI+1);$('dretry').onclick=()=>startLevel(LI);$('dlevels').onclick=()=>toSelect();
 $('again').onclick=()=>{newSession();toSelect();};$('omenu').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const m=a.medals||[0,0,0,0];const body=`Game: Runline\nScore: ${a.pts||0}\nCourses finished: ${a.courses||0} · Medals P${m[3]} G${m[2]} S${m[1]} B${m[0]} · Rival wins: ${a.rivals||0}\nSession: ${a.len||''} min · Rival ${a.tier||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] runline '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('runline',a.pts||0,body);};
 
 /* ================= boot + loop ================= */
 let last=performance.now();

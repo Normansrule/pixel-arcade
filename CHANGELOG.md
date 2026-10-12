@@ -6,6 +6,7 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 - **Repository layout:** tests moved to `tests/`, Python and Node tools to `tools/`.
 - **Engine:** `js/engine.js` split into 13 modules in `js/engine/`; the `A.gx` art kit moved from `games/sports1.js` to `js/gx.js`.
+- **3D kit:** all 31 worlds now share `js/kit3d/score.js` for the arcade profile, best scores and POST SCORE.
 - **Manifest:** `games/index.json` lists the engine modules and game packs in load order; `index.html`'s script tags, the tests and the docs generator all read it.
 - **Docs:** `tools/gen_docs.py` regenerates README counts and tables, `docs/GAMES.md` and the README art. New `docs/ARCHITECTURE.md`, `THIRD_PARTY.md`, this changelog, issue and pull request templates.
 - **CI (continuous integration):** the canvas game test runs in four parallel slices and checks that generated docs are current.

@@ -9,6 +9,7 @@ import {OUTFITS,EMOTES,makeRig,animRig,hold,muzzleWorld,makeBus} from './actor.j
 import {Particles,Tracers,Flashes,Shocks,Debris,makeStorm} from './fx.js';
 import {DIFF,initBot,planDrop,thinkBot} from './ai.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id);
 const BOTS=24,MATCH=600,RAD=.38,HT=1.8,STEP=.6,GRAV=26,MATMAX=500;
@@ -290,9 +291,8 @@ function showOver(){app='over';phase='done';document.body.classList.remove('play
  const tok=award(pts,won,place,me.kills);$('otok').textContent=`${pts} PTS · +${tok} TOKENS · BEST ${best()} PTS`;$('over').hidden=false;}
 let lastAward=null;
 function award(pts,won,place,kills){lastAward={pts,won,place,kills,diff:diff.n.toLowerCase(),mode:buildOn?'build':'no-build'};const tok=5+Math.min(60,pts/20|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'stormroyale';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'stormroyale')||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest('stormroyale',pts);return tok;}
+function best(){return bestScore('stormroyale');}
 
 /* ================= input ================= */
 const keys={},edge={};let mouseL=false,mouseR=false,mouseEdge=false,wheel=0,recoil=0,locked=false,wasLocked=false,sens=.0024,ffwd=false;
@@ -499,9 +499,9 @@ addEventListener('resize',()=>{if(fxStack)fxStack.setSize(innerWidth,innerHeight
 const seg=(id,key)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>{set(+b.dataset.v);snd.init();snd.play('click');});};
 seg('o-diff','diff');seg('o-build','build');
 $('go').onclick=()=>{start();try{canvas.requestPointerLock();}catch(e){}};$('again').onclick=()=>{start();try{canvas.requestPointerLock();}catch(e){}};$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{pause(false);toMenu();};$('specres').onclick=()=>finishSpectate();
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Storm Royale\nPoints: ${a.pts||0}\nPlacement: #${a.place||'?'} of ${BOTS+1}\nEliminations: ${a.kills||0}\nBots: ${a.diff||''} · Mode: ${a.mode||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] stormroyale '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('stormroyale',a.pts||0,body);};
 
 /* ================= context for the bots ================= */
 const G={world,build,get actors(){return actors;},get loot(){return loot;},get containers(){return containers;},get storm(){const s=stormS;return{state:s.state,phase:s.phase,count:s.count,cur:s.cur,next:s.next||s.cur,left:s.left};},get time(){return time;},get diff(){return diff;},get busT(){return busT;},get buildOn(){return buildOn;},

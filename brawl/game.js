@@ -9,6 +9,7 @@ import {makeRig,animate} from './rig.js';
 import {Particles,Trail,Shocks,Sparks,Beams,FX} from './fx.js';
 import {think} from './ai.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a,DT=1/60;
 const SLOT=['#ff4d4d','#3d8bff','#ffd23a','#4ade80'],SLOTC=SLOT.map(c=>new THREE.Color(c));
@@ -116,9 +117,8 @@ function showOver(){app='over';$('hud').hidden=true;document.body.classList.remo
  $('over').hidden=false;overT=0;snd.say((w.human>=0&&!two?'Victory! ':'')+'The winner is '+w.def.name.toLowerCase()+'!',.95,.6);}
 function award(me,won,rank,n){if(!me)return 0;const s=me.stats;const pts=Math.max(0,Math.round(s.kos*100+s.dealt-s.falls*40-s.sds*60+(won?500:0)+(n-rank)*60+s.maxCombo*10));
  lastAward={pts,won,kos:s.kos,falls:s.falls,dealt:Math.round(s.dealt),rank,n,fighter:me.def.name,stage:world.stage.name,mode:opt.mode?`stock ${opt.stock}`:`time ${opt.time}m`,lv:opt.lv,two:opt.humans===2};
- const tok=5+Math.min(60,pts/20|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/20|0);addRound(tok,won);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 
 /* ================= simulation events → juice ================= */
 let hype=0;const tv=new V(),tv2=new V();
@@ -392,9 +392,9 @@ $('o-lv').innerHTML=Array.from({length:9},(_,i)=>`<button data-v="${i+1}">${i+1}
 $('o-st').innerHTML=STAGES.map((s,i)=>`<button data-v="${i}">${s.name}</button>`).join('');
 seg('o-mode','mode');seg('o-time','time');seg('o-stock','stock');seg('o-n','n');seg('o-pl','humans');seg('o-lv','lv');seg('o-st','stage');seg('o-it','items');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Platform Brawl\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} (#${a.rank||'?'} of ${a.n||'?'})\nFighter: ${a.fighter||''} · Stage: ${a.stage||''}\nKOs: ${a.kos||0} · Falls: ${a.falls||0} · Damage dealt: ${a.dealt||0}%\nMode: ${a.mode||''} · CPU level ${a.lv||''}${a.two?' · 2P local':''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 
 /* ================= loop ================= */
 toMenu();$('loading').style.opacity=0;

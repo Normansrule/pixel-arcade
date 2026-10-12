@@ -8,6 +8,7 @@ import * as S from './sim.js';
 import {Diorama,makeFood,TEAM_X,TEAM_Z,SHOP_Y,SHOP_Z,shopX,BAT_X,BAT_Z} from './scene.js';
 import {makePet} from './models.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id);
 const SHOP_TIME=60,FACE_TEAM=Math.PI/2-.42,FACE_SHOP=.25;
@@ -182,9 +183,9 @@ function portrait(id,food){const k=(food?'f:':'p:')+id;if(PORT.has(k))return POR
 function score(){return S.score(G);}
 function award(){const pts=score(),won=G.over==='win';const team=G.team.filter(Boolean);const mvp=team.slice().sort((a,b)=>b.dmg-a.dmg)[0];
  lastAward={pts,won,wins:G.wins,lives:G.lives,turns:G.turn,record:`${G.wins}-${G.losses}-${G.draws}`,diff:['casual','normal','tough'][G.diff],mvp:mvp?petById(mvp.id).n:''};
- const tok=5+Math.min(60,pts/25|0);try{const p=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};p.played++;p.tokens+=tok;if(won)p.wins++;localStorage.setItem('pxd_profile',JSON.stringify(p));
-  const k='pxd_hs_'+(p.user?p.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);localStorage.setItem('petbrawl_best',Math.max(+(localStorage.getItem('petbrawl_best')||0),G.wins));}catch(e){}return tok;}
-function best(){try{const p=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(p.user?p.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/25|0);addRound(tok,won);saveBest(ID,pts);
+  try{localStorage.setItem('petbrawl_best',Math.max(+(localStorage.getItem('petbrawl_best')||0),G.wins));}catch(e){}return tok;}
+function best(){return bestScore(ID);}
 function showOver(){app='over';const tok=award();const won=G.over==='win';$('oeye').textContent=won?'RUN COMPLETE · 10 TROPHIES':'RUN OVER · OUT OF LIVES';$('ores').textContent=won?'CHAMPIONS!':'KNOCKED OUT';$('ores').style.color=won?'#ffd23a':'#ff5a5a';
  const st=[['TROPHIES',G.wins+'/10'],['LIVES LEFT',G.lives],['TURNS',G.turn],['RECORD',`${G.wins}-${G.losses}-${G.draws}`],['SCORE',lastAward.pts]];$('ostats').innerHTML=st.map(([a,b])=>`<div><i>${a}</i><b>${b}</b></div>`).join('');
  const team=G.team.filter(Boolean),mvp=team.slice().sort((a,b)=>b.dmg-a.dmg)[0];
@@ -210,9 +211,9 @@ $('go').onclick=()=>newRun();$('again').onclick=()=>newRun();$('omenu').onclick=
 $('b-roll').onclick=()=>act('roll');$('b-freeze').onclick=()=>act('freeze');$('b-sell').onclick=()=>act('sell');$('b-end').onclick=()=>act('end');
 $('speed').querySelectorAll('button').forEach(b=>b.onclick=()=>{const v=+b.dataset.v;if(v===99){skipBattle();return;}setSpeed(v);});
 function setSpeed(v){speed=v;$('speed').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));}
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Pet Brawl\nScore: ${a.pts||0}\nResult: ${a.won?'champion':'knocked out'} · ${a.wins||0} trophies · record ${a.record||''}\nTurns: ${a.turns||0} · lives left ${a.lives??''}\nMVP: ${a.mvp||''} · ${a.diff||''} ghosts\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 addEventListener('keydown',e=>{if(e.repeat)return;snd.init();const c=e.code;
  if(indexOpen){if(c==='Escape'||c==='KeyI')closeIndex();return;}
  if(c==='KeyI'&&app!=='menu'){openIndex();return;}

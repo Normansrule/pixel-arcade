@@ -16,6 +16,7 @@ import {InvUI,newGrid,autoAdd,removeIt,loGrids,loItems,loKg,loValue,countId,take
 import {loadProfile,saveProfile,questRaid,initQuests,freeKit,level} from './profile.js';
 import {UI} from './ui.js';
 import {HUD,mmss} from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id),V=THREE.Vector3,cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,TAU=Math.PI*2,D2R=Math.PI/180;
 const HPMAX={head:35,thorax:85,stomach:70,larm:60,rarm:60,lleg:65,rleg:65};
@@ -154,9 +155,8 @@ function endRaid(kind,info={}){if(G.app!=='raid')return;const raid=G.raid,p=prof
  if(survived)snd.extracted();}
 let lastAward={tok:0};
 function award(pts,won,info){let tok=5+Math.min(60,pts/40|0);lastAward={pts,won,tok,...info,diff:G.diff.n,cond:variant.n};
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'exfil';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'exfil')||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest('exfil',pts);return tok;}
+function best(){return bestScore('exfil');}
 function toMenu(){G.app='menu';unlock();closeInv(true);$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=true;$('menu').hidden=false;$('scope').hidden=true;document.body.classList.remove('playing');
  clearWorld();for(const c of MAP.conts){c.grid=null;}menuT=0;applyVariant(VARIANTS[SHOTS[menuShot%SHOTS.length].v]);P=null;G.P=null;G.raid=null;ui.show(ui.tab==='raid'?'raid':ui.tab);torch.intensity=0;mlight.intensity=0;}
 
@@ -437,9 +437,9 @@ function seg(id,key,num=true){const el=$(id);const set=(v,init)=>{prof().opt[key
 seg('o-var','var');seg('o-time','time');seg('o-diff','diff');seg('o-sens','sens');
 $('go').onclick=()=>{snd.init();startRaid();};$('freekit').onclick=()=>{freeKit(prof());saveProfile(prof());snd.buy();ui.raidPane();};
 $('again').onclick=()=>{snd.click();toMenu();};$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='raid';$('pause').hidden=true;endRaid('mia',{abandon:true});};
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: EXFIL\nRaid score: ${a.pts||0}\nResult: ${a.kind||''}${a.ex?' via '+a.ex:''}\nKills: ${a.kills||0} · Loot found: ${a.found||0} CR\nSurvival streak: ${a.streak||0}\nHostiles: ${a.diff||''} · ${a.cond||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] exfil '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('exfil',a.pts||0,body);};
 addEventListener('pointerdown',()=>snd.init(),{once:true});
 
 /* ================= boot + loop ================= */

@@ -14,6 +14,7 @@ import {Particles,Beams,Shocks,Decals,LightPool} from './fx.js';
 import {Sound} from './sound.js';
 import {BOTDIFF,CALLSIGNS,newBrain,think} from './ai.js';
 import {HUD,TEAMCSS} from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id),C=(r,g,b)=>new THREE.Color(r,g,b);
 const MODES={ffa:{n:'FREE-FOR-ALL',caps:[15,25,40],team:false,resp:3,ann:'Free for all'},team:{n:'TEAM SLAYER',caps:[30,50,75],team:true,resp:4,ann:'Team slayer'},koth:{n:'KING OF THE HILL',caps:[60,100,150],team:true,resp:4,ann:'King of the hill'}};
@@ -325,9 +326,8 @@ function showOver(){G.app='over';unlock();if(G.me&&G.me.alive){G.me.model.root.v
 let lastAward=null;
 function award(me,won,place){const s=me.stats,mc=Object.values(s.medals).reduce((a,b)=>a+b,0);const pts=Math.max(0,s.kills*100+s.assists*40+mc*20-s.deaths*10+(won?300:0)+Math.floor(s.hill)*4+(G.M.team?0:Math.max(0,(5-place))*40));
  lastAward={pts,won,place,kills:s.kills,deaths:s.deaths,mode:G.mode,map:G.mapDef.name,diff:BOTDIFF[G.opt.diff].n.toLowerCase(),team:G.teamScore.map(Math.floor).join('-')};
- const tok=5+Math.min(60,pts/40|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'novaarena';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'novaarena')||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/40|0);addRound(tok,won);saveBest('novaarena',pts);return tok;}
+function best(){return bestScore('novaarena');}
 function showBest(){if(typeof segSync!=='undefined')segSync.forEach(f=>f());const b=best();$('best').textContent=b?`YOUR BEST · ${b} PTS`:'';$('mapdesc').textContent=MAPS[G.opt.map].sub+' — '+MAPS[G.opt.map].desc;}
 
 /* ================= game loop ================= */
@@ -437,9 +437,9 @@ const segSync=[];const seg=(id,key,num=true,cb)=>{const el=$(id);segSync.push(()
 seg('o-mode','mode',false);seg('o-map','map',true,()=>{if(G.app==='menu')attractMode();});seg('o-diff','diff');seg('o-time','time');seg('o-cap','cap');
 seg('o-sens','sens');seg('o-fov','fov');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-mus','mus',true,v=>{snd.setMusic(v);snd.music(v>0&&G.app!=='menu',0);});seg('o-ann','ann',true,v=>snd.annOn=!!v);
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Nova Arena\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'}${a.mode==='ffa'?' · place '+(a.place||'-'):' · '+(a.team||'')}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0}\nMode: ${(MODES[a.mode]||{}).n||''} · ${a.map||''} · ${a.diff||''} bots\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] novaarena '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('novaarena',a.pts||0,body);};
 
 /* ================= boot ================= */
 attractMode();

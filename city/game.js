@@ -11,6 +11,7 @@ import {Missions,KIND} from './missions.js';
 import {Particles,Skids,Beams} from './fx.js';
 import {Sound,STATIONS} from './sound.js';
 import {Hud} from './hud.js';
+import {addRound,bestKey,postScore,saveBest,userName} from '../js/kit3d/score.js';
 const V=THREE.Vector3,$=id=>document.getElementById(id);
 const DT=1/60;
 
@@ -129,12 +130,12 @@ function toMenu(){G.app='menu';G.missions&&G.missions.cleanup();$('menu').hidden
  if(document.pointerLockElement)document.exitPointerLock();menuT=0;G.hour=18.4;career();
  if(!G.traffic.cars.length){for(let i=0;i<26;i++)G.traffic.spawnOne(60,150,0,400,true);}}
 function career(){let best=0;try{best=+(localStorage.getItem(hsKey())||0);}catch(e){}$('career').textContent=`BEST SCORE ${best.toLocaleString('en-US')} · GARAGE: ${G.owned.map(id=>SPECS[id].name).join(', ')}`;}
-function hsKey(){let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}return'pxd_hs_'+(u?u.toLowerCase()+'_':'')+'neonbay';}
+function hsKey(){return bestKey('neonbay');}
 function score(){return Math.max(0,Math.round(G.stats.earned+G.rep*10));}
 let lastAward=null;
 function endDay(){G.app='over';G.missions.cleanup();G.snd.hornOn(false);if(document.pointerLockElement)document.exitPointerLock();$('hud').hidden=true;document.body.classList.remove('playing');G.hud.togglePhone(false);G.hud.openMap(false);G.hud.closeShop();
  const s=G.stats,sc=score();const won=s.earned>=5000;let tok=5+Math.min(60,sc/250|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));const k=hsKey();if(+(localStorage.getItem(k)||0)<sc)localStorage.setItem(k,sc);}catch(e){}
+ addRound(tok,won);saveBest('neonbay',sc);
  lastAward={score:sc,cash:G.cash,earned:s.earned,rep:G.rep,missions:G.missions.passed,best:s.bestRace,len:G.opt.len,won};
  $('ores').textContent=won?'BIG DAY':'DAY DONE';$('oeye').textContent=`THE SUN'S UP · ${G.opt.len}-MINUTE DAY · ${G.rank()}`;$('ofs').textContent=sc.toLocaleString('en-US')+' PTS';
  const rows=[['CASH IN HAND',fmtCash(G.cash)],['EARNED TODAY',fmtCash(s.earned)],['SPENT',fmtCash(s.spent)],['REPUTATION',G.rep+' · '+G.rank()],['MISSIONS PASSED',G.missions.passed+(s.failed?' · '+s.failed+' failed':'')],['BEST RACE TIME',fmtRace(s.bestRace)],['BEST TRIAL TIME',fmtRace(s.bestTrial)],['UNIQUE STUNTS',s.stunts+' / '+G.W.stunts.length],['PHOTOS',s.photos],['MOST WANTED','★'.repeat(G.police.maxStars)||'—'],['TIMES BUSTED',s.busted]];
@@ -309,9 +310,9 @@ function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;frame(dt);req
 const seg=(id,key)=>{const el=$(id);const set=v=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(G.opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
 seg('o-len','len');seg('o-cops','cops');seg('o-traffic','traffic');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Neon Bay\nScore: ${a.score||0}\nEarned: ${fmtCash(a.earned||0)} · Cash: ${fmtCash(a.cash||0)}\nRep: ${a.rep||0} · Missions passed: ${a.missions||0}\nBest race: ${fmtRace(a.best)}\nDay length: ${a.len||''} min\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] neonbay '+(a.score||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('neonbay',a.score||0,body);};
 addEventListener('pointerdown',()=>{if(G.snd&&G.app==='menu')G.snd.init();},{once:false});
 
 /* ================= test hooks ================= */

@@ -8,6 +8,7 @@ import {SKILL,think,hostile,leadPoint,gunnerAim} from './ai.js';
 import {MISSIONS,DOGFIGHT,CARRIER_START,CARRIER_DIR,CARRIER_SPEED,PORT} from './missions.js';
 import {HUD} from './hud.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,Qt=THREE.Quaternion,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a,rs=(a=1)=>(Math.random()*2-1)*a;
 const DT=1/60,ID='skylancers';
@@ -108,9 +109,8 @@ function showOver(){G.app='over';unlock();$('hud').hidden=true;document.body.cla
  const next=opts.mode==='campaign'&&won&&opts.mi<MISSIONS.length-1;$('o-next').hidden=!next;showPanel('over');}
 let lastAward=null;
 function award(pts,won){lastAward={pts,won,mission:G.mission.name,stars:G.stars,kills:G.stats.kills,plane:AC[opts.plane].name,clock:opts.clock};const tok=5+Math.min(60,pts/60|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 function saveOpts(){try{localStorage.setItem('pxd_skylancers_opt',JSON.stringify(opts));}catch(e){}}
 
 /* ================= scoring + damage ================= */
@@ -414,9 +414,9 @@ function renderMenu(){if(!unlocked(opts.plane))opts.plane='wren';if(!mUnlocked(o
 $('go').onclick=()=>{snd.init();snd.play('ui');brief();};$('launch').onclick=()=>launch();$('b-back').onclick=()=>toMenu();
 $('resume').onclick=()=>pause(false);$('quit').onclick=()=>toMenu();$('again').onclick=()=>{brief();};$('o-menu').onclick=()=>toMenu();
 $('o-next').onclick=()=>{opts.mi=Math.min(MISSIONS.length-1,opts.mi+1);const rec=MISSIONS[opts.mi].plane;if(unlocked(rec))opts.plane=rec;saveOpts();brief();};
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Sky Lancers\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} · ${a.mission||''} · ${'★'.repeat(a.stars||0)}\nAir kills: ${a.kills||0}\nAircraft: ${a.plane||''} · Time limit ${fmt(a.clock||0)}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 
 /* ================= loop ================= */
 attract();renderMenu();showPanel('menu');

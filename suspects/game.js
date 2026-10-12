@@ -8,6 +8,7 @@ import {buildShip,drawFog,FOG,makeEnv,Particles,buildSpace} from './world.js';
 import {makeCrew,animate,setGhost,makeBody,animateBody,portrait,HATS} from './crew.js';
 import {TaskUI} from './tasks.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
@@ -292,11 +293,10 @@ function showOver(){app='over';$('hud').hidden=true;document.body.classList.remo
  $('over').hidden=false;overT=0;menuStats();}
 function award(won){const p=sim.player;const pts=p.sab?p.stats.kills*80+p.stats.sabotages*10+(p.alive?60:0)+(won?300:0):p.stats.tasks*25+p.stats.right*60+p.stats.reports*20+(p.alive?50:0)+(won?250:0);
  const tok=5+Math.min(60,pts/20|0);lastAward={pts,won,role:p.sab?'saboteur':'crew',kills:p.stats.kills,tasks:p.stats.tasks,right:p.stats.right,why:sim.reason,diff:AI.DIFF[sim.o.diff].n.toLowerCase(),sabs:sim.o.sabs};
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'suspects';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}
+ addRound(tok,won);saveBest('suspects',pts);
  try{const s=JSON.parse(localStorage.getItem('pxd_suspects_stats'))||{};s.played=(s.played||0)+1;const r=p.sab?'sab':'crew';s[r]=(s[r]||0)+1;if(won)s[r+'Wins']=(s[r+'Wins']||0)+1;s.kills=(s.kills||0)+p.stats.kills;s.tasks=(s.tasks||0)+p.stats.tasks;s.right=(s.right||0)+p.stats.right;s.best=Math.max(s.best||0,pts);localStorage.setItem('pxd_suspects_stats',JSON.stringify(s));}catch(e){}
  return{pts,tok};}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'suspects')||0);}catch(e){return 0;}}
+function best(){return bestScore('suspects');}
 function menuStats(){let s={};try{s=JSON.parse(localStorage.getItem('pxd_suspects_stats'))||{};}catch(e){}$('mstats').innerHTML=s.played?`${s.played} GAMES · CREW ${s.crewWins||0}/${s.crew||0} WON · SABOTEUR ${s.sabWins||0}/${s.sab||0} WON<br>${s.tasks||0} TASKS · ${s.kills||0} K.O. · ${s.right||0} CORRECT VOTES · BEST ${s.best||0} PTS`:'';}
 
 /* ================= main loop ================= */
@@ -326,9 +326,9 @@ $('o-color').innerHTML=CREW.map((c,i)=>`<button data-v="${i}" title="${c.n}" sty
 $('o-hat').innerHTML=HATS.map((h,i)=>`<button data-v="${i}" title="${h.n}"><img src="${portrait('#c9d2e6',h.id,false,48)}" alt="${h.n}"></button>`).join('');
 seg('o-role','role');seg('o-sabs','sabs');seg('o-diff','diff');seg('o-clock','clock');seg('o-conf','conf');seg('o-color','color');seg('o-hat','hat');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Starship Suspects\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} as ${a.role||''} (${WIN[a.why]||''})\n${a.role==='saboteur'?`Knock-outs: ${a.kills||0}`:`Tasks: ${a.tasks||0} · Correct votes: ${a.right||0}`}\nBots: ${a.diff||''} · Saboteurs: ${a.sabs||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] suspects '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('suspects',a.pts||0,body);};
 
 toMenu();
 let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);

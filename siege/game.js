@@ -13,6 +13,7 @@ import {Sound} from './sound.js';
 import {initGadgets} from './gadgets.js';
 import {planRound,teamTick,think,Brain} from './ai.js';
 import {HUD} from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,D2R=Math.PI/180;
 const END_T=5.5,PLANT_T=6,DISARM_T=6,DEFUSE_RUN=45,CAP_T=10,REIN_T=2.6,BAR_T=1.2,HREIN_T=2.2,GRAV=15,DT=1/60,REIN_POOL=10;
@@ -57,7 +58,7 @@ const fwd=a=>new V(-Math.sin(a.yaw),0,-Math.cos(a.yaw));
 const viewDir=(a,out=new V())=>{const y=a.yaw+a.recoil.x*D2R,p=a.pitch+a.recoil.y*D2R;return out.set(-Math.sin(y)*Math.cos(p),Math.sin(p),-Math.cos(y)*Math.cos(p));};
 const eyePos=a=>{const r=new V(Math.cos(a.yaw),0,-Math.sin(a.yaw));return new V(a.pos.x+r.x*a.leanV*.36,a.pos.y+a.eye,a.pos.z+r.z*a.leanV*.36);};
 
-function roster(attract){for(const a of G.agents)if(a.rig)scene.remove(a.rig.root);G.agents=[];const names=NAMES.slice().sort(()=>R()-.5);let id=0;let user='';try{user=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+function roster(attract){for(const a of G.agents)if(a.rig)scene.remove(a.rig.root);G.agents=[];const names=NAMES.slice().sort(()=>R()-.5);let id=0;let user=userName();
  for(let s=0;s<2;s++)for(let i=0;i<5;i++){const human=!attract&&s===0&&i===0;G.agents.push(new Agent(id++,human?(user?user.toUpperCase().slice(0,10):'YOU'):names.pop(),s,human));}G.player=G.agents.find(a=>a.human)||null;}
 
 /* ================= match flow ================= */
@@ -395,9 +396,8 @@ function endMatch(){G.app='over';unlock();$('pick').hidden=true;$('ban').hidden=
  $('stats').innerHTML='<tr><th>OPERATOR</th><th>K</th><th>D</th><th>A</th><th>BREACH</th><th>PLANT</th><th>SCORE</th></tr>'+[0,1].map(s=>rows(s).map(a=>`<tr class="s${s}${a.human?' me':''}"><td>${a.name}<i>${a.op?a.op.n:''}</i>${a===mvp?'<span class="mvp">MVP</span>':''}</td><td>${a.stats.k}</td><td>${a.stats.d}</td><td>${a.stats.a}</td><td>${a.stats.breach||0}</td><td>${a.stats.plant||0}</td><td>${a.stats.score}</td></tr>`).join('')).join('');
  G.mvpMatch=mvp;menuA=0;const tok=award(G.player,won);$('otok').textContent=G.player?`+${tok} TOKENS · BEST ${best()} PTS`:'';$('over').hidden=false;}
 function award(me,won){if(!me)return 0;const s=me.stats;const pts=s.score+G.score[0]*120+(won?500:0);lastAward={pts,won,score:`${G.score[0]}-${G.score[1]}`,k:s.k,d:s.d,diff:DIFF[G.opt.diff].n.toLowerCase(),mode:G.opt.mode};
- const tok=5+Math.min(60,pts/40|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played=(pr.played||0)+1;pr.tokens=(pr.tokens||0)+tok;if(won)pr.wins=(pr.wins||0)+1;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'fortbreach';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'fortbreach')||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/40|0);addRound(tok,won);saveBest('fortbreach',pts);return tok;}
+function best(){return bestScore('fortbreach');}
 function toMenu(){unlock();['menu','keys'].forEach(id=>$(id).hidden=false);['over','pause','pick','ban'].forEach(id=>$(id).hidden=true);document.body.classList.remove('playing');hud.board(false);snd.ambience(null,false);snd.drone(0);attractMode();}
 function attractMode(){G.attract=true;G.diff=DIFF[2];G.startAtk=R()<.5;G.score=[0,0];G.round=0;G.opt.skipPick=false;roster(true);autoPick();startRound();G.app='menu';hud.show(false);}
 
@@ -414,9 +414,9 @@ const seg=(id,key,num=true)=>{const el=$(id);if(!el)return;const set=v=>{G.opt[k
 seg('o-side','side',false);seg('o-diff','diff');seg('o-len','len');seg('o-mode','mode',false);seg('o-bans','bans');seg('o-sens','sens');seg('o-vol','vol');
 $('o-vol').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>snd.setVol(G.opt.vol)));
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Fortress Breach\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\nMode: ${a.mode||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] fortbreach '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('fortbreach',a.pts||0,body);};
 let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{if(world){step(dt);render();}}catch(e){console.error(e);}if(!window.__manual)requestAnimationFrame(loop);}
 setTimeout(()=>{boot();requestAnimationFrame(loop);},30);
 

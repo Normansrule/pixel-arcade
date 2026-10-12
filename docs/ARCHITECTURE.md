@@ -5,7 +5,7 @@ Pixel Arcade is a static website with no build step. GitHub Pages serves `main` 
 ```
 index.html ── js/engine/*.js ── js/gx.js ── games/*.js        455 canvas cabinets + hub entries for the 3D worlds
            └─ js/hero.js (Three.js lobby hero)
-<folder>/index.html ── <folder>/game.js (+ modules) ── vendor/three.module.min.js, js/fx3d.js   31 full-3D worlds
+<folder>/index.html ── <folder>/game.js (+ modules) ── vendor/, js/fx3d.js, js/kit3d/      31 full-3D worlds
 builder/                                                       2D + 3D game builder
 sw.js + offline.json + manifest.webmanifest                    installable offline web app
 desktop/                                                       Electron app (arcade:// scheme)
@@ -50,6 +50,8 @@ Scores stay in `localStorage` (`pxd_profile`, `pxd_hs_<user>_<id>`). Posting a s
 ## Full-3D worlds
 
 Each world is a folder (`city/`, `zombies/`, `rocket/`…) with an `index.html`, a `game.js` entry module and its own modules. They use Three.js r160 from `vendor/` and `js/fx3d.js`, whose `cinematic()` sets up ACES tone mapping, ambient occlusion, bloom, a colour grade and SMAA (Subpixel Morphological Anti-Aliasing); `bindQualityKey()` makes **G** cycle low, medium and ultra.
+
+Code the worlds share lives in `js/kit3d/`. So far that is `score.js`: the arcade profile (`addRound`), best scores (`bestScore`, `saveBest`, `bestKey`), the player's name (`userName`) and POST SCORE (`postScore`), using the same storage keys and issue title as the canvas engine. Pointer lock, gamepad, synthesized audio, procedural textures and the menu and results screens are still copied per world; they are the next candidates for the kit.
 
 All worlds follow the same conventions: an original name and design, a round time limit with a results screen, CPU opponents with difficulty levels, `pxd_profile` and high-score updates, a POST SCORE button, a "← ARCADE" link back to the hub, local fonts from `fonts/`, synthesized audio, procedural textures, and `window.<ID>` test hooks. Folder names are part of public URLs, so they never change.
 

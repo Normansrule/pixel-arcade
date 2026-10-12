@@ -11,6 +11,7 @@ import {Lead,Bot} from './ai.js';
 import {Scorer} from './score.js';
 import {Sound} from './sound.js';
 import {ctex,merge,M4,cl,lerp} from './util.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),rnd=(a=1)=>Math.random()*a;
 const ID='sideways';
@@ -86,9 +87,8 @@ function showOver(){app='over';showOnly('over');document.body.classList.remove('
  const tok=award(pts,m>=0,m);$('otok').innerHTML=`<b>+$${num(earned)}</b> EARNED · BANK $${num(save.money)} · +${tok} TOKENS · BEST ${num(best())} PTS`;
  if(lead)leadMesh.visible=false;}
 function award(pts,won,m){lastAward={pts,won,medal:m>=0?MEDALS[m].n:'none',combo:scorer.bestCombo,track:opt.track,time:opt.time,tandem:!!lead,car:spec().name};
- const tok=5+Math.min(60,pts/6000|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/6000|0);addRound(tok,won);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 function pause(on){if(on&&app==='run'){app='paused';showOnly('pause');document.body.classList.remove('playing');snd.mute();}else if(!on&&app==='paused'){app='run';showOnly('hud');document.body.classList.add('playing');}}
 function resetCar(){if(!car)return;scorer.lose('RESET');if(W.B){const B=W.B,i=(nearest(B,car.x,car.z,car.i)-4+B.n)%B.n;car.reset(B.x[i],B.z[i],Math.atan2(B.tx[i],B.tz[i]));car.i=i;}else{const s=W.spawn;car.reset(s.x,s.z,s.yaw);}placeY(car);camSnap=true;popMsg('RESET','info');}
 
@@ -357,9 +357,9 @@ seg('o-time','time',()=>refreshMenu());seg('o-diff','diff');seg('o-trans','auto'
 $('o-assist').value=opt.assist;$('o-assistv').textContent=opt.assist+'%';$('o-assist').oninput=e=>{opt.assist=+e.target.value;$('o-assistv').textContent=opt.assist+'%';persistOpt();if(car)car.assist=opt.assist/100;};
 $('go').onclick=()=>start();$('gar').onclick=()=>{snd.init();openGarage();};$('gback').onclick=()=>closeGarage();$('gdrive').onclick=()=>closeGarage('run');
 $('again').onclick=()=>start();$('omenu').onclick=toMenu;$('ogar').onclick=()=>openGarage();$('resume').onclick=()=>pause(false);$('restart').onclick=()=>start();$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Sideways\nPoints: ${a.pts||0}\nMedal: ${a.medal||'none'} · Best combo: ${a.combo||0}\nTrack: ${a.track||''} · ${a.time||''} min${a.tandem?' · tandem':''}\nCar: ${a.car||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 
 /* ================= boot + loop ================= */
 loadVenue(opt.track);buildPlayer();toMenu();setTimeout(()=>$('load').classList.add('off'),60);

@@ -7,6 +7,7 @@ import {makeMats,makeEnv,buildStage,Beans,Particles,Confetti,COLORS,PATTERNS,HAT
 import {ROUNDS,RACES,SURV,buildRound} from './rounds.js';
 import {DIFF,initBot,think} from './ai.js';
 import {Sound} from './sound.js';
+import {addRound,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -150,8 +151,7 @@ function showOver(){app='over';phase='over';$('hud').hidden=true;document.body.c
 let lastAward=null;
 function award(pts,won){lastAward={pts,won,rounds:show.res.length,diff:diff.n.toLowerCase(),show:show.practice?'practice':show.list.length===3?'quick':'full',best:show.res.filter(r=>r.res==='Q'||r.res==='W').length};
  prof.kudos+=pts;if(won)prof.crowns++;prof.shows++;prof.best=Math.max(prof.best||0,pts);saveProf();
- const tok=5+Math.min(60,pts/10|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'tumble';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
+ const tok=5+Math.min(60,pts/10|0);addRound(tok,won);saveBest('tumble',pts);return tok;}
 function toMenu(){app='menu';phase='lobby';show=null;G.playing=false;hideAll();$('menu').hidden=false;$('keys').hidden=false;$('hud').hidden=true;document.body.classList.remove('playing');try{document.exitPointerLock();}catch(e){}
  looks[0]={...prof.look};const field=[me,...beans.slice(1,8)];for(let i=1;i<8;i++)looks[i]=randomLook();setupRound('lobby',field);me.place(R.podium.x,R.podium.y+.05,R.podium.z,Math.PI);me.cele=false;me.menuPose=true;
  field.forEach((b,i)=>{if(b===me)return;b.cele=true;const a=(i-4)*.42+(i%2?.12:-.12),r=4.5+(i%3);b.place(R.podium.x+Math.sin(a)*r*1.2,.05,R.podium.z+3+Math.cos(a)*r*.7,Math.PI+a*.3);});refreshMenu();snd.ac&&snd.setMusic(true,.06);}
@@ -324,9 +324,9 @@ function refreshMenu(){const L=prof.look;
  if(!patOK(L.pat))L.pat=0;if(!hatOK(L.hat))L.hat=0;looks[0]={...L};if(app==='menu')vis.setLook(0,looks[0]);
  $('prof').innerHTML=`<b>${prof.crowns}</b> CROWNS · <b>${prof.kudos}</b> KUDOS · ${prof.shows} SHOWS · BEST ${prof.best||0}`;}
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Tumble Royale\nPoints: ${a.pts||0}\nResult: ${a.won?'crowned':'eliminated'}\nRounds qualified: ${a.best||0} of ${a.rounds||0}\nShow: ${a.show||''} · bots ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] tumble '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('tumble',a.pts||0,body);};
 
 /* ================= loop ================= */
 toMenu();

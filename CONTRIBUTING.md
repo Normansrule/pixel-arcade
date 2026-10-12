@@ -31,7 +31,7 @@ Thanks for helping build the arcade. Read [docs/ARCHITECTURE.md](docs/ARCHITECTU
 
 1. Make a new folder named after the game in lowercase. **Never rename it afterwards**: the URL is shared in score issues and bookmarks, and GitHub Pages cannot redirect on the server. If a folder must move, leave an `index.html` with a meta refresh behind.
 2. Start from the newest worlds (`arena/`, `zombies/`, `frontline/`, `strike/`) or `rocket/`. Load Three.js from `../vendor/three.module.min.js` and use `cinematic()` and `bindQualityKey()` from `../js/fx3d.js`.
-3. Keep the conventions: round time limit and results screen, CPU difficulty, `pxd_profile` and high-score updates, a POST SCORE button, a "← ARCADE" link, local fonts from `../fonts/`, synthesized audio, procedural textures, and a `window.<ID>` test hook with `step()` and `render()`.
+3. Keep the conventions: round time limit and results screen, CPU difficulty, scoring through `../js/kit3d/score.js` (`addRound`, `saveBest`, `bestScore`, `postScore`), a POST SCORE button, a "← ARCADE" link, local fonts from `../fonts/`, synthesized audio, procedural textures, and a `window.<ID>` test hook with `step()` and `render()`.
 4. Register it in `games/threed4.js` with `href`, `img` (`docs/cards/<id>.jpg`, 960×540), `style` (the inspiration, for example `'Halo'`), `v` (the release number) and `tags`.
 5. Add its card to the hub's FULL 3D grid in `index.html`, then run `python3 tools/gen_docs.py --art` and `python3 tools/build.py`.
 

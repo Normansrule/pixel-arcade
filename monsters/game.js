@@ -7,6 +7,7 @@ import {makeCreature,animate,makeHuman,animHuman,makeCube,template} from './mode
 import {Battle,mkMon,stats,maxHp,nameOf,STATUS_N,setUid} from './battle.js';
 import {Particles,Ring,iconSprite,PAL} from './fx.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const $=id=>document.getElementById(id);
 const V3=THREE.Vector3;
@@ -519,9 +520,8 @@ function gameOver(kind){if(BT)return;app='over';exitLock();save();document.body.
  $('oteam').innerHTML=G.party.map(m=>`<img src="${portrait(m.sp)}" title="${nameOf(m)} LV ${m.lv}">`).join('');
  const tok=award(sc,won,c);$('otok').textContent=`+${tok} TOKENS · BEST ${best()} PTS`;$('keep').style.display=won||!opt.time?'':'none';$('over').hidden=false;setNav($('over'),99,null);snd.play(won?'badge':'faint');}
 function award(pts,won,c){lastAward={pts,won,badges:G.badges.length,caught:c,top:Math.max(0,...G.party.map(m=>m.lv)),time:opt.time};const tok=5+Math.min(60,pts/80|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'blockbeasts';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'blockbeasts')||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest('blockbeasts',pts);return tok;}
+function best(){return bestScore('blockbeasts');}
 function showBest(){const b=best();$('best').textContent=b?'BEST · '+b.toLocaleString()+' PTS':'';}
 // menu wiring
 const seg=(id,key)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(opt[key]);el.querySelectorAll('button').forEach(b=>{b.dataset.nav=1;b.onclick=()=>set(+b.dataset.v);});};
@@ -530,9 +530,9 @@ $('go').dataset.nav=1;$('cont').dataset.nav=1;
 $('go').onclick=()=>{snd.init();newGame();};$('cont').onclick=()=>{snd.init();contGame();};
 $('again').onclick=()=>{newGame();};$('keep').onclick=()=>{opt.time=0;begin();};$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
 ['again','keep','omenu','post','resume','quit'].forEach(i=>$(i).dataset.nav=1);
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Block Beasts\nPoints: ${a.pts||0}\nResult: ${a.won?'island champion':'time up'}\nBadges: ${a.badges||0}/3 · Species caught: ${a.caught||0}/24 · Top level: ${a.top||0}\nTime: ${a.time?a.time/60+' min':'endless'}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] blockbeasts '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('blockbeasts',a.pts||0,body);};
 
 /* ================= update ================= */
 function step(dt){dt=Math.min(dt,.05);W.WU.uTime.value=(W.WU.uTime.value+dt)%1000;
