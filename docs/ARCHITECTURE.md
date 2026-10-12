@@ -68,6 +68,10 @@ Run `python3 tools/build.py` after adding, moving or removing files; it calls `m
 
 `desktop/main.js` serves the site through a privileged `arcade://` scheme, because ES modules and `fetch()` need a real origin. `desktop/package.json`'s `extraResources` filter copies the site into the app and leaves out tests, tools and README images. `.github/workflows/desktop.yml` builds Windows (installer and portable), macOS (DMG) and Linux (AppImage and deb) when a `v*` tag is pushed, and attaches them to the release.
 
+## Online multiplayer
+
+Not built yet. [MULTIPLAYER.md](MULTIPLAYER.md) compares peer-to-peer WebRTC (Web Real-Time Communication) with copy-paste or room-code signaling against a hosted game server, and recommends a first step.
+
 ## Tests and tools
 
 | Command | What it does |
