@@ -6,7 +6,7 @@ import {LEVELS,goalList} from './levels.js';
 import {World} from './world.js';
 import {Skater} from './skater.js';
 import {Combo} from './tricks.js';
-import {Rig,nameTag,COLORS,DECKS} from './rig.js';
+import {Rig,nameTag,COLORS,DECKS,RIGOPT} from './rig.js';
 import {AI,AIDIFF} from './ai.js';
 import {makeTextures} from './tex.js';
 import {makeMaterials,buildLevel} from './build.js';
@@ -39,9 +39,9 @@ const T=makeTextures(),M=makeMaterials(T);
 const sparks=new Particles(scene,3000,true),dust=new Particles(scene,1500,false),snd=new Sound(),lines=new SpeedLines($('lines'));
 const sparkLight=new THREE.PointLight(0xffa040,0,7,1.6);scene.add(sparkLight);
 const ENV={
- indoor:{fog:new THREE.FogExp2(0x24262c,.006),bg:0x1a1c22,hemi:[0xc9d4e8,0x4a3a2c,1.25],sun:[0xfff0d8,5.5],dir:[.42,1,.3],exp:1.05,bloomT:.92},
+ indoor:{fog:new THREE.FogExp2(0x24262c,.0048),bg:0x1a1c22,hemi:[0xc9d4e8,0x4a3a2c,1.05],sun:[0xfff0d8,5.5],dir:[.42,1,.3],exp:1.05,bloomT:.92},
  day:{fog:new THREE.Fog(0xa9bccb,140,620),hemi:[0xd6e6ff,0x5a4a3a,.7],sun:[0xfff2dc,3.0],dir:[.55,.85,.4],exp:.78,sky:{turb:3.2,ray:1.2,mie:.004,gain:.42},bloomT:.97},
- dusk:{fog:new THREE.Fog(0x5a4258,120,560),hemi:[0xffb08a,0x2a2040,.75],sun:[0xff9a50,3.4],dir:[-.66,.2,-.55],exp:.85,sky:{turb:6,ray:2.8,mie:.008,gain:.32},bloomT:.96}};
+ dusk:{fog:new THREE.Fog(0x5a4258,120,560),hemi:[0xffb08a,0x3a3048,.95],sun:[0xff9a50,3.4],dir:[-.66,.2,-.55],exp:.85,sky:{turb:6,ray:2.8,mie:.008,gain:.32},bloomT:.96}};
 let envTex=null,skyMesh=null;
 function setEnv(L){const E=ENV[L.env];scene.fog=E.fog;hemi.color.set(E.hemi[0]);hemi.groundColor.set(E.hemi[1]);hemi.intensity=E.hemi[2];sun.color.set(E.sun[0]);sun.intensity=E.sun[1];sunDir.set(...E.dir).normalize();
  if(skyMesh){scene.remove(skyMesh);skyMesh.material.dispose();skyMesh=null;}if(envTex){envTex.dispose();envTex=null;}
@@ -225,10 +225,10 @@ function award(won){const pts=run.score;lastAward={pts,won,level:L.name,best:run
 
 /* ================= rendering ================= */
 const POST={exposure:1,bloom:.38,bloomThreshold:.92,bloomRadius:.45,vignette:.3,saturation:1.08,grain:.02};
-let fx=null,gfx=quality();
-function applyQuality(q){gfx=q;R.shadowMap.enabled=q>0;sun.castShadow=q>0;const ms=q>=2?2048:1024;if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
+let fx=null,gfx=quality();RIGOPT.blob=gfx===0;
+function applyQuality(q){gfx=q;RIGOPT.blob=q===0;R.shadowMap.enabled=q>0;sun.castShadow=q>0;const ms=q>=2?2048:1024;if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
  scene.traverse(o=>{if(o.material&&o.material.needsUpdate!==undefined&&o.isMesh)o.material.needsUpdate=true;});fx=null;}
-bindQualityKey(()=>gfx,q=>applyQuality(q));
+bindQualityKey(()=>gfx,q=>applyQuality(q));applyQuality(gfx);
 function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);fx=null;}
  cam.aspect=w/h;cam.updateProjectionMatrix();sparks.U.uScale.value=dust.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));
  if(!fx){fx=cinematic(R,scene,cam,{...POST,quality:gfx,ao:gfx>=2});fx.setSize(w,h);if(fx.ao){const ov=fx.ao.overrideVisibility.bind(fx.ao);fx.ao.overrideVisibility=()=>{ov();scene.traverse(o=>{if(o.userData.noAO)o.visible=false;});};}}fx.render();}
