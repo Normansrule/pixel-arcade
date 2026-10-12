@@ -26,7 +26,7 @@ export function gableRoof(W,x,y,z,w,d,h,mat='terracotta',ry=0){const p=new Float
  W.geo(g,mat,M(x,y,z,0,ry,0));W.collider(x,y+h*.35,z,w/2,h*.35,d/2*.8,ry,false,'stone');}
 // simple building: box with facade sides + flat roof material, optional parapet
 export function building(W,x,z,w,d,h,st='concrete',o={}){const y=o.y??W.groundAt(x,z,1e9)-.2;W.box(x,y,z,w,h,d,{side:'facade:'+st,top:o.roof||'concreteD'},{ry:o.ry||0,matK:'stone'});
- if(o.parapet){const t=y+h,p=.25;for(const[a,b,c,e]of[[x-w/2,z-d/2,x+w/2,z-d/2],[x+w/2,z-d/2,x+w/2,z+d/2],[x+w/2,z+d/2,x-w/2,z+d/2],[x-w/2,z+d/2,x-w/2,z-d/2]])rail(W,a,b,c,e,t,o.parapet,o.roof||'concreteD',{t:p});}
+ if(o.parapet){const t=y+h,p=.25;for(const[a,b,c,e]of[[x-w/2,z-d/2,x+w/2,z-d/2],[x+w/2,z-d/2,x+w/2,z+d/2],[x+w/2,z+d/2,x-w/2,z+d/2],...(o.gapW?[[x-w/2,z+d/2,x-w/2,z+o.gapW],[x-w/2,z-o.gapW,x-w/2,z-d/2]]:[[x-w/2,z+d/2,x-w/2,z-d/2]])])rail(W,a,b,c,e,t,o.parapet,o.roof||'concreteD',{t:p});}
  return y+h;}
 export function lamp(W,x,y,z,o={}){W.cyl(x,y,z,.07,.1,o.h||5,'darksteel',{seg:6,collide:true,walk:false});W.box(x,y+(o.h||5)-.1,z,.5,.18,.25,'black',{collide:false});const b=new THREE.Mesh(new THREE.BoxGeometry(.4,.06,.2),W.mat('bulb'));b.position.set(x,y+(o.h||5)-.13,z);W.add(b);
  if(o.light)W.pointLight(x,y+(o.h||5)-.6,z,o.col||0xffd6a0,o.int||60,o.dist||22);}

@@ -76,7 +76,7 @@ const villa={id:'villa',n:'BAYFRONT SOIRÉE',loc:'HARBOR VILLA · COSTA SERENA',
   L.zone('pool',[[-4,-7],[-4,7],[6,-7.5],[12,7.4],[20,-7],[20,7]],{y:8,acts:['talk','drink','idle'],jit:1});
   L.zone('dance',[[14,15],[18,19],[20,15],[16,21],[22,18],[12,19]],{y:8,acts:['dance','dance','dance','talk'],jit:1.5});
   L.zone('beach',[[48,-20],[52,-34],[50,22],[55,30],[49,10],[58,-12]],{acts:['idle','talk','phone']});
-  for(const[x,z]of[[-16.5,-6],[-16.5,6],[-25,-17],[-16.5,0]])L.exit(x,8,z,true);L.exit(56,null,-20.5,true);
+  for(const[x,z]of[[-16.5,-6],[-16.5,6],[-25,-17],[-16.5,0]])L.exit(x,8,z,true);L.exit(56,null,-20.5,true,[[36,7.95,0],[49,1.9,0]]);
   // target + decoys
   L.person({id:'tgt',role:'target',name:'THE AUCTIONEER',at:[22,8,-15.6],look:SUIT(0xf2f0ea,{tie:0xb81e1e,glasses:'sun',drink:true,hs:'short',hair:0x1a1410,skin:0xd9a47c}),
    routine:[{to:'tBar',act:'drink',wait:16,face:[25,8,-18]},{to:'tPool',act:'talk',wait:16,face:[-3,8,-10]},{to:'tLog',act:'phone',wait:12,face:[-20,8,4]},{to:'tDance',act:'talk',wait:12,face:[16,8,16]},{to:'tRail',act:'lean',wait:14,face:[40,8,-14]}],wait:6});
@@ -101,7 +101,7 @@ const villa={id:'villa',n:'BAYFRONT SOIRÉE',loc:'HARBOR VILLA · COSTA SERENA',
   L.person({role:'guard',at:[-10,12.5,6],look:GUARD({rifle:true}),act:'guard',yaw:Math.PI/2,wait:1e9});
   L.person({role:'guard',at:[51,1.9,1],look:GUARD(),act:'guard',yaw:-Math.PI/2,wait:1e9});
   L.person({role:'guard',at:[-12,8,-26],look:GUARD(),routine:[{to:[-12,8,-26],act:'look',wait:4},{to:[31,8,-26],act:'look',wait:5},{to:[31,8,27],act:'look',wait:5},{to:[-12,8,27],act:'look',wait:4}]});
-  L.person({role:'guard',at:[50,null,-30],look:GUARD({rifle:true}),routine:[{to:[50,null,-30],act:'guard',wait:6},{to:[52,null,30],act:'guard',wait:6}]});
+  L.person({role:'guard',at:[48.5,null,-30],look:GUARD({rifle:true}),routine:[{to:[48.5,null,-30],act:'guard',wait:6},{to:[48.5,null,30],act:'guard',wait:6}]});
   // courier arrives by speedboat
   const sb=L.vehicle({id:'sboat',type:'speedboat',color:0xc02a20,path:[[460,null,210],[260,null,90],[150,null,24],[97,null,5.2]],speed:13,state:'park'});
   const yacht=L.vehicle({id:'yacht',type:'yacht',color:0x1c2a4a,at:[104,null,-9],yaw:Math.PI/2,leave:[[150,null,-30],[320,null,-90],[800,null,-220]],speed:7});
@@ -171,7 +171,7 @@ const dam={id:'dam',n:'SPILLWAY',loc:'KESTREL GORGE DAM · NORTHERN RANGE',time:
  water(W){W.water({y:DAMY-4,bounds:[-700,-1400,700,-5.5],cx:0,cz:-300,deep:0x0c2a34,shallow:0x2a6a6a,depthScale:20});W.water({y:.6,bounds:[-60,72,60,1400],cx:0,cz:400,deep:0x1a3a3a,shallow:0x5a8a80,depthScale:3,foam:1});},
  cast(L){const r=L.rand,Y=DAMY;
   L.node('cCrane',23.5,Y,.4);L.node('cTower',-41,Y,1);L.node('cSpill',2,Y,3.6);L.node('cPark',96,Y,4);L.node('suvBoard',104,Y,6);
-  L.zone('crest',[[-70,-2],[-30,2],[-10,-2],[10,2],[40,-2],[60,2],[80,0]],{y:Y,acts:['talk','clip','phone','idle','inspect']});
+  L.zone('crest',[[-38,-2],[-30,2],[-10,-2],[10,2],[40,-2],[60,2],[80,0]],{y:Y,acts:['talk','clip','phone','idle','inspect']});
   L.zone('park',[[95,-6],[110,6],[120,-4],[100,10]],{y:Y,acts:['talk','smoke','phone','idle']});
   L.zone('roof',[[-20,58],[0,66],[20,58],[10,68],[-12,66]],{y:14.5,acts:['inspect','talk','idle']});
   L.exit(-41.8,Y,1,true);L.exit(-112,Y,6.5,true);
@@ -189,7 +189,7 @@ const dam={id:'dam',n:'SPILLWAY',loc:'KESTREL GORGE DAM · NORTHERN RANGE',time:
   const G2=o=>GUARD({topT:'parka',top:0x2a2c30,pants:0x1a1a1a,rifle:true,hat:'beanie',hatC:0x1a1a1a,glasses:undefined,...o});
   L.person({role:'guard',at:[-88,Y,2],look:G2(),act:'guard',yaw:Math.PI/2,wait:1e9});L.person({role:'guard',at:[86,Y,-2],look:G2(),act:'guard',yaw:-Math.PI/2,wait:1e9});
   L.person({role:'guard',at:[-46,Y+16,-1],look:G2(),act:'guard',yaw:Math.PI,wait:1e9});
-  L.person({role:'guard',at:[-60,Y,-2.5],look:G2(),routine:[{to:[-60,Y,-2.5],act:'look',wait:5},{to:[70,Y,-2.5],act:'look',wait:5}]});
+  L.person({role:'guard',at:[-39,Y,-2.5],look:G2(),routine:[{to:[-39,Y,-2.5],act:'look',wait:5},{to:[70,Y,-2.5],act:'look',wait:5}]});
   L.person({role:'guard',at:[112,Y,-8],look:G2(),act:'smoke',wait:1e9,yaw:2});
   L.vehicle({id:'suv',type:'suv',color:0x101214,at:[104,Y,9],yaw:Math.PI/2,leave:[[140,null,9],[200,null,8.4],[300,null,20],[600,null,56]],speed:14});
   L.vehicle({type:'pickup',color:0xe8e8e8,at:[116,Y,-9],yaw:-Math.PI/2});L.vehicle({type:'sedan',color:0x6a1a1e,at:[122,Y,-9],yaw:-Math.PI/2});

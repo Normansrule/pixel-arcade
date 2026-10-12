@@ -34,7 +34,7 @@ const city={id:'city',n:'NEON DOWNPOUR',loc:'HOTEL ORCHID ROOFTOP · PORT HALCYO
   // the hotel (target) + the helipad tower + skybridge
   building(W,0,0,40,40,RY,'hotel',{y:0,roof:'wetconcrete'});W.sign(0,RY-4,20.3,16,3.2,'HOTEL ORCHID',{fg:'#ff5ab0',size:96});W.sign(20.3,RY-4,0,14,2.8,'ORCHID',{ry:Math.PI/2,fg:'#ff5ab0',size:96});
   for(const[a,b,c,d]of[[-20,-20,20,-20],[20,-20,20,-3],[20,3,20,20],[20,20,-20,20],[-20,20,-20,-20]])rail(W,a,b,c,d,RY,1.1,'glass',{t:.06,matK:'glass'});
-  building(W,PITCH,0,40,40,HY,'office',{y:0,roof:'wetconcrete',parapet:1.1});W.sign(PITCH-20.3,HY-6,0,10,2.4,'HALCYON',{ry:-Math.PI/2,fg:'#3af0ff',size:96});
+  building(W,PITCH,0,40,40,HY,'office',{y:0,roof:'wetconcrete',parapet:1.1,gapW:2.1});W.sign(PITCH-20.3,HY-6,0,10,2.4,'HALCYON',{ry:-Math.PI/2,fg:'#3af0ff',size:96});
   stairs(W,20,34,-2,2,RY,HY,'x','wetconcrete',10);for(const s of[-1,1])rail(W,20,s*2.1,34,s*2.1,RY+.3,1.1,'glass',{t:.05,matK:'glass'});
   
   W.cyl(PITCH,HY,0,9,9,.06,'white',{seg:32,collide:false});W.cyl(PITCH,HY+.02,0,7.6,7.6,.06,'wetconcrete',{seg:32,collide:false});W.box(PITCH,HY+.08,0,1,.02,5,'white',{collide:false});W.box(PITCH-2,HY+.08,0,.8,.02,5,'white',{collide:false});W.box(PITCH+2,HY+.08,0,.8,.02,5,'white',{collide:false});W.box(PITCH,HY+.08,0,4.8,.02,.8,'white',{collide:false});

@@ -38,16 +38,28 @@ export class Person{
   if(this.vehicle){this.seatPos();const v=this.vehicle;if(this.rig.props.skis){for(const k of this.rig.props.skis)k.visible=v.type==='chair';for(const k of this.rig.props.poles)k.visible=false;}pose(this.rig,v.type==='chair'?'ride':this.seat===0&&v.type!=='heli'&&!v.dims.boat?'drive':'ride',this.ph,0,t);this.rig.apply(dt,8);return;}
   this.react-=dt;this.brain(dt,t);
   // movement
-  let sp=0;if(this.path.length){const tgt=this.path[0];const dx=tgt.x-this.pos.x,dz=tgt.z-this.pos.z,d=Math.hypot(dx,dz);const vmax=this.ski?this.skiSpd||10:this.run?this.runSpd||4.3:this.walk;
+  let sp=0;const x0=this.pos.x,z0=this.pos.z;if(this.path.length){const tgt=this.path[0];const dx=tgt.x-this.pos.x,dz=tgt.z-this.pos.z,d=Math.hypot(dx,dz);const vmax=this.ski?this.skiSpd||10:this.run?this.runSpd||4.3:this.walk;
    if(d<.35){this.path.shift();if(!this.path.length)this.arrive();}else{sp=this.ski?vmax:Math.min(vmax,d*3+.5);const a=Math.atan2(dx,dz);const y0=this.yaw;this.turn(a,dt,this.ski?2.2:this.run?7:4.5);this.carve=clamp((this.yaw-y0)/Math.max(dt,1e-4)*.6,-1,1);const k=sp*dt/d;this.pos.x+=dx*Math.min(1,k);this.pos.z+=dz*Math.min(1,k);}}
   else if(this.faceP){this.turn(Math.atan2(this.faceP.x-this.pos.x,this.faceP.z-this.pos.z),dt,3);}
-  this.spd+=(sp-this.spd)*Math.min(1,dt*8);const gy=L.world.groundAt(this.pos.x,this.pos.z,this.pos.y+.2);this.pos.y+=(gy-this.pos.y)*Math.min(1,dt*12);if(Math.abs(gy-this.pos.y)>2)this.pos.y=gy;
+  sp=this.solid(dt,sp,x0,z0);this.spd+=(sp-this.spd)*Math.min(1,dt*8);const gy=L.world.groundAt(this.pos.x,this.pos.z,this.pos.y+.2);this.pos.y+=(gy-this.pos.y)*Math.min(1,dt*12);if(Math.abs(gy-this.pos.y)>2)this.pos.y=gy;
   this.vel.subVectors(this.pos,this.prevPos).divideScalar(Math.max(dt,1e-4));this.prevPos.copy(this.pos);
   this.ph+=dt*(this.spd>.2?(this.spd>2.6?this.spd*1.55:2.2+this.spd*1.9):0);
   // pose
   let act=this.path.length?(this.ski?'ski':'walk'):this.act;const o={rifle:!!this.o.rifle,briefcase:!!this.o.briefcase,umbrella:!!this.o.umbrella,clipboard:!!this.o.clipboard,panic:this.state==='panic',carve:this.carve||0};if(this.rig.props.skis){const on=!!this.ski;for(const k of this.rig.props.skis)k.visible=on;for(const k of this.rig.props.poles)k.visible=on;}
   if(this.lookP&&!this.path.length&&act!=='aim'){let a=Math.atan2(this.lookP.x-this.pos.x,this.lookP.z-this.pos.z)-this.yaw;a=((a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;o.headY=clamp(a,-1.1,1.1);}
   pose(this.rig,act,this.ph,this.spd,t,o);this.rig.setProp('phone',act==='phone');this.rig.setProp('cig',act==='smoke');this.rig.apply(dt,this.state==='panic'?14:9);this.place();}
+ // solid body: circle r .28 vs other people, static OBBs above step height and ground vehicles; slides along walls, side-steps head-on blocks, re-plans (wander) or ghosts when wedged >4s
+ solid(dt,sp,x0,z0){const L=this.L,W=L.world,p=this.pos,r=.28,y=p.y;
+  const box=(cx,cz,hx,hz,c,s)=>{const dx=p.x-cx,dz=p.z-cz,lx=dx*c-dz*s,lz=dx*s+dz*c,ex=lx-clamp(lx,-hx,hx),ez=lz-clamp(lz,-hz,hz),d=Math.hypot(ex,ez);if(d>=r)return;let ox=0,oz=0;
+   if(d>1e-5){ox=ex*(r-d)/d;oz=ez*(r-d)/d;}else{const px=hx-Math.abs(lx),pz=hz-Math.abs(lz);if(px<pz)ox=(px+r)*(lx<0?-1:1);else oz=(pz+r)*(lz<0?-1:1);}p.x+=ox*c+oz*s;p.z+=oz*c-ox*s;};
+  const run=()=>{if(this.ghost)return;for(const q of L.people){if(q===this||!q.alive||q.gone||q.hidden||q.vehicle||q.ghost)continue;const dx=p.x-q.pos.x,dz=p.z-q.pos.z,d2=dx*dx+dz*dz;if(d2>=.3136||Math.abs(q.pos.y-y)>1.2)continue;const d=Math.sqrt(d2),o=.56-d;if(d>1e-4){p.x+=dx/d*o;p.z+=dz/d*o;}else p.x+=o*(this.side||1);}
+   if(!this.path.length&&this.act==='sit')return;const wy=this.path.length?Math.max(y,this.path[0].y):y;for(const c of W.near(p.x,p.z)){const top=c.cy+c.hy;if(!c.on||top<=wy+.6||c.cy-c.hy>=y+1.7)continue;if(c.walk&&c.hy<.3&&top<=y+1){const dx=p.x-c.cx,dz=p.z-c.cz;if(Math.abs(dx*c.c-dz*c.s)<c.hx&&Math.abs(dx*c.s+dz*c.c)<c.hz)p.y=top;continue;}box(c.cx,c.cz,c.hx,c.hz,c.c,c.s);}
+   for(const v of L.vehicles){const b=v.body;if(!b||v.gone||v===this.escapeV||v.dims.boat||v.type==='heli'||Math.abs(v.pos.x-p.x)>9||Math.abs(v.pos.z-p.z)>9||v.pos.y+b.oy+b.hy<y+.6||v.pos.y+b.oy-b.hy>y+1.7)continue;box(v.pos.x,v.pos.z,b.hx,b.hz,Math.cos(v.yaw),Math.sin(v.yaw));}};
+  run();if(!this.path.length||sp<=0){if(!this.path.length)this.wp=null,this.ghost=false;return sp;}const t=this.path[0];if(this.wp!==t){this.wp=t;this.best=1e9;this.stk=0;this.ghost=false;}if(!this.side)this.side=L.rand()<.5?-1:1;
+  let ux=t.x-x0,uz=t.z-z0;const D=Math.hypot(ux,uz)||1;ux/=D;uz/=D;const step=sp*dt;
+  if((p.x-x0)*ux+(p.z-z0)*uz<step*.3){p.x+=uz*this.side*step*.8;p.z-=ux*this.side*step*.8;run();}
+  const d=Math.hypot(t.x-p.x,t.z-p.z);if(d<this.best-.25){this.best=d;this.stk=0;}else if(d<1.2&&this.stk>.5){this.path.shift();if(!this.path.length)this.arrive();}else if((this.stk+=dt)>4){if(this.state==='wander'){this.path=[];this.arrive();}else if(this.state==='follow')this.path=[];else this.ghost=true;this.stk=0;}else if(this.stk>1.8&&this.stk-dt<=1.8)this.side=-this.side;
+  return Math.min(sp,Math.hypot(p.x-x0,p.z-z0)/Math.max(dt,1e-4));}
  turn(a,dt,rate){let d=a-this.yaw;d=((d+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;this.yaw+=clamp(d,-rate*dt,rate*dt);}
  seatPos(){const v=this.vehicle,s=v.dims.seats[this.seat]||v.dims.seats[0];const p=new V(s[0],s[1]-.49,s[2]).applyMatrix4(v.g.matrixWorld);this.pos.copy(p);this.yaw=v.yaw+(v.type==='chair'?0:0);this.rig.root.position.copy(p);this.rig.root.rotation.set(0,this.yaw,0);
   if(v.type!=='chair'&&v.g.rotation.z)this.rig.root.rotation.z=v.g.rotation.z;}
@@ -85,7 +97,7 @@ export class Person{
   if(strength>1.2||(this.role==='civ'||this.role==='staff')&&strength>.7)return this.panic(src);
   if(this.state!=='alert'){this.saved=this.saved||{state:this.state,path:this.path.slice(),wait:this.wait};}this.path=[];this.state='alert';this.wait=3+L.rand()*4;this.lookP=src.clone();}
  panic(src){if(!this.alive||this.vehicle||this.state==='panic')return;const L=this.L;if(this.isTarget||this.role==='courier'){if(this.isTarget)return L.flee(this);}
-  if(this.role==='guard')return this.engage();this.state='panic';this.run=true;this.runSpd=4.4+L.rand()*.6;this.saved=null;const ex=L.nearestExit(this.pos,src);if(ex){this.exitHide=ex.hide;this.goTo(ex.p);}else{this.path=[];this.act='cower';}
+  if(this.role==='guard')return this.engage();this.state='panic';this.run=true;this.runSpd=4.4+L.rand()*.6;this.saved=null;const ex=L.nearestExit(this.pos,src);if(ex){this.exitHide=ex.hide;this.goTo(ex.p,ex.via&&this.pos.y>ex.p.y+3?ex.via:null);}else{this.path=[];this.act='cower';}
   if(L.rand()<.5)L.G.scream(this.pos);}
  engage(){if(!this.alive||this.vehicle||this.state==='combat')return;this.state='combat';this.path=[];this.saved=null;this.fireT=1.5+R()*2.5;this.losT=0;}
  hide(){this.hidden=true;this.gone=true;this.rig.root.visible=false;}
@@ -207,7 +219,7 @@ export class Level{
  pt(p){if(p instanceof V)return p.clone();if(typeof p==='string'){const n=this.nodes[p];if(!n)throw new Error('node '+p);return n.clone();}const y=p[1]===null||p[1]===undefined?this.world.groundAt(p[0],p[2]):p[1];return new V(p[0],y,p[2]);}
  node(n,x,y,z){this.nodes[n]=new V(x,y===null||y===undefined?this.world.groundAt(x,z):y,z);return this.nodes[n];}
  zone(n,spots,o={}){this.zones[n]={spots,...o};}
- exit(x,y,z,hide=true){this.exits.push({p:this.pt([x,y,z]),hide});}
+ exit(x,y,z,hide=true,via=null){this.exits.push({p:this.pt([x,y,z]),hide,via});}
  person(s){const p=new Person(this,s);this.people.push(p);return p;}
  vehicle(s){const v=new Vehicle(this,s);this.vehicles.push(v);return v;}
  hazard(s){const h=new Hazard(this,s);this.hazards.push(h);return h;}

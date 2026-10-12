@@ -18,9 +18,9 @@ const ID='longshot';
 const DIFF=[{n:'RECRUIT',mul:.75,sway:.7,expo:.55,susp:.75},{n:'MARKSMAN',mul:1,sway:1,expo:1,susp:1},{n:'ELITE',mul:1.5,sway:1.2,expo:1.4,susp:1.3}];
 
 /* ================= renderer + scene ================= */
-const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance',logarithmicDepthBuffer:true});R.setPixelRatio(Math.min(devicePixelRatio,1.5));
+const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});R.setPixelRatio(Math.min(devicePixelRatio,1.5));
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
-const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.03,6000);cam.rotation.order='YXZ';scene.add(cam);
+const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.5,6000);cam.rotation.order='YXZ';scene.add(cam);
 const snd=new Sound(),hud=new HUD(),S=textures();
 const add=new Particles(scene,2600,S.glow,true),smk=new Particles(scene,2600,S.puff,false);
 const flash=new THREE.PointLight(0xffaa60,0,120,1.4);scene.add(flash);
@@ -61,6 +61,8 @@ const IMP={ground:null,stone:C(0xb0a898),wood:C(0x8a6a48),metal:null,glass:null,
 
 /* ================= viewmodel rifle ================= */
 let vm=null,vmFlash=null;
+// the viewmodel sits inside the .5 m near plane: squeeze its depth into the front sliver of the buffer (never clipped, always in front), so the world keeps a 24-bit depth range without a log buffer
+const vmDepth=s=>{s.vertexShader=s.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\ngl_Position.z=gl_Position.w*(-1.+.0005*min(-mvPosition.z,2.));');};
 function makeRifle(r){const g=new THREE.Group(),std=o=>new THREE.MeshStandardMaterial(o);const body=std({color:r.body,metalness:.75,roughness:.35}),stock=std({color:r.stock,roughness:.6,metalness:r.stock===r.body?.6:.05}),blk=std({color:0x0c0d0f,metalness:.6,roughness:.4}),lens=std({color:0x203848,metalness:.9,roughness:.05,emissive:0x061018});
  const box=(w,h,d,m,x,y,z,rx=0)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.rotation.x=rx;g.add(o);return o;},cyl=(r1,r2,l,m,x,y,z,s=14)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,l,s),m);o.rotation.x=Math.PI/2;o.position.set(x,y,z);g.add(o);return o;};
  const L=r.len;box(.07,.14,.34,stock,0,-.03,.12);box(.05,.05,.2,stock,0,.03,.08);box(.065,.075,.3,body,0,0,-.18);box(.07,.07,.34,r.id==='whisper'?body:stock,0,-.012,-.48);
@@ -70,7 +72,7 @@ function makeRifle(r){const g=new THREE.Group(),std=o=>new THREE.MeshStandardMat
  cyl(.012,.012,.03,blk,0,.105,-.2).rotation.x=0;const tw=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.03,10),blk);tw.rotation.z=Math.PI/2;tw.position.set(.035,.075,-.2);g.add(tw);
  for(const s of[-1,1]){const l=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.2,5),blk);l.rotation.x=Math.PI/2-.05;l.position.set(s*.02,-.05,-.52);g.add(l);}
  const f=new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),new THREE.MeshBasicMaterial({map:S.flare,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));f.position.set(0,.01,-.36-L*.62-(r.can?.15:.08));f.visible=false;g.add(f);
- g.traverse(o=>{if(o.isMesh){o.castShadow=false;o.renderOrder=2;}});g.userData={bolt,flash:f};return g;}
+ g.traverse(o=>{if(o.isMesh){o.castShadow=false;o.renderOrder=2;o.material.onBeforeCompile=vmDepth;}});g.userData={bolt,flash:f};return g;}
 function setRifle(r){if(vm){cam.remove(vm);}vm=makeRifle(r);cam.add(vm);vm.position.set(.17,-.2,-.3);vm.rotation.y=.05;}
 
 /* ================= mission loading ================= */
