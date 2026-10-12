@@ -341,7 +341,7 @@ function hud(){if(app!=='play'&&app!=='intro')return;const h=hour();setT('clock'
  setT('tip',player.space==='igloo'&&!editing?'Press I or the IGLOO button to decorate your igloo.':day.len-day.t<60?'The island day is ending soon...':'');}
 
 /* ================= rendering ================= */
-const POST={exposure:.8,bloom:.42,bloomThreshold:2,bloomRadius:.5,vignette:.28,saturation:1.16,grain:.012,ao:false};
+const POST={exposure:.8,bloom:.42,bloomThreshold:2,bloomRadius:.5,vignette:.28,saturation:1.16,grain:.012,aoStrength:.75};
 let fxMain=null,gfx=quality();
 function applyQuality(q){gfx=q;W.setShadowQuality(q);R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));fxMain=null;for(const k in mgFx){if(mgFx[k].composer)mgFx[k].composer.dispose();delete mgFx[k];}}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));

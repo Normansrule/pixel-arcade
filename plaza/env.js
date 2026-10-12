@@ -42,17 +42,69 @@ export function palette(h){let a=KEYS[0],b=KEYS[KEYS.length-1];for(let i=0;i<KEY
  return{top:C('top'),hor:C('hor'),sun:C('sun'),si:lerp(a.si,b.si,k),hs:C('hs'),hg:C('hg'),hi:lerp(a.hi,b.hi,k),fog:C('fog'),night,sunDir,moonDir,lightDir:night>.6?moonDir:sunDir};}
 
 /* ---------- sparkly snow ---------- */
-export function snowMaterial(o={}){const m=new G.MeshStandardMaterial({color:o.color??0xffffff,vertexColors:o.vc??true,roughness:.82,metalness:0,envMapIntensity:.55});const U={uT:{value:0},uSpark:{value:o.spark??1}};m.userData.U=U;
+// shared uniforms: sun direction for angle-dependent glints, detail level (0 = low quality: no micro relief)
+export const SNOWU={uSun:{value:new V3(.5,.8,.3).normalize()},uDetail:{value:1}};
+const NOISE_GLSL=`float hs(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hs(i),hs(i+vec2(1,0)),f.x),mix(hs(i+vec2(0,1)),hs(i+vec2(1,1)),f.x),f.y);}`;
+export function snowMaterial(o={}){const m=new G.MeshStandardMaterial({color:o.color??0xffffff,vertexColors:o.vc??true,roughness:.78,metalness:0,envMapIntensity:.6});const U={uT:{value:0},uSpark:{value:o.spark??1},uSun:SNOWU.uSun,uDetail:SNOWU.uDetail,uRel:{value:o.relief??1}};m.userData.U=U;
  m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWp;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWp=(modelMatrix*vec4(transformed,1.)).xyz;');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWp;uniform float uT,uSpark;float hs(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}')
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWp;uniform float uT,uSpark,uDetail,uRel;uniform vec3 uSun;'+NOISE_GLSL)
+  // soft wind-carved relief: two octaves of rolling drifts + fine grain, faded with distance so it never shimmers
+  .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+   float camD=length(vViewPosition);
+   if(uDetail>.5){vec2 p=vWp.xz;float e=.05;
+    #define SH(q) (vn((q)*vec2(.45,.9)+vn((q)*.2)*2.)*.55+vn((q)*2.3)*.3+vn((q)*9.)*.15*smoothstep(26.,6.,camD))
+    float h0=SH(p),hx=SH(p+vec2(e,0.)),hz=SH(p+vec2(0.,e));vec3 wn=vec3(-(hx-h0)/e,0.,-(hz-h0)/e)*.65*uRel*smoothstep(160.,20.,camD);
+    normal=normalize(normal+(viewMatrix*vec4(wn,0.)).xyz*max(0.,(inverseTransformDirection(normal,viewMatrix)).y));}`)
+  // cool subsurface-like fill: shadowed / ambient-lit snow turns soft blue, lit snow stays warm white
+  .replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+   reflectedLight.indirectDiffuse*=vec3(.82,.92,1.12);
+   {float wrap=pow(1.-max(dot(normal,normalize(vViewPosition)),0.),3.);reflectedLight.indirectDiffuse+=diffuseColor.rgb*vec3(.10,.16,.24)*wrap;}`)
+  // glints: per-cell random micro facets that flash when they mirror the sun towards the camera (two sizes)
   .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
-   {vec2 cell=floor(vWp.xz*14.);float g=hs(cell);vec3 vd=normalize(vViewPosition);float tw=sin(g*91.+dot(vd,vec3(17.,11.,23.))*9.+uT*1.5);
-    float sp=step(.982,g)*pow(max(tw,0.),12.)*uSpark;vec2 f=fract(vWp.xz*14.)-.5;sp*=smoothstep(.35,0.,length(f));totalEmissiveRadiance+=vec3(1.,.98,.95)*sp*2.2*max(.0,normal.y*.5+.5);}`);};
- m.customProgramCacheKey=()=>'snowspark';return m;}
+   {vec3 vd=normalize(vViewPosition);vec3 sv=normalize((viewMatrix*vec4(uSun,0.)).xyz);float up=max(0.,(inverseTransformDirection(normal,viewMatrix)).y);float sp=0.;
+    for(int k=0;k<2;k++){float sc=k==0?11.:31.;vec2 q=vWp.xz*sc+vec2(vWp.y*3.1);vec2 cell=floor(q);float g=hs(cell+float(k)*17.);if(g<.86)continue;
+     vec3 fn=normalize(normal+(viewMatrix*vec4(hs(cell+3.1)-.5,.25,hs(cell+7.7)-.5,0.)).xyz*.9);float gl=max(dot(reflect(-vd,fn),sv),0.);
+     float tw=.55+.45*sin(uT*2.3+g*80.);vec2 f=fract(q)-.5;sp+=pow(gl,k==0?10.:6.)*tw*smoothstep(.42,0.,length(f))*(k==0?1.:.7*smoothstep(30.,6.,camD));}
+    totalEmissiveRadiance+=vec3(1.,.97,.92)*sp*uSpark*7.*up*smoothstep(140.,25.,camD);}`);};
+ m.customProgramCacheKey=()=>'snowspark2';return m;}
+
+/* ---------- ice: glossy clearcoat, frozen crack network + parallax depth bubbles, fresnel glow ---------- */
+export function iceMaterial(o={}){const m=new G.MeshPhysicalMaterial({color:o.color??0x9fd8f4,roughness:o.rough??.12,metalness:0,clearcoat:1,clearcoatRoughness:.04,envMapIntensity:o.env??1.5,transparent:!!o.opacity,opacity:o.opacity??1,vertexColors:!!o.vc});const U={uDetail:SNOWU.uDetail,uDeep:{value:new G.Color(o.deep??0x1a5a86)}};m.userData.U=U;
+ m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWp;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWp=(modelMatrix*vec4(transformed,1.)).xyz;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWp;uniform float uDetail;uniform vec3 uDeep;'+NOISE_GLSL+`
+   vec2 vor(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.,d2=8.;for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){vec2 b=vec2(x,y),r=b+vec2(hs(i+b),hs(i+b+5.3))-f;float d=dot(r,r);if(d<d1){d2=d1;d1=d;}else if(d<d2)d2=d;}return vec2(sqrt(d1),sqrt(d2));}`)
+  .replace('#include <color_fragment>',`#include <color_fragment>
+   {vec3 wv=normalize(cameraPosition-vWp);
+    vec2 p=(abs(inverseTransformDirection(normalize(vNormal),viewMatrix).y)>.6?vWp.xz:vWp.xy+vWp.zz)*.55;
+    float depth=1.;if(uDetail>.5){vec2 c2=vor(p*1.7-wv.xz/max(wv.y,.25)*.35);depth=smoothstep(.0,.5,c2.x);}
+    vec2 c=vor(p);float crack=1.-smoothstep(.0,.035,c.y-c.x);float fine=vn(p*14.)*.5+vn(p*3.)*.5;
+    diffuseColor.rgb=mix(uDeep,diffuseColor.rgb,.55+.45*depth*fine);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.95,.99,1.),crack*.5);}`)
+  .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{float fr=pow(1.-max(dot(normalize(vViewPosition),normal),0.),3.);totalEmissiveRadiance+=vec3(.35,.7,.95)*fr*.22;}');};
+ m.customProgramCacheKey=()=>'ice2';return m;}
+
+/* ---------- painted clapboard: world-space boards with grooves, per-board tint, wood grain + weathering near the ground ---------- */
+export function boardMaterial(){const m=new G.MeshStandardMaterial({vertexColors:true,roughness:.74,envMapIntensity:.5});const U={uDetail:SNOWU.uDetail};m.userData.U=U;
+ m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWp;varying vec3 vWn;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWp=(modelMatrix*vec4(transformed,1.)).xyz;vWn=normalize(mat3(modelMatrix)*objectNormal);');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWp;varying vec3 vWn;uniform float uDetail;float bGroove=0.;'+NOISE_GLSL)
+  .replace('#include <color_fragment>',`#include <color_fragment>
+   {vec3 n=normalize(vWn);float side=1.-smoothstep(.55,.8,abs(n.y));vec2 t=normalize(vec2(-n.z,n.x)+1e-4);float u=dot(vWp.xz,t),v=vWp.y/.42;float row=floor(v),fv=fract(v);
+    float gr=smoothstep(0.,.09,fv)*smoothstep(1.,.86,fv);bGroove=(1.-gr)*side*(fv<.5?1.:-1.);float tint=.9+.2*hs(vec2(row,floor(u/3.1+hs(vec2(row))*3.)));
+    float grain=vn(vec2(u*1.2,v*14.))*.6+vn(vec2(u*5.,v*40.))*.4;    diffuseColor.rgb*=mix(1.,(mix(.55,1.,gr)*tint*(.86+.22*grain)),side);}`)
+  .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+   if(uDetail>.5)normal=normalize(normal+(viewMatrix*vec4(0.,bGroove*.9,0.,0.)).xyz);`)
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=min(1.,roughnessFactor+abs(bGroove)*.2);');};
+ m.customProgramCacheKey=()=>'boards';return m;}
 
 /* ---------- pines ---------- */
 export function pineGeometry(snow=true){const L=[[new G.CylinderGeometry(.22,.32,1.4,7),M(0,.7,0),0x6a4a32]];
- for(let i=0;i<3;i++){const r=2.1-i*.55,h=2.2-i*.3,y=1.3+i*1.15;L.push([new G.ConeGeometry(r,h,9),M(0,y+h/2,0),i%2?0x2f6e48:0x2a6442]);if(snow)L.push([new G.ConeGeometry(r*.78,h*.5,9),M(0,y+h*.78,0),0xf4f8ff]);}
+ // jagged drooping branch tiers: star-shaped rims that sag at the tips, dark inside / lighter at the tips; snow caps follow the same star
+ const tier=(r,h,col,sag,seg=12)=>{const g=new G.ConeGeometry(r,h,seg,1).toNonIndexed(),p=g.attributes.position,c=new Float32Array(p.count*3),base=new G.Color(col);
+  for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);const rim=y<0;if(rim){const a=Math.atan2(z,x),k=.78+.22*Math.pow(Math.abs(Math.cos(a*seg/2)),.6);x*=k;z*=k;y-=sag*k*k;}p.setXYZ(i,x,y,z);
+   const sh=rim?1.08:.62;c[i*3]=base.r*sh;c[i*3+1]=base.g*sh;c[i*3+2]=base.b*sh;}
+  g.setAttribute('color',new G.BufferAttribute(c,3));g.computeVertexNormals();return g;};
+ for(let i=0;i<4;i++){const r=2.2-i*.45,h=1.9-i*.2,y=1.15+i*.95;L.push([tier(r,h,i%2?0x2f6e48:0x2a6442,.35),M(0,y+h/2,0,0,i*.4,0)]);
+  if(snow){const sg=tier(r*.8,h*.55,0xf4f8ff,.22);const c=sg.attributes.color;for(let k=0;k<c.count;k++)c.setXYZ(k,.96,.97,1);L.push([sg,M(0,y+h*.74,0,0,i*.4,0)]);}}
  return merge(L);}
 export function instancedPines(scene,pts,o={}){const geo=pineGeometry(o.snow??true);const m=new G.InstancedMesh(geo,new G.MeshStandardMaterial({vertexColors:true,roughness:.85,envMapIntensity:.45}),pts.length);
  const m4=new G.Matrix4(),q=new G.Quaternion(),c=new G.Color();pts.forEach((p,i)=>{const s=p.s??(.7+rnd(.7));q.setFromAxisAngle(new V3(0,1,0),rnd(7));m4.compose(new V3(p.x,p.y,p.z),q,new V3(s,s*(.85+rnd(.3)),s));m.setMatrixAt(i,m4);c.setHSL(.36+rnd(.05),.25+rnd(.2),.75+rnd(.25));m.setColorAt(i,c);});

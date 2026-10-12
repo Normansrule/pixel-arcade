@@ -18,25 +18,37 @@ function bodyGeometry(){
   const face=Math.max(lobe(1),lobe(-1),low);
   const cheek=s=>1-cl((Math.hypot((a-s*.66)/.13,(y-1.1)/.07)-.75)/.3,0,1);
   mk[i*2]=Math.max(belly,face);mk[i*2+1]=Math.max(cheek(1),cheek(-1));}
- g.setAttribute('mk',new G.BufferAttribute(mk,2));g.computeVertexNormals();return g;}
+ g.setAttribute('mk',new G.BufferAttribute(mk,2));g.computeVertexNormals();
+ // fold the head tuft + a little tail feather into the body mesh (one draw call)
+ const tuft=[[new G.ConeGeometry(.045,.22,6),M(0,1.62,.02,.2,0,0)],[new G.ConeGeometry(.04,.18,6),M(.05,1.6,-.02,0,0,-.5)],[new G.ConeGeometry(.04,.18,6),M(-.05,1.6,-.02,0,0,.5)],
+  [new G.ConeGeometry(.15,.34,8),M(0,.16,-.6,-2.1,0,0,1,1,.42)],[new G.ConeGeometry(.1,.26,8),M(.12,.15,-.56,-2.2,.3,0,1,1,.4)],[new G.ConeGeometry(.1,.26,8),M(-.12,.15,-.56,-2.2,-.3,0,1,1,.4)]].map(([q,m],i)=>{q=q.toNonIndexed();q.applyMatrix4(m);return i>2?flatMk(q):zeroMk(q);});
+ return cat([g.toNonIndexed(),...tuft]);}
+function cat(gs){const r=new G.BufferGeometry();for(const[k,n]of[['position',3],['normal',3],['uv',2],['mk',2]]){let len=0;gs.forEach(g=>len+=g.attributes[k].array.length);const a=new Float32Array(len);let o=0;gs.forEach(g=>{a.set(g.attributes[k].array,o);o+=g.attributes[k].array.length;});r.setAttribute(k,new G.BufferAttribute(a,n));}r.computeBoundingSphere();return r;}
 const zeroMk=g=>{g.setAttribute('mk',new G.BufferAttribute(new Float32Array(g.attributes.position.count*2),2));return g;};
+// mk.x=-1: skip the height gradient (flippers, tail)
+const flatMk=g=>{const a=new Float32Array(g.attributes.position.count*2);for(let i=0;i<a.length;i+=2)a[i]=-1;g.setAttribute('mk',new G.BufferAttribute(a,2));return g;};
 let GEO=null;
 function geos(){if(GEO)return GEO;const S=(r,a=16,b=12)=>new G.SphereGeometry(r,a,b);
  const eye=(s)=>{const a=s*.36,r=.485,x=Math.sin(a)*r,z=Math.cos(a)*r;return[[S(.085,16,12),M(x,0,z,0,a,0,1,1.15,.55),0x0d0d12],[S(.026,8,6),M(x+.028,.035,z+.04),0xffffff],[S(.012,6,4),M(x-.02,-.03,z+.042),0xffffff]];};
- const flip=new G.SphereGeometry(.2,14,10);flip.scale(.42,1.6,1);flip.translate(0,-.26,0);zeroMk(flip);
+ const flip=new G.SphereGeometry(.2,14,10);flip.scale(.42,1.6,1);flip.translate(0,-.26,0);flatMk(flip);
  const foot=merge([[S(.11,10,8),M(0,0,.04,0,0,0,1.15,.42,1.5),0xf29a2a],[S(.06,8,6),M(.07,0,.17,0,0,0,1,.5,1.3),0xf29a2a],[S(.06,8,6),M(-.07,0,.17,0,0,0,1,.5,1.3),0xf29a2a],[S(.06,8,6),M(0,0,.2,0,0,0,1,.5,1.3),0xf29a2a]]);
  const beak=merge([[new G.ConeGeometry(.085,.2,12),M(0,1.135,.53,Math.PI/2,0,0,1,1,.75),0xf6a028],[new G.ConeGeometry(.06,.12,10),M(0,1.085,.51,Math.PI/2+.12,0,0,1,1,.6),0xe0841a]]);
- const tuft=merge([[new G.ConeGeometry(.045,.22,6),M(0,1.62,.02,.2,0,0)],[new G.ConeGeometry(.04,.18,6),M(.05,1.6,-.02,0,0,-.5)],[new G.ConeGeometry(.04,.18,6),M(-.05,1.6,-.02,0,0,.5)]]);zeroMk(tuft);
+
  const eyes=merge([...eye(1),...eye(-1)]);eyes.translate(0,0,0);
  const shadow=new G.CircleGeometry(.62,24);shadow.rotateX(-Math.PI/2);shadow.translate(0,.02,0);
- GEO={body:bodyGeometry(),flip,foot,beak,tuft,eyes,shadow};for(const k in GEO)GEO[k].userData.keep=true;return GEO;}
+ GEO={body:bodyGeometry(),flip,foot,beak,eyes,shadow};for(const k in GEO)GEO[k].userData.keep=true;return GEO;}
 const SH={beak:null,eye:null,blob:null};
 function shared(){if(SH.beak)return SH;SH.beak=new G.MeshStandardMaterial({vertexColors:true,roughness:.45,envMapIntensity:.6});SH.eye=new G.MeshStandardMaterial({vertexColors:true,roughness:.06,metalness:0,envMapIntensity:1.6});
  const tx=new G.CanvasTexture((()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createRadialGradient(32,32,2,32,32,32);g.addColorStop(0,'rgba(0,0,0,.55)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return c;})());
  SH.blob=new G.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});for(const k in SH)SH[k].userData.keep=true;return SH;}
-export function bodyMaterial(color){const m=new G.MeshStandardMaterial({color,roughness:.5,envMapIntensity:.55});m.userData.white=new G.Color(.97,.96,.94);
- m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec2 mk;varying vec2 vMk;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMk=mk;');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vMk;').replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(.97,.96,.94),smoothstep(.35,.65,vMk.x));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.,.5,.58),smoothstep(.2,.8,vMk.y)*.75);')
+// soft feather scallops (bump only) shared by every penguin
+let FEATHER=null;function featherTex(){if(FEATHER)return FEATHER;const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#808080';x.fillRect(0,0,128,128);
+ for(let r=-1;r<9;r++)for(let k=-1;k<9;k++){const cx=k*16+(r%2?8:0),cy=r*16;const g=x.createRadialGradient(cx,cy-6,1,cx,cy-6,15);g.addColorStop(0,'#c8c8c8');g.addColorStop(.75,'#909090');g.addColorStop(1,'rgba(60,60,60,0)');x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,9,12,0,0,PI2);x.fill();}
+ FEATHER=new G.CanvasTexture(c);FEATHER.wrapS=FEATHER.wrapT=G.RepeatWrapping;FEATHER.repeat.set(22,9);FEATHER.userData.keep=true;return FEATHER;}
+const PI2=Math.PI*2;
+export function bodyMaterial(color){const m=new G.MeshPhysicalMaterial({color,roughness:.55,envMapIntensity:.6,sheen:.55,sheenRoughness:.45,sheenColor:new G.Color(.75,.82,1),bumpMap:featherTex(),bumpScale:.35});m.userData.white=new G.Color(.97,.96,.94);
+ m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec2 mk;varying vec2 vMk;varying float vPy;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMk=mk;vPy=mk.x<-.5?.9:position.y;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vMk;varying float vPy;').replace('#include <color_fragment>','#include <color_fragment>\nvec3 bodyC=diffuseColor.rgb*mix(.62,1.08,smoothstep(.0,1.45,vPy));diffuseColor.rgb=mix(bodyC,mix(vec3(.86,.85,.83),vec3(1.,.99,.97),smoothstep(.1,.9,vPy)),smoothstep(.35,.65,vMk.x));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.,.5,.58),smoothstep(.2,.8,vMk.y)*.75);diffuseColor.rgb*=mix(.55,1.,smoothstep(-.02,.35,vPy));')
   .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\nfloat rimF=pow(1.-abs(dot(normalize(vViewPosition),normal)),3.);totalEmissiveRadiance+=vec3(.55,.65,.85)*rimF*.12;');};
  m.customProgramCacheKey=()=>'pengbody';return m;}
 
@@ -46,7 +58,7 @@ export class Penguin{
   this.mat=bodyMaterial(o.color??0x3f86e0);
   this.body=new G.Mesh(g.body,this.mat);this.body.castShadow=true;this.body.receiveShadow=true;this.bob.add(this.body);
   this.eyes=new G.Mesh(g.eyes,s.eye);this.eyes.position.y=1.25;this.eyes.geometry=g.eyes;this.bob.add(this.eyes);
-  this.beak=new G.Mesh(g.beak,s.beak);this.bob.add(this.beak);this.tuft=new G.Mesh(g.tuft,this.mat);this.bob.add(this.tuft);
+  this.beak=new G.Mesh(g.beak,s.beak);this.bob.add(this.beak);this.tuft=this.body;
   this.fl=[];for(const sd of[1,-1]){const pv=new G.Group();pv.position.set(sd*.56,.98,-.02);const f=new G.Mesh(g.flip,this.mat);f.rotation.z=sd*.22;pv.add(f);this.bob.add(pv);this.fl.push(pv);}
   this.ft=[];for(const sd of[1,-1]){const f=new G.Mesh(g.foot,s.beak);f.position.set(sd*.22,.04,.14);f.rotation.y=sd*.18;this.group.add(f);this.ft.push(f);}
   this.blob=new G.Mesh(g.shadow,s.blob);this.blob.renderOrder=1;this.group.add(this.blob);
