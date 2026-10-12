@@ -12,6 +12,7 @@ import {makeTextures} from './tex.js';
 import {makeMaterials,buildLevel} from './build.js';
 import {Particles,SpeedLines} from './fx.js';
 import {Sound} from './sound.js';
+import {addRound,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,fmtN=n=>Math.round(n).toLocaleString('en-US');
 const RUN=120,DT=1/120,ID='skatecity',SAVE='pxd_skatecity';
@@ -220,8 +221,7 @@ function showOver(){app='over';$('hud').hidden=true;document.body.classList.remo
  $('otok').textContent=`+${tok} TOKENS · BEST ${fmtN(save.best[L.id]||0)}`+(r.newGoals.length?` · +${r.newGoals.length} STAT POINT${r.newGoals.length>1?'S':''}`:'')+(unlockedNow?` · ${nx.name} UNLOCKED!`:'');
  $('over').hidden=false;}
 function award(won){const pts=run.score;lastAward={pts,won,level:L.name,best:run.best,goals:goalsDone(L.id),vs:run.vs?`${rival.look.name} ${fmtN(run.rivalScore)}`:''};
- const tok=5+Math.min(60,pts/1500|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
+ const tok=5+Math.min(60,pts/1500|0);addRound(tok,won);saveBest(ID,pts);return tok;}
 
 /* ================= rendering ================= */
 const POST={exposure:1,bloom:.38,bloomThreshold:.92,bloomRadius:.45,vignette:.3,saturation:1.08,grain:.02};
@@ -242,9 +242,9 @@ function menuUI(){const o=save.opt;
 function seg(id,key){const el=$(id);el.querySelectorAll('button').forEach(b=>{b.classList.toggle('on',+b.dataset.v===save.opt[key]);b.onclick=()=>{save.opt[key]=+b.dataset.v;persist();menuUI();};});}
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;$('restart').onclick=()=>{app='run';start();};
 $('next').onclick=()=>{if(unlocked(li+1)){save.opt.level=li+1;start();}};
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Skate City\nPoints: ${a.pts||0}\nPark: ${a.level||''}\nBest combo: ${a.best||0}\nGoals: ${a.goals||0}/7${a.vs?'\nRival: '+a.vs+(a.won?' (won)':' (lost)'):''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore(ID,a.pts||0,body);};
 // skater editor
 const STATN={air:'AIR',speed:'SPEED',spin:'SPIN',balance:'BALANCE',flip:'FLIP'};
 function openEditor(){$('skater').hidden=false;$('sName').value=save.look.name;editorUI();}

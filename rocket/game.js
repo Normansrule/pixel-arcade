@@ -6,6 +6,7 @@ import {W,L,GW,GH,GD,RB,CAR,SP} from './physics.js';
 import {TEAM,makeEnv,buildArena,buildPads,makeCar,makeBall,Particles,Trail,Shocks,Mirror} from './models.js';
 import {DIFF,assignRoles,think} from './ai.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const NAMES=['VOLT','NOVA','RIFT','BLITZ','COMET','ZEPHYR','JINX','ORBIT','TORQUE','QUASAR','FLUX','RAVEN','EMBER','HALO','PISTON','SPARK','DYNAMO','KESTREL'];
@@ -86,9 +87,8 @@ function showOver(){app='over';$('hud').hidden=true;document.body.classList.remo
  const tok=award(me,me&&me.team===win);$('otok').textContent=me?`+${tok} TOKENS · BEST ${best()} PTS`:'';$('over').hidden=false;overT=0;}
 let overMvp=null,overT=0,lastAward=null;
 function award(me,won){if(!me)return 0;const pts=me.stats.score+(won?50:0);lastAward={pts,won,goals:me.stats.goals,saves:me.stats.saves,score:`${score[0]}-${score[1]}`,mode:`${opt.size}v${opt.size}`,diff:DIFF[opt.diff].n.toLowerCase(),split:opt.humans===2};
- const tok=5+Math.min(60,pts/20|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'rocket3d';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'rocket3d')||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/20|0);addRound(tok,won);saveBest('rocket3d',pts);return tok;}
+function best(){return bestScore('rocket3d');}
 
 /* ================= events from physics ================= */
 const tv=new V(),tv2=new V(),tq=new THREE.Quaternion();
@@ -272,9 +272,9 @@ addEventListener('resize',()=>{fxFull&&(fxFull.w=0);fxSplit.forEach(f=>f&&(f.w=0
 const seg=(id,key)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
 seg('o-mode','size');seg('o-pl','humans');seg('o-diff','diff');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Rocket Arena\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nGoals: ${a.goals||0} · Saves: ${a.saves||0}\nMode: ${a.mode||''}${a.split?' split-screen':''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] rocket3d '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('rocket3d',a.pts||0,body);};
 
 /* ================= loop ================= */
 toMenu();drawJumbo();

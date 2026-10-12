@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sky Lancers · Pixel Arcade</title>
+<meta name="description" content="Sky Lancers: full 3D arcade air combat in the browser. Mouse-aim dogfights over a procedural archipelago — guns, heat-seekers, flares, bombs, carrier landings, a seven-mission campaign and free-for-all dogfights.">
+<link rel="stylesheet" href="sky.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="cloudfx"></div>
+<div id="gfx"></div>
+<div id="dmg"></div>
+<div id="hud" hidden>
+  <canvas id="hudc"></canvas>
+  <div id="top"><b id="clock">5:00</b></div>
+  <div id="objbox"><span class="lab">OBJECTIVE</span><p id="obj"></p><div class="sc"><b id="score">0</b><i>PTS</i><span id="kills"></span></div><div id="lives"></div></div>
+  <div id="feed"></div>
+  <canvas id="radar" width="170" height="170"></canvas>
+  <div id="wpn">
+    <div class="pl"><span id="w-plane"></span><span class="hpw">HULL <b id="hp">100%</b></span></div>
+    <div class="dmgrow">
+      <svg viewBox="0 0 60 64" class="sil"><polygon id="d-wingL" points="27,24 3,34 3,39 27,35"/><polygon id="d-wingR" points="33,24 57,34 57,39 33,35"/><rect id="d-body" x="26" y="16" width="8" height="34" rx="3"/><rect id="d-engine" x="26.5" y="6" width="7" height="10" rx="3"/><polygon id="d-tail" points="30,48 19,56 19,59 41,59 41,56"/></svg>
+      <table>
+        <tr><td>GUN</td><td><b id="w-gun">0</b><div class="heat"><i id="w-heat"></i></div></td></tr>
+        <tr id="w-msl-row"><td>MSL</td><td><b id="w-msl">0</b></td></tr>
+        <tr><td>FLR</td><td><b id="w-flr">0</b></td></tr>
+        <tr><td>BMB</td><td><b id="w-bmb">0</b></td></tr>
+      </table>
+    </div>
+  </div>
+  <div id="gear" hidden>GEAR DOWN</div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="warn"></div>
+  <div id="toasts"></div>
+  <table id="board" hidden></table>
+</div>
+
+<div id="menu">
+  <div class="col">
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · AIR COMBAT</p>
+    <h1>SKY<br>LANCERS<em>.</em></h1>
+    <p class="how">Mouse-aim air combat over a sunlit archipelago. Out-turn, out-climb and out-think the enemy — then bring her home on the carrier deck.</p>
+    <div class="seg big" id="o-mode"><button data-v="campaign">CAMPAIGN</button><button data-v="ffa">DOGFIGHT</button></div>
+    <div id="campaign"><div id="missions"></div><p id="m-brief"></p></div>
+    <div id="dogfight" hidden><div class="opts"><label>OPPONENTS</label><div class="seg" id="o-cpus"><button data-v="3">3 CPU</button><button data-v="5">5 CPU</button><button data-v="7">7 CPU</button></div></div><p class="note">Free-for-all over the islands. Every pilot is your enemy; most kills when the clock hits zero wins. Unlimited respawns.</p></div>
+    <label class="lab">AIRCRAFT</label>
+    <div id="planes"></div>
+    <div class="opts">
+      <label>CPU SKILL</label><div class="seg" id="o-diff"><button data-v="0">ROOKIE</button><button data-v="1">VETERAN</button><button data-v="2">ACE</button></div>
+      <label>TIME LIMIT</label><div class="seg" id="o-clock"><button data-v="180">3:00</button><button data-v="300">5:00</button><button data-v="480">8:00</button></div>
+      <label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.6">SMOOTH</button><button data-v="1">NORMAL</button><button data-v="1.5">FAST</button></div>
+    </div>
+    <div class="row"><button id="go" class="go">FLY</button></div>
+  </div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Steer (plane follows the mouse)</td><td><kbd>Mouse</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Guns · missile (lock first)</td><td><kbd>LMB</kbd> <kbd>RMB</kbd> <span class="pad">RT Y</span></td></tr>
+    <tr><td>Throttle</td><td><kbd>W</kbd> <kbd>S</kbd> <span class="pad">D-pad</span></td></tr>
+    <tr><td>Roll · yaw</td><td><kbd>A</kbd> <kbd>D</kbd> · <kbd>Q</kbd> <kbd>E</kbd> <span class="pad">LB RB</span></td></tr>
+    <tr><td>Afterburner / boost · airbrake</td><td><kbd>Shift</kbd> · <kbd>Ctrl</kbd> <span class="pad">A LT</span></td></tr>
+    <tr><td>Flares · bomb</td><td><kbd>F</kbd> · <kbd>Space</kbd> <span class="pad">B X</span></td></tr>
+    <tr><td>Free look · cockpit view</td><td><kbd>C</kbd> hold · <kbd>V</kbd></td></tr>
+    <tr><td>Eject · gear · pause</td><td><kbd>J</kbd> · <kbd>L</kbd> · <kbd>Esc</kbd> <span class="pad">Back Start</span></td></tr>
+    <tr><td>Scoreboard · graphics</td><td><kbd>Tab</kbd> · <kbd>G</kbd></td></tr>
+  </table>
+  <p>Keep your speed up — hard turns bleed energy, climbs cost it, dives give it back. Hold the nose on a target to lock a missile (steady tone), flare when the warning screams. Slow down near the carrier: the gear drops automatically, touch down on the deck to rearm, repair and score a landing bonus. <kbd>W</kbd> to the stop to catapult off.</p>
+</div>
+
+<div id="brief" hidden>
+  <p class="eye" id="b-tag"></p>
+  <h1 id="b-name"></h1>
+  <p class="how" id="b-text"></p>
+  <p class="obj" id="b-obj"></p>
+  <div class="row"><button id="launch" class="go">LAUNCH ▸</button><button id="b-back" class="ghost">BACK</button></div>
+  <p class="hint">Click LAUNCH (or press Enter) to capture the mouse. Esc pauses.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLDING<br>PATTERN<em>.</em></h1><p class="how">Click resume to recapture the mouse.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">ABORT SORTIE</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="o-eye"></p>
+  <p class="res" id="o-res"></p>
+  <div class="stars" id="o-stars"></div>
+  <div class="tables"><table id="o-stats"></table><table id="o-board" hidden></table></div>
+  <p class="tok" id="o-tok"></p>
+  <div class="row"><button id="o-next" class="go" hidden>NEXT MISSION ▸</button><button id="again" class="go">RETRY</button><button id="o-menu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

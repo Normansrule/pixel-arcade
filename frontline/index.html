@@ -4,24 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Frontline Ops · Pixel Arcade</title>
-<meta name="description" content="Frontline Ops: a full 3D modern military shooter in the browser. Three campaign missions, 6v6 team deathmatch against bots and wave survival, with loadouts, attachments, ranks and killstreaks.">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="description" content="Frontline Ops: a full 3D modern military shooter in the browser. A three-mission cinematic campaign, 6v6 team deathmatch and domination against squads of CPU operators, and wave survival on four original maps, with loadouts, aim down sights and killstreaks.">
 <link rel="stylesheet" href="frontline.css">
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="vig"></div><div id="hurt"></div><div id="flashbang"></div>
+<div id="hurt"></div><div id="lowhp"></div><div id="flashov"></div>
 <div id="scope" hidden><div class="ring"></div><i class="h"></i><i class="v"></i><b></b></div>
+<div id="cine" hidden><div class="bar t"></div><div class="bar b"></div><div class="txt"><p class="op" id="cop"></p><p class="wh" id="cwh"></p><p class="ln" id="cln"></p></div><p class="skip">SPACE · SKIP</p></div>
 <div id="hud" hidden>
-  <div id="mmw"><canvas id="mini" width="200" height="200"></canvas><span class="n">N</span></div>
+  <div id="mmw"><canvas id="mini" width="220" height="220"></canvas><span class="n">N</span></div>
   <div id="obj"><p class="t" id="objt"></p><p class="s" id="objs"></p><div id="objbar"><i></i></div></div>
-  <div id="top"><div class="sc f"><i>FRIENDLY</i><b id="sf">0</b></div><div class="clk"><b id="clock">8:00</b><span id="clkl"></span></div><div class="sc e"><b id="se">0</b><i>ENEMY</i></div></div>
+  <div id="top">
+    <div class="sc f"><i>FRIENDLY</i><b id="sf">0</b></div>
+    <div class="clk"><b id="clock">8:00</b><span id="clkl"></span></div>
+    <div class="sc e"><b id="se">0</b><i>ENEMY</i></div>
+  </div>
+  <div id="flags"></div>
   <div id="feed"></div>
   <div id="radio"></div>
-  <div id="streaks"></div>
-  <div id="wpn"><p class="nm" id="wname">HAVOC-4</p><p class="am"><b id="amag">30</b><span id="ares">/ 150</span></p><p class="eq"><span id="efrag">◆◆</span><span id="esmoke">●</span><span id="watt"></span></p><div id="hp"><i></i></div></div>
+  <div id="vit"><div id="hp"><i></i></div><div id="streaks"></div></div>
+  <div id="wpn"><p class="nm" id="wname">HAVOC-4</p><p class="am"><b id="amag">30</b><span id="ares">/ 150</span></p><p class="eq"><span id="efrag"></span><span id="esmoke"></span><span id="watt"></span></p></div>
   <div id="cross"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><em></em></div>
   <div id="hit"><i></i><i></i><i></i><i></i></div>
+  <div id="kc"></div>
   <div id="dmg"></div>
   <div id="nades"></div>
   <div id="marks"></div>
@@ -34,16 +40,21 @@
   <div id="ann"></div>
 </div>
 <div id="menu" class="scr">
-  <div class="mtop"><div id="rank"><b id="rname">RECRUIT</b><span id="rxp">0 XP</span><div class="bar"><i id="rbar"></i></div></div></div>
-  <p class="eye">[ PIXEL ARCADE ] FULL 3D · MILITARY SHOOTER</p>
-  <h1>FRONTLINE<br>OPS<em>.</em></h1>
-  <div class="opts">
-    <label>MODE</label><div class="seg" id="o-mode"><button data-v="campaign">CAMPAIGN</button><button data-v="tdm" class="on">TEAM DEATHMATCH</button><button data-v="survival">SURVIVAL</button></div>
-    <label id="l-sub">MAP</label><div class="seg" id="o-sub"></div>
-    <label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">RECRUIT</button><button data-v="1" class="on">REGULAR</button><button data-v="2">VETERAN</button></div>
+  <div id="rank"><b id="rname">RECRUIT</b><span id="rxp">0 XP</span><div class="bar"><i id="rbar"></i></div></div>
+  <div class="mcol">
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · MILITARY SHOOTER</p>
+    <h1>FRONTLINE<br>OPS<em>.</em></h1>
+    <div class="modes" id="o-mode">
+      <button data-v="campaign"><b>CAMPAIGN</b><small>3 MISSIONS</small></button>
+      <button data-v="tdm"><b>TEAM DEATHMATCH</b><small>6V6</small></button>
+      <button data-v="dom"><b>DOMINATION</b><small>6V6 · 3 FLAGS</small></button>
+      <button data-v="survival"><b>SURVIVAL</b><small>10 WAVES</small></button>
+    </div>
+    <p class="how" id="mdesc"></p>
+    <div class="maps" id="o-sub"></div>
+    <div class="opts"><label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">RECRUIT</button><button data-v="1" class="on">REGULAR</button><button data-v="2">VETERAN</button></div></div>
+    <div class="row"><button id="go" class="go">DEPLOY</button><button id="loadbtn" class="ghost">LOADOUT</button></div>
   </div>
-  <p class="how" id="mdesc"></p>
-  <div class="row"><button id="go" class="go">DEPLOY</button><button id="loadbtn" class="ghost">LOADOUT</button></div>
 </div>
 <div id="load" class="scr" hidden>
   <p class="eye">CREATE A CLASS</p><h2>LOADOUT<em>.</em></h2>
@@ -53,19 +64,16 @@
 <div class="card" id="keys">
   <h3>CONTROLS<em>.</em></h3>
   <table>
-    <tr><td>Move · sprint</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <span class="pad">LS · L3</span></td></tr>
-    <tr><td>Fire · aim down sights</td><td><kbd>LMB</kbd> <kbd>RMB</kbd> <span class="pad">RT LT</span></td></tr>
-    <tr><td>Jump / mantle</td><td><kbd>Space</kbd> <span class="pad">A</span></td></tr>
-    <tr><td>Crouch · slide while sprinting</td><td><kbd>C</kbd> <kbd>Ctrl</kbd> <span class="pad">B</span></td></tr>
-    <tr><td>Reload · interact (hold)</td><td><kbd>R</kbd> <kbd>E</kbd> <span class="pad">X</span></td></tr>
-    <tr><td>Swap weapon</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>Wheel</kbd> <span class="pad">Y</span></td></tr>
-    <tr><td>Frag (hold to cook) · smoke</td><td><kbd>Q</kbd> <kbd>X</kbd> <span class="pad">RB LB</span></td></tr>
-    <tr><td>Knife</td><td><kbd>V</kbd> <span class="pad">R3</span></td></tr>
-    <tr><td>Killstreaks UAV · AIR · DRONE</td><td><kbd>3</kbd> <kbd>4</kbd> <kbd>5</kbd> <span class="pad">D-pad</span></td></tr>
-    <tr><td>Hold breath (scoped)</td><td><kbd>Shift</kbd></td></tr>
-    <tr><td>Scores · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+    <tr><td>Move · sprint</td><td><kbd>WASD</kbd> <kbd>Shift</kbd></td></tr>
+    <tr><td>Fire · aim down sights</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Jump · crouch / slide</td><td><kbd>Space</kbd> <kbd>C</kbd></td></tr>
+    <tr><td>Reload · use (hold)</td><td><kbd>R</kbd> <kbd>E</kbd></td></tr>
+    <tr><td>Swap · knife</td><td><kbd>1</kbd><kbd>2</kbd> <kbd>V</kbd></td></tr>
+    <tr><td>Frag (hold) · smoke</td><td><kbd>Q</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Killstreaks</td><td><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd></td></tr>
+    <tr><td>Scores · pause · gfx</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
   </table>
-  <p>Headshots deal bonus damage. Health regenerates when you stay out of fire. Chain 3 / 5 / 7 kills without dying for a UAV, an airstrike and an attack drone.</p>
+  <p>Gamepad supported. 3 / 5 / 7 kills in one life: UAV, airstrike, attack drone.</p>
 </div>
 <div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>STAND<br>BY<em>.</em></h1><p class="how">Click resume to lock the mouse again.</p>
   <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.6">LOW</button><button data-v="1" class="on">MED</button><button data-v="1.6">HIGH</button><button data-v="2.3">MAX</button></div>
@@ -75,7 +83,7 @@
   <p class="eye" id="oeye">MATCH OVER</p>
   <p class="res" id="ores">VICTORY</p>
   <p class="fs" id="ofs"></p>
-  <table id="stats"></table>
+  <div id="stats"></div>
   <div id="oxp"><span id="oxpt"></span><div class="bar"><i id="oxpb"></i></div></div>
   <p class="tok" id="otok"></p>
   <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>

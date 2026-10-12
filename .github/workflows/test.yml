@@ -1,12 +1,27 @@
 name: test
 on: [push, pull_request]
 jobs:
+  # every canvas game in every mode, split into slices that run in parallel
   games:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        range: ['0:115', '115:230', '230:345', '345:9999']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node tests/test.js
+        env:
+          RANGE: ${{ matrix.range }}
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: node test.js
-      - run: node quality.js
-      - run: node scorecheck.js
+      - run: node tests/quality.js
+      - run: node tests/scorecheck.js
+      # README counts, the 3D table, docs/GAMES.md and index.html's script tags must match the registry
+      - run: python3 tools/gen_docs.py --check

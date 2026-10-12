@@ -1,0 +1,53 @@
+// FORTRESS BREACH — procedural canvas textures + derived normal maps (no image files).
+import * as THREE from '../vendor/three.module.min.js';
+let seed=7;const R=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const cnv=(w,h=w)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+function speckle(x,w,h,n,a,sz=2){for(let i=0;i<n;i++){const v=R();x.fillStyle=v<.5?`rgba(0,0,0,${a*R()})`:`rgba(255,255,255,${a*R()*.7})`;const s=1+R()*sz;x.fillRect(R()*w,R()*h,s,s);}}
+function blotch(x,w,h,n,col,r0,r1){for(let i=0;i<n;i++){const r=r0+R()*(r1-r0),cx=R()*w,cy=R()*h;for(const ox of[-w,0,w])for(const oy of[-h,0,h]){const g=x.createRadialGradient(cx+ox,cy+oy,0,cx+ox,cy+oy,r);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(cx+ox-r,cy+oy-r,r*2,r*2);}}}
+function normalFrom(src,str=2){const w=src.width,h=src.height,d=src.getContext('2d').getImageData(0,0,w,h).data,c=cnv(w,h),x=c.getContext('2d'),o=x.createImageData(w,h);
+ const L=new Float32Array(w*h);for(let i=0;i<w*h;i++)L[i]=(d[i*4]+d[i*4+1]+d[i*4+2])/765;
+ for(let j=0;j<h;j++)for(let i=0;i<w;i++){const dx=(L[j*w+(i+1)%w]-L[j*w+(i-1+w)%w])*str,dy=(L[((j+1)%h)*w+i]-L[((j-1+h)%h)*w+i])*str,l=Math.hypot(dx,dy,1),k=(j*w+i)*4;o.data[k]=(-dx/l*.5+.5)*255;o.data[k+1]=(dy/l*.5+.5)*255;o.data[k+2]=(1/l*.5+.5)*255;o.data[k+3]=255;}
+ x.putImageData(o,0,0);return c;}
+function T(c,srgb=true){const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;if(srgb)t.colorSpace=THREE.SRGBColorSpace;return t;}
+function pair(size,draw,hdraw,str,rdraw){const c=cnv(size),x=c.getContext('2d');draw(x,size,size);let hc=c;if(hdraw){hc=cnv(size);hdraw(hc.getContext('2d'),size,size);}const o={map:T(c),normalMap:T(normalFrom(hc,str),false)};
+ if(rdraw){const rc=cnv(size>>1);rdraw(rc.getContext('2d'),size>>1,size>>1);o.roughnessMap=T(rc,false);}return o;}
+function blocks(x,w,h,bw,bh,vary,mortar,gap=3){x.fillStyle=mortar;x.fillRect(0,0,w,h);for(let r=0;r<h/bh;r++)for(let c=-1;c<w/bw+1;c++){const ox=(r%2)*bw/2;x.fillStyle=vary(R());x.fillRect(c*bw+ox+gap/2,r*bh+gap/2,bw-gap,bh-gap);}}
+function planks(x,w,h,n,base,dark){const ph=h/n;for(let i=0;i<n;i++){const v=R();x.fillStyle=base(v);x.fillRect(0,i*ph,w,ph);for(let k=0;k<18;k++){x.strokeStyle=`rgba(40,24,10,${.06+R()*.16})`;x.lineWidth=1;x.beginPath();const y=i*ph+2+R()*(ph-4);x.moveTo(0,y);x.bezierCurveTo(w*.3,y+R()*4-2,w*.6,y+R()*4-2,w,y);x.stroke();}
+  x.fillStyle=dark;x.fillRect(0,i*ph,w,2);const cut=R()*w;x.fillRect(cut,i*ph,2,ph);}}
+
+export function makeTextures(){seed=29;const S={};
+ S.plaster=pair(256,(x,w,h)=>{x.fillStyle='#d9d4cb';x.fillRect(0,0,w,h);blotch(x,w,h,30,'rgba(120,110,95,.08)',10,60);speckle(x,w,h,7000,.08,1.5);},null,1.2,(x,w,h)=>{x.fillStyle='#d0d0d0';x.fillRect(0,0,w,h);speckle(x,w,h,2000,.2);});
+ S.brick=pair(512,(x,w,h)=>{blocks(x,w,h,64,32,v=>`rgb(${96+v*42|0},${44+v*18|0},${34+v*14|0})`,'#5a5550',4);speckle(x,w,h,16000,.22,2);blotch(x,w,h,20,'rgba(10,10,10,.22)',20,80);},
+  (x,w,h)=>{blocks(x,w,h,64,32,v=>`rgb(${170+v*50|0},${170+v*50|0},${170+v*50|0})`,'#1a1a1a',5);speckle(x,w,h,9000,.4,2);},2.4);
+ S.concrete=pair(256,(x,w,h)=>{x.fillStyle='#7b7d7f';x.fillRect(0,0,w,h);blotch(x,w,h,30,'rgba(40,40,40,.16)',10,50);speckle(x,w,h,9000,.18,2);x.fillStyle='rgba(0,0,0,.25)';x.fillRect(0,h-2,w,2);x.fillRect(w-2,0,2,h);},null,1.5);
+ S.wood=pair(512,(x,w,h)=>{planks(x,w,h,8,v=>`rgb(${120+v*40|0},${78+v*26|0},${44+v*16|0})`,'rgba(25,14,6,.75)');speckle(x,w,h,4000,.08);},null,1.8,(x,w,h)=>{x.fillStyle='#707070';x.fillRect(0,0,w,h);speckle(x,w,h,3000,.15);});
+ S.tile=pair(256,(x,w,h)=>{const n=4,s=w/n;for(let j=0;j<n;j++)for(let i=0;i<n;i++){const v=R()*.08;x.fillStyle=(i+j)%2?`rgb(${206-v*90|0},${206-v*90|0},${200-v*90|0})`:`rgb(${60+v*60|0},${66+v*60|0},${72+v*60|0})`;x.fillRect(i*s,j*s,s,s);}
+  x.strokeStyle='#8b8a86';x.lineWidth=3;for(let i=0;i<=n;i++){x.beginPath();x.moveTo(i*s,0);x.lineTo(i*s,h);x.stroke();x.beginPath();x.moveTo(0,i*s);x.lineTo(w,i*s);x.stroke();}speckle(x,w,h,1500,.06);},null,1.4,(x,w,h)=>{x.fillStyle='#303030';x.fillRect(0,0,w,h);x.strokeStyle='#b0b0b0';x.lineWidth=3;for(let i=0;i<=4;i++){x.beginPath();x.moveTo(i*w/4,0);x.lineTo(i*w/4,h);x.stroke();x.beginPath();x.moveTo(0,i*h/4);x.lineTo(w,i*h/4);x.stroke();}});
+ S.carpet=pair(256,(x,w,h)=>{x.fillStyle='#6e6a62';x.fillRect(0,0,w,h);speckle(x,w,h,22000,.18,1.2);for(let i=0;i<w;i+=16){x.fillStyle='rgba(0,0,0,.05)';x.fillRect(i,0,8,h);}},null,2.2);
+ S.server=pair(256,(x,w,h)=>{x.fillStyle='#a3a7ab';x.fillRect(0,0,w,h);speckle(x,w,h,5000,.12);x.strokeStyle='#3e4246';x.lineWidth=4;x.strokeRect(2,2,w-4,h-4);x.strokeStyle='#5c6166';x.lineWidth=1;for(let i=1;i<4;i++){x.beginPath();x.moveTo(i*w/4,8);x.lineTo(i*w/4,h-8);x.stroke();}
+  for(const[a,b]of[[14,14],[w-14,14],[14,h-14],[w-14,h-14]]){x.fillStyle='#2a2a2a';x.beginPath();x.arc(a,b,4,0,7);x.fill();}},null,1.6);
+ S.planks=pair(256,(x,w,h)=>{x.fillStyle='#1d140c';x.fillRect(0,0,w,h);const n=5,ph=h/n;for(let i=0;i<n;i++){const v=R();x.fillStyle=`rgb(${140+v*40|0},${100+v*30|0},${60+v*20|0})`;x.fillRect(0,i*ph+3,w,ph-6);for(let k=0;k<14;k++){x.strokeStyle=`rgba(60,36,14,${.1+R()*.2})`;x.beginPath();const y=i*ph+5+R()*(ph-10);x.moveTo(0,y);x.lineTo(w,y+R()*6-3);x.stroke();}
+  for(const a of[10,w-10]){x.fillStyle='#333';x.beginPath();x.arc(a,i*ph+ph/2,3,0,7);x.fill();}}speckle(x,w,h,2500,.15);},null,2.4);
+ S.metal=pair(256,(x,w,h)=>{x.fillStyle='#5b6067';x.fillRect(0,0,w,h);blotch(x,w,h,14,'rgba(110,70,40,.3)',6,30);speckle(x,w,h,5000,.18);x.fillStyle='rgba(20,22,26,.85)';for(let i=0;i<4;i++)x.fillRect(0,i*h/4,w,3);x.fillRect(0,0,3,h);
+  for(let j=0;j<4;j++)for(let i=0;i<8;i++){x.fillStyle='#2a2d31';x.beginPath();x.arc(8+i*w/8,j*h/4+10,3,0,7);x.fill();}
+  x.fillStyle='#c99a1c';x.fillRect(0,h-26,w,20);x.fillStyle='#16181b';for(let i=-30;i<w;i+=26){x.beginPath();x.moveTo(i,h-26);x.lineTo(i+13,h-26);x.lineTo(i+33,h-6);x.lineTo(i+20,h-6);x.fill();}},null,2,(x,w,h)=>{x.fillStyle='#606060';x.fillRect(0,0,w,h);blotch(x,w,h,12,'rgba(255,255,255,.3)',8,40);});
+ S.grass=pair(256,(x,w,h)=>{x.fillStyle='#2d3a22';x.fillRect(0,0,w,h);for(let i=0;i<9000;i++){const v=R();x.fillStyle=`rgba(${40+v*50|0},${60+v*50|0},${28+v*20|0},.7)`;x.fillRect(R()*w,R()*h,1,2+R()*4);}blotch(x,w,h,16,'rgba(40,30,18,.3)',10,40);},null,2);
+ S.asphalt=pair(256,(x,w,h)=>{x.fillStyle='#2c2d2f';x.fillRect(0,0,w,h);speckle(x,w,h,16000,.25,1.5);blotch(x,w,h,10,'rgba(0,0,0,.35)',20,70);},null,1.6,(x,w,h)=>{x.fillStyle='#8a8a8a';x.fillRect(0,0,w,h);blotch(x,w,h,14,'rgba(0,0,0,.85)',20,70);});
+ S.paving=pair(256,(x,w,h)=>{blocks(x,w,h,64,64,v=>`rgb(${92+v*26|0},${88+v*22|0},${82+v*18|0})`,'#3c3a37',5);speckle(x,w,h,6000,.18);},null,2,(x,w,h)=>{x.fillStyle='#909090';x.fillRect(0,0,w,h);blotch(x,w,h,10,'rgba(0,0,0,.8)',16,50);});
+ S.roof=pair(256,(x,w,h)=>{blocks(x,w,h,32,24,v=>`rgb(${38+v*22|0},${40+v*22|0},${46+v*24|0})`,'#141518',3);speckle(x,w,h,6000,.2);},null,2.2);
+ S.hedge=pair(256,(x,w,h)=>{x.fillStyle='#14200f';x.fillRect(0,0,w,h);for(let i=0;i<6000;i++){const v=R();x.fillStyle=`rgba(${22+v*40|0},${40+v*55|0},${18+v*24|0},.85)`;const s=2+R()*5;x.beginPath();x.ellipse(R()*w,R()*h,s,s*.6,R()*3,0,7);x.fill();}},null,3);
+ S.bark=pair(128,(x,w,h)=>{x.fillStyle='#3a2c20';x.fillRect(0,0,w,h);for(let i=0;i<60;i++){x.fillStyle=`rgba(15,10,6,${.3+R()*.4})`;x.fillRect(R()*w,0,1+R()*3,h);}speckle(x,w,h,2000,.2);},null,3);
+ S.fabric=pair(128,(x,w,h)=>{x.fillStyle='#8a8a8a';x.fillRect(0,0,w,h);for(let i=0;i<h;i+=2){x.fillStyle=`rgba(0,0,0,${.05+R()*.05})`;x.fillRect(0,i,w,1);}speckle(x,w,h,3000,.12);},null,1.4);
+ S.decal=(()=>{const c=cnv(64),x=c.getContext('2d');const g=x.createRadialGradient(32,32,0,32,32,30);g.addColorStop(0,'rgba(5,5,5,1)');g.addColorStop(.2,'rgba(15,12,10,.95)');g.addColorStop(.36,'rgba(70,62,52,.5)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,64,64);
+  x.strokeStyle='rgba(20,16,12,.6)';for(let i=0;i<7;i++){const a=R()*6.28;x.beginPath();x.moveTo(32,32);x.lineTo(32+Math.cos(a)*(12+R()*12),32+Math.sin(a)*(12+R()*12));x.stroke();}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
+ S.scorch=(()=>{const c=cnv(128),x=c.getContext('2d');const g=x.createRadialGradient(64,64,0,64,64,62);g.addColorStop(0,'rgba(8,6,5,.95)');g.addColorStop(.5,'rgba(18,14,10,.6)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,128,128);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
+ S.puff=(()=>{const c=cnv(128),x=c.getContext('2d');for(let i=0;i<26;i++){const r=14+R()*30,cx=64+(R()-.5)*50,cy=64+(R()-.5)*50,g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,'rgba(255,255,255,.34)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,128,128);}
+  const m=x.getImageData(0,0,128,128);for(let j=0;j<128;j++)for(let i=0;i<128;i++){const d=Math.hypot(i-64,j-64)/64;m.data[(j*128+i)*4+3]*=Math.max(0,1-d*d);}x.putImageData(m,0,0);return new THREE.CanvasTexture(c);})();
+ S.flash=(()=>{const c=cnv(128),x=c.getContext('2d');x.translate(64,64);for(let i=0;i<7;i++){x.rotate(Math.PI*2/7+R()*.3);const g=x.createLinearGradient(0,0,58,0);g.addColorStop(0,'rgba(255,240,200,1)');g.addColorStop(1,'rgba(255,140,40,0)');x.fillStyle=g;x.beginPath();x.moveTo(0,-7);x.lineTo(56+R()*6,0);x.lineTo(0,7);x.fill();}
+  const g=x.createRadialGradient(0,0,0,0,0,30);g.addColorStop(0,'rgba(255,255,240,1)');g.addColorStop(1,'rgba(255,180,80,0)');x.fillStyle=g;x.fillRect(-64,-64,128,128);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
+ S.glow=(()=>{const c=cnv(64),x=c.getContext('2d');const g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.3,'rgba(255,255,255,.35)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
+ // static noise for camera / drone feeds
+ S.noise=(()=>{const c=cnv(128),x=c.getContext('2d'),m=x.createImageData(128,128);for(let i=0;i<m.data.length;i+=4){const v=R()*255;m.data[i]=m.data[i+1]=m.data[i+2]=v;m.data[i+3]=255;}x.putImageData(m,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;})();
+ return S;}
+// painted sign / label texture
+export function labelTex(txt,o={}){const c=cnv(o.w||256,o.h||64),x=c.getContext('2d');x.fillStyle=o.bg||'#101418';x.fillRect(0,0,c.width,c.height);x.fillStyle=o.fg||'#e8e2d0';x.font=`700 ${o.size||30}px ${o.font||'monospace'}`;x.textAlign='center';x.textBaseline='middle';x.fillText(txt,c.width/2,c.height/2+2);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}

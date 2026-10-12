@@ -7,79 +7,81 @@ export function seed(s){if(s==null){rand=Math.random;return;}let a=s>>>0||1;rand
 export const pick=a=>a[rand()*a.length|0];
 export const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rand()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
 
-export const MW=70,MH=41;
-// rooms: r=[x0,x1,z0,z1) in cells. light = room light colour, floor = floor tint
+export const MW=64,MH=46;
+// rooms: r=[x0,x1,z0,z1) in cells. light = lamp colour, floor = floor tint, pat = floor pattern, acc = accent (trim / signage)
 export const ROOMS=[
- {id:'caf',n:'CAFETERIA',r:[24,42,2,16],light:0xffe2b8,floor:0x8a8f99,li:1.0},
- {id:'med',n:'MED BAY',r:[10,20,4,13],light:0xbff4ff,floor:0x9fb6bf,li:1.0},
- {id:'o2',n:'O2 GARDEN',r:[48,57,3,12],light:0xb9ffc8,floor:0x6f8a74,li:.9},
- {id:'nav',n:'NAVIGATION',r:[60,70,16,26],light:0x9cc4ff,floor:0x6c7a96,li:.95},
- {id:'shd',n:'SHIELDS',r:[50,59,30,39],light:0xc7b0ff,floor:0x7d7698,li:.9},
- {id:'com',n:'COMMS',r:[36,45,32,40],light:0x9ff0e4,floor:0x6a8a88,li:.9},
- {id:'sto',n:'STORAGE',r:[22,33,24,37],light:0xffc985,floor:0x8c8070,li:.95},
- {id:'ele',n:'ELECTRICAL',r:[12,20,24,32],light:0xfff09a,floor:0x77786a,li:.85},
- {id:'rea',n:'REACTOR',r:[0,8,15,26],light:0x8fd0ff,floor:0x5f6f80,li:.9},
- {id:'eng',n:'ENGINES',r:[2,11,32,41],light:0xffb27a,floor:0x806e64,li:.9},
+ {id:'gal',n:'GALLEY',r:[25,41,16,30],light:0xffe3bf,floor:0xffffff,li:1.0,pat:'tile',acc:0xff8a3d},
+ {id:'brg',n:'BRIDGE',r:[27,39,1,8],light:0xd6e6ff,floor:0xffffff,li:.95,pat:'deck',acc:0x4fa3ff},
+ {id:'rad',n:'RADIO ROOM',r:[18,25,1,8],light:0xffe9c9,floor:0xffffff,li:.9,pat:'plank',acc:0xffc23d},
+ {id:'obs',n:'OBSERVATORY',r:[51,61,2,13],light:0xe0d4ff,floor:0xffffff,li:.95,pat:'star',acc:0xa77bff},
+ {id:'grn',n:'GREENHOUSE',r:[51,63,17,29],light:0xe4ffd6,floor:0xffffff,li:1.0,pat:'moss',acc:0x4fd16a},
+ {id:'lab',n:'LAB',r:[51,61,33,43],light:0xd8fffa,floor:0xffffff,li:.95,pat:'hex',acc:0x2fd6c8},
+ {id:'eng',n:'ENGINE ROOM',r:[25,41,38,45],light:0xffd6b0,floor:0xffffff,li:.95,pat:'grate',acc:0xff5a3d},
+ {id:'crg',n:'CARGO BAY',r:[5,16,33,43],light:0xffe6b0,floor:0xffffff,li:.95,pat:'hazard',acc:0xffb020},
+ {id:'pwr',n:'POWER ROOM',r:[4,15,18,28],light:0xfff4b8,floor:0xffffff,li:.9,pat:'grate2',acc:0xffe03d},
+ {id:'bnk',n:'BUNKS',r:[5,16,2,12],light:0xffdcea,floor:0xffffff,li:.95,pat:'carpet',acc:0xff7ab8},
 ];
 export const RI=Object.fromEntries(ROOMS.map((r,i)=>[r.id,i]));
-// hallways [x0,x1,z0,z1)
-export const HALLS=[[20,24,7,10],[42,48,6,9],[31,34,16,19],[8,60,19,22],[26,29,22,24],[15,18,22,24],[13,16,13,19],[53,56,22,30],[33,36,33,36],[45,50,34,37],[52,55,12,19],[11,15,32,35],[3,6,26,32]];
-// movement-blocking props (cells) — tables, beds, crates, machines. They do not block sight.
+// words the meeting chat understands for each room
+export const ALIAS={gal:['galley','kitchen','mess','cafe'],brg:['bridge','helm','cockpit'],rad:['radio'],obs:['observatory','obs','telescope'],grn:['greenhouse','green','garden','plants'],
+ lab:['lab','science'],eng:['engine','engines','eng'],crg:['cargo','storage'],pwr:['power','generator','elec'],bnk:['bunks','bunk','beds','quarters']};
+// hallways [x0,x1,z0,z1): the ring around the galley, its spokes, the room halls and two service tunnels
+export const HALLS=[[19,47,10,13],[19,47,33,36],[19,22,10,36],[44,47,10,36],
+ [31,35,13,16],[31,35,30,33],[22,25,21,25],[41,44,21,25],
+ [31,35,8,10],[20,23,8,10],[16,19,10,13],[47,51,10,13],[47,51,21,25],[47,51,33,36],[31,35,36,38],[16,19,33,36],[15,19,21,25],
+ [16,25,39,41],[41,51,39,41],[55,58,13,17],[8,11,12,18]];
+// movement-blocking props (cells). They do not block sight.
 export const PROPS=[
- // cafeteria: 4 tables + emergency button pedestal
- {k:'table',r:[27,29,4,6]},{k:'table',r:[37,39,4,6]},{k:'table',r:[27,29,11,13]},{k:'table',r:[37,39,11,13]},{k:'button',r:[32,34,8,10]},
- // med bay beds
- {k:'bed',r:[11,13,4,6]},{k:'bed',r:[14,16,4,6]},
- // O2 planters
- {k:'planter',r:[50,55,5,6]},{k:'planter',r:[50,55,8,9]},
- // navigation helm (window wall)
- {k:'helm',r:[68,70,18,24]},
- // shields emitter
- {k:'emitter',r:[54,56,34,36]},
- // comms racks
- {k:'rack',r:[37,41,38,40]},
- // storage crates
- {k:'crate',r:[24,26,29,31]},{k:'crate',r:[28,31,31,33]},{k:'crate',r:[25,27,34,36]},{k:'crate',r:[30,32,27,28]},
- // electrical cabinets
- {k:'cabinet',r:[12,13,26,30]},
- // reactor core
- {k:'core',r:[2,5,19,22]},
- // engine block
- {k:'engine',r:[3,6,35,39]},
+ {k:'button',r:[32,34,22,24]},{k:'table',r:[27,29,18,20]},{k:'table',r:[37,39,18,20]},{k:'table',r:[27,29,26,28]},{k:'table',r:[37,39,26,28]},
+ {k:'counter',r:[25,29,16,17]},{k:'counter',r:[37,41,16,17]},
+ {k:'chair',r:[32,34,4,5]},
+ {k:'rack',r:[18,19,3,7]},
+ {k:'scope',r:[55,58,5,8]},{k:'globe',r:[59,60,10,12]},
+ {k:'bed',r:[53,61,19,20]},{k:'bed',r:[53,61,26,27]},{k:'tree',r:[58,60,22,24]},
+ {k:'tanks',r:[60,61,34,37]},{k:'bench',r:[54,57,37,39]},
+ {k:'core',r:[31,35,41,44]},
+ {k:'crate',r:[6,8,34,36]},{k:'crate',r:[10,13,36,38]},{k:'crate',r:[6,9,40,42]},{k:'crate',r:[12,14,41,43]},
+ {k:'gen',r:[6,9,21,25]},{k:'cabinet',r:[4,5,19,27]},
+ {k:'bunk',r:[6,9,3,5]},{k:'bunk',r:[11,14,3,5]},{k:'bunk',r:[6,9,7,9]},{k:'locker',r:[15,16,3,7]},
 ];
 // task / fix stations: stand point (x,z) and direction to the console (dx,dz); dir 0,0 = floor pad
-export const TASK_TYPES={wires:{n:'FIX WIRING',v:'fixing wiring',t:5},swipe:{n:'SWIPE CARD',v:'swiping my card',t:4},fuel:{n:'FUEL ENGINES',v:'fuelling the engines',t:6},shields:{n:'PRIME SHIELDS',v:'priming shields',t:5},asteroids:{n:'CLEAR ASTEROIDS',v:'shooting asteroids',t:8},download:{n:'DOWNLOAD DATA',v:'downloading data',t:8},align:{n:'ALIGN ENGINE',v:'aligning the engine',t:5},scan:{n:'SUBMIT SCAN',v:'doing my scan',t:8,visual:true}};
+export const TASK_TYPES={
+ cook:{n:'COOK RATIONS',v:'cooking rations',t:5},trash:{n:'TIDY UP',v:'tidying up',t:4},stars:{n:'CHART STARS',v:'charting stars',t:6},
+ beacon:{n:'CALIBRATE BEACON',v:'calibrating the beacon',t:6},radio:{n:'TUNE RADIO',v:'tuning the radio',t:5},water:{n:'WATER SPROUTS',v:'watering the sprouts',t:5},
+ mix:{n:'MIX SAMPLE',v:'mixing a sample',t:6},scan:{n:'GRAVITY TEST',v:'doing my gravity test',t:8,visual:true},pipes:{n:'ROUTE COOLANT',v:'routing coolant',t:6},
+ crates:{n:'SORT CARGO',v:'sorting cargo',t:6}};
 export const STATIONS=[
- {id:'w-ele',type:'wires',x:13.5,z:24.6,dx:0,dz:-1},
- {id:'w-caf',type:'wires',x:40.5,z:2.6,dx:0,dz:-1},
- {id:'w-nav',type:'wires',x:62.5,z:16.6,dx:0,dz:-1},
- {id:'w-sto',type:'wires',x:31.5,z:24.6,dx:0,dz:-1},
- {id:'s-com',type:'swipe',x:41.5,z:32.6,dx:0,dz:-1},
- {id:'s-caf',type:'swipe',x:25.5,z:2.6,dx:0,dz:-1},
- {id:'f-sto',type:'fuel',x:22.6,z:26.5,dx:-1,dz:0},
- {id:'f-eng',type:'fuel',x:6.6,z:37,dx:-1,dz:0},
- {id:'h-shd',type:'shields',x:56.6,z:35,dx:-1,dz:0},
- {id:'h-sh2',type:'shields',x:51.5,z:30.6,dx:0,dz:-1},
- {id:'a-nav',type:'asteroids',x:67.4,z:21,dx:1,dz:0},
- {id:'a-o2',type:'asteroids',x:56.4,z:10.5,dx:1,dz:0},
- {id:'d-com',type:'download',x:37.5,z:32.6,dx:0,dz:-1},
- {id:'d-o2',type:'download',x:49.5,z:3.6,dx:0,dz:-1},
- {id:'d-med',type:'download',x:19.4,z:11.5,dx:1,dz:0},
- {id:'d-nav',type:'download',x:61.5,z:25.4,dx:0,dz:1},
- {id:'l-eng',type:'align',x:8.5,z:32.6,dx:0,dz:-1},
- {id:'l-rea',type:'align',x:.6,z:17.5,dx:-1,dz:0},
- {id:'c-med',type:'scan',x:17.5,z:10.2,dx:0,dz:0},
+ {id:'k-gal',type:'cook',x:25.6,z:28.5,dx:-1,dz:0},
+ {id:'t-gal',type:'trash',x:40.4,z:28.5,dx:1,dz:0},
+ {id:'t-bnk',type:'trash',x:15.4,z:8.5,dx:1,dz:0},
+ {id:'s-brg',type:'stars',x:29.5,z:1.6,dx:0,dz:-1},
+ {id:'s-obs',type:'stars',x:60.4,z:4.5,dx:1,dz:0},
+ {id:'b-brg',type:'beacon',x:36.5,z:1.6,dx:0,dz:-1},
+ {id:'b-rad',type:'beacon',x:20.5,z:1.6,dx:0,dz:-1},
+ {id:'r-rad',type:'radio',x:23.5,z:1.6,dx:0,dz:-1},
+ {id:'r-obs',type:'radio',x:53.5,z:2.6,dx:0,dz:-1},
+ {id:'w-gr1',type:'water',x:62.4,z:21,dx:1,dz:0},
+ {id:'w-gr2',type:'water',x:51.6,z:28,dx:-1,dz:0},
+ {id:'m-lab',type:'mix',x:55.5,z:33.6,dx:0,dz:-1},
+ {id:'m-la2',type:'mix',x:60.4,z:41,dx:1,dz:0},
+ {id:'g-lab',type:'scan',x:58.5,z:40.2,dx:0,dz:0},
+ {id:'p-pwr',type:'pipes',x:14.4,z:19.2,dx:1,dz:0},
+ {id:'p-eng',type:'pipes',x:39.5,z:38.6,dx:0,dz:-1},
+ {id:'c-cr1',type:'crates',x:5.6,z:38,dx:-1,dz:0},
+ {id:'c-cr2',type:'crates',x:15.4,z:37.5,dx:1,dz:0},
 ];
-export const FIX={lights:[{id:'x-ele',x:19.4,z:28,dx:1,dz:0}],reactor:[{id:'x-r1',x:.6,z:23.5,dx:-1,dz:0},{id:'x-r2',x:6.5,z:15.6,dx:0,dz:-1}],oxygen:[{id:'x-o1',x:56.4,z:6.5,dx:1,dz:0},{id:'x-o2',x:24.6,z:13.8,dx:-1,dz:0}]};
-export const BUTTON={x:33,z:9,r:1.9};
+export const FIX={lights:[{id:'x-pwr',x:14.4,z:27,dx:1,dz:0}],reactor:[{id:'x-r1',x:25.6,z:43,dx:-1,dz:0},{id:'x-r2',x:40.4,z:43,dx:1,dz:0}],oxygen:[{id:'x-o1',x:62.4,z:26.5,dx:1,dz:0},{id:'x-o2',x:33,z:1.6,dx:0,dz:-1}]};
+// what each sabotage is called on screen, and where it is fixed
+export const SAB={lights:{n:'LIGHTS OUT',fix:'FLIP THE BREAKERS IN THE POWER ROOM',short:'BREAKERS · POWER ROOM'},reactor:{n:'CORE OVERLOAD',fix:'HOLD BOTH CORE PANELS IN THE ENGINE ROOM',short:'CORE · ENGINE ROOM ×2'},oxygen:{n:'AIR FAILING',fix:'RESET THE SCRUBBERS IN THE GREENHOUSE AND ON THE BRIDGE',short:'AIR · GREENHOUSE + BRIDGE'}};
+export const BUTTON={x:33,z:23,r:1.9};
 export const VENTS=[
- {id:0,x:6.5,z:24.5,net:'A'},{id:1,x:9.5,z:39.5,net:'A'},{id:2,x:13.5,z:31,net:'A'},
- {id:3,x:11,z:11.5,net:'B'},{id:4,x:25.5,z:14.5,net:'B'},
- {id:5,x:49,z:10.5,net:'C'},{id:6,x:63.5,z:24.5,net:'C'},{id:7,x:51,z:37.5,net:'C'},
- {id:8,x:31.5,z:35.5,net:'D'},{id:9,x:43.5,z:38.5,net:'D'},
+ {id:0,x:12.5,z:10.5,net:'A'},{id:1,x:11.5,z:26.5,net:'A'},{id:2,x:9.5,z:38.5,net:'A'},
+ {id:3,x:21.5,z:5.5,net:'B'},{id:4,x:29.5,z:6.5,net:'B'},
+ {id:5,x:53.5,z:10.5,net:'C'},{id:6,x:55.5,z:23.5,net:'C'},{id:7,x:52.5,z:41.5,net:'C'},
+ {id:8,x:30.5,z:28.5,net:'D'},{id:9,x:39.5,z:41.5,net:'D'},
 ];
 export const ventLinks=v=>VENTS.filter(o=>o.net===v.net&&o!==v);
-export const SPAWN={x:33,z:12.4};
+export const SPAWN={x:33,z:26.4};
 
 /* ---------- grids ---------- */
 export const floor=new Uint8Array(MW*MH),roomOf=new Int8Array(MW*MH).fill(-1),prop=new Uint8Array(MW*MH),door=new Int16Array(MW*MH).fill(-1);

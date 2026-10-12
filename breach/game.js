@@ -12,6 +12,7 @@ import {buildViewmodel} from './viewmodel.js';
 import {Sound} from './sound.js';
 import {DIFF,Brain,planRound,botBuy,think,teamTick} from './ai.js';
 import {HUD} from './hud.js';
+import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,D2R=Math.PI/180;
 const ROUND_T=115,FREEZE_T=10,END_T=5.5,FUSE=40,PLANT_T=3,GRAV=15,BUY_WINDOW=20,DT=1/60;
@@ -51,7 +52,7 @@ class Agent{constructor(id,name,squad,human){Object.assign(this,{id,name,squad,h
 function makeRig(a){if(a.rig)scene.remove(a.rig.root);a.rig=new Rig(G.side(a),a.variant);scene.add(a.rig.root);a.rig.setGun(a.cls());a.rig.root.visible=true;}
 
 function roster(attract){for(const a of G.agents)if(a.rig)scene.remove(a.rig.root);G.agents=[];const names=NAMES.slice().sort(()=>R()-.5);let id=0;
- let user='';try{user=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+ let user=userName();
  for(let s=0;s<2;s++)for(let i=0;i<5;i++){const human=!attract&&s===0&&i===0;G.agents.push(new Agent(id++,human?(user?user.toUpperCase().slice(0,10):'YOU'):names.pop(),s,human));}
  G.player=G.agents.find(a=>a.human)||null;for(const a of G.agents)makeRig(a);}
 
@@ -424,9 +425,8 @@ function endMatch(){G.app='over';unlock();hud.closeBuy();hud.board(false);hud.sh
  $('stats').innerHTML='<tr><th>OPERATOR</th><th>K</th><th>D</th><th>A</th><th>ADR</th><th>HS%</th><th>★</th><th>SCORE</th></tr>'+[0,1].map(s=>rows(s).map(a=>`<tr class="s${s}${a.human?' me':''}"><td>${a.name}${a===mvp?'<span class="mvp">MVP</span>':''}</td><td>${a.stats.k}</td><td>${a.stats.d}</td><td>${a.stats.a}</td><td>${Math.round(a.stats.dmg/Math.max(1,G.round))}</td><td>${a.stats.k?Math.round(a.stats.hs/a.stats.k*100):0}</td><td>${a.stats.mvp}</td><td>${a.stats.score}</td></tr>`).join('')).join('');
  G.mvpMatch=mvp;menuA=0; const tok=award(me,won);$('otok').textContent=me?`+${tok} TOKENS · BEST ${best()} PTS`:'';$('over').hidden=false;}
 function award(me,won){if(!me)return 0;const s=me.stats;const pts=s.k*100+s.a*40+s.mvp*150+s.hs*20+G.roundsWon[0]*25+(won?500:0);lastAward={pts,won,score:`${G.score[0]}-${G.score[1]}`,k:s.k,d:s.d,map:MAPS[G.opt.map].name,diff:DIFF[G.opt.diff].n.toLowerCase(),side:G.opt.side};
- const tok=5+Math.min(60,pts/40|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'breachpoint';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'breachpoint')||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/40|0);addRound(tok,won);saveBest('breachpoint',pts);return tok;}
+function best(){return bestScore('breachpoint');}
 
 /* ================= HUD + menus ================= */
 const hud=new HUD(G,{SIDE,WPN,NADE,GEAR,NADE_ORDER,MAPS,ECON,ROUND_T,BUY_WINDOW,buy:(id)=>{if(G.player&&G.canBuy(G.player))G.buy(G.player,id);},autobuy:()=>{const P=G.player;if(!P||!G.canBuy(P))return;botBuy(P,G);hud.refreshBuy();snd.buy(true);}});
@@ -435,9 +435,9 @@ const seg=(id,key,num=true)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;e
 seg('o-map','map');seg('o-side','side',false);seg('o-diff','diff');seg('o-len','len');seg('o-ot','ot');seg('o-sens','sens');seg('o-vol','vol');
 $('o-vol').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>snd.setVol(G.opt.vol)));
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Breach Point\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\nMap: ${a.map||''} · Side: ${a.side||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] breachpoint '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('breachpoint',a.pts||0,body);};
 
 /* ================= loop ================= */
 attractMode();

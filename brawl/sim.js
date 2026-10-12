@@ -14,7 +14,7 @@ export class Fighter{
   this.W=def.W;this.H0=def.Hh;this.stocks=o.stocks??3;this.score=0;this.inp=blankInput();
   this.stats={kos:0,falls:0,sds:0,dealt:0,taken:0,maxCombo:0,big:0,hits:0};this.reset(0,0,1);}
  reset(x,y,face){Object.assign(this,{x,y,vx:0,vy:0,kx:0,ky:0,face,ground:null,st:'air',t:0,move:null,mname:'',mt:0,hits:{},chg:0,dmg:0,hitstun:0,hitlag:0,shield:50,inv:0,jumpsLeft:this.def.jumps,usedUp:false,usedSide:false,adUsed:false,ff:false,
-  ledge:null,ledgeCd:0,ledgeFresh:true,held:null,holder:null,holdT:0,thr:null,dropT:0,lag:0,techT:0,counterOn:0,reflectOn:0,armorOn:0,vanish:false,noGrav:false,item:null,power:0,fuel:999,px:0,py:0,combo:0,comboBy:null,lastHitBy:null,lastHitF:-9999,tap:false,dizzyT:0,flash:0,sub:'',dodgeDir:0,pumT:0,teleDir:null,stunT:0,deadT:0,lastKb:0});}
+  ledge:null,ledgeCd:0,ledgeFresh:true,held:null,holder:null,holdT:0,thr:null,dropT:0,lag:0,techT:0,counterOn:0,reflectOn:0,armorOn:0,vanish:false,noGrav:false,item:null,power:0,fuel:999,px:0,py:0,combo:0,comboBy:null,lastHitBy:null,lastHitF:-9999,tap:false,aegis:0,dizzyT:0,flash:0,sub:'',dodgeDir:0,pumT:0,teleDir:null,stunT:0,deadT:0,lastKb:0});}
  get H(){return this.st==='crouch'||this.st==='down'?this.H0*.62:this.H0;}
  hittable(){return this.inv<=0&&!['dead','out','revive'].includes(this.st)&&!this.vanish;}
  cx(){return this.x;}cy(){return this.y+this.H*.5;}
@@ -34,13 +34,13 @@ export class World{
   for(const f of this.f){if(f.st==='out')continue;if(f.hitlag>0){f.hitlag--;continue;}this.update(f);}
   this.holds();this.hitboxes();this.stepProj();this.stepItems();this.hazard();
   for(const f of this.f)this.blast(f);
-  if(this.itemsOn&&--this.itemT<=0){this.itemT=600+Math.random()*480|0;const s=this.stage.solids[0];const r=Math.random();this.spawnItem(r<.4?'bomb':r<.72?'heal':'power',s.x0+2+Math.random()*(s.x1-s.x0-4),s.y+9);}
+  if(this.itemsOn&&--this.itemT<=0){this.itemT=540+Math.random()*420|0;const s=this.stage.solids[0];const r=Math.random();this.spawnItem(r<.3?'bomb':r<.5?'heal':r<.66?'power':r<.86?'bat':'aegis',s.x0+2+Math.random()*(s.x1-s.x0-4),s.y+9);}
   return fr;}
  movePlats(){const t=this.frame/FPS;for(const p of this.stage.plats){if(!p.path){p.dx=p.dy=0;continue;}const P=p.path,k=Math.sin(t*Math.PI*2/P.period+(P.phase||0));const nx=P.ax?P.ax*k:0,ny=P.ay?P.ay*(P.type==='bob'?Math.sin(t*Math.PI*2/P.period*2+(P.phase||0)):k):0;
    const x0=p.bx0+nx,y=p.by+ny;p.dx=x0-p.x0;p.dy=y-p.y;p.x0=x0;p.x1=p.bx1+nx;p.y=y;}}
 
  /* ---------- per-fighter update: control, physics, moves ---------- */
- update(f){const inp=f.inp,st0=f.st;f.t++;if(f.inv>0)f.inv--;if(f.ledgeCd>0)f.ledgeCd--;if(f.power>0)f.power--;if(f.dropT>0)f.dropT--;if(f.techT>0)f.techT--;if(f.pumT>0)f.pumT--;if(f.flash>0)f.flash--;
+ update(f){const inp=f.inp,st0=f.st;f.t++;if(f.inv>0)f.inv--;if(f.ledgeCd>0)f.ledgeCd--;if(f.power>0)f.power--;if(f.dropT>0)f.dropT--;if(f.techT>0)f.techT--;if(f.pumT>0)f.pumT--;if(f.flash>0)f.flash--;if(f.aegis>0){f.aegis--;f.inv=Math.max(f.inv,1);}
   if(inp.shieldP)f.techT=20;if(f.st!=='shield')f.shield=Math.min(50,f.shield+.09);
   f.downP=inp.y<-.5&&f.py>=-.5;f.upP=inp.y>.5&&f.py<=.5;f.sideP=Math.abs(inp.x)>.6&&Math.abs(f.px)<=.6;f.py=inp.y;f.px=inp.x;
   f.counterOn=0;f.reflectOn=0;f.armorOn=0;f.noGrav=false;
@@ -78,6 +78,7 @@ export class World{
  /* ---------- actions ---------- */
  start(f,name,keep){const m=f.mv[name];if(!m)return false;f.move=m;f.mname=name;f.mt=0;f.st='atk';f.t=0;f.hits={};f.chg=0;f.charging=false;f.vanish=false;f.sub='';if(!keep&&f.ground)f.vx*=.5;
   const sp=m.sp;if(sp){if(sp.kind==='jet'){f.usedUp=true;if(f.fuel>sp.fuel)f.fuel=sp.fuel;if(f.ground){f.ground=null;f.y+=.05;}}if(sp.kind==='pound'&&f.ground){f.ground=null;f.vy=sp.hop;f.y+=.05;}}
+  if(m.bat&&f.item&&f.item.type==='bat'){f.item.uses=(f.item.uses??6)-1;if(f.item.uses<=0){const it=f.item;f.item=null;it.held=null;it.dead=true;this.ev('itembreak',f,it);}}
   this.ev('move',f,name);return true;}
  special(f,name){const air=!f.ground;if(name==='uspec'){if(air&&f.usedUp)return false;f.usedUp=true;}if(name==='sspec'){if(air&&f.usedSide)return false;if(air)f.usedSide=true;}
   if(Math.abs(f.inp.x)>.3&&name!=='dspec')f.face=sgn(f.inp.x);return this.start(f,name);}
@@ -98,10 +99,11 @@ export class World{
  adodge(f,x,y){f.st='adodge';f.t=0;f.adUsed=true;const m=Math.hypot(x,y);if(m>.3){f.dodgeDir=1;f.vx=x/m*.36;f.vy=y/m*.36;}else{f.dodgeDir=0;}f.ff=false;this.ev('dodge',f);}
  roll(f,d){f.st='roll';f.t=0;f.dodgeDir=d;this.ev('dodge',f);}
  groundAct(f,inp){if(inp.want&&this.doWant(f,inp.want))return;
+  if(f.item&&f.item.type==='bat'&&inp.atkP&&!inp.smashP){if(Math.abs(inp.x)>.3)f.face=sgn(inp.x);this.start(f,'batSwing');return;}
   if(f.item&&(inp.atkP||inp.smashP)){this.throwItem(f,inp);return;}if(f.item&&inp.grabP){this.dropItem(f);return;}
   if(inp.smashP){const x=inp.sx||inp.x,y=inp.sy||inp.y;if(y>.5){this.start(f,'usmash');return;}if(y<-.5){this.start(f,'dsmash');return;}if(x*f.face<-.3)f.face*=-1;this.start(f,'fsmash');return;}
   if(inp.spcP){if(this.special(f,this.specFor(f,inp.x,inp.y)))return;}
-  if(inp.atkP){const it=this.items.find(i=>!i.held&&i.type==='bomb'&&i.ground&&Math.abs(i.x-f.x)<1.1&&Math.abs(i.y-f.y)<1);if(it){f.item=it;it.held=f;it.thrown=false;this.ev('pickup',f);return;}
+  if(inp.atkP){const it=this.items.find(i=>!i.held&&(i.type==='bomb'||i.type==='bat')&&i.ground&&Math.abs(i.x-f.x)<1.1&&Math.abs(i.y-f.y)<1);if(it){f.item=it;it.held=f;it.thrown=false;this.ev('pickup',f);return;}
    if(f.st==='run'&&Math.abs(f.vx)>f.def.walk*1.15){this.start(f,'dash',true);return;}
    if(inp.y>.5){this.start(f,'utilt');return;}if(inp.y<-.5){this.start(f,'dtilt');return;}if(Math.abs(inp.x)>.5){f.face=sgn(inp.x);this.start(f,'ftilt');return;}this.start(f,'jab');return;}
   if(inp.grabP){this.start(f,'grab');return;}
@@ -111,6 +113,7 @@ export class World{
   if(inp.y<-.5){if(f.st!=='crouch'){f.st='crouch';f.t=0;}return;}
   const ax=Math.abs(inp.x);if(ax>.2){if(sgn(inp.x)!==f.face){f.face=sgn(inp.x);}const run=ax>.75;const ns=run?'run':'walk';if(f.st!==ns){f.st=ns;f.t=0;}}else if(f.st!=='idle'){f.st='idle';f.t=0;}}
  airAct(f,inp){if(inp.want&&this.doWant(f,inp.want))return;
+  if(f.item&&f.item.type==='bat'&&inp.atkP&&!inp.smashP){this.start(f,'batAir');return;}
   if(f.item&&(inp.atkP||inp.smashP)){this.throwItem(f,inp);return;}
   if(inp.smashP){f.ujT=0;this.start(f,this.aerialFor(f,inp.sx||inp.x,inp.sy||inp.y));return;}
   if(inp.spcP){f.ujT=0;if(this.special(f,this.specFor(f,inp.x,inp.y)))return;}
@@ -326,8 +329,10 @@ export class World{
    else{it.x+=it.ground.dx;it.y=it.ground.y;if(it.x<it.ground.x0||it.x>it.ground.x1)it.ground=null;}
    if(it.dead)continue;
    if(it.thrown&&it.type==='bomb'){for(const v of this.f){if((v===it.owner&&it.t<20)||!v.hittable())continue;if(this.overlap(it.x,it.y+.3,.45,v)){this.itemBoom(it);break;}}}
-   else if(it.type!=='bomb'){for(const v of this.f){if(!v.hittable()||v.st==='held')continue;if(Math.abs(v.x-it.x)<.9&&it.y>v.y-.4&&it.y<v.y+v.H){if(it.type==='heal'){v.dmg=Math.max(0,v.dmg-30);}else{v.power=600;}it.dead=true;this.ev('collect',v,it);break;}}}
+   else if(it.thrown&&it.type==='bat'&&!it.ground){for(const v of this.f){if(v===it.owner||!v.hittable())continue;if(this.overlap(it.x,it.y+.3,.55,v)){this.hit(it.owner,v,{d:11,a:361,b:38,g:72,fx:'impact',away:true},it.x,it.y+.3,{x:it.x,dirX:Math.sign(it.vx)||1});it.thrown=false;it.vx*=-.25;it.vy=.15;break;}}}
+   else if(it.type!=='bomb'&&it.type!=='bat'){for(const v of this.f){if(['dead','out','revive','held'].includes(v.st)||v.vanish)continue;if(Math.abs(v.x-it.x)<.9&&it.y>v.y-.4&&it.y<v.y+v.H){if(it.type==='heal'){v.dmg=Math.max(0,v.dmg-30);}else if(it.type==='aegis'){v.aegis=420;v.inv=Math.max(v.inv,2);}else{v.power=600;}it.dead=true;this.ev('collect',v,it);break;}}}
    const B=this.stage.blast;if(it.y<B.b||it.x<B.l||it.x>B.r)it.dead=true;
+   if(it.thrown&&it.type==='bat'&&it.ground)it.thrown=false;
    if(!it.held&&it.t>(it.type==='bomb'&&it.ground?540:900)){if(it.type==='bomb')this.itemBoom(it);else it.dead=true;}}
   this.items=this.items.filter(i=>!i.dead);}
  itemBoom(it){it.dead=true;if(it.held){it.held.item=null;it.held=null;}const p={x:it.x,y:it.y+.3,d:15,a:361,b:50,g:82,fx:'fire',owner:it.owner||null,explode:2,selfHit:true};this.explode(p);}

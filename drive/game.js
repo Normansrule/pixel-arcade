@@ -9,6 +9,7 @@ import {Traffic,Peds,Police} from './traffic.js';
 import {Jobs} from './missions.js';
 import {Sound,STATIONS} from './sound.js';
 import {HUD,mmss} from './hud.js';
+import {addRound,postScore,saveBest,userName} from '../js/kit3d/score.js';
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,lerp=(a,b,t)=>a+(b-a)*t;
 const DT=1/60;
 
@@ -73,8 +74,7 @@ function endShift(why){if(G.app!=='play'&&G.app!=='paused')return;G.app='over';h
  const tok=award(won);$('otok').innerHTML=`+${tok} TOKENS · CAREER $${Math.round(c.total).toLocaleString()} · BEST SHIFT $${Math.round(c.best).toLocaleString()}`+(newly.length?` · <b>UNLOCKED ${newly.map(k=>k.name).join(', ')}</b>`:'');$('over').hidden=false;}
 let lastAward=null;
 function award(won){const pts=Math.max(0,Math.round(G.cash));lastAward={pts,won,car:car.spec.name,len:G.opt.len,fares:G.stats.fares,races:G.stats.raceWins};const tok=5+Math.min(50,pts/100|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'drive3d';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
+ addRound(tok,won);saveBest('drive3d',pts);return tok;}
 
 /* ================= time of day + weather ================= */
 function setTimeOfDay(){const f=1-G.shiftLeft/G.shiftLen;G.hour=17.25+f*8.25;const h=G.hour;let rain=cl((h-19.9)/1.1,0,1);if(h>22.6&&h<23.6)rain*=.35;G.rain=rain;G.wet+=(Math.max(rain,G.wet*.995)-G.wet)*.02;if(G.wet<rain)G.wet=Math.min(rain,G.wet+.004);world.setTime(h,G.rain,G.wet);}
@@ -205,9 +205,9 @@ function renderGarage(){const c=career();$('garage').innerHTML=CARS.map(s=>{cons
  $('career').textContent=`CAREER $${Math.round(c.total).toLocaleString()} · BEST SHIFT $${Math.round(c.best).toLocaleString()} · ${c.shifts} SHIFTS`;}
 renderGarage();
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>endShift('quit');
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
+$('post').onclick=()=>{const a=lastAward||{};const u=userName();
  const body=`Game: Night Drive\nEarnings: $${a.pts||0}\nResult: ${a.won?'target met':'target missed'} · ${a.len||8} min shift\nCar: ${a.car||''} · Fares: ${a.fares||0} · Race wins: ${a.races||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] drive3d '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+ postScore('drive3d',a.pts||0,body);};
 
 /* ================= boot ================= */
 traffic.spawnAll(null);jobs.reset();car.place(WORLD/2,WORLD/2,0,city);world.setTime(17.6,0,0);

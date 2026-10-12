@@ -1,4 +1,4 @@
-// Copy this file to games/yourname.js, add a <script> tag in index.html, run `node test.js`.
+// Copy this file to games/<pack>.js, add it to "packs" in games/index.json, run python3 tools/gen_docs.py and node tests/quick.js mygame.
 (function(){const A=window.A,{W,H,K}=A;
 A.add({id:'mygame',name:'MY GAME',cat:'CLASSICS',how:'MOVE. CATCH THE STARS.',make(){
   const g={over:null,score:0};let x=160,star={x:100,y:0};

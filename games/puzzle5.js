@@ -2,7 +2,7 @@
    Mouse: click / drag (mouse:1). Keyboard: arrows move a cursor, A acts, B is the secondary action. */
 (function(){const A=window.A,{W,H,K}=A,T=A.text,S=A.sfx,cl=A.clamp,ri=A.ri,rnd=A.rnd;
 const PAL=['#ff5a6e','#ffa53f','#ffd84a','#48d97c','#2fd6c3','#4d9fff','#a870ff','#ff6fcf','#b88a5a','#c8d0e0'];
-const LC=new Map();
+const LC=new Map();const X=new Proxy({},{get:(_,k)=>A.gx[k]});
 const lt=(h,f)=>{const k=h+f;let v=LC.get(k);if(v)return v;const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;const m=x=>Math.max(0,Math.min(255,f>1?x+(255-x)*(f-1):x*f))|0;v='rgb('+m(r)+','+m(g)+','+m(b)+')';LC.set(k,v);return v;};
 const rgba=(h,a)=>{const n=parseInt(h.slice(1),16);return'rgba('+(n>>16)+','+((n>>8)&255)+','+(n&255)+','+a+')';};
 const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=ri(i+1);const t=a[i];a[i]=a[j];a[j]=t;}return a;};
@@ -266,7 +266,7 @@ A.add({id:'untangle',name:'UNTANGLE',cat:'PUZZLE',mouse:1,time:900,how:'DRAG THE
    if(gm?(P.rel||!P.dn):(P.ka||P.press)){grab=-1;st.mv++;S('hit');if(ncross===0){wt=45;S('coin');A.burst(160,128,K.g,24,3);}}}};
  g.draw=()=>{bgd('#15214a');const c=A.c;c.fillStyle='rgba(255,255,255,.035)';for(let x=0;x<W;x+=20)c.fillRect(x,17,1,H);for(let y=20;y<H;y+=20)c.fillRect(0,y,W,1);
   const ok=ncross===0;E.forEach(([a,b],i)=>{const p=pts[a],q=pts[b],x=crossE.has(i);ln(p.dx+1,p.dy+2,q.dx+1,q.dy+2,'rgba(0,0,0,.35)',3);ln(p.dx,p.dy,q.dx,q.dy,ok?(wt%10<5?'#7dffa8':'#48d97c'):x?'#ff5a6e':'#5fd0ff',x?3:2.5);ln(p.dx,p.dy-.5,q.dx,q.dy-.5,'rgba(255,255,255,.25)',.8);});
-  pts.forEach((p,i)=>{const big=i===grab,r=big?8:i===hov?7:6;fr(p.dx-r+1,p.dy-r+3,r*2,r*2,r,'rgba(0,0,0,.35)');if(big)glow(p.dx,p.dy,18,'#ffd84a',.5);A.circ(p.dx,p.dy,r,big?'#ffd84a':i===hov?'#ffffff':'#c8d8ff');A.ring(p.dx,p.dy,r,big?'#a07a10':'#46507a');});
+  pts.forEach((p,i)=>{const big=i===grab,r=big?8:i===hov?7:6;fr(p.dx-r+1,p.dy-r+3,r*2,r*2,r,'rgba(0,0,0,.35)');if(big)glow(p.dx,p.dy,18,'#ffd84a',.5);else if(ok)glow(p.dx,p.dy,12,'#48d97c',.35);X.orb(p.dx,p.dy,r,big?'#ffd84a':ok?'#7dffa8':i===hov?'#ffffff':'#a8c0ff');A.ring(p.dx,p.dy,r,big?'#a07a10':'#46507a');});
   if(!P.used&&grab<0&&!st.clr){A.ring(cx,cy,10,rgba('#ffd84a',.5+.4*pulse()));ln(cx-4,cy,cx+4,cy,K.y,1);ln(cx,cy-4,cx,cy+4,K.y,1);}
   hud(g,st,ok?'UNTANGLED!':'CROSSINGS '+ncross,ok?K.g:K.r);T('MOVES '+st.mv+'   '+mmss(st.t),160,229,K.gr,1,'c');lvDraw(st);pcur();};
  return g;}});

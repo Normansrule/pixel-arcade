@@ -59,7 +59,7 @@ const table=(col)=>{A.cls(col||'#1a120c');const c=A.c;c.fillStyle=rg(120,110,20,
 const plate=(x,y,w,h,on,col)=>{const c=A.c;c.fillStyle=on?'rgba(20,14,30,.82)':'rgba(10,8,14,.6)';c.fillRect(x,y,w,h);A.box(x,y,w,h,on?(col||K.y):'rgba(255,255,255,.14)');};
 /* right-hand side panel: two player cards (top = side 1), status and hint lines */
 const panel=(g,o)=>{const x=o.x||232,w=W-4-x;[1,0].forEach((s,k)=>{const y=(o.y||8)+k*50,on=!g.over&&g.turn===s&&!o.noTurn;plate(x,y,w,44,on,o.col?o.col[s]:K.y);piece(x+12,y+13,7,o.mat[s]);
-  T(nm(g,s),x+24,y+7,on?K.w:K.gr,2);if(o.stat)T(o.stat[s],x+5,y+26,K.w,1);if(o.stat2)T(o.stat2[s],x+5,y+35,K.gr,1);if(on&&isCPU(g,s)&&!demo(g))T('THINKING'+'...'.slice(0,(A.t>>4)%4),x+w-4,y+8,K.c,1,'r');});
+  T(nm(g,s),x+24,y+7,on?K.w:K.gr,2);if(o.stat)T(o.stat[s],x+5,y+26,K.w,1);if(o.stat2)T(o.stat2[s],x+5,y+35,K.gr,1);if(on&&isCPU(g,s)&&!demo(g)){for(let d=0;d<3;d++){const ph=((A.t>>3)-d)%3===0;disc(x+w-16+d*5,y+12,ph?1.8:1.2,ph?K.c:'rgba(47,214,195,.4)');}}});
  let y=(o.y||8)+104;(o.lines||[]).forEach(l=>{if(!l)return;const s=String(l[0]);T(s,x+w/2,y,l[1]||K.w,1,'c');y+=10;});};
 const statusLine=(g,s,txt)=>isCPU(g,s)?nm(g,s)+' TO MOVE':txt;
 const fxHit=(x,y,col)=>{A.burst(x,y,col||K.y,14,2);A.shake=Math.max(A.shake,4);};
@@ -392,12 +392,12 @@ A.add({id:'cornerblocks',name:'CORNER BLOCKS',cat:'BOARD',vs:1,warm:30,time:600,
   if(I.r&&g.cu.x===13&&!I.mv){g.inT=true;g.tc=cl(Math.floor(g.cu.y/2),0,6)*3;S('blip');return;}
   moveCur(I,g.cu,14,14);if(I.b){g.or=(g.or+1)%CBO[g.pc[t]].length;S('blip');}
   if(I.a){const[x,y]=ghostXY(),cells=CBO[g.pc[t]][g.or];if(cbOk(g.st.b,t+1,!g.st.np[t],CBST[t],cells,x,y))doMove({p:g.pc[t],o:g.or,x,y});else{S('lose');g.msg='MUST TOUCH A CORNER';g.mt=50;}}};
- g.draw=()=>{table('#121620');const c=A.c,s=g.st,t=g.turn;frame(OX,OY,14*CS,14*CS,'ebon',5);c.fillStyle='#e8e4dc';c.fillRect(OX,OY,14*CS,14*CS);
-  for(let i=0;i<196;i++){const x=OX+(i%14)*CS,y=OY+(i/14|0)*CS;if(s.b[i])tile(x,y,CS,COL[s.b[i]-1]);else{c.fillStyle=(i%14+(i/14|0))%2?'#dedad0':'#e8e4dc';c.fillRect(x,y,CS,CS);c.fillStyle='rgba(0,0,0,.12)';c.fillRect(x,y+CS-1,CS,1);c.fillRect(x+CS-1,y,1,CS);}}
+ g.draw=()=>{table('#121620');const c=A.c,s=g.st,t=g.turn;frame(OX,OY,14*CS,14*CS,'ebon',5);c.fillStyle='#1c2230';c.fillRect(OX,OY,14*CS,14*CS);
+  for(let i=0;i<196;i++){const x=OX+(i%14)*CS,y=OY+(i/14|0)*CS;if(s.b[i])tile(x,y,CS,COL[s.b[i]-1]);else{c.fillStyle=(i%14+(i/14|0))%2?'#262e40':'#2c3448';c.fillRect(x,y,CS,CS);c.fillStyle='rgba(255,255,255,.07)';c.fillRect(x,y,CS,1);c.fillRect(x,y,1,CS);c.fillStyle='rgba(0,0,0,.3)';c.fillRect(x,y+CS-1,CS,1);c.fillRect(x+CS-1,y,1,CS);}}
   for(let k=0;k<2;k++)if(!s.b[CBST[k]]){const i=CBST[k];disc(OX+(i%14)*CS+CS/2,OY+(i/14|0)*CS+CS/2,3.5,COL[k]);}
   if(g.lastC.length&&!g.over){c.globalAlpha=.35+.25*pulse();c.strokeStyle='#ffffff';c.lineWidth=1.2;for(const i of g.lastC)c.strokeRect(OX+(i%14)*CS+1.5,OY+(i/14|0)*CS+1.5,CS-3,CS-3);c.globalAlpha=1;}
   const hum=!isCPU(g,t)&&!g.over&&!g.pass[t]&&!g.wait;
-  if(hum){for(const i of cbAnc(s.b,t+1,!s.np[t],CBST[t]))disc(OX+(i%14)*CS+CS/2,OY+(i/14|0)*CS+CS/2,1.6,'rgba(40,180,90,.8)');
+  if(hum){for(const i of cbAnc(s.b,t+1,!s.np[t],CBST[t]))disc(OX+(i%14)*CS+CS/2,OY+(i/14|0)*CS+CS/2,1.9,'rgba(80,255,140,'+(.55+.35*pulse())+')');
    if(!g.inT){const[x,y]=ghostXY(),cells=CBO[g.pc[t]][g.or],ok=cbOk(s.b,t+1,!s.np[t],CBST[t],cells,x,y);for(const[cx,cy]of cells){const X=cx+x,Y=cy+y;if(X<0||Y<0||X>13||Y>13)continue;tile(OX+X*CS,OY+Y*CS,CS,ok?COL[t]:'#c02030',.45+.3*pulse());}c.strokeStyle=t?K.p:K.c;c.lineWidth=1;c.strokeRect(OX+g.cu.x*CS+.5,OY+g.cu.y*CS+.5,CS-1,CS-1);}}
   const tt=hum||A.two?t:g.p1s;plate(TX-4,TY-4,122,196,hum&&g.inT,K.y);
   for(let k=0;k<21;k++){const p=20-k,col=k%3,row=k/3|0,bx=TX+col*40,by=TY+row*27,used=s.used[tt][p];const sel=g.pc[tt]===p,cur=hum&&g.inT&&g.tc===k;if(sel){c.fillStyle='rgba(255,220,80,.18)';c.fillRect(bx,by,38,25);}if(cur){c.strokeStyle=K.y;c.lineWidth=1.5;c.strokeRect(bx+.5,by+.5,37,24);}

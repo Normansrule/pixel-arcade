@@ -23,7 +23,7 @@ export function think(f,w){const inp=blankInput();f.inp=inp;const m=f.ai||(f.ai=
  const T=m.tgt;
  // recovery has priority
  const off=f.x<S.x0-.1||f.x>S.x1+.1||(!f.ground&&f.y<S.y-.4&&(f.x<S.x0+1||f.x>S.x1-1));
- if(!f.ground&&off){recover(f,w,inp,m,P,S);return inp;}
+ if(!f.ground&&off&&!(m.plan&&m.plan.kind==='leap'&&f.y>S.y-1&&f.st!=='helpless')){recover(f,w,inp,m,P,S);return inp;}
  if(st==='helpless'){inp.x=sgn(-f.x);return inp;}
  if(!T){inp.x=sgn(-f.x)*(Math.abs(f.x)>3?1:0);return inp;}
  hazardDodge(f,w,inp,P,S);if(inp.want)return inp;
@@ -56,10 +56,13 @@ function hazardDodge(f,w,inp,P,S){const z=w.haz,H=w.stage.hazard;if(!H||!z||!(z.
 /* ---------- planning ---------- */
 function decide(f,w,m,P,S,T){const dx=T.x-f.x,dy=T.y-f.y,adx=Math.abs(dx),dir=sgn(dx)||f.face,mv=f.mv;
  // items: heal when hurt, bombs to throw
- const it=w.items.find(i=>!i.held&&(i.type==='heal'&&f.dmg>40||i.type==='power'||i.type==='bomb'&&P.q>.4&&!f.item)&&Math.abs(i.x-f.x)<12&&i.ground);
+ const it=w.items.find(i=>!i.held&&(i.type==='heal'&&f.dmg>40||i.type==='power'||i.type==='aegis'||(i.type==='bomb'||i.type==='bat')&&P.q>.3&&!f.item)&&Math.abs(i.x-f.x)<12&&i.ground);
  if(it&&rnd()<.6)return{kind:'item',it};
+ if(f.item&&f.item.type==='bat')return{kind:'bat'};
  if(f.item)return{kind:'toss'};
- const Toff=T.x<S.x0-.5||T.x>S.x1+.5||(T.y<S.y-1&&!T.ground);
+ // a rival standing on a side platform (raft, ledge) is chased with a leap, not edge-guarded
+ if(T.ground&&T.ground!==S&&T.ground!==f.ground&&(T.x<S.x0-.3||T.x>S.x1+.3)&&T.st!=='revive')return{kind:'leap'};
+ const Toff=!T.ground&&(T.x<S.x0-.5||T.x>S.x1+.5||T.y<S.y-1);
  if(Toff&&P.edge&&T.st!=='revive')return{kind:'edge'};
  // projectile zoning at range
  const ns=mv.nspec&&mv.nspec.sp,ss=mv.sspec&&mv.sspec.sp;const zoner=ns&&['shoot','cshot'].includes(ns.kind);
@@ -92,16 +95,17 @@ function pickAir(f,T){const dy=T.y-f.y;if(dy>1.6)return'uair';return rnd()<.6?'f
 /* ---------- executing plans ---------- */
 function follow(f,w,inp,m,P,S,T){const p=m.plan,dx=T.x-f.x,dy=T.y-f.y,adx=Math.abs(dx),dir=sgn(dx)||f.face;
  const act=ACT(f)||f.st==='air'||f.st==='tumble'&&f.hitstun<=0;
- const stay=x=>Math.max(S.x0+.8,Math.min(S.x1-.8,x));
+ const G=f.ground&&f.ground!==S&&f.ground.x1-f.ground.x0>2?f.ground:S,stay=x=>Math.max(G.x0+.6,Math.min(G.x1-.6,x));
  switch(p.kind){
-  case 'item':{const it=p.it;if(it.dead||it.held){m.plan=null;break;}inp.x=Math.abs(it.x-f.x)>.5?sgn(it.x-f.x):0;if(Math.abs(it.x-f.x)<.8&&it.type==='bomb'&&f.ground)inp.atkP=true;if(it.y>f.y+1.5&&f.ground&&Math.abs(it.x-f.x)<2)inp.want='jump';break;}
+  case 'item':{const it=p.it;if(it.dead||it.held){m.plan=null;break;}inp.x=Math.abs(it.x-f.x)>.5?sgn(it.x-f.x):0;if(Math.abs(it.x-f.x)<.8&&(it.type==='bomb'||it.type==='bat')&&f.ground)inp.atkP=true;if(it.y>f.y+1.5&&f.ground&&Math.abs(it.x-f.x)<2)inp.want='jump';break;}
+  case 'bat':{if(!f.item||f.item.type!=='bat'){m.plan=null;break;}inp.x=adx>1.6?dir:0;if(adx<2.4&&Math.abs(dy)<1.4&&act){inp.x=dir;inp.atkP=true;m.plan=null;}else if(adx>10&&rnd()<.02){inp.x=dir;inp.smashP=true;m.plan=null;}break;}
   case 'toss':{if(!f.item){m.plan=null;break;}if(adx<9&&Math.abs(dy)<3){inp.x=dir;inp.atkP=true;m.plan=null;}else inp.x=dir;break;}
   case 'edge':{const side=T.x<0?-1:1,ex=side<0?S.x0:S.x1;const tx=ex-side*1.0;if(f.ground){if(Math.abs(f.x-tx)>.5)inp.x=sgn(tx-f.x);else{f.face!==side&&(inp.x=side*.3);
      const rx=(T.x-f.x)*side,ry=T.y-f.y;
      if(rx>0&&rx<2.6&&ry>-2.4&&ry<1.4&&rnd()<.25+P.q*.4){inp.want=ry<-.6?'dsmash':'fsmash';inp.x=side;m.plan=null;}
      else if(P.q>.6&&rx>1.5&&rx<6&&ry>-3&&ry<3&&f.jumpsLeft>0&&rnd()<.04){inp.want='jump';m.plan={kind:'hop',air:rx>0?'fair':'bair',drift:side};}
      else{const ns=f.mv.nspec&&f.mv.nspec.sp;if(ns&&ns.kind==='shoot'&&Math.abs(ry)<1.5&&rnd()<.05){inp.want='nspec';inp.x=side;}}}}
-   else inp.x=sgn(tx-f.x);if(!(T.x<S.x0-.5||T.x>S.x1+.5||(T.y<S.y-1&&!T.ground))){m.plan=null;}break;}
+   else inp.x=sgn(tx-f.x);if(T.ground||!(T.x<S.x0-.5||T.x>S.x1+.5||T.y<S.y-1)){m.plan=null;}break;}
   case 'chase':{inp.x=adx>.6?dir:0;if(f.ground){if(dy>1.2&&adx<3&&act)inp.want='jump';else if(adx<1.6&&Math.abs(dy)<1.2&&act){inp.want=dy>.5?'utilt':'jab';inp.x=dir;}}
    else if(act){const a=airFor(f,T);if(a){inp.want=a;inp.x=a==='bair'?-f.face:f.face;}else if(dy>1.5&&f.jumpsLeft>0&&f.vy<.05&&rnd()<.3)inp.want='jump';}
    if(!((T.st==='stun'||T.st==='tumble')&&T.hitstun>0))m.plan=null;break;}
@@ -113,6 +117,9 @@ function follow(f,w,inp,m,P,S,T){const p=m.plan,dx=T.x-f.x,dy=T.y-f.y,adx=Math.a
    inp.want=p.act;inp.x=p.face||dir;if(p.act==='nspec'&&f.ground)f.face=p.face||dir;
    if(p.act==='uspec')inp.y=1;if(p.act==='dspec')inp.y=-1;m.charge=p.charge||0;m.plan=null;break;}
   case 'hop':{if(f.ground&&act){inp.want='hop';inp.x=dir*.6;break;}if(!f.ground){m.drift=p.drift||dir;inp.x=m.drift;const a=airFor(f,T)||(f.vy<0&&f.y-S.y<1.4?p.air:null);if(a&&act){inp.want=a;inp.x=a==='bair'?-f.face:a==='fair'?f.face:0;m.plan=null;}}break;}
+  case 'leap':{const P2=T.ground;inp.x=adx>.5?dir:0;if(f.ground){if(f.ground===P2){m.plan=null;break;}const ex=dir<0?S.x0:S.x1;inp.x=dir;if(Math.abs(f.x-ex)<1.5&&act)inp.want='jump';}
+   else{if(P2&&f.x>P2.x0+.3&&f.x<P2.x1-.3)inp.x=0;if(f.vy<0&&f.jumpsLeft>0&&f.y<(P2?P2.y:T.y)+.4&&act)inp.want='jump';}
+   if(!P2||P2===S||f.st==='helpless')m.plan=null;break;}
   case 'retreat':inp.x=-dir;if(f.x<S.x0+2||f.x>S.x1-2){m.plan=null;}break;
   case 'climb':{if(f.ground&&act&&adx<3.5)inp.want='jump';else if(f.ground)inp.x=sgn(dx);else{inp.x=sgn(dx)*(adx>.6?1:0);if(f.vy<.05&&f.y<T.y-.3&&f.jumpsLeft>0&&act)inp.want='jump';}if(!f.ground&&f.y>T.y+.2||m.t-(m.climbT||0)>150){m.plan=null;}break;}
   case 'approach':default:{const goal=stay(T.x-dir*1.4);const gd=Math.abs(goal-f.x);if(gd>(m.near?1.1:.5)){inp.x=sgn(goal-f.x);m.near=false;}else{inp.x=0;m.near=true;}if(f.ground&&T.y<f.y-1.5&&f.ground.soft&&Math.abs(dx)<5){inp.y=f.py<-.5?0:-1;inp.x=0;}
@@ -120,7 +127,7 @@ function follow(f,w,inp,m,P,S,T){const p=m.plan,dx=T.x-f.x,dy=T.y-f.y,adx=Math.a
  }
  if(f.st==='crouch'&&inp.y===0&&!inp.want)inp.x=inp.x||0;
  // don't run off the stage by accident
- if(f.ground&&!f.ground.soft&&inp.x&&!inp.want){const nx=f.x+inp.x*1.2;if(nx<S.x0+.3||nx>S.x1-.3)if(!(m.plan&&m.plan.kind==='edge'))inp.x=0;}
+ if(f.ground&&!f.ground.soft&&inp.x&&!inp.want){const nx=f.x+inp.x*1.2;if(nx<S.x0+.3||nx>S.x1-.3)if(!(m.plan&&(m.plan.kind==='edge'||m.plan.kind==='leap')))inp.x=0;}
  return inp;}
 function airFor(f,T){const dx=T.x-f.x,dy=(T.y+T.H*.5)-(f.y+f.H*.5),fx=dx*f.face;
  const inBox=n=>{const m=f.mv[n];if(!m||!m.ai)return false;const a=m.ai,rx=fx,ry=dy+f.H*.5,lead=a.st*.5;return rx>a.x0-.5-T.W/2-lead*.1&&rx<a.x1+.4+T.W/2&&ry>a.y0-.6&&ry<a.y1+.6;};

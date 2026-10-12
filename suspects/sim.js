@@ -4,15 +4,16 @@ import * as AI from './ai.js';
 const cl=(v,a,b)=>v<a?a:v>b?b:v,R=()=>M.rand();
 
 export const CREW=[
- {n:'ARLO',css:'#e8433a'},{n:'BEX',css:'#3f6fe8'},{n:'CYRA',css:'#2fbf5c'},{n:'DAX',css:'#f2c53d'},{n:'ESME',css:'#f2862e'},
- {n:'FINN',css:'#9257ec'},{n:'GUS',css:'#36d3df'},{n:'HOLLY',css:'#f27ab9'},{n:'IVO',css:'#e8ecf2'},{n:'JUNO',css:'#9bdc3e'}];
+ {n:'ARLO',css:'#ff5a4f'},{n:'BEX',css:'#4f86ff'},{n:'CYRA',css:'#3fd17a'},{n:'DAX',css:'#ffd23a'},{n:'ESME',css:'#ff9a3c'},
+ {n:'FINN',css:'#a26bff'},{n:'GUS',css:'#3fe0e8'},{n:'HOLLY',css:'#ff86c8'},{n:'IVO',css:'#f4f6fb'},{n:'JUNO',css:'#a8e04a'}];
+export const HAT_IDS=['sprout','cap','beanie','crown','chef','prop','phones','bow','top','flower'];
 export const C={speed:3.5,ghost:4.6,killR:1.8,reportR:3.4,useR:1.35,vis:7.4,visDark:2.7,visSab:8.4,coneNear:.52,coneCos:Math.cos(66*Math.PI/180),
  killCd:38,killCd0:24,killCdMeet:26,sabCd:28,critT:45,doorT:10,doorCd:24,meetCd:14,discuss:30,vote:30,intro:3.2,reveal:4.5,eject:7};
-export const WIN={tasks:'ALL TASKS COMPLETE',eject:'ALL SABOTEURS EJECTED',parity:'THE SABOTEURS OUTNUMBER THE CREW',reactor:'REACTOR MELTDOWN',oxygen:'OXYGEN DEPLETED',clock:'TIME RAN OUT'};
+export const WIN={tasks:'ALL TASKS COMPLETE',eject:'ALL SABOTEURS EJECTED',parity:'THE SABOTEURS OUTNUMBER THE CREW',reactor:'THE CORE OVERLOADED',oxygen:'THE AIR RAN OUT',clock:'TIME RAN OUT'};
 
 export class Sim{
  constructor(o={}){
-  this.o=Object.assign({role:'crew',sabs:1,diff:1,clock:720,confirm:true,discuss:C.discuss,vote:C.vote,autopilot:false,color:0,seed:null,tasks:8,attract:false},Object.fromEntries(Object.entries(o).filter(([,v])=>v!==undefined&&v!==null)));
+  this.o=Object.assign({role:'crew',sabs:1,diff:1,clock:720,confirm:true,discuss:C.discuss,vote:C.vote,autopilot:false,color:0,hat:'sprout',seed:null,tasks:8,attract:false},Object.fromEntries(Object.entries(o).filter(([,v])=>v!==undefined&&v!==null)));
   M.seed(this.o.seed);for(const d of M.DOORS)d.closed=0;
   this.t=0;this.pt=0;this.clock=this.o.clock;this.phase='play';this.events=[];this.bodies=[];this.meeting=null;this.winner=null;this.reason='';this.lastMeet=0;this.nextBody=0;
   this.sab={kind:null,t:0,done:{},hold:{},holdT:0,cd:30,assign:{},doorCd:new Float32Array(M.ROOMS.length)};this.percT=0;this.assignT=0;this.input={x:0,z:0};this.meetings=0;this.ejections=[];
@@ -21,6 +22,7 @@ export class Sim{
   const cols=M.shuffle([...Array(10).keys()].filter(i=>i!==this.o.color));cols.unshift(this.o.color);
   this.crew=cols.map((ci,i)=>({id:i,ci,name:CREW[ci].n,css:CREW[ci].css,human:i===0,sab:false,alive:true,x:0,z:0,fx:0,fz:1,vx:0,vz:0,tasks:[],emergency:1,killCd:C.killCd0,vent:null,busy:null,
    mem:{seen:[...Array(10)].map(()=>[]),ev:[],with:new Float32Array(10),clear:new Set(),saidNear:new Set()},sus:new Float32Array(10),trail:[],brain:{},stats:{tasks:0,kills:0,right:0,reports:0,sabotages:0,meetings:0},deathT:-1,ejected:false,lastKill:null}));
+  const hats=M.shuffle(HAT_IDS.filter(h=>h!==this.o.hat));this.crew.forEach((c,i)=>{c.hat=i===0?this.o.hat:hats[(i-1)%hats.length];c.happy=0;});
   const ids=M.shuffle([...Array(9).keys()].map(i=>i+1));const ns=cl(this.o.sabs,1,2);
   const sabs=this.o.role==='sab'?[0,...ids.slice(0,ns-1)]:ids.slice(0,ns);for(const i of sabs){this.crew[i].sab=true;this.crew[i].killCd=C.killCd0+(this.crew[i].human?0:M.rand()*10-3);}
   for(const c of this.crew){const types=M.shuffle(Object.keys(M.TASK_TYPES)).slice(0,c.human?this.o.tasks:Math.min(this.o.tasks,this.o.botTasks??(ns>1?6:7)));c.tasks=types.map(ty=>({st:M.pick(M.STATIONS.filter(s=>s.type===ty)),done:false}));}
@@ -48,9 +50,9 @@ export class Sim{
   for(const c of this.crew){if(c.human&&!this.o.autopilot)continue;const b=c.brain;b.tt-=dt;if(b.tt<=0){b.tt=.12+R()*.06;AI.think(this,c,.15);}}
   // busy timers (bots; the human's tasks run in minigames)
   for(const c of this.crew){const B=c.busy;if(!B||(c.human&&!this.o.autopilot&&B.kind!=='fake'))continue;B.t+=dt;if(B.kind!=='hold'&&B.t>=B.dur){c.busy=null;
-   if(B.kind==='task')this.completeTask(c,B.st.id);else if(B.kind==='fake'){const tk=c.tasks.find(t=>t.st===B.st);if(tk)tk.done=true;if(c.human)this.ev({type:'fakeDone',who:c.id});}else if(B.kind==='fix')this.fixPanel(c,B.st.id);}}
+   if(B.kind==='task')this.completeTask(c,B.st.id);else if(B.kind==='fake'){const tk=c.tasks.find(t=>t.st===B.st);if(tk)tk.done=true;c.happy=2.2;if(c.human)this.ev({type:'fakeDone',who:c.id});}else if(B.kind==='fix')this.fixPanel(c,B.st.id);}}
   // movement
-  for(const c of this.crew)this.move(c,dt);
+  for(const c of this.crew){this.move(c,dt);if(c.happy>0)c.happy-=dt;}
   this.separate();
   // reactor: both panels held at once
   if(S.kind==='reactor'){const ps=M.FIX.reactor;const held=ps.every(p=>S.hold[p.id]>0);for(const p of ps)S.hold[p.id]=Math.max(0,(S.hold[p.id]||0)-dt);
@@ -71,7 +73,7 @@ export class Sim{
  separate(){const L=this.crew;for(let i=0;i<L.length;i++){const a=L[i];if(!a.alive||a.vent)continue;for(let j=i+1;j<L.length;j++){const b=L[j];if(!b.alive||b.vent)continue;const dx=b.x-a.x,dz=b.z-a.z,d2=dx*dx+dz*dz;if(d2<.36&&d2>1e-6){const d=Math.sqrt(d2),p=(.6-d)*.25;const ax=a.busy?0:1,bx=b.busy?0:1;a.x-=dx/d*p*ax;a.z-=dz/d*p*ax;b.x+=dx/d*p*bx;b.z+=dz/d*p*bx;M.collide(a);M.collide(b);}}}}
 
  /* ---------- tasks ---------- */
- completeTask(c,stId){const tk=c.tasks.find(t=>t.st.id===stId&&!t.done);if(!tk)return false;tk.done=true;if(c.sab)return true;this.taskDone++;c.stats.tasks++;this.ev({type:'task',who:c.id,st:stId});
+ completeTask(c,stId){const tk=c.tasks.find(t=>t.st.id===stId&&!t.done);if(!tk)return false;tk.done=true;c.happy=2.2;if(c.sab)return true;this.taskDone++;c.stats.tasks++;this.ev({type:'task',who:c.id,st:stId});
   if(this.o.attract&&this.taskDone>=this.taskTotal-2){for(const x of this.crew)x.tasks.forEach(t=>t.done=false);this.taskDone=0;}return true;}
  // nearest thing the human can interact with
  actions(c=this.player){const out={use:null,report:null,kill:null,vent:null,button:false,fix:null};if(this.phase!=='play')return out;

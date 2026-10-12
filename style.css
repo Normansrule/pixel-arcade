@@ -148,7 +148,7 @@ button:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
 .shelf{scroll-margin-top:130px}
 
 /* ================= v12 · studio layer (basement-style) ================= */
-:root{--o:#ff4d00;--bg0:#000;--fg:#f2f2f2;--mut:#7a7a7a;--line:#1f1f1f;--mono:'JetBrains Mono',ui-monospace,monospace;--disp:'Anton','Impact',sans-serif}
+:root{--o:#ff4d00;--bg0:#000;--fg:#f2f2f2;--mut:#7a7a7a;--line:#1f1f1f;--mono:'JetBrains Mono','PA Mono',ui-monospace,monospace;--disp:'Anton','PA Display','Impact',sans-serif}
 body{background:#000;color:var(--fg);font-family:var(--mono)}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.07;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .bg{background:#000}.bg .sun,.bg .peaks,.bg .floor{display:none}.bg .stars{opacity:.35}.bg::after{display:none}
