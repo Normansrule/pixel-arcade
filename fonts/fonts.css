@@ -1,0 +1,4 @@
+/* Local copies of the arcade's fonts (SIL Open Font License, see OFL-*.txt), so every page works offline. */
+@font-face{font-family:'Anton';src:url(anton-400.woff2) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url(jetbrains-mono-400.woff2) format('woff2');font-weight:400 500;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url(jetbrains-mono-700.woff2) format('woff2');font-weight:600 700;font-display:swap}

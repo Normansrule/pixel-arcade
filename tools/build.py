@@ -19,6 +19,7 @@ src = re.sub(r"img:'(docs/(?:cards/)?[a-z0-9]+\.(?:png|jpg))'", lambda m: "img:'
 src = re.sub(r'href="([a-z0-9]+)/"', lambda m: 'href="' + BASE + m.group(1) + '/"', src)
 src = re.sub(r'url\((docs/[a-z0-9]+\.png)\)', lambda m: 'url(' + BASE + m.group(1) + ')', src)
 src = re.sub(r'src="(docs/[a-z0-9]+\.png)"', lambda m: 'src="' + BASE + m.group(1) + '"', src)
+src = src.replace('href="fonts/fonts.css"', 'href="' + BASE + 'fonts/fonts.css"')
 src = src.replace("im.src='docs/thumbs/'", "im.src='" + BASE + "docs/thumbs/'")
 os.makedirs('dist', exist_ok=True)
 open('dist/pixel-arcade.html', 'w', encoding='utf-8').write(src)
