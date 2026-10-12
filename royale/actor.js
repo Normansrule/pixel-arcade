@@ -1,7 +1,7 @@
 // STORM ROYALE — procedural characters (articulated rig with run / strafe / jump / skydive / glide / emote / death poses),
 // gliders and the Sky Barge drop airship.
 import * as THREE from '../vendor/three.module.min.js';
-import {V,M,merge,cl,lerp} from './util.js';
+import {V,M,merge,cl,lerp,rbox,cap} from './util.js';
 import {gunMesh,pickaxeMesh,healMesh,MUZZLE} from './items.js';
 
 export const OUTFITS=[
@@ -23,12 +23,28 @@ const CY=(r0,r1,h,x,y,z,c,seg=8)=>[new THREE.CylinderGeometry(r0,r1,h,seg),M(x,y
 const piv=(parent,x,y,z)=>{const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);return g;};
 const mesh=(parent,parts,mat)=>{const m=new THREE.Mesh(merge(parts),mat);m.castShadow=true;parent.add(m);return m;};
 
+const RB=(w,h,d,x,y,z,c,r=.04,rx=0,ry=0,rz=0)=>[rbox(w,h,d,r,2),M(x,y,z,rx,ry,rz),c];
+const CP=(r,len,x,y,z,c,rx=0,rz=0)=>[cap(r,len,10),M(x,y,z,rx,0,rz),c];
+const SS=(r,x,y,z,c,sx=1,sy=1,sz=1,ws=16,hs=12)=>[new THREE.SphereGeometry(r,ws,hs),M(x,y,z,0,0,0,sx,sy,sz),c];
 export function makeRig(o,mat){const root=new THREE.Group(),body=piv(root,0,0,0),hips=piv(body,0,.93,0);const r={root,body,hips,o,mat};
- mesh(hips,[B(.38,.2,.24,0,0,0,o.bot),B(.4,.06,.26,0,.1,0,0x2a2a2a),B(.08,.07,.03,0,.1,.14,o.acc)],mat);
- for(const s of[-1,1]){const th=piv(hips,s*.11,-.06,0);mesh(th,[B(.16,.44,.18,0,-.21,0,o.bot)],mat);const kn=piv(th,0,-.42,0);mesh(kn,[B(.14,.42,.16,0,-.2,0,o.bot),B(.16,.1,.28,0,-.43,.05,o.shoe),B(.15,.05,.16,0,-.1,.0,o.acc)],mat);r[s<0?'thR':'thL']=th;r[s<0?'knR':'knL']=kn;}
- const sp=piv(hips,0,.08,0);r.spine=sp;mesh(sp,[B(.44,.5,.26,0,.26,0,o.top),B(.46,.08,.28,0,.5,0,o.top),B(.3,.38,.16,0,.28,-.2,o.acc),B(.26,.3,.04,0,.3,.14,o.acc),B(.5,.05,.28,0,.04,0,o.bot)],mat);
- const nk=piv(sp,0,.54,0);r.neck=nk;mesh(nk,[CY(.07,.08,.1,0,.04,0,o.skin),S(.21,0,.24,.01,o.skin,1,1.05,1),S(.22,0,.31,-.02,o.hair,1.02,.75,1.04),B(.05,.05,.03,-.075,.25,.19,0x1a1a22),B(.05,.05,.03,.075,.25,.19,0x1a1a22),B(.03,.04,.04,0,.2,.21,o.skin)],mat);
- for(const s of[-1,1]){const sh=piv(sp,s*.28,.45,0);mesh(sh,[S(.1,0,0,0,o.top),B(.12,.32,.13,0,-.17,0,o.top)],mat);const el=piv(sh,0,-.33,0);mesh(el,[B(.11,.28,.12,0,-.14,0,o.skin),B(.13,.08,.14,0,-.02,0,o.acc),S(.07,0,-.31,0,0x2b2b2b)],mat);r[s<0?'shR':'shL']=sh;r[s<0?'elR':'elL']=el;}
+ const dk=new THREE.Color(o.bot).multiplyScalar(.55).getHex(),tdk=new THREE.Color(o.top).multiplyScalar(.72).getHex(),style=((o.hair>>4)+(o.top>>8))%3;
+ mesh(hips,[RB(.38,.22,.25,0,0,0,o.bot,.07),RB(.41,.07,.27,0,.1,0,0x2a2a2a,.03),RB(.09,.07,.03,0,.1,.14,o.acc,.015),RB(.1,.12,.05,.15,-.02,-.13,dk,.02),RB(.1,.12,.05,-.15,-.02,-.13,dk,.02)],mat);
+ for(const s of[-1,1]){const th=piv(hips,s*.11,-.06,0);mesh(th,[CP(.095,.26,0,0,0,o.bot),RB(.06,.11,.12,s*.09,-.2,0,dk,.02)],mat);const kn=piv(th,0,-.42,0);
+  mesh(kn,[CP(.08,.25,0,.02,0,o.bot),SS(.085,0,0,.03,o.acc,1,.8,.7,10,8),RB(.17,.13,.31,0,-.41,.05,o.shoe,.05),RB(.18,.04,.32,0,-.47,.05,0x1a1a1a,.015),RB(.16,.06,.17,0,-.32,0,o.acc,.025)],mat);r[s<0?'thR':'thL']=th;r[s<0?'knR':'knL']=kn;}
+ const sp=piv(hips,0,.08,0);r.spine=sp;
+ mesh(sp,[RB(.44,.46,.27,0,.27,0,o.top,.1),RB(.48,.12,.29,0,.47,0,o.top,.06),RB(.4,.07,.26,0,.06,0,tdk,.03),RB(.02,.36,.02,0,.28,.14,tdk,.008),RB(.12,.1,.02,-.1,.33,.14,o.acc,.02),
+  RB(.32,.38,.17,0,.28,-.21,o.acc,.06),RB(.28,.12,.06,0,.17,-.31,new THREE.Color(o.acc).multiplyScalar(.75).getHex(),.03),RB(.05,.42,.03,-.12,.3,.14,0x2b2b2b,.012),RB(.05,.42,.03,.12,.3,.14,0x2b2b2b,.012),
+  [new THREE.TorusGeometry(.1,.035,6,14),M(0,.53,0,Math.PI/2),tdk]],mat);
+ const nk=piv(sp,0,.54,0);r.neck=nk;const hp=[CY(.07,.08,.1,0,.04,0,o.skin),SS(.205,0,.24,.01,o.skin,1,1.06,1.02),
+  SS(.045,-.075,.25,.175,0xffffff,1,1.2,.5,10,8),SS(.045,.075,.25,.175,0xffffff,1,1.2,.5,10,8),SS(.026,-.072,.245,.197,0x1a1a22,1,1.2,.5,8,6),SS(.026,.072,.245,.197,0x1a1a22,1,1.2,.5,8,6),
+  RB(.07,.018,.02,-.075,.31,.19,o.hair,.006,0,0,.12),RB(.07,.018,.02,.075,.31,.19,o.hair,.006,0,0,-.12),SS(.03,0,.2,.205,o.skin,1,1,1,8,6),RB(.07,.016,.02,0,.135,.19,0x8a3a30,.006),
+  SS(.045,-.2,.24,0,o.skin,.6,1,1,8,6),SS(.045,.2,.24,0,o.skin,.6,1,1,8,6)];
+ if(style===0)hp.push(SS(.218,0,.3,-.02,o.hair,1.03,.78,1.06),RB(.3,.08,.1,0,.4,.12,o.hair,.04,.3));
+ else if(style===1){hp.push(SS(.215,0,.29,-.03,o.hair,1.02,.72,1.04));for(let i=0;i<7;i++){const a=(i-3)*.32;hp.push([new THREE.ConeGeometry(.06,.18,5),M(Math.sin(a)*.12,.44,.04-Math.abs(a)*.05,-.5+Math.abs(a)*.2,0,-a*.9),o.hair]);}}
+ else hp.push(SS(.22,0,.31,-.01,o.acc,1.02,.62,1.05),RB(.24,.03,.16,0,.33,.2,o.acc,.012,-.12),SS(.21,0,.24,-.06,o.hair,1.04,.9,1));
+ mesh(nk,hp,mat);
+ for(const s of[-1,1]){const sh=piv(sp,s*.28,.45,0);mesh(sh,[SS(.105,0,0,0,o.top,1,1,1,12,9),CP(.08,.2,0,-.02,0,o.top),[new THREE.CylinderGeometry(.085,.085,.05,10),M(0,-.27,0),tdk]],mat);const el=piv(sh,0,-.33,0);
+  mesh(el,[CP(.068,.18,0,.0,0,o.skin),RB(.15,.07,.15,0,-.04,0,o.acc,.03),SS(.075,0,-.31,.0,0x2b2b2b,1,1.1,.9,10,8),SS(.03,s*-.055,-.28,.04,0x2b2b2b,1,1,1,6,5)],mat);r[s<0?'shR':'shL']=sh;r[s<0?'elR':'elL']=el;}
  // held items: gun on an aim pivot at the right shoulder, pickaxe in right hand
  r.aim=piv(sp,-.17,.38,.12);r.aim.rotation.order='YXZ';r.handR=piv(r.elR,0,-.31,0);r.held=null;r.heldKey='';
  // glider

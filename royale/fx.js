@@ -63,21 +63,46 @@ export class Debris{
   const sc=Math.min(1,d.life*2);this.q.setFromEuler(d.r);this.m.compose(d.p,this.q,new V(d.s.x*sc,d.s.y*sc,d.s.z*sc));this.mesh.setMatrixAt(i,d.life>0?this.m:this.zero);}if(any)this.mesh.instanceMatrix.needsUpdate=true;}
  clear(){for(let i=0;i<this.n;i++){this.d[i].life=0;this.mesh.setMatrixAt(i,this.zero);}this.mesh.instanceMatrix.needsUpdate=true;}}
 
-export function makeStorm(scene){const U={uT:{value:0},uR:{value:300},uCam:{value:new V()}};
- const geo=new THREE.CylinderGeometry(1,1,700,128,1,true);geo.translate(0,250,0);
- const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({uniforms:U,transparent:true,depthWrite:false,side:THREE.DoubleSide,
+// the storm: a domain-warped energy wall (two shells) with rising streaks, lightning and a glowing seam where it meets the
+// terrain (sampled from the island height texture), plus a dark churning cloud ceiling over the stormed area.
+const NOISE=`float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+ float fb(vec2 p){float a=0.,w=.5;for(int i=0;i<4;i++){a+=n(p)*w;p=p*2.03+vec2(1.7,9.2);w*=.5;}return a;}`;
+export function makeStorm(scene,world){const U={uT:{value:0},uR:{value:300},uC:{value:new THREE.Vector2()},uHT:{value:world&&world.hTex},uL:{value:0},uFl:{value:0}},EXT=420,N=337,STEP=2*EXT/(N-1);
+ const geo=new THREE.CylinderGeometry(1,1,700,160,1,true);geo.translate(0,250,0);
+ const wallMat=layer=>new THREE.ShaderMaterial({uniforms:{...U,uL:{value:layer},uR:{value:300}},transparent:true,depthWrite:false,side:THREE.DoubleSide,
   vertexShader:'varying vec2 vUv;varying vec3 vW;void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
-  fragmentShader:`uniform float uT,uR;varying vec2 vUv;varying vec3 vW;
-   float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-   float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
-   void main(){float a=vUv.x*6.2832*uR,y=vW.y;
-    float n1=n(vec2(a*.035+uT*.25,y*.018-uT*.45))*.6+n(vec2(a*.11-uT*.6,y*.05+uT*.9))*.4;
-    float st=pow(n(vec2(a*.32,y*.006-uT*1.8)),4.)*2.2;float bolt=step(.985,n(vec2(a*.07+floor(uT*6.)*3.1,y*.002)))*step(.5,fract(uT*3.));
-    vec3 c=mix(vec3(.32,.1,.72),vec3(.72,.42,1.),n1)+st*vec3(.55,.45,1.)+bolt*vec3(2.,1.8,3.);
-    float al=(.34+.34*n1+st*.2)*smoothstep(-25.,8.,y)*(1.-smoothstep(110.,330.,y));
-    float d=length(cameraPosition-vW);al*=.15+.85*smoothstep(1.5,30.,d);
-    float gl=smoothstep(14.,0.,abs(y-0.))*.4;c+=gl*vec3(.8,.5,1.);
-    gl_FragColor=vec4(c*1.25,clamp(al+gl*.3,0.,.92));
+  fragmentShader:`uniform float uT,uR,uL,uFl;uniform vec2 uC;uniform sampler2D uHT;varying vec2 vUv;varying vec3 vW;${NOISE}
+   void main(){float t=uT*(1.-uL*.35)+uL*17.,a=vUv.x*6.2832*uR,y=vW.y;
+    vec2 q=vec2(a*.018,y*.011);vec2 w=vec2(fb(q+vec2(t*.08,-t*.22)),fb(q*1.3+vec2(4.1,-t*.3)));float f=fb(q*2.2+w*1.8+vec2(-t*.15,-t*.45));
+    float st=pow(n(vec2(a*.22+uL*9.,y*.008-t*1.6)),6.)*2.6+pow(n(vec2(a*.6,y*.02-t*2.4)),8.)*1.5;
+    vec2 tuv=((vW.xz+${EXT}.)/${STEP.toFixed(6)}+.5)/${N}.;float gh=max(texture2D(uHT,tuv).r,0.),dz=y-gh;
+    float seam=exp(-max(dz,0.)*.22),seam2=exp(-max(dz,0.)*1.2);
+    vec3 c=mix(vec3(.11,.02,.28),vec3(.66,.3,1.),smoothstep(.3,.78,f));c=mix(c,vec3(.95,.62,1.),smoothstep(.62,.9,f)*.6);c+=st*vec3(.6,.42,1.);
+    float slot=floor(uT*1.7),bx=h(vec2(slot,uL))*6.2832*uR,bo=(fb(vec2(y*.03,slot))-.5)*22.+(n(vec2(y*.2,slot))-.5)*4.;float ad=abs(mod(a-bx-bo+3.1416*uR,6.2832*uR)-3.1416*uR);
+    float bolt=smoothstep(1.4,.0,ad)*step(fract(uT*1.7),.14)*step(.35,h(vec2(slot,3.+uL)))*smoothstep(240.,40.,y);c+=bolt*vec3(2.6,2.2,3.4)+uFl*vec3(.5,.35,.8);
+    c+=seam*vec3(.8,.35,1.)*.55+seam2*vec3(1.1,.8,1.3)*.6;
+    vec3 V=normalize(cameraPosition-vW);vec2 rn=normalize(vW.xz-uC);float edge=1.-abs(dot(normalize(V.xz+1e-4),rn));
+    float al=(.3+.42*f+st*.18+edge*.22)*(1.-uL*.45)*smoothstep(gh-6.,gh+2.,y)*(1.-smoothstep(120.,360.,y));
+    float d=length(cameraPosition-vW);al*=.18+.82*smoothstep(1.5,26.,d);al=clamp(al+seam*.2+bolt,0.,.94);
+    gl_FragColor=vec4(c*1.2,al);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
-   }`}));m.renderOrder=2;m.frustumCulled=false;scene.add(m);return{mesh:m,U};}
+   }`});
+ const m=new THREE.Mesh(geo,wallMat(0));m.renderOrder=2;m.frustumCulled=false;scene.add(m);
+ const inner=new THREE.Mesh(geo,wallMat(1));inner.scale.set(.985,1,.985);inner.renderOrder=2;inner.frustumCulled=false;m.add(inner);
+ // cloud ceiling outside the safe circle
+ const ceil=new THREE.Mesh(new THREE.PlaneGeometry(2,2).rotateX(Math.PI/2),new THREE.ShaderMaterial({uniforms:U,transparent:true,depthWrite:false,side:THREE.DoubleSide,
+  vertexShader:'varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
+  fragmentShader:`uniform float uT,uR,uFl;uniform vec2 uC;varying vec3 vW;${NOISE}
+   void main(){float d=length(vW.xz-uC);vec2 p=vW.xz*.012;float an=atan(vW.z-uC.y,vW.x-uC.x);vec2 sw=vec2(cos(an+uT*.05),sin(an+uT*.05))*d*.012;
+    float f=fb(sw+fb(p+uT*.04)*1.6+vec2(uT*.03,0.));vec3 c=mix(vec3(.07,.02,.16),vec3(.36,.16,.62),smoothstep(.3,.85,f))+uFl*vec3(.6,.4,.9)*f;
+    float al=smoothstep(uR-4.,uR+60.,d)*(.55+.4*f)*(1.-smoothstep(100.,128.,cameraPosition.y));gl_FragColor=vec4(c,al);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+   }`}));ceil.renderOrder=2;ceil.frustumCulled=false;scene.add(ceil);
+ // x,z,r: current circle; on: visible; q: quality (inner shell + ceiling from medium up); flash: lightning light 0..1
+ const update=(x,z,r,t,on,q,flash=0)=>{m.visible=on;inner.visible=on&&q>0;ceil.visible=on&&q>0;if(!on)return;m.position.set(x,-40,z);m.scale.set(Math.max(.5,r),1,Math.max(.5,r));U.uR.value=Math.max(1,r);U.uT.value=t;U.uC.value.set(x,z);U.uFl.value=flash;
+  m.material.uniforms.uR.value=U.uR.value;inner.material.uniforms.uR.value=U.uR.value*.985;
+  ceil.position.set(x,118,z);ceil.scale.set(r+900,1,r+900);};
+ return{mesh:m,inner,ceil,U,update};}

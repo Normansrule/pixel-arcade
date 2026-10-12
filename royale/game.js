@@ -28,7 +28,7 @@ const sun=new THREE.DirectionalLight(0xfff0d8,2.7);sun.castShadow=true;sun.shado
 const world=new World(11);const vis=world.build(scene);
 const build=new Build(scene,world);
 const parts=new Particles(scene,5000,true),smoke=new Particles(scene,1600,false),tracers=new Tracers(scene),flashes=new Flashes(scene),shocks=new Shocks(scene),debris=new Debris(scene);debris.ground=(x,z)=>Math.max(world.heightAt(x,z),0);
-const storm=makeStorm(scene);
+const storm=makeStorm(scene,world);
 const snd=new Sound();
 const charMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.62,metalness:.05,envMapIntensity:.8});
 const lootMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.45,metalness:.25,emissive:0x222222});
@@ -71,7 +71,7 @@ function start(o={}){if(document.activeElement&&document.activeElement.blur)docu
  app='match';$('menu').hidden=true;$('keys').hidden=true;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=false;$('fullmap').hidden=true;document.body.classList.add('playing');$('feed').innerHTML='';
  banner('THE SKY BARGE IS AIRBORNE','PRESS SPACE TO JUMP',3);snd.play('storm');hudDirty=true;}
 function toMenu(){app='menu';$('menu').hidden=false;$('keys').hidden=false;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=true;$('fullmap').hidden=true;document.body.classList.remove('playing');if(document.pointerLockElement)document.exitPointerLock();
- for(const a of actors){a.rig.root.visible=false;}busMesh.visible=false;storm.mesh.visible=false;build.showGhost(null);
+ for(const a of actors){a.rig.root.visible=false;}busMesh.visible=false;storm.update(0,0,1,0,false,0);build.showGhost(null);
  if(!build.all.size){world.spawnStructures(build);}setupLobby();snd.set('wind',0);snd.set('storm',0);snd.set('engine',0);}
 function setupLobby(){clearLobby();const m=world.pois[5].mill,base=new V(m.x+12,0,m.z+1);const outs=[OUTFITS[0],OUTFITS[3],OUTFITS[1],OUTFITS[7]],offs=[[0,0],[-1.6,-1.5],[-1.2,1.6],[-3,.2]],em=[-1,0,1,2];
  outs.forEach((o,i)=>{const r=makeRig(o,charMat);const x=base.x+offs[i][0],z=base.z+offs[i][1];r.root.position.set(x,world.heightAt(x,z),z);r.root.rotation.y=Math.PI/2+(i===0?.1:(i-1.5)*.18);scene.add(r.root);if(i===0)hold(r,'pick');lobby.push({r,e:em[i],t:i*1.3});});lobby.base=base;}
@@ -359,9 +359,9 @@ function stepLoot(dt){for(const l of loot){l.age+=dt;if(!l.settled){l.v.y-=20*dt
 function menuStep(dt){menuT+=dt;}
 
 /* ================= visuals ================= */
-const stCol=new THREE.Color(),fogBase=new THREE.Color(SKY.fog),fogStorm=new THREE.Color(0x6a3aa0);let stormK=0,frame=0;
+const stCol=new THREE.Color(),fogBase=new THREE.Color(SKY.fog),fogStorm=new THREE.Color(0x6a3aa0);let stormK=0,frame=0,stormFl=0;
 function visuals(dt){frame++;const vt=time;
- world.update(dt,app==='menu'?menuT:time);parts.update(dt);smoke.update(dt);flashes.update(dt);shocks.update(dt);debris.update(dt);tracers.update(dt,camera);
+ world.update(dt,app==='menu'?menuT:time,camera.position);parts.update(dt);smoke.update(dt);flashes.update(dt);shocks.update(dt);debris.update(dt);tracers.update(dt,camera);
  // actors
  const cp=camera.position;
  for(const a of actors){const r=a.rig;if(app==='menu'){r.root.visible=false;continue;}if(a.state==='bus'){r.root.visible=false;continue;}
@@ -381,7 +381,9 @@ function visuals(dt){frame++;const vt=time;
  for(const l of loot){const d2=cp.distanceToSquared(l.p);const v=d2<80*80;l.mesh.visible=v;if(l.beam)l.beam.visible=v&&l.settled;if(!v)continue;l.spin+=dt*1.4;l.mesh.position.set(l.p.x,l.p.y+.35+(l.settled?Math.sin(l.spin*1.3)*.08:0),l.p.z);l.mesh.rotation.y=l.spin;if(l.beam)l.beam.position.copy(l.p);}
  for(const c of containers){const d2=cp.distanceToSquared(c.p);c.g.visible=d2<110*110&&!(c.kind==='ammo'&&c.opened);if(c.glow&&!c.opened){c.glow.material.opacity=.55+Math.sin(vt*4+c.p.x)*.25;if(d2<30*30&&Math.random()<dt*6)parts.emit(c.p.x+(Math.random()-.5)*1.2,c.p.y+.3+Math.random()*.6,c.p.z+(Math.random()-.5)*1.2,0,1.2,0,2.4,1.9,.6,.12,.9,0,1);}}
  // storm wall
- if(stormS&&app!=='menu'){const s=stormS.cur;storm.mesh.visible=s.r>.5&&s.r<330;storm.mesh.position.set(s.x,-40,s.z);storm.mesh.scale.set(Math.max(.5,s.r),1,Math.max(.5,s.r));storm.U.uR.value=Math.max(1,s.r);storm.U.uT.value=vt;}else storm.mesh.visible=false;
+ stormFl=Math.max(0,stormFl-dt*5);if(stormS&&app!=='menu'){const s=stormS.cur,on=s.r>.5&&s.r<330;if(on&&Math.random()<dt*(.15+stormK*.5))stormFl=1;storm.update(s.x,s.z,s.r,vt,on,gfx,stormFl*(.4+stormK*.6));}else storm.update(0,0,1,0,false,0);
+ // inside the storm: lightning lights the scene and charged motes swirl around the camera
+ hemi.intensity=1.05+stormFl*stormK*1.6;if(stormK>.05&&gfx>0){const n=gfx>=2?3:1;for(let i=0;i<n;i++){const a=Math.random()*6.28,r=3+Math.random()*14;parts.emit(camera.position.x+Math.cos(a)*r,camera.position.y-2+Math.random()*7,camera.position.z+Math.sin(a)*r,-Math.sin(a)*4,1.5+Math.random()*2,Math.cos(a)*4,1.1*stormK,.5*stormK,1.8*stormK,.09,1.2,0,.3);}}
  // camera + storm tint
  cameras(dt);
  const focus=camFocus();stormK+=(((stormS&&app!=='menu'&&focus&&focus.state!=='bus'&&stormS.cur.r<330&&inStorm(focus.pos))?1:0)-stormK)*Math.min(1,dt*3);
@@ -488,11 +490,11 @@ setInterval(()=>{if(!$('fullmap').hidden&&app==='match')drawFull();},500);
 /* ================= rendering ================= */
 const POST={exposure:1.0,bloom:.32,bloomThreshold:.94,bloomRadius:.45,vignette:.28,saturation:1.12,grain:.02,aoStrength:.8};
 let fxStack=null,gfx=quality();
-function applyQuality(q){gfx=q;fxStack=null;sun.castShadow=q>0;sun.shadow.mapSize.set(q>=2?2048:1024,q>=2?2048:1024);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}R.setPixelRatio(Math.min(devicePixelRatio,q===0?1:1.5));}
+function applyQuality(q){gfx=q;fxStack=null;world.setQuality(q);sun.castShadow=q>0;sun.shadow.mapSize.set(q>=2?2048:1024,q>=2?2048:1024);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}R.setPixelRatio(Math.min(devicePixelRatio,q===0?1:1.5));}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);if(fxStack)fxStack.setSize(w,h);}
  camera.aspect=w/h;camera.updateProjectionMatrix();parts.U.uScale.value=smoke.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360));
- if(!fxStack){fxStack=cinematic(R,scene,camera,{...POST,quality:gfx});fxStack.setSize(w,h);}fxStack.render();}
+ if(!fxStack){fxStack=cinematic(R,scene,camera,{...POST,quality:gfx});fxStack.setSize(w,h);const ao=fxStack.ao;if(ao&&world.field){const o=ao.overrideVisibility.bind(ao);ao.overrideVisibility=()=>{o();world.field.visible=false;};}}fxStack.render();}
 addEventListener('resize',()=>{if(fxStack)fxStack.setSize(innerWidth,innerHeight);fullC.width=fullC.height=Math.min(700,innerHeight*.86|0);});fullC.width=fullC.height=Math.min(700,innerHeight*.86|0);
 
 /* ================= menu wiring ================= */
