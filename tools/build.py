@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Bundle the arcade into one self-contained file: dist/pixel-arcade.html"""
 import re, os, subprocess, sys
-subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'make_pwa.py')], check=True)
+HERE = os.path.dirname(os.path.abspath(__file__))
+os.chdir(os.path.dirname(HERE))  # paths below are relative to the repo root
+subprocess.run([sys.executable, os.path.join(HERE, 'make_pwa.py')], check=True)
 src = open('index.html', encoding='utf-8').read()
 src = src.replace('<link rel="stylesheet" href="style.css">', '<style>\n' + open('style.css', encoding='utf-8').read() + '</style>')
 src = src.replace('<script type="module" src="js/hero.js"></script>', '')

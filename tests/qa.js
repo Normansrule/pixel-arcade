@@ -1,7 +1,7 @@
 // QA sweep: text clipping, frozen screens, games that never end, runaway particles.
 global.window=global;let calls=[],textBad={};let curId='';
 const ctx=new Proxy({},{get:(t,k)=>k in t?t[k]:(...a)=>{calls.push(k+':'+a.map(v=>typeof v==='number'?Math.round(v):'').join(','));},set:(t,k,v)=>{t[k]=v;return true;}});
-require('./js/engine.js');const fs=require('fs');const files=fs.readFileSync('index.html','utf8').match(/games\/[a-z0-9]+\.js/g);files.forEach(f=>require('./'+f));
+require('./lib/load.js')();const fs=require('fs');
 const A=global.A;A.c=ctx;A.silent=true;
 const ot=A.text;A.text=(s,x,y,col,sc,al,ns)=>{s=String(s).toUpperCase();sc=sc||1;const w=s.length*4*sc-sc;let x0=al==='c'?x-w/2:al==='r'?x-w:x;if(x0<-1||x0+w>321||y<-1||y+5*sc>241)(textBad[curId]=textBad[curId]||new Set()).add(s.slice(0,30)+' @'+Math.round(x0)+','+Math.round(y));ot(s,x,y,col,sc,al,ns);};
 const N=['l','r','u','d','a','b'];const rin=b=>{const o={};for(const n of N)o[n]=Math.random()<b;return o;};

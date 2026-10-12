@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Pre-render hub thumbnails for every canvas cabinet into docs/thumbs/<id>.jpg.
-Run after adding or restyling games:  python3 -m http.server 8765 &  then  python3 thumbs.py"""
+Run after adding or restyling games:  python3 -m http.server 8765 &  then  python3 tools/thumbs.py"""
 import asyncio, base64, os, sys
 from playwright.async_api import async_playwright
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'thumbs')
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'docs', 'thumbs')
 URL = next((a for a in sys.argv[1:] if a.startswith('http')), 'http://127.0.0.1:8765/')
 async def main():
     os.makedirs(OUT, exist_ok=True)

@@ -1,7 +1,7 @@
 // Headless smoke test: runs every game with random input and checks for exceptions / NaN draws.
 global.window=global;let nanHits={};let curId='';
 const ctx=new Proxy({},{get:(t,k)=>k in t?t[k]:(...a)=>{if(a.some(v=>typeof v==='number'&&!isFinite(v)))nanHits[curId+':'+String(k)]=1;},set:(t,k,v)=>{t[k]=v;return true;}});
-require('./js/engine.js');require('fs').readFileSync('index.html','utf8').match(/games\/[a-z0-9]+\.js/g).forEach(f=>require('./'+f));
+require('./lib/load.js')();
 const A=global.A;A.c=ctx;A.silent=true;const N=['l','r','u','d','a','b'];let fails=0;
 const rin=(bias)=>{const o={};for(const n of N)o[n]=Math.random()<bias;return o;};
 const RG=(process.env.RANGE||"0:9999").split(":").map(Number);const ONLY=(process.env.ONLY||"").split(",").filter(Boolean);for(const gm of A.games.filter(g=>!g.href&&(!ONLY.length||ONLY.includes(g.id))).slice(RG[0],RG[1])){curId=gm.id;const modes=gm.vs?[['cpu',1,0],['two',0,1]]:[['solo',0,0]];

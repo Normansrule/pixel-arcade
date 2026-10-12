@@ -1,4 +1,4 @@
-// Pixel Arcade service worker: installable app + offline play. Generated from sw.template.js by make_pwa.py.
+// Pixel Arcade service worker: installable app + offline play. Generated from sw.template.js by tools/make_pwa.py.
 const VERSION = '__VERSION__';
 const CORE = __CORE__;
 const SHELL = 'pa-shell-' + VERSION, RUNTIME = 'pa-runtime';
