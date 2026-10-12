@@ -14,6 +14,14 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 - **3D performance:** **F3** shows frames per second (FPS), draw calls and triangles in every world; graphics quality steps down on its own when a world stays under 45 FPS (pressing **G** turns that off).
 - **Neon Bay:** see-through car windows with a driver at the wheel; police officers get out of their cruisers and chase you on foot, then return to their cars when you drive off.
 - **Voxel Frontier:** leaves and glass cast cut-out shadows instead of solid blocks.
+- **Exfil:** CPU raiders follow you up and down stairs and fight on your floor.
+- **Longbow Keep:** CPU teams push for the flag (bot-only captures went from 0.9 to about 2.2 per match) and walk around barricades instead of chopping them.
+- **Long Shot:** people no longer walk through walls or each other; the logarithmic depth buffer is gone, which is faster on real graphics cards.
+- **Nightfall:** real jumping; climb onto crates, tables and the truck. Zombies climb after you.
+- **Ironclad:** shell hits follow the hull's tilt on slopes.
+- **Strike Zone:** bots no longer stand on Skyline's roof-edge walls.
+- **Voxel Frontier:** old saves carry over (score, nights and items) into a fresh world.
+- **Frontline Ops:** forward respawns, so most 75-kill deathmatches finish before the clock.
 
 ## v29 (12 Oct 2026)
 
