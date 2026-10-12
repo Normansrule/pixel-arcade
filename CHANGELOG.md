@@ -22,6 +22,8 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 - **Strike Zone:** bots no longer stand on Skyline's roof-edge walls.
 - **Voxel Frontier:** old saves carry over (score, nights and items) into a fresh world.
 - **Frontline Ops:** forward respawns, so most 75-kill deathmatches finish before the clock.
+- **Graphics upgrade for the eight v27-look worlds:** Night Drive (profiled cars, street lamps, wet streets), Penguin Plaza (sparkling snow, ice, feathered penguins), Pet Brawl (textured stage, meadow, battle effects), Skate City (detailed skater and board, park props), Storm Royale (swaying grass, new trees, storm wall, characters), Striker 11 (shaped players, fabric kits, stadium aisles), Tumble Royale (glossy toy plastic, stadium sky), Wild Quest (leaf-card trees, water, armoured hero).
+- **All 3D worlds:** a negative first-frame time no longer crashes the menu camera.
 
 ## v29 (12 Oct 2026)
 
