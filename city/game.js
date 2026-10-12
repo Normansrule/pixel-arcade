@@ -304,7 +304,7 @@ addEventListener('resize',()=>{fx&&fx.setSize(innerWidth,innerHeight);});
 
 /* ================= loop ================= */
 let last=performance.now();function tick(dt){step(dt);if(G.app==='play'||G.app==='paused')camera(dt);}function frame(dt){tick(dt);render();}
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;frame(dt);requestAnimationFrame(loop);}
+function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;frame(dt);requestAnimationFrame(loop);}
 
 /* ================= menu wiring ================= */
 const seg=(id,key)=>{const el=$(id);const set=v=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(G.opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
