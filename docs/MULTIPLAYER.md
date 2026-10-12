@@ -1,6 +1,6 @@
 # Online multiplayer: options and trade-offs
 
-Status: **design note, nothing built yet.** Every game today is single-player or local two-player against the CPU. This page compares the ways to add online play to a static site served by GitHub Pages, so the owner can pick one before any code is written.
+Status: **option 1 is built for Four in a Row** (owner decision, 12 Oct 2026: codes only, no outside server). Everything else is single-player or local two-player. This page compares the ways to add online play to a static site served by GitHub Pages, so the owner can pick one before any code is written.
 
 ## The constraint
 
@@ -64,4 +64,10 @@ A small Node server (on Fly.io, Render or a cheap VPS, virtual private server) r
 3. Then bring 1v1 real-time canvas games (input delay), then a 2 to 4 player mode for one shooter, with the host running the bots.
 4. Do not do option 3 unless the arcade gains a real player base.
 
-Owner decisions needed before building: whether an outside STUN request and, later, a Worker are acceptable exceptions to the "no network calls" rule for the ONLINE mode only; and which game to pilot (suggested: Four in a Row or Checkers).
+## What is built
+
+- `js/net.js`: the hub's **⇄ Play online** link opens a lobby. The host picks a game and gets an offer code plus a QR code that encodes a `#join=` link to the arcade; the guest pastes the code or scans the QR code, and sends back an answer code. Codes are the session description, deflate-compressed and base64url-encoded (about 600 characters). The QR encoder is built in (byte mode, error correction level L, versions 1 to 20).
+- `RTCPeerConnection` is created with **no ICE (Interactive Connectivity Establishment) servers**, so no STUN request leaves the browser. That keeps the no-network rule, but it means the two players must be on the same network (same Wi-Fi or LAN); across the internet most connections will fail.
+- A game opts in with `net:1` in its registry entry and reads `A.net`: `A.net.on`, `A.net.me` (0 host, 1 guest), `A.net.send(obj)` and `A.net.inbox`. Four in a Row sends the hovered column and each move; each browser applies the other's moves, so both boards stay identical.
+
+Decisions taken: codes only, no outside server; first game Four in a Row. Earlier open questions, kept for reference: whether an outside STUN request and, later, a Worker are acceptable exceptions to the "no network calls" rule for the ONLINE mode only; and which game to pilot (suggested: Four in a Row or Checkers).

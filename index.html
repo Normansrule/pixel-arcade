@@ -86,7 +86,7 @@
   <nav class="chips" id="chips" aria-label="Filter games"></nav>
   <p id="empty" class="empty" hidden>No cabinet matches that. Try another word.</p>
   <section class="grid" id="grid" aria-label="Games"></section>
-  <footer class="foot"><span><kbd>Arrows</kbd> move</span><span><kbd>Space</kbd>/<kbd>Click</kbd> A</span><span><kbd>X</kbd>/<kbd>Right-click</kbd> B</span><span><kbd>Esc</kbd> exit</span><a href="builder/">+ Build a game</a><a href="#" id="offlineBtn" title="Download every game so the arcade works with no internet">⤓ Save all offline</a><a href="https://github.com/Normansrule/pixel-arcade/releases" target="_blank" rel="noopener">Desktop app</a></footer>
+  <footer class="foot"><span><kbd>Arrows</kbd> move</span><span><kbd>Space</kbd>/<kbd>Click</kbd> A</span><span><kbd>X</kbd>/<kbd>Right-click</kbd> B</span><span><kbd>Esc</kbd> exit</span><a href="builder/">+ Build a game</a><a href="#" id="netBtn" title="Play a friend on the same network by swapping codes">⇄ Play online</a><a href="#" id="offlineBtn" title="Download every game so the arcade works with no internet">⤓ Save all offline</a><a href="https://github.com/Normansrule/pixel-arcade/releases" target="_blank" rel="noopener">Desktop app</a></footer>
 </main>
 <div id="cab" role="application" aria-label="Game screen" data-gfx="high">
   <div class="bar">
@@ -168,6 +168,7 @@
 <script src="games/advanced2.js"></script>
 <script src="games/space1.js"></script>
 <script src="js/trail.js"></script>
+<script src="js/net.js"></script>
 <!-- scripts:end -->
 <script type="module" src="js/hero.js"></script>
 <script>

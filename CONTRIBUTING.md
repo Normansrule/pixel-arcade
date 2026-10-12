@@ -25,6 +25,8 @@ Thanks for helping build the arcade. Read [docs/ARCHITECTURE.md](docs/ARCHITECTU
 4. Render its hub thumbnail: `python3 -m http.server 8765 &` then `python3 tools/thumbs.py`.
 5. Run the checks in the testing checklist below.
 
+**Online play:** a turn-based versus game can add `net:1` and use `A.net` (`on`, `me`, `send`, `inbox`); see FOUR IN A ROW in `games/puzzle.js` and [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md).
+
 **API:** `A.in(0)` held keys · `A.hit(0)` pressed this frame · `A.fire(rate)` hold-to-fire or spam-click · `A.mouse` pointer · `A.burst(x,y,colour)` particles · `A.shake` · `A.person(x,y,{c})` characters · `A.gx` art kit · `A.cpu` / `A.lvl` / `A.bot({...})` CPU input · `A.p3` `A.box3` `A.flush` pseudo-3D.
 
 ## Add a 3D world

@@ -67,6 +67,7 @@
   "games/space1.js"
  ],
  "after": [
-  "js/trail.js"
+  "js/trail.js",
+  "js/net.js"
  ]
 }

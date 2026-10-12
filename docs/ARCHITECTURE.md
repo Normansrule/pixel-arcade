@@ -70,7 +70,7 @@ Run `python3 tools/build.py` after adding, moving or removing files; it calls `m
 
 ## Online multiplayer
 
-Not built yet. [MULTIPLAYER.md](MULTIPLAYER.md) compares peer-to-peer WebRTC (Web Real-Time Communication) with copy-paste or room-code signaling against a hosted game server, and recommends a first step.
+`js/net.js` adds serverless online play: two browsers swap a copy-paste or QR code and then talk over a WebRTC (Web Real-Time Communication) data channel, on the same network only. Games opt in with `net:1` and read `A.net`; Four in a Row is the first. [MULTIPLAYER.md](MULTIPLAYER.md) has the details and the trade-offs.
 
 ## Tests and tools
 

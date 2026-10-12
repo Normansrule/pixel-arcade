@@ -6,7 +6,7 @@ const turnTag=(txt,col,y)=>{const w=txt.length*8+16;X.panel(160-w/2,y-4,w,18,col
 const cursor=(x,y,w,h,col)=>{const p=1+Math.sin(A.t*.15)*.8;X.glow(x+w/2,y+h/2,Math.max(w,h)*.8,col||'#ffcf3f',.15);X.rrs(x-p,y-p,w+2*p,h+2*p,4,col||'#ffcf3f',1.5);};
 
 /* ---- FOUR IN A ROW ---- */
-A.add({id:'four',name:'FOUR IN A ROW',cat:'BOARD',vs:1,how:'PICK COLUMN. A DROPS. CONNECT 4.',make(){
+A.add({id:'four',name:'FOUR IN A ROW',cat:'BOARD',vs:1,net:1,how:'PICK COLUMN. A DROPS. CONNECT 4.',make(){
  const g={over:null,score:0},WN=[],fx=X.fx();for(let r=0;r<6;r++)for(let c=0;c<7;c++)for(const d of[[0,1],[1,0],[1,1],[1,-1]]){const er=r+d[0]*3,ec=c+d[1]*3;if(er<6&&ec>=0&&ec<7)WN.push([0,1,2,3].map(i=>(r+d[0]*i)*7+c+d[1]*i));}
  let b=Array(42).fill(0),p=0,col=3,think=0,winL=null,fall=null;
  const drop=(bd,c)=>{for(let r=5;r>=0;r--)if(!bd[r*7+c])return r*7+c;return -1;};const won=(bd,v)=>WN.find(w=>w.every(i=>bd[i]===v));
@@ -15,7 +15,9 @@ A.add({id:'four',name:'FOUR IN A ROW',cat:'BOARD',vs:1,how:'PICK COLUMN. A DROPS
  const play=c=>{const i=drop(b,c);if(i<0){S('lose');return;}b[i]=p+1;fall={i,y:0,v:p+1};S('hit');const w=won(b,p+1);if(w){winL=w;g.over=A.win(p);}else if(b.every(v=>v))g.over='DRAW!';else p=1-p;think=0;};
  const pos=i=>[76+(i%7)*28,64+((i/7)|0)*28];
  g.update=()=>{if(fall){fall.y+=.09+fall.y*.12;if(fall.y>=1){const[x,y]=pos(fall.i);fx.spark(x,y+8,'#ffffff',4,1.5);A.shake=2;fall=null;}}if(A.cpu&&p===1){if(++think>35){let best=-1e9,bc=3;const dp=[1,3,5][A.lvl];for(const c of[3,2,4,1,5,0,6]){const i=drop(b,c);if(i<0)continue;b[i]=2;const v=mm(b,dp,-1e9,1e9,false)+rnd(A.lvl?1:8);b[i]=0;if(v>best){best=v;bc=c;}}col=bc;play(bc);}return;}
-  const h=A.hit(human(p));if(h.l)col=(col+6)%7;if(h.r)col=(col+1)%7;if(h.l||h.r)S('blip');if(h.a||h.d)play(col);};
+  const NT=A.net&&A.net.on?A.net:null;// online: moves and the hover column come from the other browser
+  if(NT){while(!fall&&!g.over&&NT.inbox.length){const m=NT.inbox.shift();if(p===NT.me)continue;if(m.h!=null)col=m.h;if(m.c!=null){col=m.c;play(m.c);}}if(p!==NT.me||fall||g.over)return;}
+  const h=A.hit(NT?0:human(p));if(h.l)col=(col+6)%7;if(h.r)col=(col+1)%7;if(h.l||h.r){S('blip');NT&&NT.send({h:col});}if(h.a||h.d){if(NT){if(drop(b,col)<0)return;NT.send({c:col});}play(col);}};
  const disc=(x,y,v,r)=>{const cc=v===1?'#2fd6c3':'#ff4f9a';X.disc(x,y,r||11,X.rg(x-3,y-4,1,x,y,r||11,[X.lt(cc,1.5),cc,X.lt(cc,.5)]));A.c.strokeStyle=X.lt(cc,.6);A.c.lineWidth=1;A.c.beginPath();A.c.arc(x,y,(r||11)*.62,0,6.283);A.c.stroke();X.ell(x-3,y-4,3.5,2,'rgba(255,255,255,.5)',-.5);};
  g.draw=()=>{X.cache('fourbg',()=>{X.sky(['#1a1240','#0c0824']);X.glow(160,130,140,'#3a4aff',.2);X.vg(0,226,W,14,['#3a2a1a','#1a1008']);});const c=A.c;
   for(let i=0;i<42;i++){if(!b[i]||(fall&&fall.i===i))continue;const[x,y]=pos(i);disc(x,y,b[i]);}
@@ -25,7 +27,7 @@ A.add({id:'four',name:'FOUR IN A ROW',cat:'BOARD',vs:1,how:'PICK COLUMN. A DROPS
   c.fillStyle='rgba(255,255,255,.2)';c.fillRect(66,48,188,2);X.vg(54,214,212,10,['#2b3bd6','#121a60']);
   if(winL){winL.forEach(i=>{const[x,y]=pos(i);X.glow(x,y,18,'#ffffff',.3+.2*Math.sin(A.t*.2));A.ring(x,y,12,'#ffffff');});}
   if(!g.over&&!fall){const hx=76+col*28,bob=Math.sin(A.t*.15)*2;disc(hx,32+bob,p+1,10);X.poly([[hx-4,45+bob],[hx+4,45+bob],[hx,49+bob]],p?'#ff4f9a':'#2fd6c3');}
-  fx.draw();X.bar();A.hud2('','');turnTag(g.over?'':A.nm(p)+' TO MOVE',p?K.p:K.c,4);};
+  fx.draw();X.bar();A.hud2('','');turnTag(g.over?'':A.net&&A.net.on?(p===A.net.me?'YOUR MOVE':'WAITING FOR RIVAL'):A.nm(p)+' TO MOVE',p?K.p:K.c,4);};
  return g;}});
 
 /* ---- TIC TAC TOE ---- */
