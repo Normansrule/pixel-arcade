@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bundle the arcade into one self-contained file: dist/pixel-arcade.html"""
-import re, os
+import re, os, subprocess, sys
+subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'make_pwa.py')], check=True)
 src = open('index.html', encoding='utf-8').read()
 src = src.replace('<link rel="stylesheet" href="style.css">', '<style>\n' + open('style.css', encoding='utf-8').read() + '</style>')
 src = src.replace('<script type="module" src="js/hero.js"></script>', '')
@@ -12,8 +13,8 @@ src = src.replace('href="kart/"', 'href="https://normansrule.github.io/pixel-arc
 # full-3D cabinets live in their own folders; point the single-file build at the live site
 BASE = 'https://normansrule.github.io/pixel-arcade/'
 src = re.sub(r"href:'([a-z0-9]+/)'", lambda m: "href:'" + BASE + m.group(1) + "'", src)
-src = re.sub(r"img:'(docs/[a-z0-9]+\.png)'", lambda m: "img:'" + BASE + m.group(1) + "'", src)
-src = re.sub(r'href="(voxel|abyss|strike|drive|kart|pets|builder|rocket|frontline|gp|plaza|royale|tumble|brawl|quest|striker|skate|suspects|monsters|breach)/"', lambda m: 'href="' + BASE + m.group(1) + '/"', src)
+src = re.sub(r"img:'(docs/(?:cards/)?[a-z0-9]+\.(?:png|jpg))'", lambda m: "img:'" + BASE + m.group(1) + "'", src)
+src = re.sub(r'href="([a-z0-9]+)/"', lambda m: 'href="' + BASE + m.group(1) + '/"', src)
 src = re.sub(r'url\((docs/[a-z0-9]+\.png)\)', lambda m: 'url(' + BASE + m.group(1) + ')', src)
 src = re.sub(r'src="(docs/[a-z0-9]+\.png)"', lambda m: 'src="' + BASE + m.group(1) + '"', src)
 src = src.replace("im.src='docs/thumbs/'", "im.src='" + BASE + "docs/thumbs/'")

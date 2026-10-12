@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ironclad · Pixel Arcade</title>
+<meta name="description" content="Ironclad: full 3D arcade tank combat in the browser. Ballistic shells, armour angles, ricochets and destructible maps. 5v5 Team Deathmatch, Capture the Flag and Control Point against CPU crews, with a garage of hulls and turrets to unlock and upgrade.">
+<link rel="stylesheet" href="ironclad.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+<div id="hud" hidden>
+  <div id="board"><div class="tm b"><i>BLUE</i><b id="s0">0</b></div><div class="clk"><b id="clock">8:00</b><span id="goal"></span></div><div class="tm r"><b id="s1">0</b><i>RED</i></div></div>
+  <div id="obj"></div>
+  <div id="feed"></div>
+  <div id="msg"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="plates"></div>
+  <div id="nums"></div>
+  <div id="scope" hidden><div class="lens"></div><div class="xh"></div><span id="zoomlv">4×</span></div>
+  <div id="reticle"><i></i><i></i><i></i><i></i></div>
+  <div id="marker"><svg viewBox="-50 -50 100 100"><circle class="bg" r="44"/><circle class="rl" r="44"/></svg><b></b></div>
+  <div id="hitinfo"></div>
+  <div id="dmgdir"></div>
+  <div id="tankp"><div class="nm"><b id="tname">BULWARK</b><span id="tspd">0 KM/H</span></div><div class="hp"><i id="hpb"></i><span id="hpt">230</span></div>
+    <div id="gunp"><div class="gl"><span class="gn" id="gname">TALON-30</span><span class="st" id="rst">READY</span></div><div class="rb"><i id="rlb"></i></div><div id="pips"></div></div><div id="buffs"></div></div>
+  <canvas id="mini" width="220" height="220"></canvas>
+  <div id="dead" hidden><p class="eye">YOUR TANK WAS DESTROYED</p><b id="killer"></b><span id="respawn"></span></div>
+  <div id="cd"></div>
+  <div id="tab" hidden></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · TANK COMBAT</p>
+  <h1>IRON<br>CLAD<em>.</em></h1>
+  <p class="how">Five-on-five armoured warfare. Angle your plates, lob shells over cover, punch through walls and houses. Earn credits, unlock hulls and turrets, upgrade them in the garage.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="tdm">TEAM DEATHMATCH</button><button data-v="ctf">CAPTURE THE FLAG</button><button data-v="cp">CONTROL POINT</button></div>
+    <label>MAP</label><div class="seg" id="o-map"><button data-v="desert">SANDGLASS RUINS</button><button data-v="snow">FROSTFALL HAMLET</button><button data-v="port">RUSTWATER DOCKS</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">RECRUIT</button><button data-v="1">VETERAN</button><button data-v="2">ACE</button></div>
+    <label>CLOCK</label><div class="seg" id="o-time"><button data-v="5">5 MIN</button><button data-v="8">8 MIN</button><button data-v="10">10 MIN</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">DEPLOY ▸</button><span class="best" id="best"></span></div>
+</div>
+<div id="garage" class="card">
+  <div class="gh"><h3>GARAGE<em>.</em></h3><span class="cr">◆ <b id="credits">0</b></span></div>
+  <div class="lbl">HULL</div><div class="tiles" id="g-hull"></div>
+  <div class="lbl">TURRET</div><div class="tiles" id="g-tur"></div>
+  <div id="g-info"></div>
+  <div class="lbl">PAINT</div><div class="paints" id="g-paint"></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Drive hull</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Aim turret</td><td>Mouse <span class="pad">R-stick</span></td></tr>
+    <tr><td>Fire (hold for bursts)</td><td><kbd>LMB</kbd> <kbd>Space</kbd> <span class="pad">RT</span></td></tr>
+    <tr><td>Sniper zoom · level</td><td><kbd>RMB</kbd> <kbd>Shift</kbd> · wheel <span class="pad">LT</span></td></tr>
+    <tr><td>Scoreboard · pause</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <span class="pad">Back Start</span></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p>Hit sides and rears for bonus damage; shallow angles ricochet. Bushes hide you until you fire. Grab supply drops: repair, double damage, speed, armour.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLD<br>FIRE<em>.</em></h1><p class="how">Click or press <b>Esc</b> to resume. Mouse sensitivity:</p><div class="seg" id="o-sens"><button data-v="0">LOW</button><button data-v="1">MED</button><button data-v="2">HIGH</button></div><div class="row" style="margin-top:18px"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO GARAGE</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">MATCH COMPLETE</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="fs" id="ofs"></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">GARAGE</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

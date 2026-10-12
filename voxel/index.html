@@ -4,49 +4,65 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Voxel Frontier · Pixel Arcade</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../drive/drive.css">
-<style>
-#cross{position:fixed;left:50%;top:50%;width:18px;height:18px;margin:-9px;pointer-events:none;mix-blend-mode:difference}
-#cross::before,#cross::after{content:"";position:absolute;background:#fff}#cross::before{left:8px;top:0;width:2px;height:18px}#cross::after{top:8px;left:0;height:2px;width:18px}
-#bar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;background:rgba(0,0,0,.45);border-radius:8px}
-#bar .s{width:46px;height:46px;border:2px solid rgba(255,255,255,.18);border-radius:6px;position:relative;image-rendering:pixelated}
-#bar .s.on{border-color:#ff4d00;box-shadow:0 0 12px rgba(255,77,0,.6)}#bar .s canvas{width:100%;height:100%}
-#bar .s b{position:absolute;right:3px;bottom:1px;font:700 .7rem var(--mono);text-shadow:1px 1px 0 #000}
-#hearts{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);font-size:18px;letter-spacing:1px;text-shadow:1px 1px 0 #000}
-#info{position:fixed;left:16px;top:14px;font:.72rem var(--mono);line-height:1.7;text-shadow:1px 1px 0 #000}
-#info b{color:var(--o)}
-#brk{position:fixed;left:50%;top:50%;width:40px;height:40px;margin:-20px;border-radius:50%;pointer-events:none;opacity:0}
-#toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);font:400 2.4rem var(--disp);color:#fff;text-shadow:3px 3px 0 #000;opacity:0;transition:opacity .3s}
- #goal{position:fixed;right:16px;top:14px;max-width:260px;text-align:right;font:.72rem var(--mono);line-height:1.6;text-shadow:1px 1px 0 #000}#goal b{display:block;color:var(--o);letter-spacing:.14em;font-size:.62rem}
-#craft{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);z-index:20}
-#craft[hidden]{display:none}
-#craft .box{width:min(640px,94vw);max-height:86vh;overflow:auto;background:rgba(14,14,16,.92);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:20px 22px;font:.75rem var(--mono)}
-#craft h2{margin:0 0 4px;font:400 1.8rem var(--disp);letter-spacing:.02em}#craft .sub{color:#9a9a9a;margin:0 0 14px}
-#craft .inv{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px}
-.it{width:40px;height:40px;border-radius:6px;background:#222;position:relative;image-rendering:pixelated}.it canvas{width:100%;height:100%}.it b{position:absolute;right:2px;bottom:0;font:700 .65rem var(--mono);text-shadow:1px 1px 0 #000}
-#craft .rec{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
-#craft .r{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:#1b1b1e;border:1px solid transparent;cursor:pointer;color:#f2f2f2;text-align:left;font:inherit}
-#craft .r.no{opacity:.35;cursor:default}#craft .r:not(.no):hover{border-color:var(--o)}
-#craft .r .ing{display:flex;gap:2px;margin-left:auto}#craft .r .ing .it{width:24px;height:24px}#craft .r .ing .it b{font-size:.55rem}
-#craft .r span{line-height:1.25}#craft .r small{display:block;color:#8a8a8a}
-.result{font:400 1.6rem var(--disp);color:var(--o);margin:0 0 12px;min-height:0}.result:empty{display:none}.tmode button{font-size:.72rem;padding:8px 14px}
-.mode{display:flex;gap:10px;margin-bottom:14px}.mode button{background:#1a1a1a;color:#f2f2f2}.mode button.on{background:var(--o);color:#000}
-</style>
+<meta name="description" content="Voxel Frontier: an endless block-world survival sandbox in the browser. Mine through biomes, caves and ores, craft tools and armour, survive night creatures and light the beacon before time runs out.">
+<link rel="stylesheet" href="voxel.css">
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hud" hidden><div id="cross"></div><div id="brk"></div><div id="info"></div><div id="hearts"></div><div id="bar"></div><div id="toast"></div><div id="goal"></div></div>
-<div id="craft" hidden><div class="box"><h2>CRAFTING</h2><p class="sub">Click a recipe to craft. <kbd>E</kbd> or <kbd>Esc</kbd> to close.</p><div class="inv" id="cinv"></div><div class="rec" id="crec"></div></div></div>
-<div id="menu">
-  <p class="eye">[ PIXEL ARCADE ] FULL 3D · VOXEL SANDBOX</p>
+<div id="hurtov"></div><div id="waterov"></div><div id="lowov"></div>
+<div id="hud" hidden>
+  <div id="quest"><p class="k">OBJECTIVE <b id="qn">1/12</b></p><b id="qt"></b><span id="qh"></span><div class="qb"><em id="qb"></em></div><p id="lives"></p></div>
+  <div id="top"><div class="dial"><i id="dsun"></i></div><div class="clk"><b id="clock">20:00</b><span id="daylbl">DAY 1 · 07:30</span></div></div>
+  <div id="score"><b id="sc">0</b><span id="bio">PLAINS</span></div>
+  <div id="feed"></div>
+  <div id="cross"></div><div id="ring"></div><p id="tip"></p>
+  <div id="pops"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="bottom"><p id="iname"></p><div id="vitals"><div id="hearts"></div><div id="armor"></div><div id="food"></div></div><div id="bar"></div></div>
+  <div id="dead" hidden><p class="k">YOU WERE DEFEATED</p><b id="deadby"></b><span id="deadl"></span></div>
+</div>
+<div id="craft" hidden><div class="box">
+  <div class="ch"><h2>INVENTORY <em>&amp;</em> CRAFTING</h2><p class="sub">Click an item to put it in the selected hotbar slot. Click a recipe to craft. <kbd>E</kbd> / <kbd>Esc</kbd> closes.</p></div>
+  <div class="cols"><div><p class="lab">BACKPACK</p><div class="inv" id="cinv"></div><p class="lab">HOTBAR</p><div class="inv hb" id="chb"></div><p class="lab" id="stations"></p></div>
+  <div><p class="lab">RECIPES</p><div class="rec" id="crec"></div></div></div></div></div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · VOXEL SURVIVAL</p>
   <h1>VOXEL<br>FRONTIER<em>.</em></h1>
-  <p class="how">Explore an endless block world. Punch trees, craft tools and TNT, light the dark, survive the night.</p>
-  <p id="result" class="result"></p>
-  <div class="mode"><button data-m="survival" class="on">SURVIVAL</button><button data-m="creative">CREATIVE</button></div>
-  <div class="mode tmode"><button data-t="600" class="on">10 MIN</button><button data-t="1200">20 MIN</button><button data-t="0">ENDLESS</button></div>
-  <div class="row"><button id="go">NEW WORLD</button><button id="cont" class="ghost">CONTINUE</button></div>
-  <p class="keys"><kbd>WASD</kbd> move · <kbd>Mouse</kbd> look · <kbd>Left</kbd> mine / hit · <kbd>Right</kbd> place / eat · <kbd>E</kbd> craft · <kbd>1-9</kbd> / wheel pick · <kbd>Space</kbd> jump / swim · <kbd>Shift</kbd> sprint · <kbd>F</kbd> fly (creative) · <kbd>G</kbd> graphics</p>
+  <p class="how">An endless block world of forests, deserts, snowy taiga, peaks and deep glowing caves. Punch trees, craft a workbench, forge tools and armour, survive the creatures of the night and light the <b>BEACON</b> before the clock runs out.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="survival">SURVIVAL</button><button data-v="creative">CREATIVE</button></div>
+    <label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>CLOCK</label><div class="seg" id="o-len"><button data-v="600">10 MIN</button><button data-v="1200">20 MIN</button><button data-v="0">ENDLESS</button></div>
+  </div>
+  <p class="clsd" id="dsc"></p>
+  <div class="row"><button id="go" class="go">NEW WORLD</button><button id="cont" class="ghost">CONTINUE</button><span class="best" id="best"></span></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · jump · sprint</td><td><kbd>WASD</kbd> <kbd>Space</kbd> <kbd>Shift</kbd></td></tr>
+    <tr><td>Mine / attack (hold)</td><td><kbd>LMB</kbd></td></tr>
+    <tr><td>Place block · eat</td><td><kbd>RMB</kbd></td></tr>
+    <tr><td>Hotbar</td><td><kbd>1</kbd>–<kbd>9</kbd> <kbd>Wheel</kbd></td></tr>
+    <tr><td>Inventory + crafting</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Fly · pause · graphics</td><td><kbd>F</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p class="pad">Gamepad: sticks move / look · <kbd>RT</kbd> mine · <kbd>LT</kbd> place · <kbd>A</kbd> jump · <kbd>Y</kbd> craft · bumpers pick</p>
+  <p>The objective card leads the way: logs → workbench → pickaxes → furnace & iron → survive a night → diamonds and crystal shards deep in the caves → craft the BEACON and place it under open sky to win. Tools are used automatically. Creatures burn in sunlight; torches keep them away.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>TAKE<br>FIVE<em>.</em></h1><p class="how">The world is frozen. Resume to lock the mouse again. Your world autosaves.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.6">LOW</button><button data-v="1">MED</button><button data-v="1.5">HIGH</button><button data-v="2.2">MAX</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="70">70</button><button data-v="80">80</button><button data-v="95">95</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.5">ON</button><button data-v="1">LOUD</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">SAVE &amp; QUIT</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">SESSION OVER</p>
+  <p class="res" id="ores">TIME UP</p>
+  <p class="fs" id="ofs">0 PTS</p>
+  <div id="ostats"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEW WORLD</button><button id="keep" class="ghost">KEEP PLAYING</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
 </div>
 <a class="back" href="../">← ARCADE</a>
 <script type="module" src="game.js"></script>

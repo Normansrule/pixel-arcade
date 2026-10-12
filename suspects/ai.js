@@ -15,7 +15,7 @@ function goTo(sim,c,x,z){const b=c.brain;b.gx=x;b.gz=z;const p=M.findPath(c.x,c.
 export function repath(sim,c){const b=c.brain;if(b.gx!=null)goTo(sim,c,b.gx,b.gz);}
 const arrived=(c,r=.35)=>!c.brain.path.length&&Math.hypot(c.brain.gx-c.x,c.brain.gz-c.z)<r;
 function spotIn(room){const r=M.ROOMS[room].r;for(let i=0;i<30;i++){const x=r[0]+1+R()*(r[1]-r[0]-2),z=r[2]+1+R()*(r[3]-r[2]-2);if(M.walkable(x,z)&&M.walkable(x+.4,z)&&M.walkable(x-.4,z)&&M.walkable(x,z+.4)&&M.walkable(x,z-.4))return{x,z};}return{x:M.ROOMS[room].cx,z:M.ROOMS[room].cz};}
-function nextTask(c,skipScan){let best=null,bd=1e9;for(const t of c.tasks){if(t.done||(skipScan&&t.st.type==='scan'))continue;const d=Math.hypot(t.st.x-c.x,t.st.z-c.z)*(.8+R()*.5);if(d<bd){bd=d;best=t;}}return best;}
+function nextTask(c,skipScan){let best=null,bd=1e9;for(const t of c.tasks){if(t.done||(skipScan&&M.TASK_TYPES[t.st.type].visual))continue;const d=Math.hypot(t.st.x-c.x,t.st.z-c.z)*(.8+R()*.5);if(d<bd){bd=d;best=t;}}return best;}
 function stationFree(sim,c,st){return !sim.crew.some(o=>o!==c&&o.alive&&o.busy&&o.busy.st===st);}
 
 /* ---------- perception: sightings memory ---------- */
@@ -61,7 +61,7 @@ export function think(sim,c,dt){const b=c.brain;if(sim.phase!=='play')return;
  // 3. fix sabotage
  if(b.fix){const p=b.fix;if(dist(c,p)<.6){c.busy={st:p,kind:S.kind==='reactor'?'hold':'fix',t:0,dur:S.kind==='lights'?3:3.5};c.fx=p.dx||c.fx;c.fz=p.dz||c.fz;}else if(!b.path.length)goTo(sim,c,p.x,p.z);return;}
  // 4. keep away from someone I strongly suspect (hard)
- if(sim.diff.smart>=2&&b.st!=='flee'){for(const o of sim.crew){if(o===c||!o.alive||c.sus[o.id]<.9||dist(o,c)>4||!sim.visibleChar(c,o))continue;const others=sim.crew.some(x=>x!==c&&x!==o&&x.alive&&sim.visibleChar(c,x));if(!others){b.st='flee';const r=M.RI.caf;const s=spotIn(r);goTo(sim,c,s.x,s.z);b.wait=4;return;}}}
+ if(sim.diff.smart>=2&&b.st!=='flee'){for(const o of sim.crew){if(o===c||!o.alive||c.sus[o.id]<.9||dist(o,c)>4||!sim.visibleChar(c,o))continue;const others=sim.crew.some(x=>x!==c&&x!==o&&x.alive&&sim.visibleChar(c,x));if(!others){b.st='flee';const r=M.RI.gal;const s=spotIn(r);goTo(sim,c,s.x,s.z);b.wait=4;return;}}}
  routine(sim,c,dt,false);}
 
 function routine(sim,c,dt,fake){const b=c.brain;
@@ -76,7 +76,7 @@ function routine(sim,c,dt,fake){const b=c.brain;
  // loiter: wander to a room or tag along with someone
  const vis=sim.crew.filter(o=>o!==c&&o.alive&&sim.visibleChar(c,o));
  if(vis.length&&R()<.5){b.st='follow';b.follow=M.pick(vis);b.wait=5+R()*10;return;}
- const room=R()<.3?M.roomAt(c.x,c.z):(R()*M.ROOMS.length|0);const s=spotIn(room>=0?room:M.RI.caf);b.st='loiter';b.wait=4+R()*12;goTo(sim,c,s.x,s.z);}
+ const room=R()<.3?M.roomAt(c.x,c.z):(R()*M.ROOMS.length|0);const s=spotIn(room>=0?room:M.RI.gal);b.st='loiter';b.wait=4+R()*12;goTo(sim,c,s.x,s.z);}
 
 function ghostThink(sim,c,dt){const b=c.brain;if(c.human&&!sim.o.autopilot)return;if(c.sab){if(!b.path.length){b.wait-=dt;if(b.wait<=0){const s=spotIn(R()*M.ROOMS.length|0);goTo(sim,c,s.x,s.z);b.wait=5+R()*8;}}return;}
  if(c.busy)return;const t=b.task&&!b.task.done?b.task:nextTask(c,false);if(!t){if(!b.path.length&&(b.wait-=dt)<=0){const s=spotIn(R()*M.ROOMS.length|0);goTo(sim,c,s.x,s.z);b.wait=6;}return;}
@@ -145,7 +145,7 @@ function alibiText(sim,st,lead='I was in'){const pl=st.places.map((k,i)=>P(k)+(s
 function evidence(sim,c,m){const out=[...Array(10)].map(()=>({s:0,r:'',w:0}));const add=(i,s,r)=>{const e=out[i];e.s+=s;if(Math.abs(s)>e.w){e.w=Math.abs(s);e.r=r;}};
  const tR=m.tPlay,body=m.body;
  for(const e of c.mem.ev){if(e.who===c.id)continue;
-  if(e.type==='kill')add(e.who,2.4,`I watched them kill ${N(sim,e.victim)}`);
+  if(e.type==='kill')add(e.who,2.4,`I watched them knock out ${N(sim,e.victim)}`);
   else if(e.type==='vent')add(e.who,2.2,`I saw them use a vent in ${P(e.k)}`);
   else if(e.type==='near'&&body&&e.victim===body.victim)add(e.who,.8,`they were standing over the body`);
   else if(e.type==='scan')add(e.who,-1.3,`they scanned in front of me`);}
@@ -190,9 +190,9 @@ function sabLines(sim,c,m,add){const D=sim.diff;const mates=sim.crew.filter(o=>o
  else if(R()<.5)add(c.id,{kind:'skip'},7);}
 
 const TEXT={
- report:(s,st)=>M.pick([`${N(s,st.victim)} is dead in ${P(st.k)}. I just found the body.`,`Body in ${P(st.k)}! It's ${N(s,st.victim)}.`,`I found ${N(s,st.victim)} in ${P(st.k)}. Who was there?`]),
- call:()=>M.pick(['Emergency meeting. Quick check-in: where is everyone?','I called it. Something feels off, let\'s compare notes.']),
- kill:(s,st)=>`${N(s,st.target)} KILLED ${N(s,st.victim)} in ${P(st.k)}! I watched it happen!`,
+ report:(s,st)=>M.pick([`${N(s,st.victim)} is knocked out cold in ${P(st.k)}. I just found them.`,`Body in ${P(st.k)}! It's ${N(s,st.victim)}.`,`I found ${N(s,st.victim)} out cold in ${P(st.k)}. Who was there?`]),
+ call:()=>M.pick(['I rang the bell. Quick check-in: where is everyone?','I called it. Something feels off, let\'s compare notes.','Bell meeting! Everyone say where you were.']),
+ kill:(s,st)=>`${N(s,st.target)} KNOCKED OUT ${N(s,st.victim)} in ${P(st.k)}! I watched it happen!`,
  vent:(s,st)=>M.pick([`I SAW ${N(s,st.target)} VENT in ${P(st.k)}!`,`${N(s,st.target)} came out of a vent in ${P(st.k)}. I saw it.`]),
  near:(s,st)=>`${N(s,st.target)} was standing right over the body.`,
  alibi:(s,st)=>alibiText(s,st),
@@ -277,7 +277,7 @@ export function afterEject(sim,m,e){if(!sim.o.confirm)return;
 /* ---------- the human's meeting options ---------- */
 export function quickLines(sim){const c=sim.player,m=sim.meeting;if(!m||!c.alive)return[];const out=[];
  const al=alibi(sim,c,m);if(c.sab)al.lie=false;out.push({label:'MY ALIBI',st:al});
- for(const e of c.mem.ev){if(e.type==='kill'||e.type==='vent')out.push({label:e.type==='vent'?`SAW ${N(sim,e.who)} VENT`:`SAW ${N(sim,e.who)} KILL`,st:{kind:e.type,target:e.who,victim:e.victim,k:e.k,t:e.t}});}
+ for(const e of c.mem.ev){if(e.type==='kill'||e.type==='vent')out.push({label:e.type==='vent'?`SAW ${N(sim,e.who)} VENT`:`SAW ${N(sim,e.who)} KNOCK OUT`,st:{kind:e.type,target:e.who,victim:e.victim,k:e.k,t:e.t}});}
  const seen=[];for(let i=1;i<10;i++){const s=c.mem.seen[i];if(!s.length)continue;const e=s[s.length-1];if(m.tPlay-e.t1<90)seen.push({i,e});}
  seen.sort((a,b)=>b.e.t1-a.e.t1).slice(0,4).forEach(({i,e})=>out.push({label:`SAW ${N(sim,i)} · ${P(e.k).toUpperCase()}`,st:{kind:sim.crew[i].alive?'saw':'lastseen',target:i,k:e.k,t:e.t1,task:e.task}}));
  out.push({label:'WHERE WAS EVERYONE?',st:{kind:'where'}});return out;}
@@ -286,10 +286,10 @@ export function claimRoom(sim,room){const m=sim.meeting;return{kind:'alibi',plac
 // free text: look for names, rooms and intent words
 export function parseText(sim,txt){const s=txt.toLowerCase(),c=sim.player;let target=null;
  for(const o of sim.crew){if(o===c)continue;const n=o.name.toLowerCase();if(new RegExp('\\b'+n+'\\b').test(s)){target=o.id;break;}}
- let room=-1;M.ROOMS.forEach((r,i)=>{const w=r.n.toLowerCase().split(' ')[0];if(s.includes(w)||(r.id==='caf'&&/\bcaf\b/.test(s))||(r.id==='ele'&&/\belec\b/.test(s))||(r.id==='nav'&&/\bnav\b/.test(s)))room=i;});
+ let room=-1;M.ROOMS.forEach((r,i)=>{if((M.ALIAS[r.id]||[r.n.toLowerCase().split(' ')[0]]).some(w=>new RegExp('\\b'+w).test(s)))room=i;});
  const st={text:txt.slice(0,140)};
  if(target!=null&&/vent/.test(s))return{...st,kind:'vent',target,k:room>=0?room:M.placeKey(c.x,c.z),t:sim.meeting.tPlay-10};
- if(target!=null&&/\b(kill|killed|murder|stab)/.test(s))return{...st,kind:'kill',target,victim:sim.meeting.victim??target,k:room>=0?room:M.placeKey(c.x,c.z),t:sim.meeting.tPlay-10};
+ if(target!=null&&/\b(kill|killed|knock|knocked|ko|bonk)/.test(s))return{...st,kind:'kill',target,victim:sim.meeting.victim??target,k:room>=0?room:M.placeKey(c.x,c.z),t:sim.meeting.tPlay-10};
  if(target!=null&&/\b(safe|clear|innocent|trust|vouch|with me)\b/.test(s))return{...st,kind:'clear',target};
  if(target!=null&&/\b(sus|vote|voting|saboteur|impostor|imposter|traitor|liar|lying|it'?s|did it|kill)\b/.test(s))return{...st,kind:'accuse',target,conf:.6,why:''};
  if(target!=null&&room>=0&&/\b(saw|seen|was in|near)\b/.test(s))return{...st,kind:'saw',target,k:room,t:sim.meeting.tPlay-15};

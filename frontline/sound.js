@@ -10,8 +10,9 @@ export class Sound{
   const ws=ac.createBufferSource();ws.buffer=b;ws.loop=true;const wf=ac.createBiquadFilter();wf.type='lowpass';wf.frequency.value=380;this.wind=ac.createGain();this.wind.gain.value=0;ws.connect(wf);wf.connect(this.wind);this.wind.connect(this.out);ws.start();
   this.drone=null;this.heart=0;}catch(e){this.ac=null;}}
  setVol(v){this.vol=v;if(this.out)this.out.gain.value=v;}
- ambience(kind,on){if(!this.ac)return;this.wind.gain.setTargetAtTime(on?(kind==='night'?.05:.07):0,this.ac.currentTime,.5);this.amb=on?kind:null;}
- tick(dt){if(!this.ac||!this.amb)return;if(this.amb==='night'&&Math.random()<dt*1.6)this._cricket();if(Math.random()<dt*.05)this._distant();}
+ ambience(kind,on){if(!this.ac)return;this.wind.gain.setTargetAtTime(on?(kind==='snow'?.12:kind==='town'?.04:.07):0,this.ac.currentTime,.5);this.amb=on?kind:null;}
+ tick(dt){if(!this.ac||!this.amb)return;if(this.amb==='town'&&Math.random()<dt*1.4)this._cricket();if(this.amb==='harbor'&&Math.random()<dt*.35)this._gull();if(this.amb==='harbor'&&Math.random()<dt*.6)this._n(1.6,500,200,.5,.03,'lowpass',0,Math.random()*2-1);if(Math.random()<dt*.06)this._distant();}
+ _gull(){const p=Math.random()*2-1,f=1400+Math.random()*500;for(let k=0;k<2+Math.random()*3;k++)this._o('sine',f,f*.7,.22,.025,k*.26,p);}
  _cricket(){const ac=this.ac,t=ac.currentTime,f=4200+Math.random()*900,pan=Math.random()*2-1;for(let k=0;k<3+Math.random()*3;k++){this._o('sine',f,f,.035,.012,k*.07,pan);}}
  _distant(){const pan=Math.random()*2-1,d=Math.random()*.5;this._n(.8,600,80,.7,.06,'lowpass',d,pan,true);this._o('sine',60,30,.6,.05,d,pan);}
  _pan(p){if(!p)return this.out;const s=this.ac.createStereoPanner();s.pan.value=Math.max(-1,Math.min(1,p));s.connect(this.out);return s;}
@@ -59,7 +60,12 @@ export class Sound{
   case'win':[392,523,659,784].forEach((f,i)=>{this._o('sawtooth',f,f*1.005,1.6,.035,i*.18,0,true);this._o('triangle',f/2,f/2,1.8,.04,i*.18);});break;
   case'lose':[392,330,262,196].forEach((f,i)=>this._o('sawtooth',f,f,.9,.035,i*.28,0,true));break;
   case'obj':[784,988].forEach((f,i)=>this._o('triangle',f,f,.3,.08,i*.12));break;
-  case'heli':this._n(4,180,160,1,.18,'lowpass');break;
+  case'heli':this._n(.7,200,150,1,.16*a,'lowpass');this._o('sawtooth',22,20,.6,.05*a);break;
+  case'capture':[523,784,1047].forEach((f,i)=>this._o('triangle',f,f,.25,.08,i*.08));break;
+  case'lost':[784,587,440].forEach((f,i)=>this._o('triangle',f,f,.25,.07,i*.1));break;
+  case'killc':this._o('sine',1800,1800,.05,.12);this._o('sine',2700,2700,.14,.1,.04);this._n(.08,3000,1500,2,.06,'bandpass');break;
+  case'laser':this._o('sine',2400,2400,.12,.03);break;
+  case'bombs':this._n(.6,4000,600,1,.08,'bandpass',0,pan);break;
   case'drone':this._o('sawtooth',180,190,1.2,.03);this._o('sawtooth',184,192,1.2,.03);break;
   }}catch(e){}}
 }

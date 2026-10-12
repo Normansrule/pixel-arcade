@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Runline · Pixel Arcade</title>
+<meta name="description" content="Runline: a full 3D first-person rooftop runner. Sprint, slide, wall-run, vault, grapple and dash through twelve handcrafted courses in three districts, chase medal times and race a rival runner ghost.">
+<link rel="stylesheet" href="runline.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="lines"></canvas>
+<div id="flash"></div>
+<div id="hud" hidden>
+  <div id="tl"><p id="lvname">01 · FIRST LIGHT</p><p id="lvsub">SUNWARD HEIGHTS</p><div id="cpline"></div><p id="orbs"></p></div>
+  <div id="tc"><b id="timer">0:00.00</b><div id="parbar"><i id="parfill"></i></div><p id="parlbl">PAR 0:50</p><p id="rivald"></p></div>
+  <div id="tr"><p class="sl">SESSION</p><b id="sess">10:00</b><p id="sscore">0 PTS</p><div id="targets"></div></div>
+  <div id="spd"><div id="dashpip"><i></i></div><b id="kmh">0</b><span>KM/H</span><div id="spdbar"><i></i></div><p id="mstate"></p></div>
+  <div id="cross"><i></i></div>
+  <div id="reticle"><i></i><span>RMB</span></div>
+  <div id="split"></div>
+  <div id="tip"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="ready"><b>READY</b><span>MOVE TO START THE CLOCK</span></div>
+  <div id="keyhint">R RESTART · Q CHECKPOINT · V RUNNER VISION · ESC PAUSE</div>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · FIRST-PERSON FREERUNNING</p>
+  <h1>RUN<br>LINE<em>.</em></h1>
+  <p class="how">Twelve rooftop courses across three districts. Sprint, slide, wall-run, vault and grapple your way to the finish before the par clock runs out — then shave seconds for platinum and leave your rival's ghost behind.</p>
+  <div class="opts">
+    <label>SESSION</label><div class="seg" id="o-sess"><button data-v="5">5 MIN</button><button data-v="10">10 MIN</button><button data-v="15">15 MIN</button></div>
+    <label>RIVAL</label><div class="seg" id="o-tier"><button data-v="0">ROOKIE</button><button data-v="1">RUNNER</button><button data-v="2">PRO</button><button data-v="3">ELITE</button></div>
+    <label>GHOST</label><div class="seg" id="o-ghost"><button data-v="1">BEST RUN ON</button><button data-v="0">OFF</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">START SESSION</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Run · look</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd> <span class="pad">L R stick</span></td></tr>
+    <tr><td>Jump · wall-jump · bhop</td><td><kbd>Space</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Slide · roll on landing</td><td><kbd>C</kbd> <kbd>Ctrl</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Dash</td><td><kbd>E</kbd> <kbd>LMB</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Grapple to a node</td><td><kbd>RMB</kbd> <kbd>F</kbd> <span class="pad">RT</span></td></tr>
+    <tr><td>Walk (sprint is automatic)</td><td><kbd>Shift</kbd></td></tr>
+    <tr><td>Restart · last checkpoint</td><td><kbd>R</kbd> <kbd>Q</kbd> <span class="pad">Back LB</span></td></tr>
+    <tr><td>Runner vision · pause · graphics</td><td><kbd>V</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Wall-runs and vaults happen when you run at them. Keep W held at a ledge to mantle. Air-strafe (A/D + mouse) to carve speed; on surf ramps hold A or D into the slope. Red surfaces are runner vision hints.</p>
+</div>
+<div id="select" class="scr" hidden>
+  <div class="selhead"><div><p class="eye" id="seleye">SESSION · 10:00 LEFT</p><h2>CHOOSE A<br>COURSE<em>.</em></h2></div><div class="selside"><p id="selscore">0 PTS</p><div class="row"><button id="endsess" class="ghost">END SESSION</button><button id="selmenu" class="ghost">MENU</button></div></div></div>
+  <div id="grid"></div>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED · SESSION CLOCK STOPPED</p><h1>CATCH<br>BREATH<em>.</em></h1>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.8">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="90">90</button><button data-v="100">100</button><button data-v="110">110</button></div>
+  <label>VISION</label><div class="seg" id="o-vision"><button data-v="1">RED HINTS ON</button><button data-v="0">OFF</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.3">LOW</button><button data-v="0.5">MED</button><button data-v="0.8">LOUD</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="prestart" class="ghost">RESTART</button><button id="plevels" class="ghost">COURSES</button></div></div>
+<div id="done" class="scr" hidden>
+  <p class="eye" id="deye">COURSE COMPLETE</p>
+  <div class="medalrow"><div id="dmedal" class="medal"><b>G</b></div><div><p class="res" id="dtime">0:00.00</p><p class="dsub" id="dsub"></p></div></div>
+  <table id="dstats"></table>
+  <div class="row"><button id="dnext" class="go">NEXT COURSE</button><button id="dretry" class="ghost">RETRY · R</button><button id="dlevels" class="ghost">COURSES</button></div>
+</div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">SESSION OVER</p>
+  <p class="res" id="ores">0 PTS</p>
+  <table id="ostats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEW SESSION</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

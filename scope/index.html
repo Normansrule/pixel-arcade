@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Long Shot · Pixel Arcade</title>
+<meta name="description" content="Long Shot: a full 3D sniper game in the browser. Read the intel, pick your target out of a living crowd, read the wind and the drop, and take the shot from up to half a kilometre away. Six missions, bullet cam, unlockable rifles and scopes.">
+<link rel="stylesheet" href="scope.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="ov"></canvas>
+<div id="loading"><b>LONG SHOT</b><span>SURVEYING THE AREA…</span></div>
+<div id="hud" hidden>
+  <div id="redv"></div>
+  <div id="clockw"><span id="mname"></span><b id="clock">5:00</b><span id="clab">TARGET DEPARTS IN</span></div>
+  <div id="sus"><div class="lab"><i class="eye"></i><span id="sstate">UNDETECTED</span></div><div class="bar"><i id="sbar"></i></div><div class="bar ex" id="exw" hidden><i id="ebar"></i></div><p id="exl" hidden>UNDER FIRE · RELOCATE <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></p></div>
+  <div id="objs"></div>
+  <div id="windw"><canvas id="windc" width="128" height="128"></canvas><p id="perchn"></p></div>
+  <div id="gun"><p id="rname"></p><div id="ammo"></div><p class="r2"><span id="zero">ZERO 300 M</span><span id="zoomr">1.0×</span></p></div>
+  <div id="hint"></div>
+  <div id="toast"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="bcam" hidden><i></i>BULLET CAM<span id="bcd"></span><em>SPACE / CLICK · SKIP</em></div>
+</div>
+<div id="fade"><p id="fadet"></p></div>
+<div id="intel" hidden>
+  <div class="doss">
+    <div class="ph"><canvas id="photo" width="220" height="260"></canvas><span>SURVEILLANCE · LOW LIGHT</span></div>
+    <div class="info">
+      <p class="eye2" id="iloc"></p>
+      <h2 id="iname"></h2>
+      <p class="brief" id="ibrief"></p>
+      <div id="itargets"></div>
+      <div class="sec"><h4>SECONDARY</h4><div id="isec"></div></div>
+      <p class="rules">Identify by the clues — civilians share some of them. Killing three civilians, running out the clock or being pinned down by return fire ends the mission. Eliminating every primary target completes it.</p>
+      <div class="row"><button id="begin" class="go">TAKE POSITION <kbd>SPACE</kbd></button><span class="tabh" id="tabh">PRESS <kbd>TAB</kbd> TO CLOSE</span></div>
+    </div>
+  </div>
+</div>
+<div id="menu">
+  <div class="mcol">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SNIPER</p>
+  <h1>LONG<br>SHOT<em>.</em></h1>
+  <p class="how">Read the dossier. Find your mark in a living crowd. Read the wind, dial the range, hold your breath — and take the shot before the clock runs out.</p>
+  <div id="missions"></div>
+  <div class="opts">
+    <label>RIFLE</label><div class="seg" id="o-rifle"></div>
+    <label>SCOPE</label><div class="seg" id="o-scope"></div>
+    <label></label><div id="lstats"></div>
+    <label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">RECRUIT</button><button data-v="1">MARKSMAN</button><button data-v="2">ELITE</button></div>
+    <label>BULLET CAM</label><div class="seg" id="o-bcam"><button data-v="1">ON</button><button data-v="2">TARGETS ONLY</button><button data-v="0">OFF</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">DEPLOY</button><span id="tot"></span></div>
+  </div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Aim (click to lock mouse)</td><td><kbd>Mouse</kbd> <span class="pad">R-stick</span></td></tr>
+    <tr><td>Scope in / out</td><td><kbd>RMB</kbd> <kbd>C</kbd> <span class="pad">LT</span></td></tr>
+    <tr><td>Fire</td><td><kbd>LMB</kbd> <span class="pad">RT</span></td></tr>
+    <tr><td>Zoom</td><td><kbd>Wheel</kbd> <kbd>Q</kbd> <kbd>E</kbd> <span class="pad">LB RB</span></td></tr>
+    <tr><td>Hold breath (steady)</td><td><kbd>Shift</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Range dial ± / auto-zero</td><td><kbd>W</kbd> <kbd>S</kbd> · <kbd>Z</kbd> <span class="pad">D-pad</span></td></tr>
+    <tr><td>Spotter binoculars · tag</td><td><kbd>B</kbd> · <kbd>F</kbd>/<kbd>LMB</kbd> <span class="pad">Y · X</span></td></tr>
+    <tr><td>Reload</td><td><kbd>R</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Relocate to perch</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <span class="pad">R3</span></td></tr>
+    <tr><td>Intel dossier · pause</td><td><kbd>Tab</kbd> · <kbd>Esc</kbd> <span class="pad">Back Start</span></td></tr>
+    <tr><td>Skip bullet cam · graphics</td><td><kbd>Space</kbd> · <kbd>G</kbd></td></tr>
+  </table>
+  <p>Mil-dots: one dot = 1 m at 1 km. A 1.8 m person spanning 4 mils is 450 m away. Bullets drop and drift with the wind — watch the flags. Misses near people spook them; bodies get found.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLD<br>FIRE<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="restart" class="ghost">RESTART</button><button id="quit" class="ghost">ABORT MISSION</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">MISSION COMPLETE</p>
+  <p class="res" id="ores">ELIMINATED</p>
+  <div id="stars"><i></i><i></i><i></i></div>
+  <p class="fs" id="ofs">0</p>
+  <div class="ogrid"><table id="obreak"></table><div id="ostats"></div></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="next" class="go">NEXT MISSION</button><button id="again" class="ghost">RETRY</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
