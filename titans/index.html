@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hardfall · Pixel Arcade</title>
+<meta name="description" content="Hardfall: a fast pilots-and-frames shooter in full 3D. Wall-run, double jump and slide as a pilot, then call a heavy combat frame down from orbit and fight 6v6 Attrition against CPU pilots, grunts and frames.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="titans.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div><div id="flash"></div>
+<div id="cockpit"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i><s></s></div>
+<div id="hud" hidden>
+  <div id="topbar"><div class="tm us"><b id="s0">0</b><i>YOUR TEAM</i><s class="pb" id="p0"></s></div><div class="clk"><b id="clock">10:00</b><span id="modeTag">ATTRITION</span></div><div class="tm them"><b id="s1">0</b><i>ENEMY</i><s class="pb" id="p1"></s></div></div>
+  <div id="tags"></div>
+  <div id="feed"></div>
+  <div id="dmg"></div>
+  <div id="cross"><div class="ring"></div><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><em></em><u class="c1"></u><u class="c2"></u><u class="c3"></u><u class="c4"></u></div>
+  <div id="hitm"><i></i><i></i><i></i><i></i></div>
+  <div id="streak"><b></b><span></span></div>
+  <div id="medals"></div>
+  <div id="prompt"></div>
+  <div id="cd"></div>
+  <div id="boot"><b>BULWARK FRAME</b><span>NEURAL LINK ESTABLISHED · WEAPONS HOT</span></div>
+  <div id="mtr"><div class="ring"><b>▲</b></div><span id="mtrT">FRAME 0%</span></div>
+  <div id="vit"><div class="bar hp"><em id="hpb"></em></div><p>PILOT · JUMP KIT</p></div>
+  <div id="mvit" hidden>
+    <div class="lbl"><span>HULL</span><span>SHIELD</span></div>
+    <div class="bar hull"><em id="hullb"></em></div><div class="bar msh"><em id="mshb"></em></div>
+    <div class="abil"><span>DASH <b id="dashp"></b></span><span id="rkc">SALVO</span><span id="agc">AEGIS</span></div>
+    <div class="mw"><p id="mwname">CHAINGUN</p><b id="mmag">160</b></div>
+  </div>
+  <canvas id="radar" width="200" height="200"></canvas>
+  <div id="wpn">
+    <div class="nades"><span id="nf" class="on">◆ FRAG 2</span></div>
+    <div class="cur"><p id="wname">RIFLE</p><b id="mag">30</b><span id="res">/ 30</span></div>
+    <div class="alt" id="walt"></div>
+    <div class="rl" id="rl"><em></em></div>
+  </div>
+  <div id="dead" hidden><p>KILLED BY <b id="killer"></b></p><span id="kwpn"></span><em id="rsp">REDEPLOY 4</em></div>
+  <div id="board" hidden></div>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · PILOTS &amp; FRAMES SHOOTER</p>
+  <h1>HARD<br>FALL<em>.</em></h1>
+  <p class="how">Wall-run the alleys, double jump the rooftops, slide into the fight. Build your meter, call a ten-tonne combat frame down from orbit, climb in and wreck the street. 6v6 Attrition against CPU pilots, grunts and frames.</p>
+  <div class="opts">
+    <label>MAP</label><div class="seg" id="o-map"><button data-v="0">KILN YARD</button><button data-v="1">HALCYON HEIGHTS</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">RECRUIT</button><button data-v="1">VETERAN</button><button data-v="2">ELITE</button></div>
+    <label>CLOCK</label><div class="seg" id="o-time"><button data-v="6">6 MIN</button><button data-v="10">10 MIN</button><button data-v="14">14 MIN</button></div>
+    <label>TARGET</label><div class="seg" id="o-cap"><button data-v="0">150 PTS</button><button data-v="1">250 PTS</button><button data-v="2">400 PTS</button></div>
+    <label>TEAM</label><div class="seg" id="o-team"><button data-v="0">KESTREL</button><button data-v="1">ASHEN</button></div>
+  </div>
+  <p class="mapdesc" id="mapdesc"></p>
+  <div class="row"><button id="go" class="go">DEPLOY</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
+    <tr><td>Fire (hold or spam) · aim down sights</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Jump · double jump · wall-jump</td><td><kbd>Space</kbd></td></tr>
+    <tr><td>Sprint · slide</td><td><kbd>Shift</kbd> <kbd>C</kbd>/<kbd>Ctrl</kbd></td></tr>
+    <tr><td>Reload · weapons</td><td><kbd>R</kbd> <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>/<kbd>Wheel</kbd></td></tr>
+    <tr><td>Kick · frag grenade</td><td><kbd>F</kbd> <kbd>Q</kbd></td></tr>
+    <tr><td>Call frame · board it</td><td><kbd>V</kbd> <kbd>E</kbd></td></tr>
+    <tr><td>Frame: salvo · aegis · dash · punch</td><td><kbd>RMB</kbd>/<kbd>Q</kbd> <kbd>F</kbd> <kbd>Shift</kbd> <kbd>V</kbd></td></tr>
+    <tr><td>Frame: eject (hold)</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Scores · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Run along any wall while airborne. The Seeker pistol locks onto pilots and grunts in its cone. Attrition: pilot 5, frame 10, grunt 1. Frames regenerate shields, never hull; when the hull fails you eject. Gamepad supported.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>FIRE<em>.</em></h1><p class="how">Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.75">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="90">90</button><button data-v="100">100</button><button data-v="110">110</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.35">LOW</button><button data-v="0.6">MED</button><button data-v="0.9">LOUD</button></div>
+  <label>ANNOUNCER</label><div class="seg" id="o-ann"><button data-v="0">OFF</button><button data-v="1">ON</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">MATCH COMPLETE</p>
+  <div class="rk"><b id="oplace">W</b><div><p class="res" id="ores">VICTORY</p><p class="fs" id="ofs"></p></div></div>
+  <div id="omedals"></div>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">REMATCH</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="lock" hidden><b>CLICK TO DEPLOY</b><span>mouse is captured · Esc to pause</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
