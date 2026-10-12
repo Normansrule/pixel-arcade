@@ -24,6 +24,8 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 - **Frontline Ops:** forward respawns, so most 75-kill deathmatches finish before the clock.
 - **Graphics upgrade for the eight v27-look worlds:** Night Drive (profiled cars, street lamps, wet streets), Penguin Plaza (sparkling snow, ice, feathered penguins), Pet Brawl (textured stage, meadow, battle effects), Skate City (detailed skater and board, park props), Storm Royale (swaying grass, new trees, storm wall, characters), Striker 11 (shaped players, fabric kits, stadium aisles), Tumble Royale (glossy toy plastic, stadium sky), Wild Quest (leaf-card trees, water, armoured hero).
 - **All 3D worlds:** a negative first-frame time no longer crashes the menu camera.
+- **Canvas art pass on the 16 plainest cabinets:** Stack 3D, Tilt Maze 3D, Tower Stack, Cloud Hop, Piano Tiles, Paper Plane, Laser Dodge, Bounce Ball, Ping Bounce, Paddle Duel, Triple Pong, Quad Pong, Flip Disks, Maze Dash, Mini Golf and Curling get new backdrops, lit objects, particles and feedback. Maze Dash and Tilt Maze 3D gain gem pickups (+25). Their hub thumbnails are re-rendered.
+- **Engine:** small automatic score pops show at most once every 36 frames, so fast-ticking scores no longer stack a cloud of +1s.
 
 ## v29 (12 Oct 2026)
 
