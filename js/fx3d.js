@@ -20,7 +20,9 @@ const Grade={uniforms:{tDiffuse:{value:null},vig:{value:.35},sat:{value:1.12},ti
 export function quality(){const q=+(localStorage.getItem('pxd_gfx')??(matchMedia('(pointer:coarse)').matches?1:2));return isNaN(q)?2:q;}
 export function setQuality(q){try{localStorage.setItem('pxd_gfx',q);}catch(e){}}
 
+const renderers=new Set();
 export function cinematic(renderer,scene,camera,o={}){
+ renderers.add(renderer);
  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=o.exposure??1;renderer.outputColorSpace=THREE.SRGBColorSpace;
  const q=o.quality??quality();if(q===0){return{render:()=>renderer.render(scene,camera),setSize:()=>{},grade:null,q};}
  const size=renderer.getSize(new THREE.Vector2()),pr=renderer.getPixelRatio();
@@ -34,9 +36,35 @@ export function cinematic(renderer,scene,camera,o={}){
 }
 
 // G cycles graphics quality (ultra -> medium -> low); rebuild(q) recreates the post stack.
+// Also: F3 shows a performance overlay (FPS, quality, draw calls, triangles), and if the frame rate
+// stays under AUTO_FPS for a few seconds the quality steps down by itself (once per few seconds,
+// remembered like a manual choice). Pressing G turns the automatic drop off for the session;
+// localStorage pxd_gfx_auto = '0' turns it off for good.
+const AUTO_FPS=45,AUTO_SECS=4,WARMUP_MS=6000;
 export function bindQualityKey(getQ,rebuild){
- let tip=null,tm=0;
- addEventListener('keydown',e=>{if(e.code!=='KeyG'||e.repeat||e.target.tagName==='INPUT')return;const q=(getQ()+2)%3;setQuality(q);rebuild(q);
-  if(!tip){tip=document.createElement('div');tip.style.cssText='position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:99;padding:8px 14px;border-radius:999px;background:rgba(8,10,16,.72);color:#fff;font:600 12px/1 ui-monospace,monospace;letter-spacing:.12em;pointer-events:none;transition:opacity .3s';document.body.appendChild(tip);}
-  tip.textContent='GRAPHICS · '+['LOW','MEDIUM','ULTRA'][q];tip.style.opacity=1;clearTimeout(tm);tm=setTimeout(()=>tip.style.opacity=0,1400);});
+ let tip=null,tm=0,manual=false;
+ const say=t=>{if(!tip){tip=document.createElement('div');tip.style.cssText='position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:99;padding:8px 14px;border-radius:999px;background:rgba(8,10,16,.72);color:#fff;font:600 12px/1 ui-monospace,monospace;letter-spacing:.12em;pointer-events:none;transition:opacity .3s';document.body.appendChild(tip);}
+  tip.textContent=t;tip.style.opacity=1;clearTimeout(tm);tm=setTimeout(()=>tip.style.opacity=0,1800);};
+ const NAMES=['LOW','MEDIUM','ULTRA'];
+ const set=(q,why)=>{setQuality(q);rebuild(q);say('GRAPHICS · '+NAMES[q]+(why?' · '+why:''));};
+ addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;
+  if(e.code==='KeyG'&&!e.repeat){manual=true;set((getQ()+2)%3);}
+  else if(e.code==='F3'){e.preventDefault();if(!e.repeat)toggleStats();}});
+ // frame counter: a rAF loop of its own, so it measures what the player sees whatever the game does
+ let frames=0,last=performance.now(),slow=0,hold=performance.now()+WARMUP_MS,fps=0,stats=null;
+ let autoOn=true;try{autoOn=localStorage.getItem('pxd_gfx_auto')!=='0';}catch(e){}
+ if(navigator.webdriver)autoOn=false; // automated tests drive frames by hand
+ function toggleStats(){if(stats){stats.remove();stats=null;renderers.forEach(r=>{r.info.autoReset=true;});return;}
+  stats=document.createElement('div');stats.style.cssText='position:fixed;right:12px;top:12px;z-index:99;padding:8px 10px;border-radius:8px;background:rgba(8,10,16,.78);color:#fff;font:600 11px/1.5 ui-monospace,monospace;letter-spacing:.06em;pointer-events:none;white-space:pre';
+  document.body.appendChild(stats);renderers.forEach(r=>{r.info.autoReset=false;r.info.reset();});}
+ let drawn=0,tris=0;
+ function tick(now){frames++;
+  if(stats){let c=0,t=0;renderers.forEach(r=>{c+=r.info.render.calls;t+=r.info.render.triangles;r.info.reset();});if(c){drawn=c;tris=t;}}
+  if(now-last>=1000){const gap=now-last;fps=Math.round(frames*1000/gap);frames=0;last=now;
+   if(stats)stats.textContent='FPS '+fps+'\nGFX '+NAMES[getQ()]+(autoOn&&!manual?' · AUTO':'')+'\nCALLS '+drawn+'\nTRIS '+(tris>=1e6?(tris/1e6).toFixed(2)+'M':Math.round(tris/1e3)+'K');
+   if(autoOn&&!manual&&!document.hidden&&now>hold&&gap<5000){slow=fps<AUTO_FPS?slow+1:0;
+    if(slow>=AUTO_SECS){slow=0;hold=now+WARMUP_MS;const q=getQ();if(q>0)set(q-1,'AUTO ('+fps+' FPS)');}}}
+  requestAnimationFrame(tick);}
+ document.addEventListener('visibilitychange',()=>{slow=0;hold=performance.now()+2000;});
+ requestAnimationFrame(tick);
 }
