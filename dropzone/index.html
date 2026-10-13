@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DROPZONE · Pixel Arcade</title>
+<meta name="description" content="DROPZONE: a 40-player first-person battle royale in the browser. Parachute into the port city of Halvard, loot rarity-tier weapons and armour plates, beat the closing gas, call loadout drops with cash and win the cage to redeploy.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="dropzone.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="gasfx"></div><div id="hurt"></div>
+<div id="scope" hidden><div class="ring"></div><i class="h"></i><i class="v"></i><b></b></div>
+<div id="black"></div>
+
+<!-- ================= HUD ================= -->
+<div id="hud" hidden>
+  <div id="mm"><canvas id="mini" width="200" height="200"></canvas><div id="mmi"><span><b id="alive">40</b> ALIVE</span><span><b id="kills">0</b> KILLS</span></div><div id="pname"></div></div>
+  <div id="top"><canvas id="comp" width="420" height="34"></canvas><div id="gast"><span id="gasl">CIRCLE CLOSES IN</span><b id="gasv">1:35</b><span class="mt">MATCH <b id="mtime">12:00</b></span></div></div>
+  <div id="feed"></div>
+  <div id="notes"></div>
+  <div id="duel" hidden></div>
+  <div id="xh"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i></div><div id="hm"><i></i><i></i><i></i><i></i></div><div id="ddir"></div>
+  <div id="prompt"></div>
+  <div id="prog" hidden><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" class="bg"/><circle cx="32" cy="32" r="26" class="fg" id="progc"/></svg><span id="progt"></span></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="vit">
+    <div id="armor"><i><u></u></i><i><u></u></i><i><u></u></i></div>
+    <div id="hpb"><i id="hpf"></i></div>
+    <div class="row"><span id="plates">PLATES 0</span><span id="cash">$0</span></div>
+  </div>
+  <div id="wpn"><span id="wn">P-9 WARDEN</span><div class="am"><b id="wa">15</b><span>/</span><em id="wr">48</em></div><span id="wm"></span><span id="w2"></span></div>
+  <div id="keyhint"></div>
+</div>
+
+<!-- ================= buy station ================= -->
+<div id="buy" hidden>
+  <div class="bh"><h3>BUY STATION</h3><b id="bcash">$0</b></div>
+  <div id="blist"></div>
+  <p class="bf">PRESS 1-6 TO BUY · E OR ESC TO CLOSE · ONE LOADOUT DROP PER MATCH</p>
+</div>
+
+<!-- ================= full map ================= -->
+<div id="bigmap" hidden><div class="bmw"><canvas id="bmc" width="800" height="800"></canvas><div class="bml"><b>PORT HALVARD</b><span>WHITE DASHES · NEXT CIRCLE</span><span>$ · BUY STATION</span><span>V · ROVER</span><span>L · LOADOUT DROP</span><span>M / TAB · CLOSE</span></div></div></div>
+
+<!-- ================= menu ================= -->
+<div id="menu">
+  <a class="back" href="../">← ARCADE</a>
+  <div class="mwrap">
+    <div class="brand">
+      <p class="kick">PORT HALVARD · 40 OPERATORS</p>
+      <h1>DROP<em>ZONE</em></h1>
+      <p class="tag">Forty jump. One walks out. Parachute into a coastal port city, loot weapons by rarity, plate up, outrun the gas and win the cage when you go down.</p>
+      <ul class="feat"><li><b>40</b><span>OPERATORS</span></li><li><b>600m</b><span>CITY MAP</span></li><li><b>5</b><span>RARITY TIERS</span></li><li><b>1V1</b><span>THE CAGE</span></li></ul>
+    </div>
+    <div class="panel">
+      <h2>MATCH SETUP</h2>
+      <label>CPU DIFFICULTY</label>
+      <div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+      <label>MOUSE SENSITIVITY</label>
+      <div class="seg" id="o-sens"><button data-v="0">LOW</button><button data-v="1">MEDIUM</button><button data-v="2">HIGH</button></div>
+      <button id="go">DEPLOY</button>
+      <p id="mbest"></p>
+      <div class="ctl">
+        <div><kbd>WASD</kbd>MOVE</div><div><kbd>MOUSE</kbd>AIM · FIRE · ADS</div><div><kbd>SHIFT</kbd>SPRINT</div><div><kbd>C</kbd>CROUCH</div>
+        <div><kbd>SPACE</kbd>JUMP · CHUTE</div><div><kbd>E</kbd>LOOT · BUY · DRIVE</div><div><kbd>V</kbd>ARMOR PLATE</div><div><kbd>R</kbd>RELOAD</div>
+        <div><kbd>1 2 Q</kbd>WEAPONS</div><div><kbd>M</kbd>MAP</div><div><kbd>G</kbd>GRAPHICS</div><div><kbd>ESC</kbd>PAUSE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pause" hidden><div class="box"><h2>PAUSED</h2><p>The match is frozen. Resume to lock the mouse and drop back in.</p><button id="resume">RESUME</button><button id="quit" class="ghost">LEAVE MATCH</button></div></div>
+<div id="clickp" hidden><b>CLICK TO PLAY</b><span>MOUSE LOCK IS NEEDED TO AIM</span></div>
+
+<div id="over" hidden>
+  <div class="box">
+    <p class="kick">MATCH COMPLETE</p>
+    <h2 id="otitle">ELIMINATED</h2>
+    <div id="oplace">#1<small>/ 40</small></div>
+    <table id="stats"></table>
+    <p id="otok"></p>
+    <div class="btns"><button id="again">PLAY AGAIN</button><button id="post" class="ghost">POST SCORE</button><a class="ghost btn" href="../">← ARCADE</a></div>
+  </div>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
