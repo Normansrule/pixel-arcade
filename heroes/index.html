@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zenith Protocol · Pixel Arcade</title>
+<meta name="description" content="Zenith Protocol: a 5v5 first-person hero shooter in full 3D against CPU heroes. Seven original tank, damage and support heroes with abilities and ultimates. Payload and Control with overtime on two maps.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="heroes.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div><div id="flash"></div>
+<div id="hud" hidden>
+  <div id="top"><div class="ros" id="rA"></div><div id="obj"></div><div class="ros" id="rB"></div></div>
+  <div id="tags"></div>
+  <div id="feed"></div>
+  <div id="dmg"></div>
+  <div id="scope" hidden><i></i></div>
+  <div id="cross"><div class="ring"></div><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><em></em><svg class="chg" viewBox="0 0 60 60"><circle cx="30" cy="30" r="24"/></svg></div>
+  <div id="hitm"><i></i><i></i><i></i><i></i></div>
+  <div id="banner"><b></b><span></span></div>
+  <div id="prompt"></div>
+  <div id="cd"></div>
+  <div id="me">
+    <img id="mePor" alt="">
+    <div class="mi">
+      <div class="nm"><b id="meName"></b><span id="meRole"></span></div>
+      <div id="meBuffs"></div>
+      <div class="hpw"><div class="bar"><em id="hpFill"></em></div><div class="hpt"><b id="hpN">0</b><span id="hpM">/ 0</span></div></div>
+    </div>
+  </div>
+  <div id="kit">
+    <div class="ab" id="ab1"><div class="ic"></div><b class="cdn"></b><span class="nm"></span><kbd>SHIFT</kbd></div>
+    <div class="ab" id="ab2"><div class="ic"></div><b class="cdn"></b><span class="nm"></span><kbd>E</kbd></div>
+    <div class="wp"><p id="wname"></p><div><b id="mag">0</b><span id="magM"></span></div><div class="rl" id="rl"><em></em></div></div>
+  </div>
+  <div id="ult"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle id="ultRing" cx="50" cy="50" r="42"/></svg><div class="ic"></div><b id="ultP">0%</b><kbd>Q</kbd></div>
+  <div id="dead" hidden><p>ELIMINATED BY</p><b id="killer"></b><span id="kwpn"></span><em id="rsp">RESPAWN 6</em><div class="sw"><p>PRESS A NUMBER TO SWITCH HERO ON RESPAWN</p><div id="swap"></div></div></div>
+  <div id="board" hidden></div>
+</div>
+
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · 5V5 HERO SHOOTER</p>
+  <h1>ZENITH<br>PROTOCOL<em>.</em></h1>
+  <p class="how">Seven heroes. Five a side. Pick a tank, a damage dealer or a healer, then fight CPU squads to push the cargo core or hold the point. Abilities on cooldown, ultimates on charge.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="attack">PAYLOAD · ATTACK</button><button data-v="defend">PAYLOAD · DEFEND</button><button data-v="control">CONTROL</button></div>
+    <label>MAP</label><div class="seg" id="o-map"><button data-v="0">PORTO CELESTE</button><button data-v="1">NEON VERGE</button></div>
+    <label>BOTS</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+  </div>
+  <p class="mapdesc" id="mapdesc"></p>
+  <div class="row"><button id="go" class="go">CHOOSE HERO</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim · jump</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd> <kbd>Space</kbd></td></tr>
+    <tr><td>Fire (hold or spam) · scope</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Ability 1 · ability 2</td><td><kbd>Shift</kbd> <kbd>E</kbd></td></tr>
+    <tr><td>Ultimate</td><td><kbd>Q</kbd></td></tr>
+    <tr><td>Reload · melee</td><td><kbd>R</kbd> <kbd>V</kbd>/<kbd>F</kbd></td></tr>
+    <tr><td>Switch hero (while dead)</td><td><kbd>1</kbd>–<kbd>7</kbd></td></tr>
+    <tr><td>Scores · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Stand next to the cargo core to push it; enemies near it stop it. Checkpoints add time. If the attackers touch the core as time runs out, the match goes to overtime. Gamepad supported.</p>
+</div>
+
+<div id="select" class="scr" hidden>
+  <p class="eye">ASSEMBLE · HALCYON SQUAD</p>
+  <h2 class="ttl">CHOOSE YOUR HERO<em>.</em></h2>
+  <div id="hinfo"></div>
+  <div id="hgrid"></div>
+  <div class="row"><button id="lockin" class="go">LOCK IN</button><button id="sback" class="ghost">BACK</button></div>
+</div>
+
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>THE LINE<em>.</em></h1><p class="how">Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.75">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="90">90</button><button data-v="100">100</button><button data-v="110">110</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.3">LOW</button><button data-v="0.5">MED</button><button data-v="0.8">LOUD</button></div>
+  <label>ANNOUNCER</label><div class="seg" id="o-ann"><button data-v="0">OFF</button><button data-v="1">ON</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">MATCH COMPLETE</p>
+  <p class="res" id="ores">VICTORY</p><p class="fs" id="ofs"></p>
+  <div id="accol"></div>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="ohero" class="ghost">CHANGE HERO</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="lock" hidden><b>CLICK TO PLAY</b><span>mouse is captured · Esc to pause</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

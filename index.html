@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pixel Arcade</title>
-<meta name="description" content="491 original browser games and 36 full-3D worlds. Play solo, against the CPU, or two players on one keyboard.">
+<meta name="description" content="492 original browser games and 37 full-3D worlds. Play solo, against the CPU, or two players on one keyboard.">
 <link rel="icon" href="docs/icons/favicon-64.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="docs/icons/apple-touch-icon.png">
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="description" content="491 original browser games, 36 full-3D worlds and a 2D/3D game builder. Free, open source, plays offline as an app.">
+<meta name="description" content="492 original browser games, 37 full-3D worlds and a 2D/3D game builder. Free, open source, plays offline as an app.">
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -20,7 +20,7 @@
 <div id="glow" aria-hidden="true"></div>
 <nav class="topbar" aria-label="Site">
   <a class="brand" href="#top"><i></i><b>PIXEL</b>ARCADE</a>
-  <div class="tools"><input id="q" type="search" placeholder="Search 491 games" aria-label="Search games"><button id="rnd" type="button" title="Random game">🎲</button><a class="buildlink" href="builder/" title="Make your own game">+ BUILD</a><button class="buildlink" id="installBtn" type="button" title="Install Pixel Arcade as an app" hidden>⤓ APP</button></div>
+  <div class="tools"><input id="q" type="search" placeholder="Search 492 games" aria-label="Search games"><button id="rnd" type="button" title="Random game">🎲</button><a class="buildlink" href="builder/" title="Make your own game">+ BUILD</a><button class="buildlink" id="installBtn" type="button" title="Install Pixel Arcade as an app" hidden>⤓ APP</button></div>
   <button class="profile" id="profile" type="button" aria-label="Player profile"></button>
   <a class="gh" href="https://github.com/Normansrule/pixel-arcade" target="_blank" rel="noopener" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a>
 </nav>
@@ -42,7 +42,7 @@
   </header>
   <div class="ticker" aria-hidden="true"><div id="ticker"></div></div>
   <section class="flag" id="flag" aria-label="Full 3D games">
-    <header><p>(00)</p><h2>FULL 3D</h2><span>36 real-time 3D worlds. Cinematic lighting. Press G in game for graphics.</span></header>
+    <header><p>(00)</p><h2>FULL 3D</h2><span>37 real-time 3D worlds. Cinematic lighting. Press G in game for graphics.</span></header>
     <div class="fgrid">
       <a class="fc big" href="city/" style="--img:url(docs/cards/neonbay.jpg)"><em>OPEN WORLD · CARS · COPS</em><b>NEON BAY</b><span>A sun-bleached coastal city: steal cars, drive fares, win street races and shake the cops before sunrise. GTA-style.</span><i>NEW · PLAY →</i></a>
       <a class="fc big" href="zombies/" style="--img:url(docs/cards/nightfall.jpg)"><em>ROUND SURVIVAL · UNTIL DAWN</em><b>NIGHTFALL</b><span>Board the windows, buy guns and perks, open the farm station and hold off the undead until sunrise. CoD Zombies-style.</span><i>NEW · PLAY →</i></a>
@@ -56,6 +56,7 @@
       <a class="fc big" href="quest/" style="--img:url(docs/cards/wildquest.jpg)"><em>OPEN WORLD · CLIMB · GLIDE</em><b>WILD QUEST</b><span>Climb, glide and cook across a wild island; clear four shrines before the Crimson Moon. Zelda-style.</span><i>PLAY →</i></a>
       <a class="fc big" href="orbit/" style="--img:url(docs/cards/orbitlab.jpg)"><em>ROCKET SCIENCE · KSP-STYLE</em><b>ORBIT LAB</b><span>Build rockets, fly real orbital mechanics and watch Tsiolkovsky, vis-viva and Hohmann do the work.</span><i>PLAY →</i></a>
       <a class="fc big" href="siege/" style="--img:url(docs/cards/fortbreach.jpg)"><em>TACTICAL 5V5 · DESTRUCTION · R6-STYLE</em><b>FORTRESS BREACH</b><span>Rain-soaked embassy siege: drone, reinforce, then blast holes through walls.</span><i>PLAY →</i></a>
+      <a class="fc" href="heroes/" style="--img:url(docs/cards/zenith.jpg)"><em>5V5 HERO SHOOTER · PAYLOAD</em><b>ZENITH PROTOCOL</b><span>Seven heroes with abilities and ultimates fight CPU squads over the payload or the point. Overwatch-style.</span><i>NEW · PLAY →</i></a>
       <a class="fc" href="warfront/" style="--img:url(docs/cards/warfront.jpg)"><em>COMBINED ARMS · 16V16 CONQUEST</em><b>IRON VANGUARD</b><span>Fight for five flags across a river valley with tanks, jeeps, attack helicopters and jets. Battlefield-style.</span><i>NEW · PLAY →</i></a>
       <a class="fc" href="looter/" style="--img:url(docs/cards/starwarden.jpg)"><em>CO-OP LOOTER · STRIKES</em><b>STARWARDEN</b><span>Run alien-ruin strikes with two CPU guardians, break elemental shields, topple a multi-phase boss and chase exotic loot. Destiny-style.</span><i>NEW · PLAY →</i></a>
       <a class="fc" href="campaign/" style="--img:url(docs/cards/starfall.jpg)"><em>SCI-FI STORY CAMPAIGN · SQUAD</em><b>STARFALL VANGUARD</b><span>Lead a marine squad across an alien ring-world on foot, in a buggy and in a hover tank, then face the Overseer. Halo-style.</span><i>NEW · PLAY →</i></a>
