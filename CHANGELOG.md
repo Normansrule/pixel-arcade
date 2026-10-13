@@ -29,6 +29,7 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 - **New 3D game: GLOSS RIOT** (`ink/`): 4v4 turf war in glossy ink. Paint the ground in your crew's colour, swim through it to refill and move fast, and out-cover the rival crew before the 3-minute whistle. CPU teammates and rivals. Splatoon-style.
 - **New 3D game: STARFALL VANGUARD** (`campaign/`): a 3-mission sci-fi campaign on a ring-world with four CPU marines, recharging shields, overheating alien guns, a turret buggy, a hover tank and a boss fight. Four difficulties, a time limit per mission and campaign results with a rank. Halo-style.
 - **New 3D game: STARWARDEN** (`looter/`): a co-op looter shooter. Run timed strikes with two CPU guardians across three destinations, break elemental shields, beat a two-phase boss, and collect guns with random perks and rarities. Three subclasses and three difficulties. Destiny-style.
+- **New 3D game: IRON VANGUARD** (`warfront/`): 16v16 Conquest over five flags in a 700 m river valley. Four classes, tickets and revives, and tanks, jeeps, attack helicopters and jets for both the player and the CPU. Three round lengths and three difficulties. Battlefield-style.
 - **Online play (first step):** **⇄ Play online** in the hub footer links two browsers on the same network with a copy-paste or QR code, no server. Four in a Row is the first online game. See `docs/MULTIPLAYER.md`.
 - **Engine:** small automatic score pops show at most once every 36 frames, so fast-ticking scores no longer stack a cloud of +1s.
 
