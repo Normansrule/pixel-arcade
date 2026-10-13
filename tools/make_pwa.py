@@ -5,7 +5,7 @@ import os, json, time, hashlib
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKIP_DIRS = {'.git', '.github', 'dist', 'desktop', 'node_modules', '__pycache__', 'tests', 'tools'}
 SKIP_EXT = {'.py', '.sh', '.md', '.mjs', '.orig', '.bak', '.log'}
-SKIP_FILES = {'sw.js', 'LICENSE', '.nojekyll', '.gitignore'}
+SKIP_FILES = {'.git', 'sw.js', 'LICENSE', '.nojekyll', '.gitignore'}
 files = []
 for d, dirs, fs in os.walk(ROOT):
     dirs[:] = sorted(x for x in dirs if x not in SKIP_DIRS)

@@ -102,7 +102,7 @@ Real-time 3D in the browser: shadows, ambient occlusion, bloom, filmic colour, a
 </tr>
 <tr>
 <td width="33%" align="center"><a href="https://normansrule.github.io/pixel-arcade/skate/"><img src="docs/cards/skatecity.jpg" alt="Skate City"></a><br><b>Skate City</b><br><sub>Tony Hawk-style</sub></td>
-<td width="33%" align="center"><a href="https://normansrule.github.io/pixel-arcade/striker/"><img src="docs/cards/striker11.jpg" alt="Striker 11"></a><br><b>Striker 11</b><br><sub>FIFA-style</sub></td>
+<td width="33%" align="center"><a href="https://normansrule.github.io/pixel-arcade/striker/"><img src="docs/cards/striker.jpg" alt="Striker 11"></a><br><b>Striker 11</b><br><sub>FIFA-style</sub></td>
 <td width="33%" align="center"><a href="https://normansrule.github.io/pixel-arcade/quest/"><img src="docs/cards/wildquest.jpg" alt="Wild Quest"></a><br><b>Wild Quest</b><br><sub>Zelda: BotW-style</sub></td>
 </tr>
 <tr>
