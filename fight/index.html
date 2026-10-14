@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tempest Fist · Pixel Arcade</title>
+<meta name="description" content="Tempest Fist: a full 3D one-on-one fighting game in the browser. Nine original fighters, strings, throws, launchers and air juggles, sidesteps, supers with cinematic cameras, arcade ladder with a boss, versus and training.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="fight.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bars"></div>
+<div id="flashv"></div>
+<div id="hud" hidden>
+  <div class="topbar">
+    <div class="side s1"><div class="por" id="por0"></div><div class="meta"><div class="nm"><b id="nm0">RYKER</b><span id="tg0">P1</span></div><div class="hp"><i class="lag" id="lag0"></i><i class="val" id="hp0"></i></div><div class="pips" id="w0"></div></div></div>
+    <div id="timer"><b id="clock">60</b><span id="rnd">ROUND 1</span></div>
+    <div class="side s2"><div class="por" id="por1"></div><div class="meta"><div class="nm"><b id="nm1">SERA</b><span id="tg1">CPU</span></div><div class="hp"><i class="lag" id="lag1"></i><i class="val" id="hp1"></i></div><div class="pips" id="w1"></div></div></div>
+  </div>
+  <div class="sm s1"><div class="bar"><i id="sm0"></i></div><span id="sml0">SUPER</span></div>
+  <div class="sm s2"><div class="bar"><i id="sm1"></i></div><span id="sml1">SUPER</span></div>
+  <div class="combo c0" id="cb0"><b></b><span>HITS</span><em></em></div>
+  <div class="combo c1" id="cb1"><b></b><span>HITS</span><em></em></div>
+  <div id="pops"></div>
+  <div id="ann"><b id="annt"></b><span id="anns"></span></div>
+  <div id="cine"><em id="cinew">SUPER</em><b id="cinet">INFERNO BARRAGE</b></div>
+  <div id="ladder" hidden></div>
+  <div id="train" hidden>
+    <h4>TRAINING<em>.</em></h4>
+    <table>
+      <tr><td>MOVE</td><td id="t-mv">—</td></tr>
+      <tr><td>STARTUP</td><td id="t-su">—</td></tr>
+      <tr><td>DAMAGE</td><td id="t-dm">—</td></tr>
+      <tr><td>ON HIT / BLOCK</td><td id="t-adv">—</td></tr>
+      <tr><td>COMBO</td><td id="t-cb">—</td></tr>
+    </table>
+    <div class="seg" id="o-dummy"><button data-v="stand">STAND</button><button data-v="crouch">CROUCH</button><button data-v="block">BLOCK</button><button data-v="jump">JUMP</button><button data-v="cpu">CPU</button></div>
+    <p><kbd>1</kbd>–<kbd>5</kbd> dummy · <kbd>0</kbd> reset · meters refill</p>
+  </div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · ONE-ON-ONE FIGHTING</p>
+  <h1>TEMPEST <span>FIST</span><em>.</em></h1>
+  <div class="opts top">
+    <label>MODE</label><div class="seg big" id="o-mode"><button data-v="arcade">ARCADE</button><button data-v="versus">VERSUS</button><button data-v="training">TRAINING</button></div>
+  </div>
+  <p class="how" id="how"></p>
+  <div class="roster"><label>P1</label><div class="grid" id="r1"></div><label id="r2l">P2</label><div class="grid" id="r2"></div></div>
+  <div class="info" id="info"></div>
+  <div class="opts">
+    <label id="l-pl">VERSUS</label><div class="seg" id="o-pl"><button data-v="1">VS CPU</button><button data-v="2">2 PLAYERS</button></div>
+    <label>CPU</label><div class="seg" id="o-cpu"><button data-v="easy">EASY</button><button data-v="normal">NORMAL</button><button data-v="hard">HARD</button></div>
+    <label>ROUNDS</label><div class="seg" id="o-rounds"><button data-v="2">BEST OF 3</button><button data-v="3">BEST OF 5</button></div>
+    <label>TIMER</label><div class="seg" id="o-time"><button data-v="60">60</button><button data-v="99">99</button></div>
+    <label id="l-st">STAGE</label><div class="seg wide" id="o-stage"></div>
+  </div>
+  <div class="row"><button id="go" class="go">FIGHT!</button><span class="best" id="best"></span></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · jump · crouch</td><td><kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>S</kbd> <span class="pad">L-stick / D-pad</span></td></tr>
+    <tr><td>Block (high · low)</td><td>hold back · down-back</td></tr>
+    <tr><td>Punch · Kick · Heavy</td><td><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd> <span class="pad">X A Y</span></td></tr>
+    <tr><td>Throw · break</td><td><kbd>U</kbd> or <kbd>J</kbd>+<kbd>K</kbd> <span class="pad">RB</span></td></tr>
+    <tr><td>Special (+ direction)</td><td><kbd>I</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Super (full meter)</td><td><kbd>O</kbd> <span class="pad">RT</span></td></tr>
+    <tr><td>Sidestep (in · out)</td><td><kbd>Space</kbd> + <kbd>W</kbd>/<kbd>S</kbd> <span class="pad">LB LT</span></td></tr>
+    <tr><td>Dash · backdash</td><td>tap fwd fwd · back back</td></tr>
+  </table>
+  <p>Strings: <b>P P P</b> · <b>P P K</b> · <b>K K K</b>. Launcher <b>↘+H</b>, then juggle. Specials also take motions: <b>↓↘→</b>, <b>↓↙←</b>, <b>→↓↘</b> + button. Hold or tap buttons, both work.<br>2P keyboard: <kbd>Arrows</kbd> · <kbd>,</kbd><kbd>.</kbd><kbd>/</kbd> P K H · <kbd>;</kbd> throw · <kbd>'</kbd> special · <kbd>]</kbd> super · <kbd>R-Shift</kbd> step (or numpad 1–6, 0) · or a gamepad.<br><kbd>Esc</kbd> pause · <kbd>M</kbd> mute · <kbd>G</kbd> graphics</p>
+</div>
+<div id="vs" hidden><div class="vsl" id="vsl"></div><div class="vsm"><em id="vss">STAGE 1 / 6</em><b>VS</b><span id="vsst"></span></div><div class="vsr" id="vsr"></div></div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>TIME<br>OUT<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">ARCADE</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="sub" id="osub"></p>
+  <div class="resrow"><table id="stats"></table><div class="grade"><span>GRADE</span><b id="ograde">A</b></div></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">REMATCH</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="loading">ENTERING THE RING…</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
