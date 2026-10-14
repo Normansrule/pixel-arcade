@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ashen Vigil · Pixel Arcade</title>
+<meta name="description" content="Ashen Vigil: a full 3D third-person action RPG in a ruined cathedral-keep. Stamina combat, parries and ripostes, backstabs, lock-on, ember flasks, three weapon styles and four great foes with telegraphed movesets and phase changes, against the clock.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="ashen.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="bars">
+    <div class="bar hp"><i id="hpL"></i><i id="hpF"></i></div>
+    <div class="bar st"><i id="stF"></i></div>
+  </div>
+  <div id="flask"><svg viewBox="0 0 40 52"><path d="M15 2h10v8c8 3 13 10 13 19 0 12-8 21-18 21S2 41 2 29c0-9 5-16 13-19z" class="gl"/><path id="flq" d="M5 30c0 10 7 17 15 17s15-7 15-17z" class="liq"/></svg><b id="flN">4</b></div>
+  <div id="clock"><span>EMBERS FADE IN</span><b id="clk">20:00</b></div>
+  <div id="souls"><i></i><b id="cin">0</b></div>
+  <div id="area"><span></span><b id="areaN"></b><span></span></div>
+  <div id="lockr"></div>
+  <div id="marks"></div>
+  <div id="prompt"></div>
+  <div id="notes"></div>
+  <div id="boss" hidden><div class="bn"><b id="bname"></b><em id="bdmg"></em></div><div class="bbar"><i id="bhpL"></i><i id="bhp"></i></div><div class="bpost"><i id="bpo"></i></div></div>
+  <div id="vign"></div><div id="flash"></div>
+</div>
+<div id="banner"><div class="band"></div><b id="bt"></b><span id="bs"></span></div>
+<div id="fade"></div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SOULS-LIKE ACTION RPG</p>
+  <h1>ASHEN<br><em>VIGIL</em></h1>
+  <p class="how">The Cathedral-Keep of Ordhal burns without flame. Rest at the vigils, master stamina, guard and parry, and fell the three great foes that bar the Throne of Ash before the last embers fade.</p>
+  <div class="styles" id="o-style">
+    <button data-v="ss"><i class="ic ss"></i><b>SWORD &amp; SHIELD</b><small>A true shield, the widest parry. Steady and safe.</small></button>
+    <button data-v="gs"><i class="ic gs"></i><b>GREATSWORD</b><small>Slow crushing arcs. Heavy blows ignore flinching.</small></button>
+    <button data-v="dg"><i class="ic dg"></i><b>TWIN DAGGERS</b><small>Quick flurries, a fast roll and brutal crits.</small></button>
+  </div>
+  <div class="opts">
+    <label>FOES</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>EMBERS</label><div class="seg" id="o-len"><button data-v="12">12 MIN</button><button data-v="20">20 MIN</button><button data-v="30">30 MIN</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">KINDLE THE VIGIL</button><span class="best" id="best"></span></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · camera</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd> <span class="pad">L · R stick</span></td></tr>
+    <tr><td>Light attack (hold to chain)</td><td><kbd>LMB</kbd> <span class="pad">RB</span></td></tr>
+    <tr><td>Heavy attack</td><td><kbd>Shift</kbd>+<kbd>LMB</kbd> <kbd>C</kbd> <span class="pad">RT</span></td></tr>
+    <tr><td>Guard (hold)</td><td><kbd>RMB</kbd> <span class="pad">LB</span></td></tr>
+    <tr><td>Parry</td><td><kbd>Shift</kbd>+<kbd>RMB</kbd> <kbd>F</kbd> <span class="pad">LT</span></td></tr>
+    <tr><td>Roll · hold to sprint</td><td><kbd>Space</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Lock on · switch target</td><td><kbd>Q</kbd> <kbd>MMB</kbd> <kbd>Wheel</kbd> <span class="pad">R3</span></td></tr>
+    <tr><td>Ember flask · interact</td><td><kbd>R</kbd> <kbd>E</kbd> <span class="pad">X · A</span></td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd> <span class="pad">Start</span></td></tr>
+  </table>
+  <p>Parry a glowing blade, then strike to riposte. Strike an unaware foe from behind to backstab. Break a great foe's posture to open it to a critical blow. Red-flashing attacks cannot be guarded: roll.</p>
+</div>
+<div id="lockmsg" hidden><b>CLICK TO PLAY</b><span>Mouse look needs pointer lock</span></div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>THE ASH<br><em>WAITS</em></h1><p class="how">Press <b>Esc</b> or Resume. The embers keep fading only while you play.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">ABANDON THE VIGIL</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye"></p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="grade"><span>GRADE</span><b id="ogr">S</b><em id="ofs"></em></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">KINDLE AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
