@@ -8,14 +8,18 @@ export const DIFF=[{n:'EASY',err:4.6,react:.95,dmg:.42,turn:4},{n:'NORMAL',err:3
 export const SKIRM={err:3.8,react:.95,dmg:.4,turn:6};
 const EYE=1.55;const tv=new V(),tv2=new V();
 
-export function newBrain(){return{t:Math.random()*.3,state:'loot',target:null,seenT:-99,react:0,last:null,lastT:-99,path:null,pi:0,goal:null,goalKind:'',goalRef:null,pathT:-99,stuckT:0,lastPos:new V(),
+export function newBrain(){return{t:Math.random()*.3,state:'loot',target:null,seenT:-99,react:0,last:null,lastT:-99,path:null,pi:0,goal:null,goalKind:'',goalRef:null,pathT:-99,stuckT:0,stuckN:0,lastPos:new V(),
  strafe:0,strafeT:0,burst:0,pauseT:0,hurtT:-99,attacker:null,heard:null,heardT:-99,retreat:false,dropTo:null,jumpAt:0,want:null,lootT:0,ignore:new Set(),depotT:0};}
 
 function setGoal(a,x,z,G,kind='',ref=null){const ai=a.ai;ai.goal=new V(x,0,z);ai.goalKind=kind;ai.goalRef=ref;ai.path=null;ai.pi=0;ai.pathT=-99;}
 function planPath(a,G){const ai=a.ai;if(!ai.goal||G.pathBudget<=0)return;G.pathBudget--;ai.pathT=G.time;
  // long trips: path toward an intermediate point at most ~90 m away
  let tx=ai.goal.x,tz=ai.goal.z;const dx=tx-a.pos.x,dz=tz-a.pos.z,d=Math.hypot(dx,dz);if(d>90){tx=a.pos.x+dx/d*90;tz=a.pos.z+dz/d*90;}
- const p=G.nav.path(a.pos.x,a.pos.z,tx,tz,7000);ai.path=p&&p.length?p:null;ai.pi=0;if(!ai.path){ai.path=[[tx,tz]];}}
+ const e=G.nav.free(a.pos.x,a.pos.z)?null:escape(a,G,[1,1.6,2.4,3.2]);const p=G.nav.path(e?e[0]:a.pos.x,e?e[1]:a.pos.z,tx,tz,7000);ai.path=p&&p.length?p:null;ai.pi=0;if(!ai.path){ai.path=[[tx,tz]];}if(e)ai.path.unshift(e);}
+// a nearby free nav point the bot can walk to in a straight line (no movement-blocking box at knee or chest height), biased toward its goal
+function escape(a,G,ds=[3,2.2,1.4]){const W=G.W,P=a.pos,ai=a.ai,gy=ai.goal?Math.atan2(ai.goal.x-P.x,ai.goal.z-P.z):a.yaw;let best=null,bs=-1e9;
+ for(let k=0;k<16;k++){const an=(k+Math.random()*.5)/16*Math.PI*2,sx=Math.sin(an),sz=Math.cos(an);for(const d of ds){const x=P.x+sx*d,z=P.z+sz*d;if(!G.nav.free(x,z))continue;
+  if(W.ray(P.x,P.y+.6,P.z,sx,0,sz,d+.4,1)!==Infinity||W.ray(P.x,P.y+1.3,P.z,sx,0,sz,d+.4,1)!==Infinity)continue;const sc=Math.cos(angD(an,gy))-d*.15+Math.random()*.3;if(sc>bs){bs=sc;best=[x,z];}break;}}return best;}
 
 function canSee(a,b,G){const dx=b.pos.x-a.pos.x,dz=b.pos.z-a.pos.z,d=Math.hypot(dx,dz)||1;const range=b.state==='chute'?140:b.isPlayer||a.isPlayer||a.inGulag?a.range||110:72;if(d>range)return false;
  const ai=a.ai;const fx=Math.sin(a.yaw),fz=Math.cos(a.yaw);const dot=(fx*dx+fz*dz)/d;const alert=G.time-ai.hurtT<3||G.time-ai.seenT<2;if(dot<.35&&d>6&&!alert)return false;
@@ -54,7 +58,10 @@ export function thinkBot(a,G,dt){const ai=a.ai,I=a.in;I.fire=false;I.jump=false;
  // move input is relative to the facing direction
  const l=Math.hypot(mx,mz);if(l>1){mx/=l;mz/=l;}I.mx=mx;I.mz=mz;I.sprint=run&&!seen&&mz>.5;
  // stuck detection
- if(ai.path){ai.stuckT+=dt;if(ai.stuckT>1.6){if(a.pos.distanceTo(ai.lastPos)<.8){ai.path=null;ai.pathT=-99;I.jump=true;ai.strafe=Math.random()<.5?-1:1;if(ai.goalKind==='loot'&&ai.goalRef){ai.ignore.add(ai.goalRef);ai.goal=null;}}ai.stuckT=0;ai.lastPos.copy(a.pos);}}}
+ if(ai.path){ai.stuckT+=dt;if(ai.stuckT>1.6){if(a.pos.distanceTo(ai.lastPos)<.8){ai.stuckN++;G.stats.botStuck=(G.stats.botStuck||0)+1;ai.path=null;ai.pathT=-99;I.jump=true;ai.strafe=Math.random()<.5?-1:1;if(ai.goalKind==='loot'&&ai.goalRef){ai.ignore.add(ai.goalRef);ai.goal=null;}
+   // second miss in a row: step to a clear spot first (the bot may be pinned in a corner the nav grid cannot see); much later, hop to the nearest free nav cell out of view
+   if(ai.stuckN>=2){const e=escape(a,G,ai.stuckN>3?[4.5,3,2,1.2]:[3,2.2,1.4]);if(e){ai.path=[e];ai.pi=0;ai.pathT=G.time;}}if(ai.stuckN>=7&&!a.isPlayer&&!a.inGulag&&(!G.camPos||a.pos.distanceTo(G.camPos)>60)){const c=G.nav.nearestFree(a.pos.x,a.pos.z,20);if(c>=0){const q=G.nav.pt(c);a.pos.set(q[0],G.W.groundAt(q[0],q[1],a.pos.y+.5,.3),q[1]);a.vel.set(0,0,0);}ai.stuckN=0;}}
+  else ai.stuckN=0;ai.stuckT=0;ai.lastPos.copy(a.pos);}}}
 
 function think(a,G){const ai=a.ai,me=a.pos;const gas=G.gas;
  // ---- perception
@@ -72,25 +79,27 @@ function think(a,G){const ai=a.ai,me=a.pos;const gas=G.gas;
  if(it&&!best&&it.mag<wstats(it).mag*.5&&a.reloadT<=0)G.reload(a);
  // ---- gulag duel: hunt the opponent, use cover
  if(a.inGulag){if(best){ai.path=null;ai.retreat=false;return;}const o=G.actors.find(b=>b!==a&&b.alive&&b.inGulag);if(o&&(!ai.path||G.time-ai.pathT>1.2)){ai.path=[[o.pos.x+rr(-3,3),o.pos.z+rr(-3,3)]];ai.pi=0;ai.pathT=G.time;}return;}
+ // ---- gas: where are we (in the gas, or due to rotate)
+ const dg=Math.hypot(me.x-gas.cur.x,me.z-gas.cur.z),dn=Math.hypot(me.x-gas.next.x,me.z-gas.next.z);
+ const outside=dg>gas.cur.r-6||(gas.state!=='closed'&&dn>gas.next.r*.92&&(gas.state==='shrink'||gas.left<45+a.id%20));
+ // already in the gas: keep walking in and shoot on the move instead of standing to trade (or retreating deeper)
+ if(best&&dg>gas.cur.r-3){ai.retreat=false;rotate(a,G);return;}
  // ---- retreat + plate when hurt
  const tot=a.hp+a.armor;ai.retreat=!!best&&tot<70&&(a.plates>0)&&Math.random()<.6;
  if(!best&&a.armor<150&&a.plates>0&&G.time-ai.seenT>1.5&&!a.plateT)G.plate(a);
  if(best){if(me.distanceTo(best.pos)>40&&!ai.retreat&&Math.random()<.25){setGoal(a,best.pos.x+rr(-6,6),best.pos.z+rr(-6,6),G,'push');planPath(a,G);}else if(!ai.retreat)ai.path=null;
   if(ai.retreat&&(!ai.path||G.time-ai.pathT>2)){const dx=me.x-best.pos.x,dz=me.z-best.pos.z,l=Math.hypot(dx,dz)||1;setGoal(a,me.x+dx/l*18+rr(-6,6),me.z+dz/l*18+rr(-6,6),G,'retreat');planPath(a,G);}return;}
  // a far enemy in view: well-armed bots go hunting, the rest keep looting
- if(ai.far&&gunScore(a.guns[a.cur])>=1.25&&a.hp+a.armor>150&&Math.random()<.2&&ai.goalKind!=='push'){setGoal(a,ai.far.pos.x,ai.far.pos.z,G,'push');planPath(a,G);return;}
+ if(!outside&&ai.far&&gunScore(a.guns[a.cur])>=1.25&&a.hp+a.armor>150&&Math.random()<.2&&ai.goalKind!=='push'){setGoal(a,ai.far.pos.x,ai.far.pos.z,G,'push');planPath(a,G);return;}
  // recently seen target: chase the last known position
- if(ai.last&&G.time-ai.lastT<5&&ai.target&&ai.target.alive){if(ai.goalKind!=='chase'||G.time-ai.pathT>3){setGoal(a,ai.last.x,ai.last.z,G,'chase');planPath(a,G);}return;}
+ if(!outside&&ai.last&&G.time-ai.lastT<5&&ai.target&&ai.target.alive){if(ai.goalKind!=='chase'||G.time-ai.pathT>3){setGoal(a,ai.last.x,ai.last.z,G,'chase');planPath(a,G);}return;}
  // ---- walking to a claimed rover
  if(ai.goalKind==='car'){const c=ai.goalRef;if(!c||c.dead||c.driver||Math.abs(c.pos.y-me.y)>1.5){ai.goalKind='';ai.goal=null;ai.goalRef=null;ai.path=null;ai.carCD=G.time+10;}
   else{const d=Math.hypot(c.pos.x-me.x,c.pos.z-me.z);if(d<3.4){G.enterCar(a,c);return;}c.claimT=G.time;if(!ai.path||G.time-ai.pathT>4||Math.hypot(ai.goal.x-c.pos.x,ai.goal.z-c.pos.z)>4){setGoal(a,c.pos.x,c.pos.z,G,'car',c);planPath(a,G);}return;}}
- // ---- gas: rotate inside
- const dg=Math.hypot(me.x-gas.cur.x,me.z-gas.cur.z),dn=Math.hypot(me.x-gas.next.x,me.z-gas.next.z);
- const outside=dg>gas.cur.r-6||(gas.state!=='closed'&&dn>gas.next.r*.92&&(gas.state==='shrink'||gas.left<45+a.id%20));
  // far from the next circle (or already rotating a long way) with a free rover nearby: take it
- const far=dn-gas.next.r;if((outside&&far>50||far>80&&(gas.state==='shrink'||gas.left<80||gunScore(a.guns[a.cur])>=1))&&G.time>(ai.carCD||0)&&gas.next.r>20){const c=freeCar(a,G,Math.min(190,far*1.1),gas.next,dn);if(c){c.claim=a;c.claimT=G.time;G.stats.rover.claim++;setGoal(a,c.pos.x,c.pos.z,G,'car',c);planPath(a,G);return;}}
- if(outside){if(ai.goalKind!=='rotate'||!ai.goal||Math.hypot(ai.goal.x-gas.next.x,ai.goal.z-gas.next.z)>gas.next.r*.8){const an=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*gas.next.r*.55;let gx=gas.next.x+Math.cos(an)*rad,gz=gas.next.z+Math.sin(an)*rad;const p=G.nav.randomNear(gx,gz,8);if(p){gx=p[0];gz=p[1];}setGoal(a,gx,gz,G,'rotate');}
-  if(!ai.path||(ai.path&&ai.pi>=ai.path.length)||G.time-ai.pathT>6)planPath(a,G);return;}
+ const far=dn-gas.next.r;if((outside&&far>35||far>65&&(gas.state==='shrink'||gas.left<80||gunScore(a.guns[a.cur])>=1))&&G.time>(ai.carCD||0)&&gas.next.r>20){const c=freeCar(a,G,Math.min(200,25+far*1.3),gas.next,dn);if(c){c.claim=a;c.claimT=G.time;G.stats.rover.claim++;setGoal(a,c.pos.x,c.pos.z,G,'car',c);planPath(a,G);return;}}
+ // ---- gas: rotate inside
+ if(outside){rotate(a,G);return;}
  // ---- third party: go toward recent gunfire if healthy
  if(ai.heard&&G.time-ai.heardT<8&&tot>120&&a.guns[a.cur]&&a.id%3!==0){if(ai.goalKind!=='third'||G.time-ai.pathT>4){setGoal(a,ai.heard.x+rr(-10,10),ai.heard.z+rr(-10,10),G,'third');planPath(a,G);}return;}
  // ---- depot shopping
@@ -106,9 +115,12 @@ function think(a,G){const ai=a.ai,me=a.pos;const gas=G.gas;
   if(!ai.path||ai.pi>=(ai.path?ai.path.length:0)){const an=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*Math.min(gas.next.r*.8,150);let gx=me.x*.5+(gas.next.x+Math.cos(an)*rad)*.5,gz=me.z*.5+(gas.next.z+Math.sin(an)*rad)*.5;setGoal(a,gx,gz,G,'roam');planPath(a,G);}}
 }
 
+function rotate(a,G){const ai=a.ai,gas=G.gas;if(ai.goalKind!=='rotate'||!ai.goal||Math.hypot(ai.goal.x-gas.next.x,ai.goal.z-gas.next.z)>gas.next.r*.8){const an=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*gas.next.r*.55;let gx=gas.next.x+Math.cos(an)*rad,gz=gas.next.z+Math.sin(an)*rad;const p=G.nav.randomNear(gx,gz,8);if(p){gx=p[0];gz=p[1];}setGoal(a,gx,gz,G,'rotate');}
+ if(!ai.path||(ai.path&&ai.pi>=ai.path.length)||G.time-ai.pathT>6)planPath(a,G);}
+
 // ---- rovers: pick a free one, then drive it (called from carTick with the bot as driver)
-// a free rover within R that is roughly on the way (walk to it + its distance to the circle centre <= 1.45x the direct trip)
-function freeCar(a,G,R,n,dn){let best=null,bd=R;for(const c of G.cars){if(c.dead||c.driver||c.hp<200||Math.abs(c.pos.y-a.pos.y)>1.5)continue;if(c.claim&&c.claim!==a&&c.claim.alive&&G.time-c.claimT<3)continue;const d=Math.hypot(c.pos.x-a.pos.x,c.pos.z-a.pos.z);if(d<bd&&d+Math.hypot(c.pos.x-n.x,c.pos.z-n.z)<dn*1.45){bd=d;best=c;}}return best;}
+// a free rover within R that is roughly on the way (walk to it + its distance to the circle centre <= 1.55x the direct trip)
+function freeCar(a,G,R,n,dn){let best=null,bd=R;for(const c of G.cars){if(c.dead||c.driver||c.hp<200||Math.abs(c.pos.y-a.pos.y)>1.5)continue;if(c.claim&&c.claim!==a&&c.claim.alive&&G.time-c.claimT<3)continue;const d=Math.hypot(c.pos.x-a.pos.x,c.pos.z-a.pos.z);if(d<bd&&d+Math.hypot(c.pos.x-n.x,c.pos.z-n.z)<dn*1.55){bd=d;best=c;}}return best;}
 // steers along a path on the car nav grid (walls grown by a rover half-width), feeler rays avoid corners, reverses out when stuck,
 // swerves into enemies on foot; returns {thr,st,exit} where exit names why the bot gets out
 export function driveBot(a,c,G,dt){const ai=a.ai,gas=G.gas,nv=G.cnav,p=c.pos,S=G.stats.rover;let dv=ai.dv;

@@ -50,15 +50,25 @@ export class World{
  los(ax,ay,az,bx,by,bz){const dx=bx-ax,dy=by-ay,dz=bz-az,d=Math.hypot(dx,dy,dz);if(d<.01)return true;return this.ray(ax,ay,az,dx/d,dy/d,dz/d,d-.05,2)===Infinity;}
 }
 
-/* ================= navigation grid (1 m, ground level) ================= */
+/* ================= navigation grid (1 m, ground level) =================
+ thin walls (<.4 m) also block the cell their centre line runs through, so no wall can slip between two cell centres */
 export const NH=320,NN=NH*2;
 export class Nav{
  constructor(world,blockers=[]){const N=this.N=NN,off=NH;this.w=world;this.blk=new Uint8Array(N*N);const B=world.B;
-  for(let i=0;i<world.n;i++){if(!(world.F[i]&1))continue;const o=i*6;if(B[o+1]>1.7||B[o+4]<.5)continue;const r=.34;const i0=Math.max(0,Math.floor(B[o]-r+off)),i1=Math.min(N-1,Math.floor(B[o+3]+r+off)),j0=Math.max(0,Math.floor(B[o+2]-r+off)),j1=Math.min(N-1,Math.floor(B[o+5]+r+off));
-   for(let j=j0;j<=j1;j++)for(let k=i0;k<=i1;k++){const cx=k-off+.5,cz=j-off+.5;if(cx>B[o]-r&&cx<B[o+3]+r&&cz>B[o+2]-r&&cz<B[o+5]+r)this.blk[j*N+k]=1;}}
+  for(let i=0;i<world.n;i++){if(!(world.F[i]&1))continue;const o=i*6;if(B[o+1]>=1.75||B[o+4]<=STEP)continue;const r=.34,tx=B[o+3]-B[o]<.4?Math.floor((B[o]+B[o+3])/2+off):-1,tz=B[o+5]-B[o+2]<.4?Math.floor((B[o+2]+B[o+5])/2+off):-1;const i0=Math.max(0,Math.floor(B[o]-r+off)),i1=Math.min(N-1,Math.floor(B[o+3]+r+off)),j0=Math.max(0,Math.floor(B[o+2]-r+off)),j1=Math.min(N-1,Math.floor(B[o+5]+r+off));
+   for(let j=j0;j<=j1;j++)for(let k=i0;k<=i1;k++){const cx=k-off+.5,cz=j-off+.5;if((k===tx||cx>B[o]-r&&cx<B[o+3]+r)&&(j===tz||cz>B[o+2]-r&&cz<B[o+5]+r))this.blk[j*N+k]=1;}}
   for(const b of blockers)for(let j=Math.max(0,Math.floor(b[1]+off));j<=Math.min(N-1,Math.floor(b[3]+off));j++)for(let k=Math.max(0,Math.floor(b[0]+off));k<=Math.min(N-1,Math.floor(b[2]+off));k++)this.blk[j*N+k]=1;
   const L=LAND-2;for(let j=0;j<N;j++)for(let k=0;k<N;k++){const x=k-off+.5,z=j-off+.5;if(Math.abs(x)>L||Math.abs(z)>L)this.blk[j*N+k]=1;}
-  this.g=new Float32Array(N*N);this.par=new Int32Array(N*N);this.stamp=new Uint32Array(N*N);this.cstamp=new Uint32Array(N*N);this.gen=1;this.heap=new Int32Array(N*N);this.hf=new Float32Array(N*N);}
+  this.g=new Float32Array(N*N);this.par=new Int32Array(N*N);this.stamp=new Uint32Array(N*N);this.cstamp=new Uint32Array(N*N);this.gen=1;this.heap=new Int32Array(N*N);this.hf=new Float32Array(N*N);this.bridge();}
+ // rooms the 1 m grid seals off (a door next to furniture can leave no 8-connected way in): unblock a short straight run of cells from each pocket to the
+ // main area wherever a bot-width corridor is clear of movement boxes, so every reachable floor stays reachable on the grid
+ bridge(){const N=this.N,blk=this.blk,W=this.w,lab=new Int32Array(N*N).fill(-1),q=new Int32Array(N*N),sz=[];
+  const fill=(s0,id)=>{let h=0,t=0;q[t++]=s0;lab[s0]=id;while(h<t){const c=q[h++],ci=c%N,cj=c/N|0;for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const ni=ci+di,nj=cj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const k=nj*N+ni;if(blk[k]||lab[k]>=0)continue;if(di&&dj&&(blk[cj*N+ni]||blk[nj*N+ci]))continue;lab[k]=id;q[t++]=k;}}return t;};
+  for(let c=0;c<N*N;c++)if(!blk[c]&&lab[c]<0)sz.push(fill(c,sz.length));if(sz.length<2)return;let main=0;sz.forEach((v,i)=>{if(v>sz[main])main=i;});
+  const clear=(ax,az,bx,bz)=>{const dx=bx-ax,dz=bz-az,l=Math.hypot(dx,dz),ux=dx/l,uz=dz/l;for(const o of[-.3,0,.3])for(const y of[.6,1.3])if(W.ray(ax-uz*o,y,az+ux*o,ux,0,uz,l,1)!==Infinity)return false;return true;};
+  const done=new Set([main]);for(let c=0;c<N*N;c++){const id=lab[c];if(id<0||done.has(id))continue;const ci=c%N,cj=c/N|0;
+   for(let dj=-3;dj<=3&&!done.has(id);dj++)for(let di=-3;di<=3;di++){const ni=ci+di,nj=cj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const k=nj*N+ni;if(lab[k]!==main)continue;const[ax,az]=this.pt(c),[bx,bz]=this.pt(k);if(!clear(ax,az,bx,bz))continue;
+    let pi=ci,pj=cj;const n=Math.max(Math.abs(di),Math.abs(dj))*4;for(let m=1;m<=n;m++){const i=Math.floor(ax+(bx-ax)*m/n+NH),j=Math.floor(az+(bz-az)*m/n+NH);if(i!==pi&&j!==pj)blk[j*N+pi]=0;blk[j*N+i]=0;pi=i;pj=j;}done.add(id);break;}}}
  cell(x,z){const N=this.N,i=Math.floor(x+NH),j=Math.floor(z+NH);return(i<0||j<0||i>=N||j>=N)?-1:j*N+i;}
  free(x,z){const c=this.cell(x,z);return c>=0&&!this.blk[c];}
  nearestFree(x,z,R=14){const N=this.N;let i=Math.floor(x+NH),j=Math.floor(z+NH);for(let r=0;r<R;r++)for(let dj=-r;dj<=r;dj++)for(let di=-r;di<=r;di++){if(Math.max(Math.abs(di),Math.abs(dj))!==r)continue;const a=i+di,b=j+dj;if(a>0&&b>0&&a<N-1&&b<N-1&&!this.blk[b*N+a])return b*N+a;}return -1;}

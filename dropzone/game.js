@@ -307,7 +307,7 @@ function botBuy(a){if(a.bought||a.cash<4000)return;a.bought=true;a.cash-=4000;co
 
 /* ================= AI context ================= */
 function botPickup(a,l){const ok=pickup(a,l);if(ok){for(const m of [...G.loot]){if(m.lvl!==l.lvl||m.p.distanceTo(a.pos)>2.6)continue;if(wantsItem(a,m.it))pickup(a,m);}}return ok;}
-Object.assign(G,{enterCar,swap:a=>swapGun(a),reload:a=>startReload(a),plate:a=>startPlate(a),botBuy,pickup:botPickup,openCrate});
+Object.assign(G,{camPos:cam.position,enterCar,swap:a=>swapGun(a),reload:a=>startReload(a),plate:a=>startPlate(a),botBuy,pickup:botPickup,openCrate});
 
 /* ================= per-actor simulation ================= */
 function weaponTick(a,dt){a.fireT-=dt;if(a.flashT>0){a.flashT-=dt;if(a.flashT<=0&&a.rig)a.rig.flash.visible=false;}
