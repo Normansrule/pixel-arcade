@@ -93,7 +93,7 @@ export class Rig{
   this.b={};for(const o of bones)this.b[o.name]=o;
   this.flash=new THREE.Mesh(new THREE.PlaneGeometry(.45,.45),KIT.flash);this.flash.position.set(0,.01,.82);this.flash.visible=false;const f2=new THREE.Mesh(new THREE.PlaneGeometry(.55,.3),KIT.flash);f2.rotation.y=PI/2;f2.position.z=.12;this.flash.add(f2);if(type!=='vip')this.b.gun.add(this.flash);else this.b.gun.visible=false;
   this.phase=rnd()*6;this.die=0;this.dieDir=1;this.flinch=0;this.kick=0;this.aimK=0;this.sprK=0;this.relK=0;this.ang=0;this.angV=0;this.throwT=0;this.hy=.95;this.idleT=rnd()*10;}
- // st: {speed, vf, vs (local fwd/side speed), crouch, pitch, aim (0/1), sprint, reload (0..1 progress or -1), dead}
+ // st: {speed, vf, vs (local fwd/side speed), crouch, pitch, aim (0/1), sprint, reload (0..1 progress or -1), dead, seat (rover driver)}
  update(dt,st){const B=this.b,r=this.root;this.idleT+=dt;
   if(st.dead){this.topple(dt);return;}
   if(this.die){this.die=0;this.ang=0;this.angV=0;this.mesh.rotation.set(0,0,0);this.mesh.position.set(0,0,0);}
@@ -103,7 +103,7 @@ export class Rig{
   this.sprK+=((st.sprint?1:0)-this.sprK)*Math.min(1,dt*6);this.aimK+=((st.aim?1:0)-this.aimK)*Math.min(1,dt*7);const rel=st.reload>=0?1:0;this.relK+=(rel-this.relK)*Math.min(1,dt*8);
   // hips / spine
   const vf=st.vf??sp,vs=st.vs??0,fk=sp>.2?vf/sp:1,sk=sp>.2?vs/sp:0;
-  const hy=.95-cr*.37-(moving?Math.abs(Math.sin(ph))*.04*amp:Math.sin(this.idleT*1.6)*.004)-this.sprK*.03;this.hy+=(hy-this.hy)*k;B.hips.position.y=this.hy;
+  let hy=.95-cr*.37-(moving?Math.abs(Math.sin(ph))*.04*amp:Math.sin(this.idleT*1.6)*.004)-this.sprK*.03;const seat=st.seat?1:0;if(seat)hy=.55;this.hy+=(hy-this.hy)*k;B.hips.position.y=this.hy;
   B.hips.rotation.y=Math.sin(ph)*.12*amp*fk;B.hips.rotation.z=Math.sin(ph)*.04*amp;
   this.flinch=Math.max(0,this.flinch-dt*5);this.kick=Math.max(0,this.kick-dt*14);
   const lean=this.sprK*.28+(moving?.06:0)+cr*.18;const pitch=st.pitch||0;
@@ -112,7 +112,8 @@ export class Rig{
   // legs (FK) — cycle follows local move direction; crouch blends to a kneeling stance
   const legs=[['L',0],['R',PI]];for(const[s,o]of legs){const p=ph+o;let th=-Math.sin(p)*amp*.75*fk,kn=Math.max(0,Math.sin(p+1.3))*amp*1.25+.06,tz=Math.sin(p)*amp*.35*sk*(s==='L'?1:-1),ft=0;
    if(!moving){th=s==='L'?-.05:.08;kn=.08;tz=s==='L'?.06:-.06;}
-   const ct=s==='L'?-1.25:-.35,ck=s==='L'?1.95:2.2;th=th*(1-cr)+(ct+th*.3)*cr;kn=kn*(1-cr)+ck*cr;ft=-(th+kn)*(cr*.9)+(moving?Math.min(0,Math.sin(p+.4))*.3*amp:0);
+   if(seat){th=-1.45;kn=1.4;tz=s==='L'?.08:-.08;}
+   const ct=s==='L'?-1.25:-.35,ck=s==='L'?1.95:2.2;th=th*(1-cr)+(ct+th*.3)*cr;kn=kn*(1-cr)+ck*cr;ft=seat?0:-(th+kn)*(cr*.9)+(moving?Math.min(0,Math.sin(p+.4))*.3*amp:0);
    B['thigh'+s].rotation.x+=(th-B['thigh'+s].rotation.x)*k;B['thigh'+s].rotation.z+=(tz+(s==='L'?.02:-.02)-B['thigh'+s].rotation.z)*k;B['shin'+s].rotation.x+=(kn-B['shin'+s].rotation.x)*k;B['foot'+s].rotation.x+=(ft-B['foot'+s].rotation.x)*k;}
   // weapon pose: low-ready ↔ shouldered ↔ sprint carry ↔ reload tilt
   const g=B.gun;if(this.type==='vip'){this.vipArms(dt);return;}

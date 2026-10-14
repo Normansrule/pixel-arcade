@@ -4,12 +4,12 @@ import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import {Pass} from '../vendor/jsm/postprocessing/Pass.js';
 import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
 import {makeTextures,makeSprites,makeKit as kitTex} from './tex.js';
-import {Nav,LAND} from './world.js';
+import {Nav,LAND,NH} from './world.js';
 import {makeMats,buildMap,GULAG} from './map.js';
 import {buildGround,buildSea,buildSky,buildGas,buildProps,makePlane,makeChute,makeCrate,makeRover} from './env.js';
 import {RAR,WPN,AMMO,makeGun,wstats,gunName,lootGunGeo,Viewmodel} from './weapons.js';
 import {makeKit,Rig,hitActor,makeImpostors} from './actors.js';
-import {DIFF,SKIRM,newBrain,thinkBot,hearShot,botHurt,wantsItem} from './ai.js';
+import {DIFF,SKIRM,newBrain,thinkBot,hearShot,botHurt,wantsItem,driveBot} from './ai.js';
 import {FX} from './fx.js';
 import {Sound} from './sound.js';
 import {HUD,mmss} from './hud.js';
@@ -34,6 +34,10 @@ vmScene.add(new THREE.HemisphereLight(0xd0d4d8,0x50483e,1.6));const vmKey=new TH
 
 /* ================= world ================= */
 const T=makeTextures(),SPR=makeSprites(),MATS=makeMats(T);const MAP=buildMap(MATS);scene.add(MAP.group);const W=MAP.W;const nav=new Nav(W,MAP.navBlock);
+// rover nav: the walker grid with walls grown by one more cell, so paths keep a rover's half-width clear (search buffers shared, stamps own)
+const cnav=Object.assign(Object.create(Nav.prototype),nav,{blk:new Uint8Array(nav.blk.length),stamp:new Uint32Array(nav.blk.length),cstamp:new Uint32Array(nav.blk.length),gen:1});{const N=nav.N,b=nav.blk;for(let j=0;j<N;j++)for(let k=0;k<N;k++){if(!b[j*N+k])continue;for(let dj=-1;dj<=1;dj++)for(let dk=-1;dk<=1;dk++){const y=j+dj,x=k+dk;if(x>=0&&y>=0&&x<N&&y<N)cnav.blk[y*N+x]=1;}}
+ // thin posts fall between walker cells: rasterise every wall box again at rover radius
+ const B=W.B,r=1.9;for(let i=0;i<W.n;i++){if(!(W.F[i]&1))continue;const o=i*6;if(B[o+1]>1.7||B[o+4]<.45)continue;for(let j=Math.max(0,Math.floor(B[o+2]-r+NH));j<=Math.min(N-1,Math.floor(B[o+5]+r+NH));j++)for(let k=Math.max(0,Math.floor(B[o]-r+NH));k<=Math.min(N-1,Math.floor(B[o+3]+r+NH));k++){const x=k-NH+.5,z=j-NH+.5;if(x>B[o]-r&&x<B[o+3]+r&&z>B[o+2]-r&&z<B[o+5]+r)cnav.blk[j*N+k]=1;}}}
 scene.add(buildGround(T,MAP));const sea=buildSea(T);scene.add(sea.mesh);const sky=buildSky();scene.add(sky.mesh);scene.add(buildProps(MAP,T));const gasV=buildGas(scene);
 const sunDir=new V(.42,.62,.36).normalize();
 const hemi=new THREE.HemisphereLight(0xc4ccd4,0x6a5e4c,1.05);scene.add(hemi);
@@ -46,7 +50,7 @@ const IMP=makeImpostors(NACT);scene.add(IMP.mesh);
 const plane=makePlane();scene.add(plane);plane.visible=false;
 
 /* ================= state ================= */
-const G={log:[],app:'menu',time:0,diff:DIFF[OPT.diff],actors:[],W,nav,pathBudget:3,gas:null,loot:[],crates:[],depots:MAP.depots,drops:[],cars:[],plane:null,planeT:0,remaining:NACT,uavT:0,gulagQ:[],duel:null,feed:[],matchLeft:MATCH,phase:0,zone:''};
+const G={log:[],app:'menu',time:0,diff:DIFF[OPT.diff],actors:[],W,nav,cnav,stats:{rover:{enter:0,riders:[],dist:0,stuck:0,crash:0,claim:0,exit:{},rk:0}},pathBudget:3,gas:null,loot:[],crates:[],depots:MAP.depots,drops:[],cars:[],plane:null,planeT:0,remaining:NACT,uavT:0,gulagQ:[],duel:null,feed:[],matchLeft:MATCH,phase:0,zone:''};
 let P=null;const keys={},mouse={l:false,r:false,q:0,dx:0,dy:0};let locked=false,shake=0,mapOpen=false,buyOpen=false,interactT=null,menuT=0,lastAward=null,deathT=0,resultT=-1;
 const tv=new V(),tv2=new V(),tv3=new V(),HIT={t:0,i:-1,nx:0,ny:0,nz:0,mat:0};
 
@@ -102,17 +106,19 @@ function rayCar(c,o,d,maxT){const s=Math.sin(-c.yaw),co=Math.cos(-c.yaw);const o
  let tn=-1e9,tf=1e9;for(const[p,q,mn,mx]of[[lx,dx,-1.1,1.1],[oy,d.y,.35,2.3],[lz,dz,-2.4,2.4]]){if(Math.abs(q)<1e-9){if(p<mn||p>mx)return Infinity;continue;}let a=(mn-p)/q,b=(mx-p)/q;if(a>b)[a,b]=[b,a];tn=Math.max(tn,a);tf=Math.min(tf,b);}
  return tn<=tf&&tn>0&&tn<maxT?tn:Infinity;}
 function hurtCar(c,dmg,src){if(c.dead)return;c.hp-=dmg;if(c.driver)damage(c.driver,dmg*.3,src,'body',null,'car');if(c.hp<=0){c.dead=true;c.v=0;fx.boom(c.pos);snd.impact(1,c.pos);snd.shot('stk',c.pos,false);c.g.traverse(o=>{if(o.isMesh)o.material.color.setHex(0x1a1a1a);});const d=c.driver;if(d){exitCar(d);damage(d,65,src,'body',null,'boom');}}}
-function enterCar(a,c){a.car=c;c.driver=a;a.reloadT=0;a.plateT=0;if(a===P){snd.click();hud.note('ROVER · W/S DRIVE · A/D STEER · E EXIT','q');}}
-function exitCar(a){const c=a.car;if(!c)return;c.driver=null;a.car=null;const sx=-Math.cos(c.yaw),sz=Math.sin(c.yaw);for(const s of[1,-1,0]){const px=c.pos.x+sx*2.2*s+(s?0:Math.sin(c.yaw)*3.4),pz=c.pos.z+sz*2.2*s+(s?0:Math.cos(c.yaw)*3.4);a.pos.set(px,W.groundAt(px,pz,c.pos.y+2,.3),pz);if(nav.free(px,pz)||W.groundAt(px,pz,c.pos.y+2,.3)<c.pos.y+1)break;}a.vel.set(0,0,0);if(a===P)snd.click();}
+function enterCar(a,c){a.car=c;c.driver=a;a.reloadT=0;a.plateT=0;c.claim=null;if(a.ai){a.ai.dv=null;a.ai.path=null;a.ai.goalKind='';a.ai.goal=null;a.ai.goalRef=null;a.in.fire=false;a.in.mx=a.in.mz=0;if(!a.isPlayer||G.autopilot){const S=G.stats.rover;S.enter++;S.riders.push(a.name);}}if(a===P){snd.click();hud.note('ROVER · W/S DRIVE · A/D STEER · E EXIT','q');}}
+function exitCar(a){const c=a.car;if(!c)return;c.driver=null;a.car=null;const sx=-Math.cos(c.yaw),sz=Math.sin(c.yaw);for(const s of[1,-1,0]){const px=c.pos.x+sx*2.2*s+(s?0:Math.sin(c.yaw)*3.4),pz=c.pos.z+sz*2.2*s+(s?0:Math.cos(c.yaw)*3.4);a.pos.set(px,W.groundAt(px,pz,c.pos.y+2,.3),pz);if(nav.free(px,pz)||W.groundAt(px,pz,c.pos.y+2,.3)<c.pos.y+1)break;}a.vel.set(0,0,0);a.onGround=true;if(a.ai){a.ai.dv=null;a.ai.carCD=G.time+30;a.ai.path=null;a.ai.goalKind='';a.ai.goal=null;}if(a===P)snd.click();}
 function carTick(c,dt){if(c.dead){if((c.smokeT-=dt)<=0){c.smokeT=.15;fx.smokeCol(tv.set(c.pos.x,c.pos.y+1.8,c.pos.z),[.12,.12,.12],1);}return;}
- const d=c.driver;let thr=0,st=0;if(d===P&&G.app==='match'){thr=(keys.KeyW?1:0)-(keys.KeyS?1:0);st=(keys.KeyA?1:0)-(keys.KeyD?1:0);if(G.pad){thr=thr||(G.pad.f>.3?1:G.pad.f<-.3?-1:0);st=st||-G.pad.s;}}
+ const d=c.driver;let thr=0,st=0,bo=null;if(d===P&&!G.autopilot&&G.app==='match'){thr=(keys.KeyW?1:0)-(keys.KeyS?1:0);st=(keys.KeyA?1:0)-(keys.KeyD?1:0);if(G.pad){thr=thr||(G.pad.f>.3?1:G.pad.f<-.3?-1:0);st=st||-G.pad.s;}}
+ else if(d&&d.ai&&d.alive){bo=driveBot(d,c,G,dt);thr=bo.thr;st=bo.st;}
  if(thr)c.v+=thr*(thr*c.v<0?26:11)*dt;else c.v*=Math.exp(-dt*.9);c.v*=Math.exp(-dt*.08);c.v=cl(c.v,-9,27);c.steer+=(st-c.steer)*Math.min(1,dt*5);c.yaw+=c.steer*dt*cl(c.v/7,-1,1)*1.5;
  c.vel.x=Math.sin(c.yaw)*c.v;c.vel.z=Math.cos(c.yaw)*c.v;c.vel.y-=22*dt;const sp0=Math.abs(c.v);const r=W.move(c.pos,c.vel,dt,1.25,1.7,c.onG);c.onG=r.ground;
- if(r.wall&&sp0>4){if(sp0>13){hurtCar(c,sp0*2.5,null);fx.dustCloud(c.pos,6);snd.impact(1,c.pos);}c.v*=-.25;}
+ if(r.wall&&sp0>4){if(sp0>13){if(bo)G.stats.rover.crash++;hurtCar(c,sp0*2.5,null);fx.dustCloud(c.pos,6);snd.impact(1,c.pos);}c.v*=-.25;}
  // run-over
  if(sp0>5)for(const b of G.actors){if(!b.alive||b===d||b.car||b.state!=='ground'||b.inGulag)continue;const dx=b.pos.x-c.pos.x,dz=b.pos.z-c.pos.z;if(dx*dx+dz*dz<5.5&&Math.abs(b.pos.y-c.pos.y)<1.6){const l=Math.hypot(dx,dz)||1;b.vel.x+=dx/l*8;b.vel.z+=dz/l*8;b.vel.y=4;damage(b,sp0*6,d,'body',tv.set(-dx/l,0,-dz/l),'car');c.v*=.8;}}
  const w=c.g.userData.wheels;for(let i=0;i<4;i++){w[i].rotation.x+=c.v*dt/.48;if(i>=2)w[i].rotation.y=c.steer*.4;}placeCar(c);c.g.rotation.z=Math.sin(G.time*13)*.004*Math.min(1,sp0/10);
- if(d===P)snd.engine(.3+Math.min(1,sp0/27)*.9,.11);}
+ if(d===P)snd.engine(.3+Math.min(1,sp0/27)*.9,.11);
+ if(bo&&c.driver===d){const S=G.stats.rover;S.dist+=sp0*dt;if(bo.exit){S.exit[bo.exit]=(S.exit[bo.exit]||0)+1;exitCar(d);}}}
 // keep walkers out of rover bodies
 function pushFromCars(a){for(const c of G.cars){if(c===a.car)continue;const dx=a.pos.x-c.pos.x,dz=a.pos.z-c.pos.z;if(dx*dx+dz*dz>9||Math.abs(a.pos.y-c.pos.y)>1.8)continue;const s=Math.sin(-c.yaw),co=Math.cos(-c.yaw);let lx=dx*co+dz*s,lz=-dx*s+dz*co;const hx=1.1+PR,hz=2.4+PR;if(Math.abs(lx)<hx&&Math.abs(lz)<hz){if(hx-Math.abs(lx)<hz-Math.abs(lz))lx=Math.sign(lx||1)*hx;else lz=Math.sign(lz||1)*hz;a.pos.x=c.pos.x+lx*co-lz*s;a.pos.z=c.pos.z+lx*s+lz*co;}}}
 
@@ -140,7 +146,7 @@ function resetActor(a){Object.assign(a,{alive:true,out:false,hp:100,armor:0,plat
  if(a.rig){a.rig.root.visible=false;a.rig.die=0;a.rig.mesh.rotation.set(0,0,0);a.rig.mesh.position.set(0,0,0);}
  a.ai=(!a.isPlayer||G.autopilot)?newBrain():null;Object.assign(a,{recP:0,recY:0,burst:0,burstT:0,adsV:0,zoom:1,speed:0,flash:0,supp:0,won:false,dropBought:false,killer:'',onGround:false,reloadDur:1,reloadTube:false,flashT:0});}
 function dropPoint(){const pool=Math.random()<.35?MAP.pois:null;let x,z;if(pool){const p=pick(pool);x=p.x+rr(-p.r*.6,p.r*.6);z=p.z+rr(-p.r*.6,p.r*.6);}else{const s=pick(MAP.spots);x=s.x;z=s.z;}const q=nav.randomNear(x,z,14);return q?new V(q[0],0,q[1]):new V(x,0,z);}
-function start(o={}){G.diff=DIFF[cl(o.diff??OPT.diff,0,2)];G.autopilot=!!o.autopilot;G.gasScale=o.gasScale||1;G.time=0;G.uavT=0;G.gulagQ=[];G.log=[];G.duel=null;G.matchLeft=MATCH;G.stats={};deathT=0;resultT=-1;lastAward=null;
+function start(o={}){G.diff=DIFF[cl(o.diff??OPT.diff,0,2)];G.autopilot=!!o.autopilot;G.gasScale=o.gasScale||1;G.time=0;G.uavT=0;G.gulagQ=[];G.log=[];G.duel=null;G.matchLeft=MATCH;G.stats={rover:{enter:0,riders:[],dist:0,stuck:0,crash:0,claim:0,exit:{},rk:0}};for(const c of G.cars)c.claim=null;deathT=0;resultT=-1;lastAward=null;
  for(const l of [...G.loot])removeLoot(l);for(const d of G.drops)scene.remove(d.g);G.drops=[];fx.clear();hud.reset();
  for(const c of G.crates){c.opened=false;crateMat(c);}resetCars();
  // ground loot
@@ -205,7 +211,7 @@ function damage(v,amt,src,part,dir,kind){if(!v.alive||amt<=0||(v===P&&G.god))ret
 
 function kill(v,src,part,kind){G.log.push({t:+G.time.toFixed(1),v:v.name,k:src&&src!==v?src.name:'',kind,part,d:src?+src.pos.distanceTo(v.pos).toFixed(1):0,w:src&&gunOf(src)?gunOf(src).w+gunOf(src).r:'',cage:!!v.inGulag});v.alive=false;v.hp=0;v.state='dead';v.deadT=0;v.reloadT=0;v.plateT=0;if(v.car)exitCar(v);v.chute.visible=false;
  if(v.rig){v.rig.dieDir=R()<.5?1:-1;}
- if(src&&src!==v){src.kills++;if(part==='head')src.heads=(src.heads||0)+1;}
+ if(src&&src!==v){src.kills++;if(kind==='car'&&src.ai&&src.car)G.stats.rover.rk++;if(part==='head')src.heads=(src.heads||0)+1;}
  const wname=kind==='gas'?'GAS':kind==='car'?'ROVER':kind==='boom'?'EXPLOSION':src&&gunOf(src)?WPN[gunOf(src).w].n:'';
  if(v.inGulag&&G.duel){hud.feed(src?src.name:'',wname,v.name,{cage:true,me:v===P||src===P});duelEnd(v===P?G.duel.o:P);return;}
  hud.feed(src&&src!==v?src.name:'',wname,v.name,{head:part==='head',me:v===P||src===P});
@@ -300,7 +306,7 @@ function botBuy(a){if(a.bought||a.cash<4000)return;a.bought=true;a.cash-=4000;co
 
 /* ================= AI context ================= */
 function botPickup(a,l){const ok=pickup(a,l);if(ok){for(const m of [...G.loot]){if(m.lvl!==l.lvl||m.p.distanceTo(a.pos)>2.6)continue;if(wantsItem(a,m.it))pickup(a,m);}}return ok;}
-Object.assign(G,{swap:a=>swapGun(a),reload:a=>startReload(a),plate:a=>startPlate(a),botBuy,pickup:botPickup,openCrate});
+Object.assign(G,{enterCar,swap:a=>swapGun(a),reload:a=>startReload(a),plate:a=>startPlate(a),botBuy,pickup:botPickup,openCrate});
 
 /* ================= per-actor simulation ================= */
 function weaponTick(a,dt){a.fireT-=dt;if(a.flashT>0){a.flashT-=dt;if(a.flashT<=0&&a.rig)a.rig.flash.visible=false;}
@@ -408,6 +414,8 @@ function camera(dt){shake=Math.max(0,shake-dt*2.4);const aspect=innerWidth/inner
 function lod(){IMP.begin();const cx=cam.position.x,cz=cam.position.z,cy=cam.position.y;const near=gfx===0?60:gfx===1?95:120,far=520;
  for(const a of G.actors){if(a.isPlayer){a.chute.visible=a.state==='chute';if(a.chute.visible){a.chute.position.copy(a.pos);a.chute.rotation.set(0,a.yaw,0);}continue;}
   const vis=a.state!=='plane'&&!a.car&&(a.alive||a.deadT<30)&&!(a.out&&a.deadT>30);const d=Math.hypot(a.pos.x-cx,a.pos.z-cz,(a.pos.y-cy)*.5);const r=a.rig;
+  // rover drivers sit behind the wheel (left seat), visible through the glass
+  if(a.car&&a.alive){const c=a.car,sn=Math.sin(c.yaw),cs=Math.cos(c.yaw);if(d<near){r.root.visible=true;r.root.position.set(c.pos.x+.45*cs-.1*sn,c.pos.y+.6,c.pos.z-.45*sn-.1*cs);r.root.rotation.set(0,c.yaw,0);r.update(a._dt||.016,{speed:0,seat:1,pitch:0,reload:-1});r.b.gun.visible=false;}else r.root.visible=false;a.chute.visible=false;continue;}
   if(a.state==='chute'){a.chute.visible=d<900;a.chute.position.copy(a.pos);a.chute.rotation.set(0,a.yaw,Math.sin(G.time+a.id)*.06);}else a.chute.visible=false;
   if(vis&&d<near){r.root.visible=true;r.root.position.copy(a.pos);r.root.rotation.set(a.state==='fall'?1.25:0,a.yaw,0);
    const it=gunOf(a);const vf=a.vel.x*Math.sin(a.yaw)+a.vel.z*Math.cos(a.yaw),vs=a.vel.x*-Math.cos(a.yaw)+a.vel.z*Math.sin(a.yaw);
@@ -489,7 +497,7 @@ let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(
 
 /* ================= test hooks ================= */
 window.DROPZONE={get state(){return G.app;},G,MAP,W,nav,scene,cam,R:Rr,keys,mouse,VM,fx,
- get player(){return P;},get bots(){return G.actors.filter(a=>!a.isPlayer);},get round(){const g=G.gas;return{time:G.time,left:G.matchLeft,phase:g&&g.phase,gas:g&&{state:g.state,left:g.left,cur:{...g.cur},next:{...g.next}},remaining:remaining(),duel:!!G.duel,plane:!!G.plane};},
+ get player(){return P;},get bots(){return G.actors.filter(a=>!a.isPlayer);},get round(){const g=G.gas;return{time:G.time,left:G.matchLeft,phase:g&&g.phase,gas:g&&{state:g.state,left:g.left,cur:{...g.cur},next:{...g.next}},remaining:remaining(),alive:G.actors.filter(a=>!a.out&&a.alive&&!a.inGulag).length,duel:!!G.duel,plane:!!G.plane};},
  get score(){return lastAward?lastAward.pts:Math.max(0,P.kills*100+Math.round(P.dmg*.2));},get award(){return lastAward;},
  step,render,start:o=>start(o||{}),toMenu,finish,pause,setQuality:applyQuality,get gfx(){return gfx;},
  jump:()=>{if(P.state==='plane'&&G.plane)jumpOut(P);},interact,buy:i=>{buy(i);},openBuy,enterGulag,kill:(v,src)=>damage(v||P,999,src||null,'body',null,'gun'),fire:()=>fire(P),giveLoadout:k=>giveLoadout(P,k),eliminate,redeploy,

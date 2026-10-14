@@ -16,7 +16,7 @@ kbd{display:inline-block;font:700 11px var(--mono);padding:2px 6px;border:1px so
 #hud{position:fixed;inset:0;pointer-events:none;z-index:3;text-shadow:0 1px 2px rgba(0,0,0,.7)}
 #mm{position:absolute;left:22px;top:22px;width:200px}
 #mini{width:200px;height:200px;border-radius:50%;background:rgba(0,0,0,.35);box-shadow:0 2px 14px rgba(0,0,0,.4)}
-#mmi{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;letter-spacing:.12em;color:var(--mut)}#mmi b{color:#fff;font-size:15px;margin-right:4px}
+#mmi{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;letter-spacing:.12em;color:var(--mut)}#mmi b{color:#fff;font-size:15px;margin-right:4px}#mmi span{white-space:nowrap}#cage{color:#ff9a6a}#cage b{color:#ffb48a}#cage[hidden]{display:none}
 #pname{margin-top:4px;font:15px var(--disp);letter-spacing:.14em;color:#fff;opacity:.9}
 #top{position:absolute;left:50%;top:14px;transform:translateX(-50%);text-align:center}
 #comp{width:420px;height:34px;display:block}
@@ -88,4 +88,4 @@ kbd{display:inline-block;font:700 11px var(--mono);padding:2px 6px;border:1px so
 #otok{color:var(--y)!important;letter-spacing:.12em}
 #clickp{position:fixed;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(0,0,0,.45);cursor:pointer}#clickp b{font:44px var(--disp);letter-spacing:.1em}#clickp span{font-size:11px;letter-spacing:.2em;color:var(--mut)}
 @media (max-height:640px){.brand h1{font-size:84px}.tag{font-size:12px;margin:6px 0}.feat{margin-top:10px}.feat b{font-size:24px}.ctl{display:none}.mwrap{padding:24px 4vw;gap:30px}.panel{padding:16px}}
-@media (max-width:760px){#comp{width:300px}#mm,#mini{width:140px}#mini{height:140px}.panel{width:100%}#wa{font-size:36px}#vit{width:200px}#buy{width:92vw;right:4vw}}
+@media (max-width:760px){#comp{width:300px}#mm,#mini{width:140px}#mmi{font-size:9px;letter-spacing:.02em}#mmi b{font-size:12px;margin-right:2px}#mini{height:140px}.panel{width:100%}#wa{font-size:36px}#vit{width:200px}#buy{width:92vw;right:4vw}}

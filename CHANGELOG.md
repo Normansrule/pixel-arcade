@@ -32,6 +32,7 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 - **New 3D game: IRON VANGUARD** (`warfront/`): 16v16 Conquest over five flags in a 700 m river valley. Four classes, tickets and revives, and tanks, jeeps, attack helicopters and jets for both the player and the CPU. Three round lengths and three difficulties. Battlefield-style.
 - **New 3D game: ZENITH PROTOCOL** (`heroes/`): a 5v5 hero shooter against CPU squads. Seven heroes (tanks, damage and supports) with abilities and ultimates, Payload Attack, Payload Defend and Control on two maps, and a results screen with per-hero stats and awards. Overwatch-style.
 - **New 3D game: DROPZONE** (`dropzone/`): a 40-player battle royale against 39 CPU operators in an original port city. Parachute drop, loot in five rarity tiers with attachments, armour plates, buy stations and loadout drops, seven gas phases, drivable rovers, and a 1v1 cage duel that sends the winner back in. 12-minute limit. Warzone-style.
+- **DROPZONE:** CPU players now drive the rovers to rotate with the gas, with a visible driver behind see-through glass, and the HUD shows players waiting for the cage separately (ALIVE · CAGE).
 - **Online play (first step):** **⇄ Play online** in the hub footer links two browsers on the same network with a copy-paste or QR code, no server. Four in a Row is the first online game. See `docs/MULTIPLAYER.md`.
 - **Engine:** small automatic score pops show at most once every 36 frames, so fast-ticking scores no longer stack a cloud of +1s.
 

@@ -124,8 +124,10 @@ export function makeCrate(){const g=new THREE.Group();const m=new THREE.MeshStan
  const lid=B(1.62,.12,1.12,m,0,1.06,0);g.userData.lid=lid;return g;}
 
 /* ---------- rover (armoured SUV) ---------- */
-export function makeRover(){const g=new THREE.Group();const paint=new THREE.MeshStandardMaterial({color:0x4a5440,roughness:.55,metalness:.4}),dk=new THREE.MeshStandardMaterial({color:0x1a1c1e,roughness:.6,metalness:.3}),gl=new THREE.MeshStandardMaterial({color:0x223040,roughness:.05,metalness:.9}),lt=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xfff0c0,emissiveIntensity:1.5});
+export function makeRover(){const g=new THREE.Group();const paint=new THREE.MeshStandardMaterial({color:0x4a5440,roughness:.55,metalness:.4}),dk=new THREE.MeshStandardMaterial({color:0x1a1c1e,roughness:.6,metalness:.3}),lt=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xfff0c0,emissiveIntensity:1.5});
  const B=(w,h,d,m,x,y,z,rx=0)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.rotation.x=rx;b.castShadow=true;g.add(b);return b;};
- B(2.1,.9,4.6,paint,0,.95,0);B(1.9,.8,2.6,paint,0,1.8,-.4);B(1.92,.55,.1,gl,0,1.85,.92,-.35);B(1.94,.5,2.2,gl,0,1.85,-.45);B(2.2,.3,1,dk,0,.7,2.35);B(2.2,.3,.8,dk,0,.7,-2.35);B(.3,.18,.06,lt,-.7,1.15,2.32);B(.3,.18,.06,lt,.7,1.15,2.32);
+ B(2.1,.9,4.6,paint,0,.95,0);B(1.9,.2,2.6,paint,0,1.5,-.4);B(1.9,.14,2.6,paint,0,2.16,-.4);for(const x of[-.9,.9])for(const z of[.82,-.55,-1.65])B(.1,.52,.12,paint,x,1.85,z);
+ // see-through glass so the driver shows
+ const tg=new THREE.MeshStandardMaterial({color:0x2a3a4a,roughness:.05,metalness:.6,transparent:true,opacity:.38,depthWrite:false});B(1.84,.6,.08,tg,0,1.86,.92,-.35).castShadow=false;B(1.86,.5,2.48,tg,0,1.85,-.42).castShadow=false;B(2.2,.3,1,dk,0,.7,2.35);B(2.2,.3,.8,dk,0,.7,-2.35);B(.3,.18,.06,lt,-.7,1.15,2.32);B(.3,.18,.06,lt,.7,1.15,2.32);
  B(1.6,.12,1.2,dk,0,2.26,-.9);for(const s of[-1,1])B(.08,.5,3.6,dk,s*1.08,1,0);
  const wheels=[];const wg=new THREE.CylinderGeometry(.48,.48,.36,14);wg.rotateZ(Math.PI/2);for(const[a,b]of[[-1,-1],[1,-1],[-1,1],[1,1]]){const w=new THREE.Mesh(wg,dk);w.position.set(a*1.02,.48,b*1.5);w.castShadow=true;g.add(w);wheels.push(w);}g.userData.wheels=wheels;return g;}

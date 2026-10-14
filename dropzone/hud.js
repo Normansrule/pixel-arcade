@@ -37,7 +37,8 @@ export class HUD{
  tick(dt){if(this.banT>0){this.banT-=dt;if(this.banT<=0)$('banner').classList.remove('on');}if(this.ddT>0){this.ddT-=dt;if(this.ddT<=0)$('ddir').className='';}}
  // ---- per-frame panel text
  panels(G,P){const it=P.guns[P.cur];
-  this.set('alive',String(G.remaining));this.set('kills',String(P.kills));
+  // alive = still on the island; cage = downed and waiting for (or fighting) the 1v1 duel, which G.remaining still counts
+  let on=0;for(const a of G.actors)if(!a.out&&a.alive&&!a.inGulag)on++;const cg=G.remaining-on;this.set('alive',String(on));this.set('cagen',String(cg));this.set('cage',cg<=0,'hidden');this.set('kills',String(P.kills));
   const g=G.gas;let gl,gv;if(g.state==='wait'){gl='CIRCLE CLOSES IN';gv=mmss(g.left);}else if(g.state==='shrink'){gl='CIRCLE CLOSING';gv=mmss(g.left);}else{gl='FINAL CIRCLE';gv='';}
   this.set('gasl',gl);this.set('gasv',gv);this.set('mtime',mmss(G.matchLeft));
   const arm=P.armor;for(let i=0;i<3;i++){const f=Math.max(0,Math.min(1,(arm-i*50)/50));const k='arm'+i,v=(f*100).toFixed(0)+'%';if(this.cache[k]!==v){this.cache[k]=v;$('armor').children[i].firstChild.style.width=v;}}
