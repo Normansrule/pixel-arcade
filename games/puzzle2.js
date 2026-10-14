@@ -1,6 +1,6 @@
 (function(){const A=window.A,{W,H,K}=A,R=A.rect,T=A.text,C=A.circ,L=A.line,rnd=A.rnd,ri=A.ri,cl=A.clamp,S=A.sfx;
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0);
-const X=new Proxy({},{get:(_,k)=>A.gx[k]});
+const X=new Proxy({},{get:(_,k)=>A.gx[k]}),lo=()=>A.gfx!=='off';
 const cur2=(x,y,w,h,col)=>{const p=1+Math.sin(A.t*.15)*.8;X.glow(x+w/2,y+h/2,Math.max(w,h)*.8,col||'#ffcf3f',.15);X.rrs(x-p,y-p,w+2*p,h+2*p,3,col||'#ffcf3f',1.5);};
 const mvCur=(h,c,w,hh)=>{if(h.l)c.x=(c.x+w-1)%w;if(h.r)c.x=(c.x+1)%w;if(h.u)c.y=(c.y+hh-1)%hh;if(h.d)c.y=(c.y+1)%hh;};
 
@@ -119,16 +119,21 @@ A.add({id:'blockfit',name:'BLOCK FIT',cat:'PUZZLE',how:'PLACE 3 PIECES ANYWHERE.
 
 /* ---- PEG JUMP ---- */
 A.add({id:'pegs',name:'PEG JUMP',cat:'PUZZLE',low:1,how:'A PICKS A PEG, A JUMPS IT OVER A NEIGHBOUR. FEWEST LEFT WINS.',make(){
- const g={over:null,score:32},N=7,fx=X.fx();let b=[],c={x:3,y:2},sel=-1,hop=null;for(let i=0;i<49;i++){const x=i%7,y=(i/7)|0,ok=(x>1&&x<5)||(y>1&&y<5);b.push(ok?1:-1);}b[24]=0;
+ const g={over:null,score:32},N=7,fx=X.fx();let b=[],c={x:3,y:2},sel=-1,hop=null,fly=[],pc=[];for(let i=0;i<49;i++){const x=i%7,y=(i/7)|0,ok=(x>1&&x<5)||(y>1&&y<5);b.push(ok?1:-1);}b[24]=0;
  const jumps=i=>{const x=i%7,y=(i/7)|0,o=[];for(const d of[[1,0],[-1,0],[0,1],[0,-1]]){const mx=x+d[0],my=y+d[1],tx=x+2*d[0],ty=y+2*d[1];if(tx<0||ty<0||tx>6||ty>6)continue;if(b[my*7+mx]===1&&b[ty*7+tx]===0)o.push([my*7+mx,ty*7+tx]);}return o;};
  const pos=i=>[76+(i%7)*24+12,36+((i/7)|0)*24+12];
- g.update=()=>{if(hop){hop.t+=.12;if(hop.t>=1)hop=null;}const h=A.hit(0);mvCur(h,c,7,7);if(h.l||h.r||h.u||h.d)S('blip');if(h.a){const i=c.y*7+c.x;if(sel<0){if(b[i]===1&&jumps(i).length){sel=i;S('blip');}else S('lose');}else{const j=jumps(sel).find(j=>j[1]===i);if(j){b[sel]=0;b[j[0]]=0;b[i]=1;hop={f:sel,to:i,t:0};const[mx,my]=pos(j[0]);fx.debris(mx,my,'#ff9838',6,2);sel=-1;g.score=b.filter(v=>v===1).length;S('hit');if(!b.some((v,k)=>v===1&&jumps(k).length))g.over=g.score===1?'PERFECT! WIN':g.score+' PEGS LEFT';}else{sel=-1;S('lose');}}}};
- const peg=(x,y,s)=>{X.shadow(x+1,y+3,7,3,.4);X.orb(x,y,7,s?'#ffcf3f':'#ff9838');};
- g.draw=()=>{X.cache('pegs_bg',()=>{X.vg(0,0,W,H,['#2a1a10','#140a04']);X.disc(160,120,98,'rgba(0,0,0,.4)');X.disc(160,118,96,X.rg(140,90,10,160,118,96,['#d89a5a','#a8743a','#7a4a20']));A.c.fillStyle='rgba(80,40,10,.15)';for(let i=0;i<20;i++){A.c.beginPath();A.c.arc(160,118,10+i*4.5,0,6.283);A.c.strokeStyle='rgba(80,40,10,.12)';A.c.stroke();}
-   for(let i=0;i<49;i++){const x=i%7,y=(i/7)|0;if(!((x>1&&x<5)||(y>1&&y<5)))continue;const[px,py]=pos(i);X.disc(px,py,7.5,X.rg(px,py-2,1,px,py,7.5,['#1a0e04','#3a2410','#6a4020']));}});
-  b.forEach((v,i)=>{if(v<0)return;const[x,y]=pos(i);if(v===1&&!(hop&&hop.to===i))peg(x,y-(i===sel?3:0),i===sel);if(sel>=0&&jumps(sel).some(j=>j[1]===i)){X.glow(x,y,10,'#3ddc84',.4);X.disc(x,y,3,'#3ddc84');}});
-  if(hop){const[a,b_]=[pos(hop.f),pos(hop.to)],t=hop.t;peg(a[0]+(b_[0]-a[0])*t,a[1]+(b_[1]-a[1])*t-Math.sin(t*3.1416)*14,false);}
-  cur2(76+c.x*24,36+c.y*24,24,24,'#ffcf3f');fx.draw();X.bar('PEGS '+g.score,'');};
+ g.update=()=>{fly.forEach(f=>f.t=Math.min(1,f.t+.05));if(hop){hop.t+=.12;if(hop.t>=1){const[x,y]=pos(hop.to);fx.ring(x,y,'#ffffff',12,8);hop=null;}}const h=A.hit(0);mvCur(h,c,7,7);if(h.l||h.r||h.u||h.d)S('blip');if(h.a){const i=c.y*7+c.x;if(sel<0){if(b[i]===1&&jumps(i).length){sel=i;S('blip');}else S('lose');}else{const j=jumps(sel).find(j=>j[1]===i);if(j){b[sel]=0;b[j[0]]=0;b[i]=1;pc[i]=pc[sel];hop={f:sel,to:i,t:0};const[mx,my]=pos(j[0]);fx.debris(mx,my,'#ff9838',6,2);fx.spark(mx,my,'#ffe0a0',8,2);fx.ring(mx,my,'#ffcf3f',16,10);fly.push({x:mx,y:my,t:0,k:32-b.filter(v=>v===1).length,c:pc[j[0]]});sel=-1;g.score=b.filter(v=>v===1).length;S('hit');A.shake=Math.max(A.shake,1);if(g.score<=8)fx.pop(mx,my-12,g.score+' LEFT',g.score<=3?'#3dff8b':'#ffcf3f');if(!b.some((v,k)=>v===1&&jumps(k).length)){g.over=g.score===1?'PERFECT! WIN':g.score+' PEGS LEFT';if(g.score<=3){A.confetti&&A.confetti();fx.flash('#ffcf3f',8);}}}else{sel=-1;S('lose');}}}};
+ const PC=['#ff9838','#ff4f6d','#ffcf3f','#3ddc84','#4dabff','#c86dff'],pcol=i=>PC[(i*7+(i/7|0)*3)%6];for(let i=0;i<49;i++)pc.push(pcol(i));
+ const tray=k=>[k<16?22+(k%2)*14:284+(k%2)*14,46+((k%16)/2|0)*20];
+ const peg=(x,y,s,col)=>{X.shadow(x+1.5,y+4,7.5,3,.45);if(s)X.glow(x,y,16,'#ffcf3f',.4);X.orb(x,y,8,s?'#ffe070':col);};
+ g.draw=()=>{X.cache('pegs_bg2',()=>{X.wood(0,0,W,H,'#2e1a0c');X.glow(160,100,190,'#ffd890',.16);for(const tx of[14,276]){X.rr(tx+2,34,30,170,8,'rgba(0,0,0,.4)');X.rr(tx,30,30,170,8,X.lg(0,30,0,200,['#8a5a2a','#5a3416','#3a200a']));X.rr(tx+3,33,24,164,6,'rgba(0,0,0,.35)');}
+   X.disc(162,124,102,'rgba(0,0,0,.45)');X.disc(160,118,101,X.lg(0,17,0,219,['#f0c080','#8a5424','#4a2a10']));X.disc(160,118,95,X.rg(140,90,10,160,118,96,['#e8aa66','#b07a3c','#7a4a20']));const c=A.c;for(let i=0;i<20;i++){c.beginPath();c.arc(160+Math.sin(i)*1.5,118,8+i*4.5,0,6.283);c.strokeStyle='rgba(80,40,10,'+(.08+(i%3)*.04)+')';c.lineWidth=1;c.stroke();}X.ell(130,70,40,14,'rgba(255,255,255,.07)',-.4);
+   for(let i=0;i<49;i++){const x=i%7,y=(i/7)|0;if(!((x>1&&x<5)||(y>1&&y<5)))continue;const[px,py]=pos(i);X.disc(px,py+.8,8.6,'rgba(255,230,180,.25)');X.disc(px,py,8,X.rg(px,py-2,1,px,py,8,['#1a0e04','#3a2410','#6a4020']));}X.vignette(.5);});
+  for(let k=0;k<fly.length;k++){const f=fly[k],[tx,ty]=tray(f.k),e=f.t*f.t*(3-2*f.t),x=f.x+(tx-f.x)*e,y=f.y+(ty-f.y)*e-Math.sin(f.t*3.1416)*30;X.shadow(x+1,y+3,5,2,.35);X.orb(x,y,5.5,f.c);}
+  const mv=sel<0?b.map((v,i)=>v===1&&jumps(i).length>0):null;
+  b.forEach((v,i)=>{if(v<0)return;const[x,y]=pos(i);if(v===1&&!(hop&&hop.to===i)){peg(x,y-(i===sel?4+Math.sin(A.t*.2):0),i===sel,pc[i]);if(mv&&mv[i]&&lo())X.disc(x,y+9,1.2,'rgba(61,255,139,.8)');}if(sel>=0&&jumps(sel).some(j=>j[1]===i)){const pu=.5+.3*Math.sin(A.t*.25);X.glow(x,y,13,'#3ddc84',pu);A.ring(x,y,6,'#9fffc0');X.disc(x,y,2.5,'#3ddc84');}});
+  if(hop){const[a,b_]=[pos(hop.f),pos(hop.to)],t=hop.t;peg(a[0]+(b_[0]-a[0])*t,a[1]+(b_[1]-a[1])*t-Math.sin(t*3.1416)*16,false,pc[hop.to]);}
+  cur2(76+c.x*24,36+c.y*24,24,24,'#ffcf3f');fx.draw();X.bar('PEGS '+g.score,g.score<=1?'PERFECT':g.score<=3?'GREAT':g.score<=6?'GOOD':'',' TAKEN '+(32-g.score),K.y,'#3dff8b');};
  return g;}});
 
 /* ---- QUICK MATH ---- */
