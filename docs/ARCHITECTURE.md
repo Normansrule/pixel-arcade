@@ -51,7 +51,13 @@ Scores stay in `localStorage` (`pxd_profile`, `pxd_hs_<user>_<id>`). Posting a s
 
 Each world is a folder (`city/`, `zombies/`, `rocket/`…) with an `index.html`, a `game.js` entry module and its own modules. They use Three.js r160 from `vendor/` and `js/fx3d.js`, whose `cinematic()` sets up ACES tone mapping, ambient occlusion, bloom, a colour grade and SMAA (Subpixel Morphological Anti-Aliasing); `bindQualityKey()` makes **G** cycle low, medium and ultra.
 
-Code the worlds share lives in `js/kit3d/`. So far that is `score.js`: the arcade profile (`addRound`), best scores (`bestScore`, `saveBest`, `bestKey`), the player's name (`userName`) and POST SCORE (`postScore`), using the same storage keys and issue title as the canvas engine. Pointer lock, gamepad, synthesized audio, procedural textures and the menu and results screens are still copied per world; they are the next candidates for the kit.
+Code the worlds share lives in `js/kit3d/`. So far that is `score.js`: the arcade profile (`addRound`), best scores (`bestScore`, `saveBest`, `bestKey`), the player's name (`userName`) and POST SCORE (`postScore`), using the same storage keys and issue title as the canvas engine. Next to it, three modules hold the plumbing the worlds used to copy:
+
+- `input.js`: `controls(canvas,opts)` returns the keyboard state (`keys`, `edge`, `flush()`), the mouse (`dx`/`dy` look deltas, held `l`/`r`, latched `le`/`re`), pointer lock with the click-to-play overlay (`lock()`, `unlock()`, `locked`, `onLock`) and `fire()`, which works for both a held button and spam clicks. `gamepad()` and `deadzone()` cover pads.
+- `audio.js`: WebAudio building blocks (`boot`, `master`, `gain`, `noiseBuf`, `reverb`, `bed`, `panTo`, `tone`, `hiss`) and `SpatialSound`, the positional base class that the `play(kind,pos)` worlds extend. Each world's sound recipes and music stay in its own `sound.js`.
+- `ui.js`: saved options (`stored`), segmented menu pickers (`pickers`), the POST SCORE button (`postButton`) and kill-feed/toast lines (`toast`).
+
+Every module documents its API in its header comment. `arena`, `zombies`, `frontline`, `strike`, `titans`, `ink`, `campaign`, `looter`, `extract` and `breach` use them. Procedural textures and the results-screen layouts are still per world, because they differ from world to world.
 
 All worlds follow the same conventions: an original name and design, a round time limit with a results screen, CPU opponents with difficulty levels, `pxd_profile` and high-score updates, a POST SCORE button, a "← ARCADE" link back to the hub, local fonts from `fonts/`, synthesized audio, procedural textures, and `window.<ID>` test hooks. Folder names are part of public URLs, so they never change.
 

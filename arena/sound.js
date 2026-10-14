@@ -1,29 +1,9 @@
 // NOVA ARENA — WebAudio synthesis (no audio files): spatial weapon/impact one-shots, jetpack loop, ambience, a small music sequencer, announcer.
-export class Sound{
- constructor(){this.ac=null;this.vol=.8;this.musVol=.5;this.annOn=true;this.lp={x:0,y:0,z:0,yaw:0};this.mus=null;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=5;comp.connect(ac.destination);this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);
-  this.sfx=ac.createGain();this.sfx.connect(this.master);this.musG=ac.createGain();this.musG.gain.value=this.musVol*.5;this.musG.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  // reverb-ish send (short feedback delay)
-  this.verb=ac.createGain();this.verb.gain.value=.22;const dl=ac.createDelay();dl.delayTime.value=.09;const fb=ac.createGain();fb.gain.value=.35;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;this.verb.connect(dl);dl.connect(lp);lp.connect(fb);fb.connect(dl);lp.connect(this.sfx);
-  // jetpack loop (local player)
-  const js=ac.createBufferSource();js.buffer=b;js.loop=true;this.jf=ac.createBiquadFilter();this.jf.type='bandpass';this.jf.frequency.value=900;this.jf.Q.value=.7;this.jg=ac.createGain();this.jg.gain.value=0;js.connect(this.jf);this.jf.connect(this.jg);this.jg.connect(this.sfx);js.start();
-  // ambience bed
-  const as=ac.createBufferSource();as.buffer=b;as.loop=true;this.af=ac.createBiquadFilter();this.af.type='lowpass';this.af.frequency.value=300;this.ag=ac.createGain();this.ag.gain.value=0;as.connect(this.af);this.af.connect(this.ag);this.ag.connect(this.master);as.start();
-  this.hum=ac.createOscillator();this.hum.type='sine';this.hum.frequency.value=55;this.hg=ac.createGain();this.hg.gain.value=0;this.hum.connect(this.hg);this.hg.connect(this.master);this.hum.start();}catch(e){this.ac=null;}}
- setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
- setMusic(v){this.musVol=v;if(this.musG)this.musG.gain.value=v*.5;}
- ambience(theme){if(!this.ac)return;const t=this.ac.currentTime;const cfg={space:[260,.05,46,.03],canyon:[520,.07,0,0],sky:[900,.06,0,0]}[theme]||[300,0,0,0];
-  this.af.frequency.setTargetAtTime(cfg[0],t,.5);this.ag.gain.setTargetAtTime(cfg[1],t,.5);this.hum.frequency.setTargetAtTime(cfg[2]||50,t,.5);this.hg.gain.setTargetAtTime(cfg[3],t,.5);}
- listener(x,y,z,yaw){this.lp.x=x;this.lp.y=y;this.lp.z=z;this.lp.yaw=yaw;}
+import {boot,SpatialSound} from '../js/kit3d/audio.js';
+export class Sound extends SpatialSound{
+ init(){boot(this,ac=>{this.bus(ac);this.room(ac);this.beds(ac,900);});}
+ ambience(theme){if(!this.ac)return;this.amb({space:[260,.05,46,.03],canyon:[520,.07,0,0],sky:[900,.06,0,0]}[theme]||[300,0,0,0]);}
  jet(on,k=1){if(!this.ac)return;const t=this.ac.currentTime;this.jg.gain.setTargetAtTime(on?.13*k:0,t,.05);this.jf.frequency.setTargetAtTime(on?700+Math.random()*300:500,t,.05);}
- // destination node for a positioned sound (gain + stereo pan by listener-relative angle)
- _dst(pos,vol,range=60){const ac=this.ac,g=ac.createGain();let v=vol,pan=0;if(pos){const dx=pos.x-this.lp.x,dy=pos.y-this.lp.y,dz=pos.z-this.lp.z,d=Math.hypot(dx,dy,dz);v*=1/(1+(d/(range*.25))**2);if(d>.5){const rx=Math.cos(this.lp.yaw),rz=-Math.sin(this.lp.yaw);pan=Math.max(-.85,Math.min(.85,(dx*rx+dz*rz)/d));}if(v<.004)return null;}
-  g.gain.value=1;if(this.ac.createStereoPanner&&pan){const p=ac.createStereoPanner();p.pan.value=pan;g.connect(p);p.connect(this.sfx);if(vol>.15)p.connect(this.verb);}else{g.connect(this.sfx);}this._v=v;return g;}
- _n(dst,dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*this._v,t+.004);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(dst);s.start(t,Math.random()*1.5);s.stop(t+dur+.02);}
- _o(dst,type,f0,f1,dur,vol,delay=0,att=.004){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*this._v,t+att);g.gain.exponentialRampToValueAtTime(.0008,t+dur);o.connect(g);g.connect(dst);o.start(t);o.stop(t+dur+.03);}
  play(k,pos=null,vol=1,a=0){if(!this.ac)return;try{const r=1+(Math.random()-.5)*.08;let d;
   const D=(v,range)=>(d=this._dst(pos,v*vol,range));
   switch(k){
@@ -77,5 +57,4 @@ export class Sound{
     if(s%4===2||this.musI>.6&&s%2===1){const n=ac.createBufferSource(),f=ac.createBiquadFilter(),gg=ac.createGain();n.buffer=this.noise;f.type='highpass';f.frequency.value=7000;gg.gain.setValueAtTime(.05,t);gg.gain.exponentialRampToValueAtTime(.001,t+.05);n.connect(f);f.connect(gg);gg.connect(g);n.start(t,Math.random());n.stop(t+.06);}
     if(s%16===8&&this.musI>.3){const o=ac.createOscillator(),gg=ac.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(40,t+.2);gg.gain.setValueAtTime(.3,t);gg.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(gg);gg.connect(g);o.start(t);o.stop(t+.26);}
     st.step++;st.next+=spb;}setTimeout(tick,60);};tick();}
-  else if(!on&&this.mus){this.mus=null;}}
- announce(text){if(!this.annOn)return;try{const s=window.speechSynthesis;if(!s)return;if(s.speaking&&s.pending)s.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.02;u.pitch=.55;u.volume=Math.min(1,this.vol*1.1);s.speak(u);}catch(e){}}}
+  else if(!on&&this.mus){this.mus=null;}}}

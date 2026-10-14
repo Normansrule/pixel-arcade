@@ -1,5 +1,6 @@
 // STRIKE ZONE — synthesized audio (WebAudio only): layered gun reports with distance filtering and panning, reload foley,
 // footsteps, hit / headshot / kill confirms, explosions, movement, pickups, announcer stingers and a driving procedural score.
+import {boot,master,gain,noiseBuf,reverb,panTo,tone,hiss} from '../js/kit3d/audio.js';
 const R=Math.random;
 const RIFFS=[{g:'x.xxx.xx3-1-x.x6',k:'x.xxx.xxx.x.x.xx',s:'....x.......x...'},{g:'x.xxx.xxx.xx5-6-',k:'xxxxxxxxxxxxxxxx',s:'....x.......x...'},{g:'0---x.x.3---x.x.',k:'x...x.x.x...x.x.',s:'....x.......x...'},
  {g:'5---x.x.6-5-3-1-',k:'x...x.x.x.x.x.x.',s:'....x.......x..x'},{g:'x..xx..xx.x.a-8-',k:'x..xx..xx.x.x.x.',s:'........x.......'},{g:'x..xx..x3-1-0---',k:'x..xx..xx...x...',s:'........x.......'}];
@@ -11,25 +12,20 @@ const GUN={rifle:{c:[3600,1500,.08,.55],b:[1900,240,.2,.75],t:[150,48,.13,.65],r
  sniper:{c:[4800,1400,.12,.8],b:[1400,110,.55,1.05],t:[90,28,.38,1],rev:true},rl:{c:[1400,500,.15,.5],b:[900,140,.6,.8],t:[70,30,.4,.7],rev:true}};
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.musVol=.35;this.intensity=0;this.s16=0;this.bar=0;this.nextT=0;this.cam={x:0,y:0,z:0,yaw:0};this.lastStep=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-12;comp.ratio.value=4;comp.connect(ac.destination);this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);
-  this.sfx=ac.createGain();this.sfx.connect(this.master);this.mus=ac.createGain();this.mus.gain.value=this.musVol;this.mus.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=R()*2-1;this.noise=b;
-  const il=ac.sampleRate*1.6,ib=ac.createBuffer(2,il,ac.sampleRate);for(let c=0;c<2;c++){const x=ib.getChannelData(c);for(let i=0;i<il;i++)x[i]=(R()*2-1)*Math.pow(1-i/il,2.8);}this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.28;this.verbIn.connect(this.verb);this.verb.connect(this.sfx);
+ init(){boot(this,ac=>{this.master=master(ac,this.vol,-12,4);this.sfx=gain(ac,1,this.master);this.mus=gain(ac,this.musVol,this.master);
+  this.noise=noiseBuf(ac);this.verbIn=reverb(ac,1.6,2.8,.28,this.sfx);
   const curve=new Float32Array(2048);for(let i=0;i<2048;i++){const x=i/1024-1;curve[i]=Math.tanh(x*26)*.9;}this.amp=[0,1].map(k=>{const ws=ac.createWaveShaper();ws.curve=curve;ws.oversample='2x';const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=90;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3400;const pan=ac.createStereoPanner();pan.pan.value=k?.6:-.6;const g=ac.createGain();g.gain.value=.14;ws.connect(hp);hp.connect(lp);lp.connect(g);g.connect(pan);pan.connect(this.mus);return{ws,lp};});
   this.drone=ac.createGain();this.drone.gain.value=0;this.drone.connect(this.mus);const df=ac.createBiquadFilter();df.type='lowpass';df.frequency.value=300;df.connect(this.drone);for(const f of[41.2,41.7,61.7]){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f;o.connect(df);o.start();}
-  this.timer=setInterval(()=>this.schedule(),30);}catch(e){this.ac=null;}}
+  this.timer=setInterval(()=>this.schedule(),30);});}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
  setMusic(v){this.musVol=v;if(this.mus)this.mus.gain.setTargetAtTime(v,this.ac.currentTime,.2);}
  music(level){if(this.intensity===level)return;const was=this.intensity;this.intensity=level;if(!this.ac)return;const t=this.ac.currentTime;this.drone.gain.setTargetAtTime(level===1?.45:level===0?.2:.1,t,.8);if(level>=2&&was<2){this.bar=0;this.s16=0;this.nextT=t+.05;this.crash(this.nextT,.45);}}
  listener(x,y,z,yaw){this.cam.x=x;this.cam.y=y;this.cam.z=z;this.cam.yaw=yaw;}
  at(p){if(!p)return[0,0];const c=this.cam;const dx=p.x-c.x,dz=p.z-c.z,dy=(p.y||0)-c.y;const d=Math.hypot(dx,dy,dz)||1;const rx=Math.cos(c.yaw),rz=-Math.sin(c.yaw);return[d,(dx*rx+dz*rz)/d];}
  att(d,ref=10){return 1/(1+Math.max(0,d-2)/ref);}
- _out(pan,bus){bus=bus||this.sfx;if(!pan)return bus;const s=this.ac.createStereoPanner();s.pan.value=Math.max(-1,Math.min(1,pan));s.connect(bus);return s;}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,rev=false,bus,at){if(vol<.003)return;const ac=this.ac,t=(at??ac.currentTime)+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(Math.max(30,f0),t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(this._out(pan,bus));if(rev)g.connect(this.verbIn);s.start(t,R()*1.5);s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0,pan=0,rev=false,bus,at,atk=.003){if(vol<.003)return;const ac=this.ac,t=(at??ac.currentTime)+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+atk);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
-  o.connect(g);g.connect(this._out(pan,bus));if(rev)g.connect(this.verbIn);o.start(t);o.stop(t+dur+.03);}
+ _out(pan,bus){return panTo(this.ac,pan,bus||this.sfx);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,rev=false,bus,at){if(vol<.003)return;const g=hiss(this.ac,this.noise,this._out(pan,bus),(at??this.ac.currentTime)+delay,dur,f0,f1,q,vol,type);if(rev)g.connect(this.verbIn);}
+ _o(type,f0,f1,dur,vol,delay=0,pan=0,rev=false,bus,at,atk=.003){if(vol<.003)return;const g=tone(this.ac,this._out(pan,bus),(at??this.ac.currentTime)+delay,type,f0,f1,dur,vol,atk);if(rev)g.connect(this.verbIn);}
  /* ---------- music ---------- */
  schedule(){if(!this.ac||this.intensity<2)return;const ac=this.ac;const bpm=this.intensity>=3?178:164,s16=60/bpm/4;if(this.nextT<ac.currentTime)this.nextT=ac.currentTime+.02;
   while(this.nextT<ac.currentTime+.14){const song=this.intensity>=3?HOT:SONG;const rf=RIFFS[song[this.bar%song.length]];this.playStep(rf,this.s16,this.nextT,s16);this.nextT+=s16;this.s16++;if(this.s16>=16){this.s16=0;this.bar++;if(this.bar%4===0)this.crash(this.nextT,.3);}}}

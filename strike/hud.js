@@ -1,3 +1,4 @@
+import {toast} from '../js/kit3d/ui.js';
 // STRIKE ZONE — HUD: vitals, ammo + slots, match clock and scores, rotating minimap with shot pings, kill feed, hit markers,
 // damage direction, medals, banners, name tags, killcam panel and the Tab scoreboard.
 const $=id=>document.getElementById(id);
@@ -10,9 +11,9 @@ export class HUD{
  set(id,v){if(this.cache[id]!==v){this.cache[id]=v;$(id).textContent=v;}}
  html(id,v){if(this.cache[id]!==v){this.cache[id]=v;$(id).innerHTML=v;}}
  banner(t,s,col,dur=2.2){$('bt').textContent=t;$('bt').style.color=col||'#fff';$('bs').textContent=s||'';$('bs').style.display=s?'':'none';$('banner').classList.add('on');this.banT=dur;}
- feed(e){const f=$('feed');const d=document.createElement('div');if(e.me)d.className='me';const c=t=>t===0?'#ff9a5a':t===1?'#7cbcff':'#fff';
-  d.innerHTML=(e.k?`<b style="color:${e.kc||c(e.kt)}">${e.k}</b>`:'')+`<span class="w">${e.w}</span>${e.hs?'<span class="hs">◉</span> ':''}<b style="color:${e.vc||c(e.vt)}">${e.v}</b>`;f.prepend(d);setTimeout(()=>d.remove(),5200);while(f.children.length>6)f.lastChild.remove();}
- medal(txt,pts,cls=''){const m=$('medals');const d=document.createElement('div');d.className=cls;d.innerHTML=txt+(pts?` <b>+${pts}</b>`:'');m.appendChild(d);setTimeout(()=>d.remove(),1400);while(m.children.length>4)m.firstChild.remove();}
+ feed(e){const c=t=>t===0?'#ff9a5a':t===1?'#7cbcff':'#fff';
+  const d=toast($('feed'),(e.k?`<b style="color:${e.kc||c(e.kt)}">${e.k}</b>`:'')+`<span class="w">${e.w}</span>${e.hs?'<span class="hs">◉</span> ':''}<b style="color:${e.vc||c(e.vt)}">${e.v}</b>`,5200,6);if(e.me)d.className='me';}
+ medal(txt,pts,cls=''){toast($('medals'),txt+(pts?` <b>+${pts}</b>`:''),1400,4,false).className=cls;}
  hitmark(kind){const h=$('hit');h.className=kind||'';h.style.opacity=1;this.hitT=kind==='kill'?.32:.14;}
  hurt(ang){const s=this.dmg.find(x=>x.t<=0)||this.dmg[0];s.t=1;s.a=ang;}
  clear(){$('feed').innerHTML='';$('medals').innerHTML='';this.banT=0;$('banner').classList.remove('on');for(const s of this.dmg){s.t=0;s.e.style.opacity=0;}this.cache={};$('tags').innerHTML='';this.tagPool=[];}

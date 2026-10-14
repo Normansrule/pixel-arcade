@@ -1,20 +1,18 @@
 // NIGHTFALL — all audio synthesized with WebAudio: guns, reloads, groans, boards, the crate's music box, perks, power, round bells, wind and crickets.
+import {boot,master,gain,noiseBuf,reverb,bed,panTo,tone,hiss} from '../js/kit3d/audio.js';
 const R=Math.random;
 // original motifs (semitone offsets from A2)
 const ROUND_START=[0,3,7,6,3,0,-2,0],ROUND_END=[12,10,7,3,5,0],BOX_TUNE=[12,15,19,15,22,19,15,14,12,15,19,24,22,19,15,17],DAWN=[0,4,7,12,16,19,24];
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.cam={x:0,y:0,z:0,yaw:0};this.boxNode=null;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-12;comp.ratio.value=5;comp.connect(ac.destination);this.duck=ac.createBiquadFilter();this.duck.type='lowpass';this.duck.frequency.value=20000;this.duck.connect(comp);
-  this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(this.duck);this.sfx=ac.createGain();this.sfx.connect(this.master);this.mus=ac.createGain();this.mus.gain.value=.6;this.mus.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=R()*2-1;this.noise=b;
-  const il=ac.sampleRate*2.4,ib=ac.createBuffer(2,il,ac.sampleRate);for(let c=0;c<2;c++){const x=ib.getChannelData(c);for(let i=0;i<il;i++)x[i]=(R()*2-1)*Math.pow(1-i/il,3);}this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.35;this.verbIn.connect(this.verb);this.verb.connect(this.master);
+ init(){boot(this,ac=>{this.duck=ac.createBiquadFilter();this.duck.type='lowpass';this.duck.frequency.value=20000;this.master=master(ac,this.vol,-12,5,this.duck);this.sfx=gain(ac,1,this.master);this.mus=gain(ac,.6,this.master);
+  const b=this.noise=noiseBuf(ac);this.verbIn=reverb(ac,2.4,3,.35,this.master);
   const curve=new Float32Array(1024);for(let i=0;i<1024;i++){const x=i/512-1;curve[i]=Math.tanh(x*4);}this.curve=curve;
   // ambience: wind + crickets + drone
-  this.amb=ac.createGain();this.amb.gain.value=.0;this.amb.connect(this.master);const ws=ac.createBufferSource();ws.buffer=b;ws.loop=true;const wf=ac.createBiquadFilter();wf.type='bandpass';wf.frequency.value=420;wf.Q.value=.7;const wg=ac.createGain();wg.gain.value=.22;ws.connect(wf);wf.connect(wg);wg.connect(this.amb);ws.start();
+  this.amb=gain(ac,0,this.master);const{f:wf,g:wg}=bed(ac,b,'bandpass',420,.7,this.amb,.22);
   const lfo=ac.createOscillator();lfo.frequency.value=.07;const lg=ac.createGain();lg.gain.value=260;lfo.connect(lg);lg.connect(wf.frequency);lfo.start();const lfo2=ac.createOscillator();lfo2.frequency.value=.11;const lg2=ac.createGain();lg2.gain.value=.12;lfo2.connect(lg2);lg2.connect(wg.gain);lfo2.start();
-  this.drone=ac.createGain();this.drone.gain.value=0;this.drone.connect(this.mus);const df=ac.createBiquadFilter();df.type='lowpass';df.frequency.value=260;df.Q.value=2;df.connect(this.drone);this.droneF=df;for(const f of[55,55.4,82.4,110.3]){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f;const g=ac.createGain();g.gain.value=.12;o.connect(g);g.connect(df);o.start();}
-  this.timer=setInterval(()=>this.tick(),120);}catch(e){this.ac=null;}}
+  this.drone=gain(ac,0,this.mus);const df=ac.createBiquadFilter();df.type='lowpass';df.frequency.value=260;df.Q.value=2;df.connect(this.drone);this.droneF=df;for(const f of[55,55.4,82.4,110.3]){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f;o.connect(gain(ac,.12,df));o.start();}
+  this.timer=setInterval(()=>this.tick(),120);});}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
  ambience(on,tension=0,dawn=0){if(!this.ac)return;const t=this.ac.currentTime;this.amb.gain.setTargetAtTime(on?.5:0,t,.8);this.drone.gain.setTargetAtTime(on?.05+tension*.22:0,t,1.2);this.droneF.frequency.setTargetAtTime(180+tension*500,t,1);this.dawn=dawn;this.ambOn=on;}
  muffle(on){if(!this.ac)return;this.duck.frequency.setTargetAtTime(on?650:20000,this.ac.currentTime,.25);}
@@ -23,11 +21,9 @@ export class Sound{
  tick(){if(!this.ac||!this.ambOn)return;// crickets, owl, distant howls
   if(R()<.35*(1-this.dawn))this.cricket();if(R()<.008)this.owl();if(this.dawn>.3&&R()<.25*this.dawn)this.bird();}
  /* ---------- primitives ---------- */
- _out(pan,bus){bus=bus||this.sfx;if(!pan)return bus;const s=this.ac.createStereoPanner();s.pan.value=Math.max(-1,Math.min(1,pan));s.connect(bus);return s;}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,rev=0,bus){if(!this.ac||vol<.002)return;const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(this._out(pan,bus));if(rev){const r=ac.createGain();r.gain.value=rev;g.connect(r);r.connect(this.verbIn);}s.start(t,R()*1.5);s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0,pan=0,rev=0,bus,atk=.004){if(!this.ac||vol<.002)return;const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+atk);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
-  o.connect(g);g.connect(this._out(pan,bus));if(rev){const r=ac.createGain();r.gain.value=rev;g.connect(r);r.connect(this.verbIn);}o.start(t);o.stop(t+dur+.03);}
+ _out(pan,bus){return panTo(this.ac,pan,bus||this.sfx);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,rev=0,bus){if(!this.ac||vol<.002)return;const g=hiss(this.ac,this.noise,this._out(pan,bus),this.ac.currentTime+delay,dur,f0,f1,q,vol,type);if(rev)g.connect(gain(this.ac,rev,this.verbIn));}
+ _o(type,f0,f1,dur,vol,delay=0,pan=0,rev=0,bus,atk=.004){if(!this.ac||vol<.002)return;const g=tone(this.ac,this._out(pan,bus),this.ac.currentTime+delay,type,f0,f1,dur,vol,atk);if(rev)g.connect(gain(this.ac,rev,this.verbIn));}
  note(semi,dur,vol,delay=0,type='triangle',base=110,bus){const f=base*Math.pow(2,semi/12);this._o(type,f,f*.998,dur,vol,delay,0,.5,bus||this.mus,.01);}
  /* ---------- weapons ---------- */
  shot(kind,up){if(!this.ac)return;const u=up?1.15:1;

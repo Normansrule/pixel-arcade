@@ -12,7 +12,9 @@ import {DIFF,newBrain,drive,eyeOf,chestOf} from './ai.js';
 import {Sound} from './sound.js';
 import {makeMode,MISSIONS} from './modes.js';
 import * as HUD from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rr=(a,b)=>a+Math.random()*(b-a),ang=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const D2R=Math.PI/180,GRAV=16,PR=.35,EYE=1.62,CEYE=1.05,FOV=68,PI=Math.PI;
@@ -167,25 +169,18 @@ G.refill=()=>{if(!P)return;for(const s of P.slots){s.mag=magSize(s);s.res=WEAPON
 G.placePlayer=(x,z,yaw)=>{G.respawnActor(P,x,z,yaw);P.pitch=0;};
 
 /* ---------- input ---------- */
-const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false,le:false};let locked=false;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
- if(['Space','Tab','ArrowUp','ArrowDown','KeyQ','ControlLeft'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Tab')e.preventDefault();
+const I=controls(canvas,{canLock:()=>G.app==='play'&&!G.noLock,clickThrough:true,menu:()=>G.app==='play',look:e=>I.locked||(G.app==='play'&&e.buttons&&!G.noLock),
+ onLock:(on,was)=>{if(was&&!on&&G.app==='play'&&!G.over)pause(true);},onDown:()=>{if(G.app!=='play')return true;if(G.cine){endCine();return true;}},
+ onWheel:()=>{if(G.app==='play'&&P&&P.alive&&!G.cine)queueSwap(1-P.cur);},
+ onKey:e=>{if(['Space','Tab','ArrowUp','ArrowDown','KeyQ','ControlLeft'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Tab')e.preventDefault();
  if(G.cine&&G.app==='play'&&(e.code==='Space'||e.code==='Enter')){delete edge[e.code];endCine();return;}
- if(e.code==='Escape'){if(G.app==='paused')pause(false);else if(G.app==='play'&&!G.over)pause(true);}});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
-canvas.addEventListener('mousedown',e=>{if(G.app!=='play')return;if(!locked&&!G.noLock)lockPointer();if(G.cine){endCine();return;}if(e.button===0){mouse.l=true;mouse.le=true;}if(e.button===2)mouse.r=true;});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(locked||(G.app==='play'&&e.buttons&&!G.noLock)){mouse.dx+=e.movementX;mouse.dy+=e.movementY;}});
-addEventListener('wheel',e=>{if(G.app==='play'&&P&&P.alive&&!G.cine)queueSwap(1-P.cur);},{passive:true});
-function lockPointer(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play'&&!G.over)pause(true);});
-function pause(on){if(on&&G.app==='play'){G.app='paused';HUD.showPause(true);document.body.classList.remove('playing');if(document.exitPointerLock&&locked)document.exitPointerLock();}
- else if(!on&&G.app==='paused'){G.app='play';HUD.showPause(false);document.body.classList.add('playing');if(!G.noLock)lockPointer();}}
+ if(e.code==='Escape'){if(G.app==='paused')pause(false);else if(G.app==='play'&&!G.over)pause(true);}}});
+const {keys,edge,mouse}=I;
+function pause(on){if(on&&G.app==='play'){G.app='paused';HUD.showPause(true);document.body.classList.remove('playing');I.unlock();}
+ else if(!on&&G.app==='paused'){G.app='play';HUD.showPause(false);document.body.classList.add('playing');if(!G.noLock)I.lock();}}
 G.pause=pause;
 const pad={prev:{}};
-function readPad(){const gps=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];const g=gps[0];if(!g)return null;const ax=g.axes,bt=g.buttons,dz=v=>Math.abs(v)>.15?(v-Math.sign(v)*.15)/.85:0;
+function readPad(){const g=gamepad();if(!g)return null;const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.15,true);
  const st={mx:dz(ax[0]||0),my:dz(ax[1]||0),lx:dz(ax[2]||0),ly:dz(ax[3]||0),fire:(bt[7]?.value||0)>.3,ads:(bt[6]?.value||0)>.3};const pr=pad.prev,b=i=>!!bt[i]?.pressed,e=i=>b(i)&&!pr[i];
  st.jump=e(0);st.crouchE=e(1);st.reload=b(2);st.reloadE=e(2);st.swap=e(3);st.frag=b(5);st.smoke=e(4);st.knife=e(11);st.sprint=b(10);st.start=e(9);st.back=b(8);st.k3=e(12);st.k4=e(14);st.k5=e(15);for(let i=0;i<17;i++)pr[i]=b(i);return st;}
 
@@ -394,7 +389,7 @@ let camA=0;
 function attractCam(dt){camA+=dt*.03;const r=44;cam.position.set(Math.cos(camA)*r,12+Math.sin(camA*.7)*3,Math.sin(camA)*r);cam.fov=55;cam.updateProjectionMatrix();cam.lookAt(Math.cos(camA+1.1)*6,2,Math.sin(camA+1.1)*6);}
 function cineCam(dt){const C=G.cine;C.t+=dt;let t=C.t,sh=null;for(const s of C.shots){if(t<=s.d){sh=s;break;}t-=s.d;}
  if(!sh){endCine();return;}const k=t/sh.d,e=k*k*(3-2*k);cam.position.lerpVectors(sh.a,sh.b,e);tv.lerpVectors(sh.la,sh.lb,e);cam.fov=50;cam.updateProjectionMatrix();cam.lookAt(tv);HUD.cine(G,true,C.lines,C.t);}
-function endCine(){if(!G.cine)return;G.cine=null;HUD.cine(G,false);HUD.banner(G,G.mode.label,G.mode.def?G.mode.def.tag+' · '+G.level.name:'','#ff4d00',2.4);if(!G.noLock)lockPointer();}
+function endCine(){if(!G.cine)return;G.cine=null;HUD.cine(G,false);HUD.banner(G,G.mode.label,G.mode.def?G.mode.def.tag+' · '+G.level.name:'','#ff4d00',2.4);if(!G.noLock)I.lock();}
 
 /* ================= match flow ================= */
 const MAP_ALIAS={blacksite:'northwatch',outpost:'sandgate'};
@@ -402,13 +397,13 @@ function start(o={}){if(document.activeElement&&document.activeElement.blur)docu
  G.diffI=opt.diff;G.diff=DIFF[opt.diff];if(G.mode&&G.mode.dispose)G.mode.dispose();clearActors();fx.clear();for(const n of G.nades)scene.remove(n.m);G.nades=[];G.noises=[];resetStreakFx();
  G.time=0;G.over=null;G.marks=[];G.matchXP=0;G.cine=null;G.pickFlag=null;G.mode=makeMode(G,opt);loadMap(G.mode.map);G.app='play';G.mode.init();if(P){P.ks={uav:0,air:0,drone:0};P.streak=0;}
  HUD.startMatch(G);snd.ambience(look.amb,true);document.body.classList.add('playing');
- if(G.mode.intro&&!o.noIntro&&!G.skipIntro){G.cine={...G.mode.intro,t:0};HUD.cine(G,true,G.cine.lines,0);}else if(!G.noLock)lockPointer();
+ if(G.mode.intro&&!o.noIntro&&!G.skipIntro){G.cine={...G.mode.intro,t:0};HUD.cine(G,true,G.cine.lines,0);}else if(!G.noLock)I.lock();
  if(!G.cine)HUD.banner(G,G.mode.label,G.mode.def?G.mode.def.tag+' · '+G.level.name:G.level.name,'#ff4d00',2.4);}
 G.start=start;
 function resetStreakFx(){G.streak={uav:0,air:null,drone:null,euav:0,designate:false};droneMesh.visible=false;uavMesh.visible=false;markRing.visible=false;laser.visible=false;jets.forEach(j=>j.visible=false);for(const b of bombs)scene.remove(b.m);bombs.length=0;}
 function menuMapId(){return opt.mode==='campaign'?MISSIONS[opt.mission||0].map:opt.map;}
 function toMenu(){if(G.mode&&G.mode.dispose)G.mode.dispose();G.app='menu';G.over=null;G.cine=null;clearActors();fx.clear();for(const n of G.nades)scene.remove(n.m);G.nades=[];G.mode=null;G.marks=[];resetStreakFx();
- G.diff=DIFF[1];G.diffI=1;attractSquads();snd.ambience(look.amb,false);HUD.showMenu(G);document.body.classList.remove('playing');if(document.exitPointerLock&&locked)document.exitPointerLock();}
+ G.diff=DIFF[1];G.diffI=1;attractSquads();snd.ambience(look.amb,false);HUD.showMenu(G);document.body.classList.remove('playing');I.unlock();}
 function attractSquads(){clearActors();loadMap(menuMapId());const L=G.level;for(let t=0;t<2;t++){const pts=t?L.spawns.b:L.spawns.a;G.names(t,5).forEach((n,i)=>{const p=pts[i];makeActor({team:t,x:p[0],z:p[1],role:'tdm',squad:t*2+(i>2?1:0),weapon:G.pickWeapon(t),name:n});});}}
 G.menuMap=()=>{if(G.app==='menu'&&G.level&&G.level.id!==menuMapId())attractSquads();};
 G.toMenu=toMenu;
@@ -416,12 +411,11 @@ G.endMatch=(res,title,sub)=>{if(G.over)return;G.over={res,title,sub,t:0};G.phase
 function finish(){const m=G.mode,me=P;const pts=Math.max(0,Math.round(m.points?m.points():me?me.stats.score:0));const won=G.over.res==='win';
  const before=prog.xp;prog.xp+=pts;try{localStorage.setItem('pxd_frontline_prog',JSON.stringify(prog));}catch(e){}
  const tok=award(pts,won);G.lastAward={pts,won,mode:m.kind,label:m.label,kills:me?me.stats.kills:0,deaths:me?me.stats.deaths:0,heads:me?me.stats.heads:0,diff:G.diff.n,res:G.over.res,xpBefore:before,xpAfter:prog.xp,tok,map:G.level.name};
- G.app='over';document.body.classList.remove('playing');if(document.exitPointerLock&&locked)document.exitPointerLock();HUD.showOver(G);}
+ G.app='over';document.body.classList.remove('playing');I.unlock();HUD.showOver(G);}
 function award(pts,won){const tok=5+Math.min(60,pts/40|0);addRound(tok,won);saveBest('frontline',pts);return tok;}
 G.best=()=>bestScore('frontline');
-G.postScore=()=>{const a=G.lastAward||{};const u=userName();
- const body=`Game: Frontline Ops\nPoints: ${a.pts||0}\nResult: ${a.res||''}\nMode: ${a.label||a.mode||''} · ${a.map||''} · ${a.diff||''}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0} · Headshots: ${a.heads||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('frontline',a.pts||0,body);};
+postButton($('post'),'frontline',()=>{const a=G.lastAward||{};
+ return[a.pts||0,`Game: Frontline Ops\nPoints: ${a.pts||0}\nResult: ${a.res||''}\nMode: ${a.label||a.mode||''} · ${a.map||''} · ${a.diff||''}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0} · Headshots: ${a.heads||0}`];});
 
 /* ================= main step ================= */
 function step(dt){dt=Math.min(dt,.1);

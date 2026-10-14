@@ -14,7 +14,9 @@ import {Particles,Beams,Shocks,Decals,LightPool} from './fx.js';
 import {Sound} from './sound.js';
 import {BOTDIFF,CALLSIGNS,newBrain,think} from './ai.js';
 import {HUD,TEAMCSS} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),C=(r,g,b)=>new THREE.Color(r,g,b);
 const MODES={ffa:{n:'FREE-FOR-ALL',caps:[15,25,40],team:false,resp:3,ann:'Free for all'},team:{n:'TEAM SLAYER',caps:[30,50,75],team:true,resp:4,ann:'Team slayer'},koth:{n:'KING OF THE HILL',caps:[60,100,150],team:true,resp:4,ann:'King of the hill'}};
@@ -37,7 +39,7 @@ const parts=new Particles(scene,5000),smoke=new Particles(scene,1400,true),beams
 const G={app:'menu',phase:'countdown',opt:{mode:'ffa',map:0,diff:1,time:8,cap:1,sens:1,fov:100,vol:.8,mus:.6,ann:1},fighters:[],me:null,time:0,clock:480,cdT:3,goT:0,endT:0,teamScore:[0,0],cap:25,M:MODES.ffa,mode:'ffa',
  D:null,W:null,S:null,mapDef:MAPS[0],items:[],proj:[],noise:null,hillIdx:0,hillT:60,hillState:{owner:-1,contested:false},hillAcc:0,hurtFx:0,shake:0,attract:true,firstBlood:false,timeScale:1,lastLead:null,annQ:[],
  aimTarget:null,aimFoe:false,aimAlly:false,ann1min:false,ann30:false,results:null};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_novaarena_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_novaarena_opt',G.opt);
 G.enemy=(a,b)=>a!==b&&(!G.M.team||a.team!==b.team);G.hill=()=>G.mode==='koth'&&G.D?G.D.hills[G.hillIdx]:null;
 G.inHill=f=>{const h=G.hill();return h&&f.alive&&Math.hypot(f.pos.x-h.p.x,f.pos.z-h.p.z)<h.r&&f.pos.y>h.p.y-1&&f.pos.y<h.p.y+3.5;};
 const hud=new HUD(G);
@@ -288,7 +290,7 @@ function die(f,k,o={}){if(!f.alive)return;f.alive=false;f.respawnT=G.M.resp;f.st
  if(f===G.me){G.hurtFx=.8;f.zoom=0;f.model.root.visible=true;camPos.copy(cam.position);}
  checkCap();}
 function medal(f,name,col,glyph,multi){if(!f)return;f.stats.medals[name]=(f.stats.medals[name]||0)+1;if(f===G.me){hud.medal(name,col,glyph);snd.play('medal');if(multi||name==='FIRST STRIKE'||name==='HEADSHOT'&&Math.random()<.3||name==='ASSASSIN'||name==='SHUTDOWN')ann(name.toLowerCase());}}
-function feedSys(t){const d=document.createElement('div');d.innerHTML=`<span class="w" style="margin:0">${t}</span>`;$('feed').prepend(d);setTimeout(()=>d.remove(),4200);}
+function feedSys(t){toast($('feed'),`<span class="w" style="margin:0">${t}</span>`,4200);}
 let msgT=0;function hudMsg(t){hud.prompt(`<span style="color:#9fe8ff">${t}</span>`);msgT=1.2;}
 function ann(t){if(G.attract)return;G.annQ.push(t);}
 
@@ -328,7 +330,7 @@ function award(me,won,place){const s=me.stats,mc=Object.values(s.medals).reduce(
  lastAward={pts,won,place,kills:s.kills,deaths:s.deaths,mode:G.mode,map:G.mapDef.name,diff:BOTDIFF[G.opt.diff].n.toLowerCase(),team:G.teamScore.map(Math.floor).join('-')};
  const tok=5+Math.min(60,pts/40|0);addRound(tok,won);saveBest('novaarena',pts);return tok;}
 function best(){return bestScore('novaarena');}
-function showBest(){if(typeof segSync!=='undefined')segSync.forEach(f=>f());const b=best();$('best').textContent=b?`YOUR BEST · ${b} PTS`:'';$('mapdesc').textContent=MAPS[G.opt.map].sub+' — '+MAPS[G.opt.map].desc;}
+function showBest(){seg.sync();const b=best();$('best').textContent=b?`YOUR BEST · ${b} PTS`:'';$('mapdesc').textContent=MAPS[G.opt.map].sub+' — '+MAPS[G.opt.map].desc;}
 
 /* ================= game loop ================= */
 function stepMatch(dt){
@@ -381,21 +383,9 @@ function visuals(dt){parts.update(dt);smoke.update(dt);beams.update(dt);shocks.u
  if(G.app==='play'&&me){if(msgT<=0){const n=me.alive&&me.near;if(n){const w=WPN[n.it.w];hud.prompt(me.weapons.some(x=>x.id===n.it.w)?'':`HOLD <kbd>E</kbd> TO SWAP FOR ${w.name}`);}else hud.prompt('');}me.near=null;cam.updateMatrixWorld();hud.update(dt,cam);hud.board(keys.Tab||padBoard);}}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false,wheel:0},mouseVis={dx:0,dy:0};let locked=false,padBoard=false;
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;$('lock').hidden=locked||G.app!=='play';if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',e=>{if(G.app==='play'&&!locked){lock();return;}if(e.button===0)mouse.l=true;if(e.button===2)mouse.r=true;});
-$('lock').onclick=()=>lock();
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app==='play'&&locked)mouse.wheel+=Math.sign(e.deltaY);},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
- if(['Space','Tab','ControlLeft','KeyQ'].includes(e.code)&&G.app==='play')e.preventDefault();
- if(e.code==='Escape'&&G.app==='paused'){pause(false);}});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+const I=controls(canvas,{canLock:()=>G.app==='play',overlay:$('lock'),menu:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onKey:e=>{if(['Space','Tab','ControlLeft','KeyQ'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused'){pause(false);}}});
+const {keys,edge,mouse}=I,{lock,unlock}=I,mouseVis={dx:0,dy:0};let padBoard=false;
 let padPrev={};
 function readInput(dt){const me=G.me;const ed=k=>edge[k];
  if(me&&G.app==='play'){const i=me.inp;const sens=G.opt.sens*.0022*(1/(1+(me.zoom*((WPN[me.weapons[me.wi]?.id]?.zoom||1)-1))));
@@ -403,17 +393,17 @@ function readInput(dt){const me=G.me;const ed=k=>edge[k];
   i.jump=!!keys.Space;i.jumpEdge=!!ed('Space');i.sprint=!!(keys.ShiftLeft||keys.ShiftRight);i.slide=!!(ed('KeyC')||ed('ControlLeft'));i.fire=mouse.l;i.zoom=mouse.r;
   i.reload=!!ed('KeyR');i.melee=!!(ed('KeyF')||ed('KeyV'));i.nade=!!ed('KeyQ');i.swap=!!(ed('Digit1')&&me.wi!==0||ed('Digit2')&&me.wi!==1||mouse.wheel!==0);mouse.wheel=0;i.interact=!!keys.KeyE;
   if(ed('KeyX'))me.nadeSel=me.nadeSel==='frag'?'plasma':'frag';
-  if(locked&&me.alive){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.5,1.5);}mouseVis.dx+=mouse.dx;mouseVis.dy+=mouse.dy;mouse.dx=mouse.dy=0;
+  if(I.locked&&me.alive){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.5,1.5);}mouseVis.dx+=mouse.dx;mouseVis.dy+=mouse.dy;mouse.dx=mouse.dy=0;
   // gamepad
-  const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const a=gp.axes,b=gp.buttons,dz=v=>Math.abs(v)>.15?v:0,pr=padPrev;const P=n=>b[n]&&b[n].pressed;
+  const gp=gamepad();if(gp){const a=gp.axes,b=gp.buttons,dz=deadzone,pr=padPrev;const P=n=>b[n]&&b[n].pressed;
    if(dz(a[1])||dz(a[0])){i.fwd=-dz(a[1]);i.side=dz(a[0]);}const lx=dz(a[2]||0),ly=dz(a[3]||0),zf=1+me.zoom*2;me.yaw-=lx*Math.abs(lx)*3.4*G.opt.sens*dt/zf;me.pitch=cl(me.pitch-ly*Math.abs(ly)*2.6*G.opt.sens*dt/zf,-1.5,1.5);
    if(P(0))i.jump=true;if(P(0)&&!pr[0])i.jumpEdge=true;if((b[7]?.value||0)>.3)i.fire=true;if((b[6]?.value||0)>.3)i.zoom=true;if(P(1)&&!pr[1])i.slide=true;if(P(10))i.sprint=true;
    if(P(2)&&!pr[2])i.reload=true;if(P(2))i.interact=true;if(P(3)&&!pr[3])i.swap=true;if(P(5)&&!pr[5])i.nade=true;if(P(4)&&!pr[4])me.nadeSel=me.nadeSel==='frag'?'plasma':'frag';if(P(11)&&!pr[11])i.melee=true;
    if(P(9)&&!pr[9])pause(true);padBoard=!!P(8);for(let k=0;k<17;k++)pr[k]=P(k);}
   if(G.inOv)Object.assign(i,G.inOv);if(G.inOnce){Object.assign(i,G.inOnce);G.inOnce=null;}
   if(i.interact)me.swapHold+=dt;else me.swapHold=0;}
- else if(G.app==='paused'){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp&&gp.buttons[9]?.pressed&&!padPrev[9])pause(false);if(gp)padPrev[9]=gp.buttons[9]?.pressed;}
- for(const k in edge)delete edge[k];}
+ else if(G.app==='paused'){const gp=gamepad();if(gp&&gp.buttons[9]?.pressed&&!padPrev[9])pause(false);if(gp)padPrev[9]=gp.buttons[9]?.pressed;}
+ I.flush();}
 function pause(on){if(on&&G.app==='play'){G.app='paused';$('pause').hidden=false;$('lock').hidden=true;document.body.classList.remove('playing');unlock();snd.jet(false);}
  else if(!on&&G.app==='paused'){G.app='play';$('pause').hidden=true;document.body.classList.add('playing');lock();}}
 
@@ -432,14 +422,12 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 
 /* ================= menus ================= */
-function saveOpt(){try{localStorage.setItem('pxd_novaarena_opt',JSON.stringify(G.opt));}catch(e){}}
-const segSync=[];const seg=(id,key,num=true,cb)=>{const el=$(id);segSync.push(()=>el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(G.opt[key]))));const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(v)));if(!init){saveOpt();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
+const seg=pickers(G.opt,saveOpt);
 seg('o-mode','mode',false);seg('o-map','map',true,()=>{if(G.app==='menu')attractMode();});seg('o-diff','diff');seg('o-time','time');seg('o-cap','cap');
 seg('o-sens','sens');seg('o-fov','fov');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-mus','mus',true,v=>{snd.setMusic(v);snd.music(v>0&&G.app!=='menu',0);});seg('o-ann','ann',true,v=>snd.annOn=!!v);
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Nova Arena\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'}${a.mode==='ffa'?' · place '+(a.place||'-'):' · '+(a.team||'')}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0}\nMode: ${(MODES[a.mode]||{}).n||''} · ${a.map||''} · ${a.diff||''} bots\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('novaarena',a.pts||0,body);};
+postButton($('post'),'novaarena',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Nova Arena\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'}${a.mode==='ffa'?' · place '+(a.place||'-'):' · '+(a.team||'')}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0}\nMode: ${(MODES[a.mode]||{}).n||''} · ${a.map||''} · ${a.diff||''} bots`];});
 
 /* ================= boot ================= */
 attractMode();

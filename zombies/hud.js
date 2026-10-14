@@ -1,6 +1,7 @@
 // NIGHTFALL — heads-up display: round tally, points with pop-ups, dawn clock, weapon + ammo, perks, power-ups, prompts, markers, hit markers.
 import * as THREE from '../vendor/three.module.min.js';
 import {perkIcon} from './map.js';
+import {toast} from '../js/kit3d/ui.js';
 const $=id=>document.getElementById(id);
 export const mmss=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 const PUP={ammo:{n:'AMMO CACHE',c:'#9be24a'},double:{n:'DOUBLE BOUNTY',c:'#ffd04a'},insta:{n:'DEATHTOUCH',c:'#ff5a3a'},nuke:{n:'DAYBREAK FLARE',c:'#ffb340'},board:{n:'BOARD UP',c:'#c8a070'}};
@@ -12,7 +13,7 @@ export class HUD{
  show(on){$('hud').hidden=!on;}
  set(id,v){if(this.c[id]!==v){this.c[id]=v;$(id).textContent=v;}}
  banner(t,s,col='#ff4d00',dur=2.4){$('bt').textContent=t;$('bt').style.color=col;$('bs').textContent=s||'';$('bs').style.display=s?'':'none';const b=$('banner');b.classList.remove('on');void b.offsetWidth;b.classList.add('on');this.banT=dur;}
- feed(t,cls=''){const d=document.createElement('div');d.textContent=t;d.className=cls;this.feedEl.prepend(d);setTimeout(()=>d.remove(),4200);while(this.feedEl.children.length>5)this.feedEl.lastChild.remove();}
+ feed(t,cls=''){const d=toast(this.feedEl,'',4200,5);d.textContent=t;d.className=cls;}
  points(n){const d=document.createElement('i');d.textContent=(n>0?'+':'')+n;if(n<0)d.className='neg';else if(n>=100)d.className='big';d.style.left=(Math.random()*40)+'px';this.pop.appendChild(d);setTimeout(()=>d.remove(),900);while(this.pop.children.length>8)this.pop.firstChild.remove();}
  hitmark(kind){const h=$('hit');h.className='on '+(kind||'');void h.offsetWidth;this.hitT=.18;}
  hurt(ang){const d=document.createElement('i');d.style.transform=`translate(-50%,-50%) rotate(${ang}rad)`;$('dmgind').appendChild(d);setTimeout(()=>d.remove(),1100);}

@@ -15,7 +15,9 @@ import {Particles,Drops,Beams,Shocks,Shots,LightPool} from './fx.js';
 import {Sound} from './sound.js';
 import {BOTDIFF,NAMES,newBrain,think} from './ai.js';
 import {HUD} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);const GID='glossriot';
 export const PALS=[{n:['TANGERINE','COBALT'],c:['#ff7a14','#2f5cff']},{n:['BUBBLEGUM','LIME'],c:['#ff2f92','#7ee01c']},{n:['LEMON','GRAPE'],c:['#ffcf14','#8a3cff']},{n:['TEAL','CORAL'],c:['#10cbbb','#ff5236']}];
@@ -33,7 +35,7 @@ const parts=new Particles(scene,1500),drops=new Drops(scene,3500),beams=new Beam
 /* ================= state ================= */
 const G={app:'menu',phase:'countdown',opt:{mode:'turf',map:0,wpn:'splatter',diff:1,pal:0,sens:1,vol:.8,mus:.6},fighters:[],me:null,time:0,clock:MATCH_T,cdT:3,endT:0,M:MODES.turf,mode:'turf',
  D:null,W:null,P:null,S:null,proj:[],bombs:[],hurtFx:0,shake:0,attract:true,timeScale:1,aimP:new V(),aimTarget:null,aimFoe:false,zone:{owner:-1,count:[100,100]},results:null,pal:PALS[0],cols:[new THREE.Color(),new THREE.Color()]};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_glossriot_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_glossriot_opt',G.opt);
 const hud=new HUD(G);
 
 /* ================= maps ================= */
@@ -237,7 +239,7 @@ function stepTally(dt){const T=G.tally;if(!T)return;T.t+=dt;const k=cl(T.t/3.1,0
  if(T.revealed&&T.t>4.2&&!T.after){T.after=true;$('oafter').classList.add('on');}}
 function confetti(col){const box=$('confetti');for(let i=0;i<70;i++){const c=document.createElement('i');c.style.left=Math.random()*100+'%';c.style.background=Math.random()<.7?col:'#fff';c.style.animationDuration=(2+Math.random()*2.5)+'s';c.style.animationDelay=Math.random()*.8+'s';c.style.transform=`scale(${.6+Math.random()*.9})`;box.appendChild(c);}}
 let lastAward=null;
-function showBest(){segSync.forEach(f=>f());const b=bestScore(GID);$('best').textContent=b?`YOUR BEST · ${b} PTS`:'';$('mapdesc').textContent=MAPS[G.opt.map].sub+' — '+MAPS[G.opt.map].desc+'  ·  '+WPN[G.opt.wpn].name+': '+WPN[G.opt.wpn].desc;}
+function showBest(){seg.sync();const b=bestScore(GID);$('best').textContent=b?`YOUR BEST · ${b} PTS`:'';$('mapdesc').textContent=MAPS[G.opt.map].sub+' — '+MAPS[G.opt.map].desc+'  ·  '+WPN[G.opt.wpn].name+': '+WPN[G.opt.wpn].desc;}
 
 /* ================= visuals: models, camera, fx ================= */
 const camPos=new V();let orbitA=0,camY=null,camDist=4;
@@ -271,31 +273,22 @@ function visuals(dt){parts.update(dt);drops.update(dt);beams.update(dt);shocks.u
   cam.lookAt(0,over?-2:0,0);cam.fov=over?58:60;cam.aspect=aspect;cam.updateProjectionMatrix();cam.updateMatrixWorld();snd.listener(cam.position.x,cam.position.y,cam.position.z,0);snd.loops(0,0);}}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false};let locked=false,padBoard=false;
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;$('lock').hidden=locked||G.app!=='play';if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',e=>{if(G.app==='play'&&!locked){lock();return;}if(e.button===0)mouse.l=true;if(e.button===2)mouse.r=true;});
-$('lock').onclick=()=>lock();
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;if(['Space','Tab','ShiftLeft','KeyQ'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused')pause(false);});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+const I=controls(canvas,{canLock:()=>G.app==='play',overlay:$('lock'),menu:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onKey:e=>{if(['Space','Tab','ShiftLeft','KeyQ'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused')pause(false);}});
+const {keys,edge,mouse,lock,unlock}=I;let padBoard=false;
 const padPrev={};
 function readInput(dt){const me=G.me;const ed=k=>edge[k];
  if(me&&G.app==='play'){const i=me.inp;const sens=G.opt.sens*.0022;
   i.fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);i.side=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
   i.jump=!!keys.Space;i.jumpEdge=!!ed('Space');i.swim=!!(keys.ShiftLeft||keys.ShiftRight||keys.ControlLeft);i.fire=mouse.l;i.sub=mouse.r||!!keys.KeyQ;i.special=!!(ed('KeyE')||ed('KeyF'));
-  if(locked&&me.alive){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.3,1.15);}mouse.dx=mouse.dy=0;
-  const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const a=gp.axes,b=gp.buttons,dz=v=>Math.abs(v)>.15?v:0,P=n=>b[n]&&b[n].pressed;
+  if(I.locked&&me.alive){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.3,1.15);}mouse.dx=mouse.dy=0;
+  const gp=gamepad();if(gp){const a=gp.axes,b=gp.buttons,dz=deadzone,P=n=>b[n]&&b[n].pressed;
    if(dz(a[1])||dz(a[0])){i.fwd=-dz(a[1]);i.side=dz(a[0]);}const lx=dz(a[2]||0),ly=dz(a[3]||0);me.yaw-=lx*Math.abs(lx)*3.2*G.opt.sens*dt;me.pitch=cl(me.pitch-ly*Math.abs(ly)*2.4*G.opt.sens*dt,-1.3,1.15);
    if(P(0))i.jump=true;if(P(0)&&!padPrev[0])i.jumpEdge=true;if((b[7]?.value||0)>.3)i.fire=true;if((b[6]?.value||0)>.3)i.swim=true;if(P(5))i.sub=true;if(P(3)&&!padPrev[3]||P(4)&&!padPrev[4])i.special=true;
    if(P(9)&&!padPrev[9])pause(true);padBoard=!!P(8);for(let k=0;k<17;k++)padPrev[k]=P(k);}
   if(G.inOv)Object.assign(i,G.inOv);if(G.inOnce){Object.assign(i,G.inOnce);G.inOnce=null;}}
- else if(G.app==='paused'){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp&&gp.buttons[9]?.pressed&&!padPrev[9])pause(false);if(gp)padPrev[9]=gp.buttons[9]?.pressed;}
- for(const k in edge)delete edge[k];}
+ else if(G.app==='paused'){const gp=gamepad();if(gp&&gp.buttons[9]?.pressed&&!padPrev[9])pause(false);if(gp)padPrev[9]=gp.buttons[9]?.pressed;}
+ I.flush();}
 function pause(on){if(on&&G.app==='play'){G.app='paused';$('pause').hidden=false;$('lock').hidden=true;document.body.classList.remove('playing');unlock();snd.loops(0,0);}
  else if(!on&&G.app==='paused'){G.app='play';$('pause').hidden=true;document.body.classList.add('playing');lock();}}
 
@@ -314,15 +307,12 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 
 /* ================= menus ================= */
-function saveOpt(){try{localStorage.setItem('pxd_glossriot_opt',JSON.stringify(G.opt));}catch(e){}}
-const segSync=[];const seg=(id,key,num=true,cb)=>{const el=$(id);const sync=()=>el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(G.opt[key])));segSync.push(sync);
- el.querySelectorAll('button').forEach(b=>b.onclick=()=>{G.opt[key]=num?+b.dataset.v:b.dataset.v;sync();saveOpt();cb&&cb(G.opt[key]);});sync();};
+const seg=pickers(G.opt,saveOpt);
 seg('o-mode','mode',false);seg('o-map','map',true,()=>{if(G.app==='menu')attractMode();});seg('o-wpn','wpn',false,()=>showBest());seg('o-diff','diff');seg('o-pal','pal',true,()=>{if(G.app==='menu'){setCols();G.P.setColors(G.pal.c);G.S.recolor(G.pal.c);for(const f of G.fighters){f.model.setColor(G.cols[f.team]);f.gun.traverse(o=>{if(o.material&&o.material.emissive&&o.material.roughness<.2){o.material.color.copy(G.cols[f.team]);o.material.emissive.copy(G.cols[f.team]);}});}}});
 seg('o-sens','sens');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-mus','mus',true,v=>{snd.setMusic(v);snd.music(v>0&&G.app!=='menu',0);});
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Gloss Riot\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} · ${(MODES[a.mode]||{}).n||''}\nTurf: ${a.turf?a.turf.map(x=>(x*100).toFixed(1)+'%').join(' vs '):''}\nInked: ${a.turfP||0}p · Splats: ${a.splats||0} · Deaths: ${a.deaths||0}\nWeapon: ${a.wpn||''} · ${a.map||''} · ${a.diff||''} crews\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(GID,a.pts||0,body);};
+postButton($('post'),GID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Gloss Riot\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} · ${(MODES[a.mode]||{}).n||''}\nTurf: ${a.turf?a.turf.map(x=>(x*100).toFixed(1)+'%').join(' vs '):''}\nInked: ${a.turfP||0}p · Splats: ${a.splats||0} · Deaths: ${a.deaths||0}\nWeapon: ${a.wpn||''} · ${a.map||''} · ${a.diff||''} crews`];});
 
 /* ================= boot ================= */
 setCols();attractMode();

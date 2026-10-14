@@ -3,6 +3,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {V,fmt,cl} from './util.js';
 import {WPN} from './weapons.js';
+import {toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 export class HUD{
@@ -12,9 +13,8 @@ export class HUD{
  reset(){const G=this.G,E=this.el;E.feed.innerHTML='';E.dmg.innerHTML='';this.c={};E.modeTag.textContent=G.M.n;E.dead.hidden=true;E.board.hidden=true;E.zonebar.hidden=G.mode!=='zone';this.icons.clear();
   for(const t of[0,1]){const box=E['sq'+t];box.innerHTML='';for(const f of G.fighters.filter(f=>f.team===t)){const i=document.createElement('i');i.style.setProperty('--c',G.pal.c[t]);i.textContent=WPN[f.wpn].glyph;if(f===G.me)i.className='me';box.appendChild(i);this.icons.set(f,i);}}
   const[x0,x1,z0,z1]=G.D.def.bounds;const asp=(x1-x0)/(z1-z0);E.mini.height=320;E.mini.width=Math.round(320*asp);this.banT=0;E.banner.classList.remove('on');}
- feed(k,v,how,mine){const G=this.G,d=document.createElement('div');const col=f=>G.pal.c[f.team];
-  d.innerHTML=(k?`<span style="color:${col(k)}">${k.name}</span><span class="w">${how}</span>`:`<span class="w">${how}</span>`)+`<span style="color:${col(v)}">${v.name}</span>`;if(mine)d.className='me';
-  this.el.feed.prepend(d);setTimeout(()=>d.remove(),5000);while(this.el.feed.children.length>6)this.el.feed.lastChild.remove();}
+ feed(k,v,how,mine){const G=this.G;const col=f=>G.pal.c[f.team];
+  const d=toast(this.el.feed,(k?`<span style="color:${col(k)}">${k.name}</span><span class="w">${how}</span>`:`<span class="w">${how}</span>`)+`<span style="color:${col(v)}">${v.name}</span>`,5000,6);if(mine)d.className='me';}
  banner(t,s='',dur=1.6,col){const e=this.el.banner;e.querySelector('b').textContent=t;e.querySelector('b').style.color=col||'';const sp=e.querySelector('span');sp.textContent=s;sp.style.display=s?'':'none';e.classList.add('on');this.banT=dur;}
  hit(kind){this.el.hitm.className=kind||'';this.hitT=kind==='k'?.45:.2;}
  damageFrom(ang){const i=document.createElement('i');i.style.transform=`rotate(${ang}rad)`;this.el.dmg.appendChild(i);setTimeout(()=>i.remove(),1000);while(this.el.dmg.children.length>5)this.el.dmg.firstChild.remove();}

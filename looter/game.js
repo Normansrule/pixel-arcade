@@ -19,7 +19,9 @@ import {DIFF,ALLY_NAMES,newBrain,thinkGuardian,thinkFoe} from './ai.js';
 import {HUD} from './hud.js';
 import {Orbit,itemCard} from './ui.js';
 import {orbTex,hexTex} from './tex.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),C=(r,g,b)=>new THREE.Color(r,g,b);
 const tv=new V(),tv2=new V(),tv3=new V(),UP=new V(0,1,0);
@@ -47,7 +49,7 @@ const glowSpr=orbTex(),hexT=hexTex();
 const G={app:'menu',phase:'countdown',opt:{dest:0,diff:1,time:15,sens:1,fov:100,vol:.8,mus:.6},save:loadSave(),team:[],me:null,foes:[],proj:[],eproj:[],drops:[],nums:[],time:0,clock:900,cdT:3,
  dif:DIFF[1],dest:DEST[0],D:null,W:null,S:null,stage:'patrol',power:100,lvl:100,hpMul:1,inMul:1,hurtFx:0,shake:0,timeScale:1,auto:false,loot:[],boss:null,chest:null,ck:0,wave:-1,waveT:0,beaconK:0,beaconW:0,
  objT:'',objS:'',objP:null,objPos:null,objTag:'',patrolN:0,results:null,endT:0,wipeT:0,addT:0,group:0,aimFoe:false,kills:0,pts:0,ptsKill:0,events:[]};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('looter_opt'))||{});}catch(e){}
+const saveOpt=stored('looter_opt',G.opt);
 G.opt.dest=cl(G.opt.dest|0,0,DEST.length-1);
 const hud=new HUD(G);
 const log=t=>{G.events.push([Math.round(G.time*10)/10,t]);if(G.events.length>200)G.events.shift();};
@@ -533,34 +535,24 @@ function visuals(dt){parts.update(dt);smoke.update(dt);beams.update(dt);shocks.u
  if(G.app==='play'&&me){let pr=G.prm||'';if(!pr){const dn=G.team.find(o=>o!==me&&o.downed&&o.pos.distanceTo(me.pos)<2.6);if(dn)pr=`HOLD <kbd>E</kbd> TO REVIVE ${dn.name}`;else if(me.superK>=1&&me.superT<=0)pr='';}hud.prompt(pr);G.prm='';cam.updateMatrixWorld();hud.update(dt,cam);}}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false,wheel:0},mouseVis={dx:0,dy:0};let locked=false;
-function lock(){if(G.app!=='play'||G.auto)return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;$('lock').hidden=locked||G.app!=='play'||G.auto;if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',e=>{if(G.app==='play'&&!locked&&!G.auto){lock();return;}if(e.button===0)mouse.l=true;if(e.button===2)mouse.r=true;});
-$('lock').onclick=()=>lock();
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app==='play'&&locked)mouse.wheel+=Math.sign(e.deltaY);},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;if(['Space','Tab','ControlLeft','KeyQ'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused')pause(false);});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+const I=controls(canvas,{canLock:()=>G.app==='play'&&!G.auto,overlay:$('lock'),menu:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onKey:e=>{if(['Space','Tab','ControlLeft','KeyQ'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused')pause(false);}});
+const {keys,edge,mouse,lock,unlock}=I,mouseVis={dx:0,dy:0};
 const padPrev={};
 function readInput(dt){const me=G.me;const ed=k=>edge[k];
  if(me&&G.app==='play'&&!me.ai){const i=me.inp;const zA=me.weapons[me.wi].st.zoom||1;const sens=G.opt.sens*.0022/(1+me.zoom*(zA-1));
   i.fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);i.side=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
   i.jump=!!keys.Space;i.jumpEdge=!!ed('Space');i.sprint=!!(keys.ShiftLeft||keys.ShiftRight);i.slide=!!(ed('KeyC')||ed('ControlLeft'));i.fire=mouse.l;i.zoom=mouse.r;
   i.reload=!!ed('KeyR');i.melee=!!(ed('KeyF')||ed('KeyV'));i.nade=!!ed('KeyQ');i.sup=!!ed('KeyX');i.interact=!!keys.KeyE;i.sel=ed('Digit1')?0:ed('Digit2')?1:ed('Digit3')?2:mouse.wheel?(me.wi+(mouse.wheel>0?1:2))%3:-1;mouse.wheel=0;
-  if(locked&&me.alive&&!me.downed){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.5,1.5);}mouseVis.dx+=mouse.dx;mouseVis.dy+=mouse.dy;mouse.dx=mouse.dy=0;
-  const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const a=gp.axes,b=gp.buttons,dz=v=>Math.abs(v)>.15?v:0,pr=padPrev;const P=n=>b[n]&&b[n].pressed;
+  if(I.locked&&me.alive&&!me.downed){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.5,1.5);}mouseVis.dx+=mouse.dx;mouseVis.dy+=mouse.dy;mouse.dx=mouse.dy=0;
+  const gp=gamepad();if(gp){const a=gp.axes,b=gp.buttons,dz=deadzone,pr=padPrev;const P=n=>b[n]&&b[n].pressed;
    if(dz(a[1])||dz(a[0])){i.fwd=-dz(a[1]);i.side=dz(a[0]);}const lx=dz(a[2]||0),ly=dz(a[3]||0),zf=1+me.zoom*2;me.yaw-=lx*Math.abs(lx)*3.4*G.opt.sens*dt/zf;me.pitch=cl(me.pitch-ly*Math.abs(ly)*2.6*G.opt.sens*dt/zf,-1.5,1.5);
    if(P(0))i.jump=true;if(P(0)&&!pr[0])i.jumpEdge=true;if((b[7]?.value||0)>.3)i.fire=true;if((b[6]?.value||0)>.3)i.zoom=true;if(P(1)&&!pr[1])i.slide=true;if(P(10))i.sprint=true;
    if(P(2)&&!pr[2])i.reload=true;if(P(2))i.interact=true;if(P(3)&&!pr[3])i.sel=(me.wi+1)%3;if(P(4)&&!pr[4])i.nade=true;if(P(5)&&!pr[5])i.melee=true;if(P(11)&&!pr[11])i.sup=true;if(P(9)&&!pr[9])pause(true);for(let k=0;k<17;k++)pr[k]=P(k);}
   if(G.inOv)Object.assign(i,G.inOv);if(G.inOnce){Object.assign(i,G.inOnce);G.inOnce=null;}}
- for(const k in edge)delete edge[k];}
+ I.flush();}
 function pause(on){if(on&&G.app==='play'){G.app='paused';$('pause').hidden=false;$('lock').hidden=true;document.body.classList.remove('playing');unlock();}
- else if(!on&&G.app==='paused'){G.app='play';$('pause').hidden=true;document.body.classList.add('playing');$('lock').hidden=locked||G.auto;lock();}}
+ else if(!on&&G.app==='paused'){G.app='play';$('pause').hidden=true;document.body.classList.add('playing');$('lock').hidden=I.locked||G.auto;lock();}}
 
 /* ================= rendering ================= */
 class VMPass extends Pass{constructor(){super();this.needsSwap=false;}render(r,wb,rb){if(!VM.root.visible||G.app!=='play'&&G.app!=='paused')return;const ac=r.autoClear;r.autoClear=false;r.setRenderTarget(this.renderToScreen?null:rb);r.clearDepth();r.render(vmScene,vmCam);r.autoClear=ac;}}
@@ -578,14 +570,13 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 
 /* ================= menus ================= */
-function saveOpt(){try{localStorage.setItem('looter_opt',JSON.stringify(G.opt));}catch(e){}}
-const seg=(id,key,num=true,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(v)));if(!init){saveOpt();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
+const seg=pickers(G.opt,saveOpt);
 seg('o-diff','diff',true,()=>orbit.render());seg('o-time','time');seg('o-sens','sens');seg('o-fov','fov');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-mus','mus',true,v=>{snd.setMusic(v);snd.music(v>0&&G.app==='play',0);});
 const orbit=new Orbit(G.save,{opt:()=>G.opt,setDest:i=>{G.opt.dest=i;saveOpt();if(G.app==='menu')toOrbit();},sound:k=>{snd.init();snd.play(k);},onRender:()=>{if(G.app==='menu'&&G.team[0]&&G.team[0].cls!==G.save.cls){clearWorld();setupMenuScene();}}});
 function showBest(){const b=bestScore('starwarden');$('best').textContent=(b?`YOUR BEST · ${b} PTS · `:'')+`${G.save.clears||0} CLEARS · ${G.save.runs||0} RUNS`;}
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('orbit').onclick=toOrbit;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='play';endStrike(false);};
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Starwarden\nPoints: ${a.pts||0}\nResult: ${a.won?'strike complete':'strike failed'}\nStrike: ${a.dest||''} · ${a.diff||''}\nKills: ${a.kills||0} · Downs: ${a.deaths||0} · Max power: ${a.max||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;postScore('starwarden',a.pts||0,body);};
+postButton($('post'),'starwarden',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Starwarden\nPoints: ${a.pts||0}\nResult: ${a.won?'strike complete':'strike failed'}\nStrike: ${a.dest||''} · ${a.diff||''}\nKills: ${a.kills||0} · Downs: ${a.deaths||0} · Max power: ${a.max||0}`];});
 
 /* ================= boot ================= */
 loadDest(G.opt.dest);setupMenuScene();orbit.render();showBest();

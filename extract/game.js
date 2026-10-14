@@ -16,7 +16,9 @@ import {InvUI,newGrid,autoAdd,removeIt,loGrids,loItems,loKg,loValue,countId,take
 import {loadProfile,saveProfile,questRaid,initQuests,freeKit,level} from './profile.js';
 import {UI} from './ui.js';
 import {HUD,mmss} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),V=THREE.Vector3,cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,TAU=Math.PI*2,D2R=Math.PI/180;
 const HPMAX={head:35,thorax:85,stomach:70,larm:60,rarm:60,lleg:65,rleg:65};
@@ -279,26 +281,17 @@ function finishUse(){const it=P.use.it,d=ITEMS[it.id];P.use=null;let used=true;
  if((d.u&&it.uses<=0)||(d.hp&&it.hp<=1)){const g=findGridOf(grids(),it);if(g)removeIt(g,it);}}
 
 /* ================= input ================= */
-const keys=G.keys,mouse={l:false,r:false,lEdge:false,dx:0,dy:0};let locked=false;
-function lock(){if(G.app!=='raid'||invOpen)return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='raid'&&!invOpen)pause(true);});
-canvas.addEventListener('mousedown',e=>{if(G.app==='raid'&&!locked&&!invOpen)lock();});
-addEventListener('mousedown',e=>{if(G.app!=='raid'||!locked)return;if(e.button===0){mouse.l=true;mouse.lEdge=true;}if(e.button===2)mouse.r=true;});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='raid')e.preventDefault();});
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app!=='raid'||!locked||!P)return;swapTo(P.cur==='primary'?'secondary':'primary');},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code)||(G.app==='raid'&&(e.code==='KeyQ'||e.code==='KeyE'||e.code.startsWith('Control'))))e.preventDefault();
+const I=controls(canvas,{canLock:()=>G.app==='raid'&&!invOpen,menu:()=>G.app==='raid',onLock:(on,was)=>{if(was&&!on&&G.app==='raid'&&!invOpen)pause(true);},
+ onDown:()=>G.app!=='raid'||!I.locked,onWheel:()=>{if(G.app!=='raid'||!I.locked||!P)return;swapTo(P.cur==='primary'?'secondary':'primary');},
+ onKey:(e,first)=>{if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code)||(G.app==='raid'&&(e.code==='KeyQ'||e.code==='KeyE'||e.code.startsWith('Control'))))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='paused')pause(false);else if(G.app==='raid'){if(invOpen)closeInv();else pause(true);}return;}
  if(G.app!=='raid'||!first||!P||!P.alive)return;
  if(e.code==='Tab'){if(invOpen)closeInv();else{G.loot=null;openInv();}return;}
  if(invOpen){if(e.code==='KeyF'||e.code==='KeyI')closeInv();return;}
  if(e.code==='KeyF')interact(interactT);if(e.code==='KeyR')startReload();if(e.code==='KeyB')cycleMode();if(e.code==='KeyT')cycleAmmo();if(e.code==='KeyH')smartHeal();if(e.code==='KeyO')hud.showEx(6);
  if(e.code==='KeyL'){P.light=!P.light;snd.click();}if(e.code==='Digit1')swapTo('primary');if(e.code==='Digit2')swapTo('secondary');
- if(e.code==='KeyC')P.crouch=P.crouch?0:1;if(e.code==='Space')P.jump=true;});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+ if(e.code==='KeyC')P.crouch=P.crouch?0:1;if(e.code==='Space')P.jump=true;}});
+const {keys,mouse,lock,unlock}=I;G.keys=keys;
 function pause(on){if(on&&G.app==='raid'){G.app='paused';$('pause').hidden=false;document.body.classList.remove('playing');unlock();}else if(!on&&G.app==='paused'){G.app='raid';$('pause').hidden=true;document.body.classList.add('playing');lock();}}
 function swapTo(s){if(!P||P.cur===s||!prof().lo[s])return;P.cur=s;P.swapT=.45;P.reload=0;P.ads=false;P.burst=0;refreshWs();snd.swap();}
 function cycleMode(){const s=G.ws;if(!s||s.modes.length<2)return;P.mode[P.cur]=(P.mode[P.cur]+1)%s.modes.length;snd.click();hud.note('FIRE MODE · '+s.modes[P.mode[P.cur]].toUpperCase(),'');}
@@ -338,7 +331,7 @@ function raidStep(dt){const raid=G.raid,p=prof();
  {const n=MAP.named.find(q=>q.id==='beacon');const want=fl.open?n.y+5.5:fl.t>0&&fl.t<12?n.y+5.5+fl.t*4:n.y+70;if(fl.open||fl.t>0&&fl.t<12||heli.visible){if(!heli.visible){heli.visible=true;heli.position.set(n.x-4,n.y+70,n.z);}heli.position.y+=(want-heli.position.y)*Math.min(1,dt*.8);heli.rotation.y=-1.2+Math.sin(G.time*.4)*.08;heli.userData.rot.rotation.y+=dt*24;heli.userData.tr.rotation.x+=dt*30;if(!fl.open&&fl.t<=0&&heli.position.y>n.y+60)heli.visible=false;if(R()<dt*8)snd._n(.12,180,90,.6,.12*Math.min(1,30/(1+heli.position.distanceTo(P.pos))),'lowpass');}}
  if(!P.alive){P.deathT+=dt;P.vel.set(0,P.vel.y-20*dt,0);W.move(P.pos,P.vel,dt,PR,1,P.onGround);$('black').style.opacity=Math.min(1,Math.max(0,(P.deathT-1.4)/1.2));if(P.deathT>2.8){endRaid('kia',P.killer);$('black').style.opacity=0;}return;}
  // input
- readPad();const sens=.0021*(p.opt.sens||1)*(P.adsV>.5?1/Math.max(1,(G.ws?G.ws.zoom:1)*.7):1);if(locked&&!invOpen){P.yaw-=mouse.dx*sens;P.pitch=cl(P.pitch-mouse.dy*sens,-1.5,1.5);}VM.mdx=mouse.dx;VM.mdy=mouse.dy;mouse.dx=mouse.dy=0;
+ readPad();const sens=.0021*(p.opt.sens||1)*(P.adsV>.5?1/Math.max(1,(G.ws?G.ws.zoom:1)*.7):1);if(I.locked&&!invOpen){P.yaw-=mouse.dx*sens;P.pitch=cl(P.pitch-mouse.dy*sens,-1.5,1.5);}VM.mdx=mouse.dx;VM.mdy=mouse.dy;mouse.dx=mouse.dy=0;
  const s=refreshWs();G.kg=carriedKg();
  // status effects
  P.pain=Math.max(0,P.pain-dt);P.stim=Math.max(0,P.stim-dt);P.hurt=Math.max(0,P.hurt-dt*.8);P.supp=Math.max(0,P.supp-dt*.8);P.punch*=Math.exp(-dt*8);
@@ -369,9 +362,9 @@ function raidStep(dt){const raid=G.raid,p=prof();
  // footsteps + noise
  if(P.onGround&&P.speed>.6){P.stepD+=P.speed*dt;const stride=P.sprinting?2.1:crouch?1.1:1.6;if(P.stepD>stride){P.stepD=0;const surf=W.surfAt(P.pos.x,P.pos.z,P.pos.y);snd.step(surf,null,P.sprinting?.9:crouch?.25:.55);const r=(P.sprinting?28:crouch?4:13)*(surf===1?1.35:surf===3?.75:1);noise(P.pos,r,'step',PT);}}
  // weapon
- if(s&&!block){if(mouse.lEdge&&P.reload>0&&s.tube&&wpn().ammo>0)P.reload=0;const mode=s.modes[(P.mode[P.cur]||0)%s.modes.length];const want=mode==='auto'?(mouse.l||(G.pad&&G.pad.fire)):(mouse.lEdge||(G.pad&&G.pad.fireEdge));
-  if(want&&P.fireT<=0&&P.reload<=0&&!P.use&&P.swapT<=0&&!(P.pumpT>0)){const w=wpn();if(w.ammo>0)playerFire();else if(mouse.lEdge||G.pad&&G.pad.fireEdge){snd.dry();P.fireT=.3;startReload();}}}
- if(!mouse.l)P.burst=0;mouse.lEdge=false;if(G.pad)G.pad.fireEdge=false;
+ if(s&&!block){if(mouse.le&&P.reload>0&&s.tube&&wpn().ammo>0)P.reload=0;const mode=s.modes[(P.mode[P.cur]||0)%s.modes.length];const want=mode==='auto'?(mouse.l||(G.pad&&G.pad.fire)):(mouse.le||(G.pad&&G.pad.fireEdge));
+  if(want&&P.fireT<=0&&P.reload<=0&&!P.use&&P.swapT<=0&&!(P.pumpT>0)){const w=wpn();if(w.ammo>0)playerFire();else if(mouse.le||G.pad&&G.pad.fireEdge){snd.dry();P.fireT=.3;startReload();}}}
+ if(!mouse.l)P.burst=0;mouse.le=false;if(G.pad)G.pad.fireEdge=false;
  // recoil recovery
  const rec=G.time-P.lastShot>.1?1:0;P.recP*=Math.exp(-dt*(rec?7:1.2));P.recY*=Math.exp(-dt*(rec?7:1.2));
  // interaction
@@ -390,7 +383,7 @@ function raidStep(dt){const raid=G.raid,p=prof();
  if(G.raid.t%1<dt)questTrack();}
 function ambient(dt){const sd=P?Math.abs((P.pos.x)-shoreX(P.pos.z)):Math.abs(cam.position.x-80);const ind=P?W.groundAt(P.pos.x,P.pos.z,P.pos.y+5,.1)>P.pos.y+2.4:false;snd.ambient(dt,{on:G.app==='raid'||G.app==='menu',seaD:sd,rain:variant.rain,indoor:ind,high:P?Math.max(0,P.pos.y/12):.5});}
 // gamepad
-function readPad(){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(!gp){G.pad=null;return;}const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.17?v:0;const pr=G.padPrev||{};const btn=i=>!!bt[i]&&(bt[i].pressed||bt[i].value>.4);
+function readPad(){const gp=gamepad();if(!gp){G.pad=null;return;}const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.17);const pr=G.padPrev||{};const btn=i=>!!bt[i]&&(bt[i].pressed||bt[i].value>.4);
  const pad={f:-dz(ax[1]||0),s:dz(ax[0]||0),ads:btn(6),fire:btn(7),sprint:btn(10),fireEdge:btn(7)&&!pr[7]};P.yaw-=dz(ax[2]||0)*.05*(prof().opt.sens||1);P.pitch=cl(P.pitch-dz(ax[3]||0)*.04*(prof().opt.sens||1),-1.5,1.5);
  const ed=i=>btn(i)&&!pr[i];if(ed(2))startReload();if(ed(0))P.jump=true;if(ed(1))P.crouch=P.crouch?0:1;if(ed(3))swapTo(P.cur==='primary'?'secondary':'primary');if(ed(5))interact(interactT);if(ed(4))smartHeal();if(ed(8)){if(invOpen)closeInv();else openInv();}if(ed(9))pause(true);if(ed(12))hud.showEx(6);
  G.padPrev=bt.map(b=>b.pressed);G.pad=pad;}
@@ -437,9 +430,8 @@ function seg(id,key,num=true){const el=$(id);const set=(v,init)=>{prof().opt[key
 seg('o-var','var');seg('o-time','time');seg('o-diff','diff');seg('o-sens','sens');
 $('go').onclick=()=>{snd.init();startRaid();};$('freekit').onclick=()=>{freeKit(prof());saveProfile(prof());snd.buy();ui.raidPane();};
 $('again').onclick=()=>{snd.click();toMenu();};$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='raid';$('pause').hidden=true;endRaid('mia',{abandon:true});};
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: EXFIL\nRaid score: ${a.pts||0}\nResult: ${a.kind||''}${a.ex?' via '+a.ex:''}\nKills: ${a.kills||0} · Loot found: ${a.found||0} CR\nSurvival streak: ${a.streak||0}\nHostiles: ${a.diff||''} · ${a.cond||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('exfil',a.pts||0,body);};
+postButton($('post'),'exfil',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: EXFIL\nRaid score: ${a.pts||0}\nResult: ${a.kind||''}${a.ex?' via '+a.ex:''}\nKills: ${a.kills||0} · Loot found: ${a.found||0} CR\nSurvival streak: ${a.streak||0}\nHostiles: ${a.diff||''} · ${a.cond||''}`];});
 addEventListener('pointerdown',()=>snd.init(),{once:true});
 
 /* ================= boot + loop ================= */

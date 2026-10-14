@@ -16,7 +16,9 @@ import {Particles,Beams,Shocks,Decals,LightPool} from './fx.js';
 import {Sound} from './sound.js';
 import {DIFF,MARINE_AI,KIND,newBrain,think} from './ai.js';
 import {HUD} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),C=(r,g,b)=>new THREE.Color(r,g,b);
 const tv=new V(),tv2=new V(),tv3=new V(),UP=new V(0,1,0);
@@ -36,7 +38,7 @@ boltMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);boltMesh.frustumCulled=
 /* ================= state ================= */
 const G={app:'menu',phase:'play',opt:{diff:1,mis:0,sens:1,fov:90,vol:.8,mus:.6},actors:[],me:null,vehicles:[],items:[],proj:[],bolts:[],landers:[],time:0,clock:600,mi:0,D:null,W:null,S:null,def:MISSIONS[0],
  stepI:-1,step:null,stepT:0,f:{},mark:null,progress:0,cp:null,boss:null,stats:null,camp:null,results:null,hurtFx:0,shake:0,noise:null,timeScale:1,deadT:0,endT:0,attract:true,camYaw:0,camPitch:0,emitT:0,squadGoal:null,mres:null};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_starfall_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_starfall_opt',G.opt);
 G.sfx=(k,p)=>snd.play(k,p||null);G.mePos=()=>G.me?G.me.pos:new V();
 const hud=new HUD(G);
 
@@ -466,36 +468,26 @@ function visuals(dt){parts.update(dt);smoke.update(dt);beams.update(dt);shocks.u
 function nearVehicle(){const me=G.me;let best=null,bd=4.2;for(const v of G.vehicles){if(v.dead||v.seats.driver)continue;const d=Math.hypot(me.pos.x-v.pos.x,me.pos.z-v.pos.z)-v.S.r*.6;if(d<bd){bd=d;best=v;}}return best;}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false,wheel:0},mouseVis={dx:0,dy:0};let locked=false;
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;$('lock').hidden=locked||G.app!=='play';if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',e=>{if(G.app==='play'&&!locked){lock();return;}if(e.button===0){mouse.l=true;mouse.click=true;}if(e.button===2)mouse.r=true;});
-$('lock').onclick=()=>lock();
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app==='play'&&locked)mouse.wheel+=Math.sign(e.deltaY);},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;if(['Space','Tab','ControlLeft','KeyQ'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused')pause(false);});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+const I=controls(canvas,{canLock:()=>G.app==='play',overlay:$('lock'),menu:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onKey:e=>{if(['Space','Tab','ControlLeft','KeyQ'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused')pause(false);}});
+const {keys,edge,mouse,lock,unlock}=I,mouseVis={dx:0,dy:0};
 let padPrev={};
 function readInput(dt){const me=G.me;const ed=k=>edge[k];
  if(me&&G.app==='play'){const i=me.inp;const w=me.weapons[me.wi];const zm=me.veh?1:1+me.zoom*((WPN[w?.id]?.zoom||1)-1);const sens=G.opt.sens*.0022/zm;
   i.fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);i.side=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
-  i.jump=!!keys.Space;i.jumpEdge=!!ed('Space');i.sprint=!!(keys.ShiftLeft||keys.ShiftRight);i.crouch=!!(keys.KeyC||keys.ControlLeft);i.fire=mouse.l||!!mouse.click;mouse.click=false;i.zoom=mouse.r;
+  i.jump=!!keys.Space;i.jumpEdge=!!ed('Space');i.sprint=!!(keys.ShiftLeft||keys.ShiftRight);i.crouch=!!(keys.KeyC||keys.ControlLeft);i.fire=I.fire();i.zoom=mouse.r;
   i.reload=!!ed('KeyR');i.melee=!!(ed('KeyF')||ed('KeyV'));i.nade=!!ed('KeyQ');i.swap=!!(ed('Digit1')&&me.wi!==0||ed('Digit2')&&me.wi!==1||mouse.wheel!==0);mouse.wheel=0;i.interact=!!keys.KeyE;
   if(ed('KeyX'))me.nadeSel=me.nadeSel==='frag'?'stick':'frag';
-  if(locked&&me.alive){if(me.veh){G.camYaw-=mouse.dx*sens;G.camPitch=cl(G.camPitch-mouse.dy*sens,-.9,.6);}else{me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.5,1.5);}}mouseVis.dx+=mouse.dx;mouseVis.dy+=mouse.dy;mouse.dx=mouse.dy=0;
-  const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const a=gp.axes,b=gp.buttons,dz=v=>Math.abs(v)>.15?v:0,pr=padPrev;const P=n=>b[n]&&b[n].pressed;
+  if(I.locked&&me.alive){if(me.veh){G.camYaw-=mouse.dx*sens;G.camPitch=cl(G.camPitch-mouse.dy*sens,-.9,.6);}else{me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.5,1.5);}}mouseVis.dx+=mouse.dx;mouseVis.dy+=mouse.dy;mouse.dx=mouse.dy=0;
+  const gp=gamepad();if(gp){const a=gp.axes,b=gp.buttons,dz=deadzone,pr=padPrev;const P=n=>b[n]&&b[n].pressed;
    if(dz(a[1])||dz(a[0])){i.fwd=-dz(a[1]);i.side=dz(a[0]);}const lx=dz(a[2]||0),ly=dz(a[3]||0);if(me.veh){G.camYaw-=lx*Math.abs(lx)*3*G.opt.sens*dt;G.camPitch=cl(G.camPitch-ly*Math.abs(ly)*2*G.opt.sens*dt,-.9,.6);}else{const zf=1+me.zoom*2;me.yaw-=lx*Math.abs(lx)*3.4*G.opt.sens*dt/zf;me.pitch=cl(me.pitch-ly*Math.abs(ly)*2.6*G.opt.sens*dt/zf,-1.5,1.5);}
    if(P(0))i.jump=true;if(P(0)&&!pr[0])i.jumpEdge=true;if((b[7]?.value||0)>.3)i.fire=true;if((b[6]?.value||0)>.3)i.zoom=true;if(P(1))i.crouch=true;if(P(10))i.sprint=true;
    if(P(2)&&!pr[2])i.reload=true;if(P(2))i.interact=true;if(P(3)&&!pr[3])i.swap=true;if(P(5)&&!pr[5])i.nade=true;if(P(4)&&!pr[4])me.nadeSel=me.nadeSel==='frag'?'stick':'frag';if(P(11)&&!pr[11])i.melee=true;if(P(9)&&!pr[9])pause(true);for(let k=0;k<17;k++)pr[k]=P(k);}
   if(G.inOv)Object.assign(i,G.inOv);if(G.inOnce){Object.assign(i,G.inOnce);G.inOnce=null;}
   // hold E: enter / exit vehicles, take weapons
   if(i.interact&&me.alive&&G.phase==='play'){me.swapHold+=dt;if(me.swapHold>.28&&me.swapHold<1){me.swapHold=2;if(me.veh){if(me.veh.speed<9)exitVehicle(me);}else{const v=nearVehicle();if(v)enterVehicle(me,v,'driver');else if(G.nearItem)takeItem(G.nearItem);}}}else me.swapHold=0;}
- else if(G.app==='paused'){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp&&gp.buttons[9]?.pressed&&!padPrev[9])pause(false);if(gp)padPrev[9]=gp.buttons[9]?.pressed;}
- for(const k in edge)delete edge[k];}
+ else if(G.app==='paused'){const gp=gamepad();if(gp&&gp.buttons[9]?.pressed&&!padPrev[9])pause(false);if(gp)padPrev[9]=gp.buttons[9]?.pressed;}
+ I.flush();}
 function pause(on){if(on&&G.app==='play'){G.app='paused';$('pause').hidden=false;$('pobj').textContent='OBJECTIVE: '+(G.objText||'');$('lock').hidden=true;document.body.classList.remove('playing');unlock();snd.engine(false);}
  else if(!on&&G.app==='paused'){G.app='play';$('pause').hidden=true;document.body.classList.add('playing');lock();}}
 
@@ -513,15 +505,13 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 
 /* ================= menus ================= */
-function saveOpt(){try{localStorage.setItem('pxd_starfall_opt',JSON.stringify(G.opt));}catch(e){}}
-const segSync=[];const seg=(id,key,num=true,cb)=>{const el=$(id);segSync.push(()=>el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(G.opt[key]))));const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(v)));if(!init){saveOpt();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
+const seg=pickers(G.opt,saveOpt);
 seg('o-diff','diff',true,showBest);seg('o-mis','mis',true,()=>{if(G.app==='menu')attractMode();});seg('o-sens','sens');seg('o-fov','fov');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-mus','mus',true,v=>{snd.setMusic(v);snd.music(v>0&&G.app==='play',0);});
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;$('restart').onclick=()=>{$('pause').hidden=true;startMission(G.mi);};
 $('mnext').onclick=()=>{if(G.mi<2)startMission(G.mi+1);else showCampaign();};$('mretry').onclick=()=>{G.camp.missions.pop();startMission(G.mi);};$('mend').onclick=()=>showCampaign();
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Starfall Vanguard\nPoints: ${a.pts||0}\nResult: ${a.won?'campaign complete':'campaign ended'} · rank ${a.rank||'-'}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0}\nDifficulty: ${a.diff||''}\nMissions: ${a.missions||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('starfall',a.pts||0,body);};
-function showBest(){segSync.forEach(f=>f());const b=bestScore('starfall');$('best').textContent=b?`YOUR BEST CAMPAIGN · ${b} PTS`:'';const m=MISSIONS[G.opt.mis];$('mapdesc').innerHTML=`<b>MISSION ${m.n} · ${m.name}</b> — ${m.brief} <b>${fmt(m.time)}</b> time limit.`;}
+postButton($('post'),'starfall',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Starfall Vanguard\nPoints: ${a.pts||0}\nResult: ${a.won?'campaign complete':'campaign ended'} · rank ${a.rank||'-'}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0}\nDifficulty: ${a.diff||''}\nMissions: ${a.missions||''}`];});
+function showBest(){seg.sync();const b=bestScore('starfall');$('best').textContent=b?`YOUR BEST CAMPAIGN · ${b} PTS`:'';const m=MISSIONS[G.opt.mis];$('mapdesc').innerHTML=`<b>MISSION ${m.n} · ${m.name}</b> — ${m.brief} <b>${fmt(m.time)}</b> time limit.`;}
 
 /* ================= boot ================= */
 attractMode();

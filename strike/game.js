@@ -13,7 +13,9 @@ import {buildViewmodel} from './viewmodel.js';
 import {Rig,hitActor,PALETTES} from './actors.js';
 import {Brain,DIFF,think,canSee} from './ai.js';
 import {HUD,mmss} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest,userName} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,D2R=Math.PI/180,TAU=Math.PI*2;
 const MV={run:7.3,accel:11,friction:7.2,stop:2.4,airAccel:2.4,airCap:1.05,jump:7.1,grav:20,max:17,crouchMul:.5,adsMul:.66,slideBoost:3.8,slideFric:.85,slideT:.8,slideMin:5.2,slideMax:14,r:.38,h:1.8,hc:1.22,eye:1.62};
@@ -33,7 +35,7 @@ const snd=new Sound();let L=null,world=null,fx=null;const WC={};const VM=buildVi
 /* ================= state ================= */
 const G={app:'menu',opt:{mode:'ffa',map:0,cls:0,diff:1,len:360,sens:1,asens:.8,fov:100,vol:.8,mus:.35},actors:[],player:null,mode:'ffa',clock:360,limit:25,teamScore:[0,0],time:0,events:[],pickups:[],rockets:[],frags:[],
  diff:DIFF[1],intel:[null,null],attract:true,hurtFx:0,kc:null,rec:{frames:[],shots:[]},recT:0,idle:false,god:false,firstBlood:false,result:null,cam,V3:V,spreadNow:0,aimedAt:null,shake:0};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_strike_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_strike_opt',G.opt);
 if(!['ffa','tdm','ladder'].includes(G.opt.mode))G.opt.mode='ffa';G.opt.map=cl(+G.opt.map||0,0,2);G.opt.cls=cl(+G.opt.cls||0,0,4);G.opt.diff=cl(+G.opt.diff||0,0,2);if(![240,360,600].includes(+G.opt.len))G.opt.len=360;
 G.enemies=(a,b)=>a!==b&&(G.mode!=='tdm'||a.team!==b.team);
 G.leader=(ex)=>{let b=null;for(const a of G.actors){if(a===ex)continue;if(!b||(G.mode==='ladder'?a.ladder>b.ladder||a.ladder===b.ladder&&a.stats.k>b.stats.k:a.stats.k>b.stats.k))b=a;}return b;};
@@ -260,31 +262,23 @@ function pickupMesh(k){const g=new THREE.Group();const col=k==='hp'?0x50ff90:k==
 function stepPickups(dt){for(const p of G.pickups){if(!p.active){p.t-=dt;if(p.t<=0){p.active=true;p.mesh.visible=true;fx.spawnFx({x:p.x,y:p.y,z:p.z},p.k==='rl'?0xffa040:0x80ffb0);}}else{const b=p.mesh.userData.body;b.rotation.y+=dt*1.6;b.position.y=Math.sin(G.time*2+p.x)*.08;}}}
 
 /* ================= input ================= */
-const keys={},mouse={l:false,r:false,dx:0,dy:0,click:false,clickT:-9};let locked=false;
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',()=>{if(G.app==='play'&&!locked)lock();});
-addEventListener('mousedown',e=>{if(G.app!=='play'||!locked)return;if(G.kc){G.kc.skip=true;return;}if(e.button===0){mouse.l=true;mouse.click=true;mouse.clickT=G.time;}if(e.button===2)mouse.r=true;});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app!=='play'||!locked||!G.player||!G.player.alive)return;const P=G.player;const own=[0,1,2].filter(i=>P.slots[i]);let i=own.indexOf(P.cur);i=(i+(e.deltaY>0?1:-1)+own.length)%own.length;switchTo(P,own[i]);},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
+const I=controls(canvas,{canLock:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onDown:e=>{if(G.app!=='play'||!I.locked)return true;if(G.kc){G.kc.skip=true;return true;}if(e.button===0){mouse.click=true;mouse.clickT=G.time;}},
+ onWheel:e=>{if(G.app!=='play'||!I.locked||!G.player||!G.player.alive)return;const P=G.player;const own=[0,1,2].filter(i=>P.slots[i]);let i=own.indexOf(P.cur);i=(i+(e.deltaY>0?1:-1)+own.length)%own.length;switchTo(P,own[i]);},
+ onKey:(e,first)=>{if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='paused')pause(false);else if(G.app==='play')pause(true);return;}if(G.app!=='play'||!first)return;const P=G.player;
  if(e.code==='Tab'){hud.board(true);return;}
  if(!P.alive){if(e.code==='Space'&&G.kc)G.kc.skip=true;if(e.code.startsWith('Digit')&&G.mode!=='ladder'){const n=+e.code.slice(5)-1;if(n>=0&&n<5){G.opt.cls=n;P.clsIdx=n;saveOpt();classText();snd.click();}}return;}
  if(e.code.startsWith('Digit')){const n=+e.code.slice(5)-1;if(n>=0&&n<3)switchTo(P,n);}
  if(e.code==='KeyQ'&&P.slots[P.prev])switchTo(P,P.prev);if(e.code==='KeyR')P.ctl.reload=true;if(e.code==='KeyV')melee(P);if(e.code==='KeyF'&&G.mode!=='ladder')throwFrag(P,null);
- if((e.code==='KeyC'||e.code==='ControlLeft'||e.code==='ShiftLeft'||e.code==='ShiftRight')&&P.onGround&&Math.hypot(P.vel.x,P.vel.z)>MV.slideMin)slideEdge=true;});
-addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab')hud.board(false);});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+ if((e.code==='KeyC'||e.code==='ControlLeft'||e.code==='ShiftLeft'||e.code==='ShiftRight')&&P.onGround&&Math.hypot(P.vel.x,P.vel.z)>MV.slideMin)slideEdge=true;},onKeyUp:e=>{if(e.code==='Tab')hud.board(false);}});
+const {keys,mouse,lock,unlock}=I;Object.assign(mouse,{click:false,clickT:-9});
 let slideEdge=false;
 function readPlayer(dt){const P=G.player,c=P.ctl;const g=P.gun();const zoom=g&&P.adsK>.5?g.w.ads.zoom:1;const sens=.0022*G.opt.sens*(P.adsK>.5?G.opt.asens/zoom*(zoom>2?1.6:1):1);
- if(locked&&P.alive&&!G.kc){P.yaw-=mouse.dx*sens;P.pitch=cl(P.pitch-mouse.dy*sens,-1.5,1.5);}VM.mdx=mouse.dx;VM.mdy=mouse.dy;mouse.dx=mouse.dy=0;
+ if(I.locked&&P.alive&&!G.kc){P.yaw-=mouse.dx*sens;P.pitch=cl(P.pitch-mouse.dy*sens,-1.5,1.5);}VM.mdx=mouse.dx;VM.mdy=mouse.dy;mouse.dx=mouse.dy=0;
  const f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);const sy=Math.sin(P.yaw),cy=Math.cos(P.yaw);c.mx=-sy*f+cy*s;c.mz=-cy*f-sy*s;
- c.jump=!!keys.Space;c.crouch=!!(keys.KeyC||keys.ControlLeft||keys.ShiftLeft||keys.ShiftRight);c.slide=slideEdge;slideEdge=false;c.fire=mouse.l&&locked;c.ads=mouse.r&&locked;
- const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.16?v:0;const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);const pr=G.pad||{};const btn=i=>bt[i]&&(bt[i].pressed||bt[i].value>.4);
+ c.jump=!!keys.Space;c.crouch=!!(keys.KeyC||keys.ControlLeft||keys.ShiftLeft||keys.ShiftRight);c.slide=slideEdge;slideEdge=false;c.fire=mouse.l&&I.locked;c.ads=mouse.r&&I.locked;
+ const gp=gamepad();if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.16);const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);const pr=G.pad||{};const btn=i=>bt[i]&&(bt[i].pressed||bt[i].value>.4);
   if(lx||ly){c.mx=-sy*(-ly)+cy*lx;c.mz=-cy*(-ly)-sy*lx;}const gs=dt*2.8*G.opt.sens*(P.adsK>.5?.45:1);P.yaw-=rx*Math.abs(rx)*gs;P.pitch=cl(P.pitch-ry*Math.abs(ry)*gs*.8,-1.5,1.5);
   if(btn(7)){c.fire=true;if(!pr.rt){mouse.click=true;mouse.clickT=G.time;}}if(btn(6))c.ads=true;if(btn(0))c.jump=true;if(btn(1)){c.crouch=true;if(!pr.b&&P.onGround)c.slide=true;}if(btn(2)&&!pr.x)c.reload=true;if(btn(3)&&!pr.y)switchTo(P,P.cur===0&&P.slots[1]?1:0);
   if(btn(5)&&!pr.rb&&G.mode!=='ladder')throwFrag(P,null);if(btn(4)&&!pr.lb)melee(P);if(btn(9)&&!pr.st)pause(true);G.pad={rt:btn(7),b:btn(1),x:btn(2),y:btn(3),rb:btn(5),lb:btn(4),st:btn(9)};}}
@@ -378,15 +372,13 @@ function updateBest(){const b=best();$('best').textContent=b?'BEST · '+b.toLoca
 
 /* ================= HUD + menus ================= */
 const hud=new HUD(G);G.hud=hud;G.snd=snd;
-function saveOpt(){try{localStorage.setItem('pxd_strike_opt',JSON.stringify(G.opt));}catch(e){}}
-const seg=(id,key,num=true,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(v)));if(!init){saveOpt();snd.click&&snd.click();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
+const seg=pickers(G.opt,()=>{saveOpt();snd.click&&snd.click();});
 const clsDesc=()=>{$('clsd').textContent=G.opt.mode==='ladder'?'GUN LADDER: everyone climbs the same 9 weapons — a kill moves you up, a knife kill wins.':CLASSES[G.opt.cls].desc;};
 seg('o-mode','mode',false,clsDesc);seg('o-map','map',true,()=>{if(G.app==='menu')attractMode();});seg('o-cls','cls',true,clsDesc);seg('o-diff','diff');seg('o-len','len');
 seg('o-sens','sens');seg('o-asens','asens');seg('o-fov','fov');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-mus','mus',true,v=>snd.setMusic(v));clsDesc();
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Strike Zone\nScore: ${a.pts||0}\nResult: ${a.won?'win':'loss'}${a.place?' · place '+a.place:''}${a.team?' · '+a.team:''}\nMode: ${a.mode||''} · Map: ${a.map||''} · CPU ${a.diff||''} · Class ${a.cls||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('strike3d',a.pts||0,body);};
+postButton($('post'),'strike3d',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Strike Zone\nScore: ${a.pts||0}\nResult: ${a.won?'win':'loss'}${a.place?' · place '+a.place:''}${a.team?' · '+a.team:''}\nMode: ${a.mode||''} · Map: ${a.map||''} · CPU ${a.diff||''} · Class ${a.cls||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}`];});
 
 /* ================= boot + loop ================= */
 attractMode();

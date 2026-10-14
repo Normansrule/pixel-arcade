@@ -4,6 +4,7 @@ import * as THREE from '../vendor/three.module.min.js';
 import {V,fmt,cl} from './util.js';
 import {EL,RAR,ARCH} from './loot.js';
 import {CLS} from './actors.js';
+import {toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 const ELC={kin:'#e9e4d8',solar:'#ff8a2a',arc:'#5fd8ff',void:'#b46bff'};
@@ -17,9 +18,8 @@ export class HUD{
   E.sn.textContent=G.dest.strike+' · '+G.dest.name;document.documentElement.style.setProperty('--sc',ELC[C.el]);E.supI.textContent={strider:'ϟ',bulwark:'☀',seer:'◉'}[G.me.cls];E.supN.textContent=C.sup;E.abGn.textContent=C.gren;E.abMn.textContent=C.mel;
   E.team.innerHTML=G.team.map((f,i)=>`<div style="--c:${ELC[CLS[f.cls].el]}"><span>${f.name}</span><i id="tm${i}">${CLS[f.cls].n}</i><s><em id="tb${i}"></em></s></div>`).join('');
   E.wpns.innerHTML=[0,1,2].map(i=>`<div class="w" id="w${i}"><p><span id="wr${i}"></span><b id="wn${i}"></b></p><em id="wa${i}"></em></div>`).join('')+'<div class="rl" id="wrl"><em></em></div>';}
- feed(html){const d=document.createElement('div');d.innerHTML=html;this.el.feed.prepend(d);setTimeout(()=>d.remove(),4500);while(this.el.feed.children.length>5)this.el.feed.lastChild.remove();}
- toast(it,head){const d=document.createElement('div');d.style.setProperty('--rc',RAR[it.r].c);d.innerHTML=`<p>${head||RAR[it.r].n+' ENGRAM DECODED'}</p><b style="color:${RAR[it.r].c}">${it.n}</b><span>${EL[it.el].n} ${ARCH[it.a].n} · ✦ ${it.p}</span>`;
-  this.el.toasts.appendChild(d);setTimeout(()=>d.remove(),5200);while(this.el.toasts.children.length>4)this.el.toasts.firstChild.remove();}
+ feed(html){toast(this.el.feed,html,4500,5);}
+ toast(it,head){toast(this.el.toasts,`<p>${head||RAR[it.r].n+' ENGRAM DECODED'}</p><b style="color:${RAR[it.r].c}">${it.n}</b><span>${EL[it.el].n} ${ARCH[it.a].n} · ✦ ${it.p}</span>`,5200,4,false).style.setProperty('--rc',RAR[it.r].c);}
  banner(t,s,col='#f2c55c',dur=2.4){const e=this.el.banner;e.querySelector('b').textContent=t;e.querySelector('b').style.color=col;e.querySelector('span').textContent=s||'';e.querySelector('span').style.display=s?'':'none';e.classList.add('on');this.banT=dur;}
  hit(kind){this.el.hitm.className=kind||'';this.hitT=kind==='k'?.45:.2;}
  damageFrom(ang){const i=document.createElement('i');i.style.transform=`rotate(${ang}rad)`;this.el.dmg.appendChild(i);setTimeout(()=>i.remove(),1100);while(this.el.dmg.children.length>6)this.el.dmg.firstChild.remove();}

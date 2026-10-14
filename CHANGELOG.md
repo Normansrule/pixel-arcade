@@ -7,6 +7,7 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 - **Repository layout:** tests moved to `tests/`, Python and Node tools to `tools/`.
 - **Engine:** `js/engine.js` split into 13 modules in `js/engine/`; the `A.gx` art kit moved from `games/sports1.js` to `js/gx.js`.
 - **3D kit:** all 31 worlds now share `js/kit3d/score.js` for the arcade profile, best scores and POST SCORE.
+- **3D kit, part 2:** new shared `js/kit3d/input.js` (keys, mouse, pointer lock, held and spam-click fire, gamepad), `audio.js` (WebAudio helpers and a spatial sound base class) and `ui.js` (saved options, menu pickers, POST SCORE button, toasts). Ten worlds use them (arena, zombies, frontline, strike, titans, ink, campaign, looter, extract, breach) with identical behaviour.
 - **Offline fonts:** the hub, the builder and 14 older worlds no longer load Google Fonts; they use the local copies through `fonts/fonts.css`.
 - **Manifest:** `games/index.json` lists the engine modules and game packs in load order; `index.html`'s script tags, the tests and the docs generator all read it.
 - **Docs:** `tools/gen_docs.py` regenerates README counts and tables, `docs/GAMES.md` and the README art. New `docs/ARCHITECTURE.md`, `THIRD_PARTY.md`, this changelog, issue and pull request templates.

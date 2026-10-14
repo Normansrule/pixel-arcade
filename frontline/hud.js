@@ -3,6 +3,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {MAP_LIST} from './maps.js';
 import {MODE_INFO} from './modes.js';
+import {toast} from '../js/kit3d/ui.js';
 const _el={},$=id=>_el[id]||(_el[id]=document.getElementById(id)),cl=(v,a,b)=>v<a?a:v>b?b:v,ang=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const mmss=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 let R=null;const st={banT:0,annT:0,hitT:0,hurtT:0,promptT:0,dmg:[],tagCache:new Map(),tagT:0,c:{},base:null,baseHalf:60,sweep:0,flashT:0};
@@ -15,7 +16,7 @@ export function init(G,refs){R=refs;
  const o=G.opt;st.updMode=seg('o-mode',()=>o.mode,v=>{o.mode=v;buildSub(G);G.menuMap&&G.menuMap();});seg('o-diff',()=>o.diff,v=>o.diff=v,Number);
  seg('o-sens',()=>o.sens,v=>o.sens=v,Number);seg('o-vol',()=>o.vol,v=>{o.vol=v;G.snd.setVol(v);},Number);buildSub(G);
  $('go').onclick=()=>G.start();$('loadbtn').onclick=()=>showLoadout(G,true);$('ldone').onclick=()=>showLoadout(G,false);
- $('resume').onclick=()=>G.pause(false);$('quit').onclick=()=>G.toMenu();$('again').onclick=()=>G.start();$('omenu').onclick=()=>G.toMenu();$('post').onclick=()=>G.postScore();
+ $('resume').onclick=()=>G.pause(false);$('quit').onclick=()=>G.toMenu();$('again').onclick=()=>G.start();$('omenu').onclick=()=>G.toMenu();
  addEventListener('keydown',e=>{if(G.app==='menu'&&e.code==='Enter'&&!$('menu').hidden)G.start();});}
 function buildSub(G){const o=G.opt,el=$('o-sub');let items;
  if(o.mode==='campaign'){items=R.MISSIONS.map((m,i)=>[String(i),`${i+1} · ${m.name}`,m.tag,SKYDOT[m.map]]);el.classList.add('three');}
@@ -66,15 +67,14 @@ function drawMini(G){const cv=$('mini'),x=cv.getContext('2d'),P=G.player,W=cv.wi
  x.save();x.translate(W/2,H/2);x.fillStyle='rgba(255,255,255,.08)';x.beginPath();x.moveTo(0,0);x.arc(0,0,W/2,-Math.PI/2-.6,-Math.PI/2+.6);x.fill();x.fillStyle='#fff';x.beginPath();x.moveTo(0,-8);x.lineTo(6,6);x.lineTo(0,2);x.lineTo(-6,6);x.fill();x.restore();}
 
 /* ================= events ================= */
-export function feed(G,att,v,w,head){if(G.app!=='play')return;const f=$('feed'),d=document.createElement('div');const cls=a=>a?(a.isPlayer?'me':a.team===0?'f':'e'):'';
- d.innerHTML=att&&att!==v?`<span class="${cls(att)}">${att.name}</span><span class="w">${head?'<span class="hs">◉ </span>':''}${w||''}</span><span class="${cls(v)}">${v.name}</span>`:`<span class="${cls(v)}">${v.name}</span><span class="w">${w==='FALL'?'FELL':'DOWN'}</span>`;
- f.prepend(d);setTimeout(()=>d.remove(),5000);while(f.children.length>6)f.lastChild.remove();}
-export function radio(G,name,text,hq){const r=$('radio'),d=document.createElement('div');if(hq)d.className='hq';d.innerHTML=`<b>${name}</b>${text}`;r.appendChild(d);setTimeout(()=>d.remove(),5600);while(r.children.length>4)r.firstChild.remove();}
+export function feed(G,att,v,w,head){if(G.app!=='play')return;const cls=a=>a?(a.isPlayer?'me':a.team===0?'f':'e'):'';
+ toast($('feed'),att&&att!==v?`<span class="${cls(att)}">${att.name}</span><span class="w">${head?'<span class="hs">◉ </span>':''}${w||''}</span><span class="${cls(v)}">${v.name}</span>`:`<span class="${cls(v)}">${v.name}</span><span class="w">${w==='FALL'?'FELL':'DOWN'}</span>`,5000,6);}
+export function radio(G,name,text,hq){const d=toast($('radio'),`<b>${name}</b>${text}`,5600,4,false);if(hq)d.className='hq';}
 export function banner(G,t,s,col,dur){$('bt').textContent=t;$('bt').style.color=col||'#fff';$('bs').textContent=s||'';$('bs').style.display=s?'':'none';$('banner').classList.add('on');st.banT=dur||2;}
 export function ann(G,t,dur){$('ann').textContent=t;$('ann').classList.add('on');st.annT=dur||2;}
-export function xp(G,n,label){if(G.xpGain)G.xpGain(n);const d=document.createElement('div');d.innerHTML=`+${n}<small>${label}</small>`;const x=$('xp');x.appendChild(d);setTimeout(()=>d.remove(),900);while(x.children.length>3)x.firstChild.remove();}
+export function xp(G,n,label){if(G.xpGain)G.xpGain(n);toast($('xp'),`+${n}<small>${label}</small>`,900,3,false);}
 export function hitmark(head,kill){const h=$('hit');h.className=kill?'kill':head?'head':'';st.hitT=kill?.5:.24;h.style.transform=`scale(${kill?1.25:1})`;}
-export function killConfirm(G,v,head,kind){const k=$('kc'),d=document.createElement('div');if(head)d.className='hs';d.innerHTML=`<b>${head?'HEADSHOT':kind==='knife'?'MELEE':kind==='frag'?'GRENADE':'ELIMINATED'}</b><span>${v.name}</span>`;k.prepend(d);setTimeout(()=>d.remove(),1500);while(k.children.length>2)k.lastChild.remove();}
+export function killConfirm(G,v,head,kind){const d=toast($('kc'),`<b>${head?'HEADSHOT':kind==='knife'?'MELEE':kind==='frag'?'GRENADE':'ELIMINATED'}</b><span>${v.name}</span>`,1500,2);if(head)d.className='hs';}
 export function hurt(G,att,dm){st.hurtT=Math.min(.7,.25+dm/80);const P=G.player;if(!P||!att||!att.pos)return;const a=Math.atan2(att.pos.x-P.pos.x,att.pos.z-P.pos.z);const el=document.createElement('div');$('dmg').appendChild(el);st.dmg.push({a,t:1.6,el});if(st.dmg.length>6){const o=st.dmg.shift();o.el.remove();}}
 export function dead(G,on,att,w){$('dead').hidden=!on;if(on){$('deadby').textContent=att&&att!==G.player&&att.name?`KILLED BY ${att.name}${w?' · '+w:''}`:'YOU DIED';}}
 export function objective(){st.c.objt=null;}

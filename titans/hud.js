@@ -4,6 +4,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {V,fmt,cl} from './util.js';
 import {WPN,MECH} from './weapons.js';
+import {toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 export const TEAMCSS=['#3d9bff','#ff6a2a'],TEAMN=['KESTREL','ASHEN'];
@@ -12,11 +13,10 @@ export class HUD{
   this.rc=this.el.radar.getContext('2d');this.tagPool=[];this.hitT=0;this.streakT=0;this.flashV=0;this.vigV=0;this.prm='';this.radarT=0;this.bootT=0;}
  set(el,k,v,prop='textContent'){if(this.c[k]!==v){this.c[k]=v;el[prop]=v;}}
  reset(){const E=this.el;E.feed.innerHTML='';E.medals.innerHTML='';E.dmg.innerHTML='';this.c={};E.modeTag.textContent='ATTRITION · '+this.G.cap;E.dead.hidden=true;E.board.hidden=true;}
- feed(k,v,w,mine,vName){const d=document.createElement('div');const col=f=>f?TEAMCSS[f.team]:'#aaa';const nm=f=>f.kind==='grunt'?TEAMN[f.team]+' GRUNT':f.name;
-  d.innerHTML=(k&&k!==v?`<span style="color:${col(k)}">${nm(k)}</span><span class="w">${w}</span>`:`<span class="w">${w}</span>`)+`<span style="color:${col(v)}">${vName||nm(v)}</span>`;if(mine)d.className='me';
-  this.el.feed.prepend(d);setTimeout(()=>d.remove(),5200);while(this.el.feed.children.length>6)this.el.feed.lastChild.remove();}
- sys(t,col='#9fe8ff'){const d=document.createElement('div');d.innerHTML=`<span class="w" style="margin:0;color:${col}">${t}</span>`;this.el.feed.prepend(d);setTimeout(()=>d.remove(),4200);}
- medal(name,col='#ffcf3f',glyph='★'){const d=document.createElement('div');d.className='medal';d.style.setProperty('--mc',col);d.innerHTML=`<i>${glyph}</i><span>${name}</span>`;this.el.medals.appendChild(d);setTimeout(()=>d.remove(),2600);while(this.el.medals.children.length>4)this.el.medals.firstChild.remove();}
+ feed(k,v,w,mine,vName){const col=f=>f?TEAMCSS[f.team]:'#aaa';const nm=f=>f.kind==='grunt'?TEAMN[f.team]+' GRUNT':f.name;
+  const d=toast(this.el.feed,(k&&k!==v?`<span style="color:${col(k)}">${nm(k)}</span><span class="w">${w}</span>`:`<span class="w">${w}</span>`)+`<span style="color:${col(v)}">${vName||nm(v)}</span>`,5200,6);if(mine)d.className='me';}
+ sys(t,col='#9fe8ff'){toast(this.el.feed,`<span class="w" style="margin:0;color:${col}">${t}</span>`,4200);}
+ medal(name,col='#ffcf3f',glyph='★'){const d=toast(this.el.medals,`<i>${glyph}</i><span>${name}</span>`,2600,4,false);d.className='medal';d.style.setProperty('--mc',col);}
  banner(t,s,col='#ff6a2a',dur=2.2){const e=this.el.streak;e.querySelector('b').textContent=t;e.querySelector('b').style.color=col;e.querySelector('span').textContent=s||'';e.querySelector('span').style.display=s?'':'none';e.classList.add('on');this.streakT=dur;}
  boot(){this.bootT=2.2;this.el.boot.classList.add('on');}
  hit(kind){this.el.hitm.className=kind||'';this.hitT=kind==='k'?.45:.22;}

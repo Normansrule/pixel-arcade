@@ -3,6 +3,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {V,fmt,cl} from './util.js';
 import {WPN} from './weapons.js';
+import {toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 export const TEAMCSS=['#3d9bff','#ff5a2a'];
@@ -15,10 +16,9 @@ export class HUD{
  reset(){const G=this.G;this.el.feed.innerHTML='';this.el.medals.innerHTML='';this.el.dmg.innerHTML='';this.c={};this.el.mode.textContent=G.M.n;this.el.dead.hidden=true;this.el.board.hidden=true;
   this.el.sc.innerHTML=G.M.team?`<div class="t az"><b id="s0">0</b><i>AZURE</i><s class="pb" id="p0"></s></div><div class="t em"><b id="s1">0</b><i>EMBER</i><s class="pb" id="p1"></s></div>${G.mode==='koth'?'<div class="hl"><span>HILL</span><b id="hs">—</b></div>':''}`
    :`<div class="t me"><b id="s0">0</b><i>YOU</i><s class="pb" id="p0"></s></div><div class="t ld"><b id="s1">0</b><i id="ln">LEADER</i><s class="pb" id="p1"></s></div>`;}
- feed(k,v,w,head,mine){const d=document.createElement('div');const col=f=>f?(this.G.M.team?TEAMCSS[f.team]:f.css):'#aaa';
-  d.innerHTML=(k&&k!==v?`<span style="color:${col(k)}">${k.name}</span><span class="w">${w}${head?' <span class="hs">◉</span>':''}</span>`:`<span class="w">${w}</span>`)+`<span style="color:${col(v)}">${v.name}</span>`;if(mine)d.className='me';
-  this.el.feed.prepend(d);setTimeout(()=>d.remove(),5200);while(this.el.feed.children.length>6)this.el.feed.lastChild.remove();}
- medal(name,col='#ffcf3f',glyph='★'){const d=document.createElement('div');d.className='medal';d.style.setProperty('--mc',col);d.innerHTML=`<i>${glyph}</i><span>${name}</span>`;this.el.medals.appendChild(d);setTimeout(()=>d.remove(),2600);while(this.el.medals.children.length>4)this.el.medals.firstChild.remove();}
+ feed(k,v,w,head,mine){const col=f=>f?(this.G.M.team?TEAMCSS[f.team]:f.css):'#aaa';
+  const d=toast(this.el.feed,(k&&k!==v?`<span style="color:${col(k)}">${k.name}</span><span class="w">${w}${head?' <span class="hs">◉</span>':''}</span>`:`<span class="w">${w}</span>`)+`<span style="color:${col(v)}">${v.name}</span>`,5200,6);if(mine)d.className='me';}
+ medal(name,col='#ffcf3f',glyph='★'){const d=toast(this.el.medals,`<i>${glyph}</i><span>${name}</span>`,2600,4,false);d.className='medal';d.style.setProperty('--mc',col);}
  banner(t,s,col='#ff4d00',dur=2.2){const e=this.el.streak;e.querySelector('b').textContent=t;e.querySelector('b').style.color=col;e.querySelector('span').textContent=s||'';e.querySelector('span').style.display=s?'':'none';e.classList.add('on');this.streakT=dur;}
  hit(kind){this.el.hitm.className=kind||'';this.hitT=kind==='k'?.45:.22;}
  damageFrom(ang){const i=document.createElement('i');i.style.transform=`rotate(${ang}rad)`;this.el.dmg.appendChild(i);setTimeout(()=>i.remove(),1100);while(this.el.dmg.children.length>6)this.el.dmg.firstChild.remove();}

@@ -1,5 +1,6 @@
 // EXFIL — in-raid HUD: compass with extract bearings, raid clock, body-part health, stamina, weapon panel, prompts, hit markers, damage direction.
 import {ITEMS,RAR} from './data.js';
+import {toast} from '../js/kit3d/ui.js';
 const $=id=>document.getElementById(id);
 const wrap=a=>{a=((a+180)%360+360)%360-180;return a;};
 export const mmss=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
@@ -10,7 +11,7 @@ export class HUD{
  set(id,v){if(this.c[id]!==v){this.c[id]=v;$(id).textContent=v;}}
  html(id,v){if(this.c[id]!==v){this.c[id]=v;$(id).innerHTML=v;}}
  banner(t,s,col,dur=2.6){$('bt').textContent=t;$('bt').style.color=col||'#fff';$('bs').textContent=s||'';$('bs').hidden=!s;$('banner').classList.add('on');this.banT=dur;}
- note(t,cls=''){const d=document.createElement('div');d.textContent=t;d.className=cls;const n=$('notes');n.appendChild(d);setTimeout(()=>d.remove(),4200);while(n.children.length>6)n.firstChild.remove();}
+ note(t,cls=''){const d=toast($('notes'),'',4200,6,false);d.textContent=t;d.className=cls;}
  hit(kind){const h=$('hm');h.className=kind||'';h.style.opacity=1;this.hmT=kind==='kill'?.5:.22;}
  hurtDir(ang){const i=document.createElement('i');i.style.transform=`rotate(${ang}rad)`;$('ddir').appendChild(i);setTimeout(()=>i.remove(),1200);}
  showEx(t=6){this.exT=t;}

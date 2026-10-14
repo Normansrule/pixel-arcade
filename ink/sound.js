@@ -1,23 +1,11 @@
 // GLOSS RIOT — WebAudio synthesis (no audio files): wet blaster pops, charger whine + zap, roller rumble loop, squelchy
 // splats, swim swishes, bomb fizz, the INKQUAKE slam, a funky bass + clap music loop, and the results drumroll / fanfare.
-export class Sound{
- constructor(){this.ac=null;this.vol=.8;this.musVol=.5;this.lp={x:0,y:0,z:0,yaw:0};this.mus=null;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=5;comp.connect(ac.destination);this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);
-  this.sfx=ac.createGain();this.sfx.connect(this.master);this.musG=ac.createGain();this.musG.gain.value=this.musVol*.5;this.musG.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  // roller rumble loop + swim loop
-  const mk=(type,f,q)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(this.sfx);s.start();return{f:fl,g};};
-  this.rollL=mk('lowpass',260,2);this.swimL=mk('bandpass',700,1.4);}catch(e){this.ac=null;}}
- setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
- setMusic(v){this.musVol=v;if(this.musG)this.musG.gain.value=v*.5;}
- listener(x,y,z,yaw){this.lp.x=x;this.lp.y=y;this.lp.z=z;this.lp.yaw=yaw;}
+import {boot,bed,SpatialSound} from '../js/kit3d/audio.js';
+export class Sound extends SpatialSound{
+ constructor(){super();this.range=50;}
+ // roller rumble loop + swim loop
+ init(){boot(this,ac=>{this.bus(ac);this.rollL=bed(ac,this.noise,'lowpass',260,2,this.sfx);this.swimL=bed(ac,this.noise,'bandpass',700,1.4,this.sfx);});}
  loops(roll,swim){if(!this.ac)return;const t=this.ac.currentTime;this.rollL.g.gain.setTargetAtTime(roll*.22,t,.06);this.rollL.f.frequency.setTargetAtTime(180+roll*220,t,.06);this.swimL.g.gain.setTargetAtTime(swim*.08,t,.08);this.swimL.f.frequency.setTargetAtTime(500+swim*700,t,.08);}
- _dst(pos,vol,range=50){const ac=this.ac,g=ac.createGain();let v=vol,pan=0;if(pos){const dx=pos.x-this.lp.x,dy=pos.y-this.lp.y,dz=pos.z-this.lp.z,d=Math.hypot(dx,dy,dz);v*=1/(1+(d/(range*.25))**2);if(d>.5){const rx=Math.cos(this.lp.yaw),rz=-Math.sin(this.lp.yaw);pan=Math.max(-.85,Math.min(.85,(dx*rx+dz*rz)/d));}if(v<.004)return null;}
-  if(this.ac.createStereoPanner&&pan){const p=ac.createStereoPanner();p.pan.value=pan;g.connect(p);p.connect(this.sfx);}else g.connect(this.sfx);this._v=v;return g;}
- _n(dst,dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*this._v,t+.004);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(dst);s.start(t,Math.random()*1.5);s.stop(t+dur+.02);}
- _o(dst,type,f0,f1,dur,vol,delay=0,att=.004){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*this._v,t+att);g.gain.exponentialRampToValueAtTime(.0008,t+dur);o.connect(g);g.connect(dst);o.start(t);o.stop(t+dur+.03);}
  play(k,pos=null,vol=1,a=0){if(!this.ac)return;try{const r=1+(Math.random()-.5)*.1;let d;const D=(v,range)=>(d=this._dst(pos,v*vol,range));
   switch(k){
   case'shot':if(!D(.45,55))return;this._o(d,'square',900*r,300,.06,.1);this._n(d,.09,2600*r,500,2.5,.4,'bandpass');this._o(d,'sine',300*r,120,.07,.25);break;

@@ -1,31 +1,11 @@
 // STARFALL VANGUARD — WebAudio synthesis (no audio files): spatial weapon/impact one-shots, engine loop, ambience, radio chirps and a choir-pad battle score.
-export class Sound{
- constructor(){this.ac=null;this.vol=.8;this.musVol=.5;this.annOn=true;this.lp={x:0,y:0,z:0,yaw:0};this.mus=null;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=5;comp.connect(ac.destination);this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);
-  this.sfx=ac.createGain();this.sfx.connect(this.master);this.musG=ac.createGain();this.musG.gain.value=this.musVol*.5;this.musG.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  // reverb-ish send (short feedback delay)
-  this.verb=ac.createGain();this.verb.gain.value=.22;const dl=ac.createDelay();dl.delayTime.value=.09;const fb=ac.createGain();fb.gain.value=.35;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;this.verb.connect(dl);dl.connect(lp);lp.connect(fb);fb.connect(dl);lp.connect(this.sfx);
-  // jetpack loop (local player)
-  const js=ac.createBufferSource();js.buffer=b;js.loop=true;this.jf=ac.createBiquadFilter();this.jf.type='bandpass';this.jf.frequency.value=900;this.jf.Q.value=.7;this.jg=ac.createGain();this.jg.gain.value=0;js.connect(this.jf);this.jf.connect(this.jg);this.jg.connect(this.sfx);js.start();
-  // ambience bed
-  const as=ac.createBufferSource();as.buffer=b;as.loop=true;this.af=ac.createBiquadFilter();this.af.type='lowpass';this.af.frequency.value=300;this.ag=ac.createGain();this.ag.gain.value=0;as.connect(this.af);this.af.connect(this.ag);this.ag.connect(this.master);as.start();
-  this.hum=ac.createOscillator();this.hum.type='sine';this.hum.frequency.value=55;this.hg=ac.createGain();this.hg.gain.value=0;this.hum.connect(this.hg);this.hg.connect(this.master);this.hum.start();}catch(e){this.ac=null;}}
- setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
- setMusic(v){this.musVol=v;if(this.musG)this.musG.gain.value=v*.5;}
- ambience(theme){if(!this.ac)return;const t=this.ac.currentTime;const cfg={gorge:[700,.06,0,0],spire:[260,.05,46,.04],plains:[1100,.05,0,0]}[theme]||[300,0,0,0];
-  this.af.frequency.setTargetAtTime(cfg[0],t,.5);this.ag.gain.setTargetAtTime(cfg[1],t,.5);this.hum.frequency.setTargetAtTime(cfg[2]||50,t,.5);this.hg.gain.setTargetAtTime(cfg[3],t,.5);}
- listener(x,y,z,yaw){this.lp.x=x;this.lp.y=y;this.lp.z=z;this.lp.yaw=yaw;}
+import {boot,SpatialSound} from '../js/kit3d/audio.js';
+export class Sound extends SpatialSound{
+ init(){boot(this,ac=>{this.bus(ac);this.room(ac);this.beds(ac,900);});}
+ ambience(theme){if(!this.ac)return;this.amb({gorge:[700,.06,0,0],spire:[260,.05,46,.04],plains:[1100,.05,0,0]}[theme]||[300,0,0,0]);}
  engine(on,rpm=0,tank=0){if(!this.ac)return;const t=this.ac.currentTime;if(!this.eo){const ac=this.ac;this.eo=ac.createOscillator();this.eo.type='sawtooth';this.eo2=ac.createOscillator();this.eo2.type='square';this.ef=ac.createBiquadFilter();this.ef.type='lowpass';this.ef.frequency.value=500;this.eg=ac.createGain();this.eg.gain.value=0;this.eo.connect(this.ef);this.eo2.connect(this.ef);this.ef.connect(this.eg);this.eg.connect(this.sfx);this.eo.start();this.eo2.start();}
   const f=(tank?32:48)+rpm*(tank?30:120);this.eo.frequency.setTargetAtTime(f,t,.06);this.eo2.frequency.setTargetAtTime(f*1.51,t,.06);this.ef.frequency.setTargetAtTime(tank?380+rpm*300:500+rpm*1400,t,.08);this.eg.gain.setTargetAtTime(on?(tank?.11:.07)+rpm*.05:0,t,.1);this.jg.gain.setTargetAtTime(on&&tank?.05+rpm*.04:0,t,.1);this.jf.frequency.setTargetAtTime(tank?300:900,t,.1);}
  jet(on,k=1){if(!this.ac)return;const t=this.ac.currentTime;this.jg.gain.setTargetAtTime(on?.13*k:0,t,.05);this.jf.frequency.setTargetAtTime(on?700+Math.random()*300:500,t,.05);}
- // destination node for a positioned sound (gain + stereo pan by listener-relative angle)
- _dst(pos,vol,range=60){const ac=this.ac,g=ac.createGain();let v=vol,pan=0;if(pos){const dx=pos.x-this.lp.x,dy=pos.y-this.lp.y,dz=pos.z-this.lp.z,d=Math.hypot(dx,dy,dz);v*=1/(1+(d/(range*.25))**2);if(d>.5){const rx=Math.cos(this.lp.yaw),rz=-Math.sin(this.lp.yaw);pan=Math.max(-.85,Math.min(.85,(dx*rx+dz*rz)/d));}if(v<.004)return null;}
-  g.gain.value=1;if(this.ac.createStereoPanner&&pan){const p=ac.createStereoPanner();p.pan.value=pan;g.connect(p);p.connect(this.sfx);if(vol>.15)p.connect(this.verb);}else{g.connect(this.sfx);}this._v=v;return g;}
- _n(dst,dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*this._v,t+.004);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(dst);s.start(t,Math.random()*1.5);s.stop(t+dur+.02);}
- _o(dst,type,f0,f1,dur,vol,delay=0,att=.004){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*this._v,t+att);g.gain.exponentialRampToValueAtTime(.0008,t+dur);o.connect(g);g.connect(dst);o.start(t);o.stop(t+dur+.03);}
  play(k,pos=null,vol=1,a=0){if(!this.ac)return;try{const r=1+(Math.random()-.5)*.08;let d;
   const D=(v,range)=>(d=this._dst(pos,v*vol,range));
   switch(k){
@@ -102,5 +82,4 @@ export class Sound{
     if(s%16===8&&this.musI>.3){const o=ac.createOscillator(),gg=ac.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(40,t+.2);gg.gain.setValueAtTime(.3,t);gg.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(gg);gg.connect(g);o.start(t);o.stop(t+.26);}
     if(s%16===0){for(const iv of[0,3,7,12]){const o=ac.createOscillator(),o2=ac.createOscillator(),gg=ac.createGain(),f=ac.createBiquadFilter();o.type='sawtooth';o2.type='sawtooth';o.frequency.value=hz(root+iv);o2.frequency.value=hz(root+iv)*1.006;f.type='lowpass';f.frequency.value=700+this.musI*900;gg.gain.setValueAtTime(0,t);gg.gain.linearRampToValueAtTime(.022,t+.5);gg.gain.linearRampToValueAtTime(.0,t+spb*16);o.connect(f);o2.connect(f);f.connect(gg);gg.connect(g);o.start(t);o2.start(t);o.stop(t+spb*16+.05);o2.stop(t+spb*16+.05);}}
     st.step++;st.next+=spb;}setTimeout(tick,60);};tick();}
-  else if(!on&&this.mus){this.mus=null;}}
- announce(text){if(!this.annOn)return;try{const s=window.speechSynthesis;if(!s)return;if(s.speaking&&s.pending)s.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.02;u.pitch=.55;u.volume=Math.min(1,this.vol*1.1);s.speak(u);}catch(e){}}}
+  else if(!on&&this.mus){this.mus=null;}}}

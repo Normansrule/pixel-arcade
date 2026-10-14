@@ -1,15 +1,14 @@
 // EXFIL — WebAudio synthesis: layered gunshots with distance filtering + echo, footsteps by surface, foley, UI, and a coastal ambience bed.
+import {boot,master,gain,noiseBuf,bed} from '../js/kit3d/audio.js';
 const R=Math.random;
 const GUN={p9:{f:900,b:150,len:.11,v:.8},vx9:{f:1100,b:140,len:.09,v:.75},ark:{f:1500,b:110,len:.13,v:1},hrn:{f:1300,b:80,len:.2,v:1.15},stk:{f:700,b:70,len:.22,v:1.2}};
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.cam={x:0,y:0,z:0,yaw:0};this.amb=null;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-12;comp.ratio.value=5;comp.connect(ac.destination);this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);
-  this.sfx=ac.createGain();this.sfx.connect(this.master);this.ui=ac.createGain();this.ui.gain.value=.7;this.ui.connect(this.master);this.ambG=ac.createGain();this.ambG.gain.value=0;this.ambG.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=R()*2-1;this.noise=b;
+ init(){boot(this,ac=>{this.master=master(ac,this.vol,-12,5);this.sfx=gain(ac,1,this.master);this.ui=gain(ac,.7,this.master);this.ambG=gain(ac,0,this.master);
+  const n=ac.sampleRate*2;this.noise=noiseBuf(ac);
   const br=ac.createBuffer(1,n,ac.sampleRate),bd=br.getChannelData(0);let l=0;for(let i=0;i<n;i++){l=(l+.02*(R()*2-1))/1.02;bd[i]=l*3.5;}this.brown=br;
   const il=ac.sampleRate*2.6,ib=ac.createBuffer(2,il,ac.sampleRate);for(let c=0;c<2;c++){const x=ib.getChannelData(c);for(let i=0;i<il;i++)x[i]=(R()*2-1)*Math.pow(1-i/il,3.2)*(i<ac.sampleRate*.02?.2:1);}
-  this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.45;this.verbIn.connect(this.verb);this.verb.connect(this.sfx);this.startAmb();}catch(e){this.ac=null;}}
+  this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.45;this.verbIn.connect(this.verb);this.verb.connect(this.sfx);this.startAmb();});}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
  listener(x,y,z,yaw){this.cam.x=x;this.cam.y=y;this.cam.z=z;this.cam.yaw=yaw;}
  at(p){if(!p)return[0,0];const c=this.cam;const dx=p.x-c.x,dz=p.z-c.z,dy=(p.y||0)-c.y;const d=Math.hypot(dx,dy,dz)||1;const rx=Math.cos(c.yaw),rz=-Math.sin(c.yaw);return[d,(dx*rx+dz*rz)/d];}
@@ -66,7 +65,7 @@ export class Sound{
  breath(v){this._n(.5,1200,700,.8,.06*v,'bandpass',{atk:.15});}
  horn(){this._o('sawtooth',98,97,2.2,.18,{lp:500,atk:.3,rev:true});this._o('sawtooth',146,145,2.2,.12,{lp:500,atk:.3});}
  /* ---------- ambience ---------- */
- startAmb(){const ac=this.ac;const mk=(buf,type,f,q,g)=>{const s=ac.createBufferSource();s.buffer=buf;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const gn=ac.createGain();gn.gain.value=g;s.connect(fl);fl.connect(gn);gn.connect(this.ambG);s.start();return{fl,gn};};
+ startAmb(){const ac=this.ac;const mk=(buf,type,f,q,g)=>{const l=bed(ac,buf,type,f,q,this.ambG,g);return{fl:l.f,gn:l.g};};
   this.wind=mk(this.brown,'bandpass',420,.5,.5);this.sea=mk(this.noise,'lowpass',500,.4,.0);this.rain=mk(this.noise,'highpass',2500,.3,0);this.ambT=0;this.gullT=8;this.hornT=40;this.farT=25;}
  ambient(dt,o){if(!this.ac||!this.wind)return;const t=this.ac.currentTime;this.ambG.gain.setTargetAtTime(o.on?1:0,t,.8);if(!o.on)return;this.ambT+=dt;
   this.wind.gn.gain.setTargetAtTime(.25+.2*Math.sin(this.ambT*.21)+.15*Math.sin(this.ambT*.53)+(o.high||0)*.3,t,.5);this.wind.fl.frequency.setTargetAtTime(350+150*Math.sin(this.ambT*.17),t,.5);

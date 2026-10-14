@@ -12,7 +12,9 @@ import {buildViewmodel} from './viewmodel.js';
 import {Sound} from './sound.js';
 import {DIFF,Brain,planRound,botBuy,think,teamTick} from './ai.js';
 import {HUD} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest,userName} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,D2R=Math.PI/180;
 const ROUND_T=115,FREEZE_T=10,END_T=5.5,FUSE=40,PLANT_T=3,GRAV=15,BUY_WINDOW=20,DT=1/60;
@@ -33,7 +35,7 @@ let TXC={},WC={},TX=null,world=null,L=null,fx=null,VM=null;
 const G={app:'menu',opt:{map:0,side:'atk',diff:1,len:1,ot:1,sens:1,vol:.8},agents:[],player:null,score:[0,0],half:0,round:0,roundInHalf:0,phase:'freeze',timer:ROUND_T,freezeT:FREEZE_T,endT:0,time:0,matchT:0,
  bomb:{state:'none',carrier:null,pos:new V(),fuse:FUSE,site:null,beepT:0,planter:null,defuser:null},events:[],nades:[],drops:[],plan:null,diff:DIFF[1],lossStreak:[0,0],ot:false,target:7,halfRounds:6,maxRounds:12,limit:40*60,
  feedLog:[],util:{},attract:true,spec:null,winner:null,history:[],mvpLast:null,roundsWon:[0,0]};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_breach_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_breach_opt',G.opt);
 G.side=a=>sideOfSquad(a.squad);
 function sideOfSquad(s){const startAtk=G.startAtk;let atk=s===0?startAtk:!startAtk;if(G.half%2===1)atk=!atk;return atk?'atk':'def';}
 G.squadOf=side=>sideOfSquad(0)===side?0:1;
@@ -66,7 +68,7 @@ function loadMap(i){const def=MAPS[i];const mood=def.mood;if(world)scene.remove(
  hud.buildMini(L);fxStack=null;Rr.shadowMap.needsUpdate=true;applyShadowMode();}
 
 /* ================= match flow ================= */
-function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(G.opt,o);try{localStorage.setItem('pxd_breach_opt',JSON.stringify(G.opt));}catch(e){}snd.init();snd.setVol(G.opt.vol);
+function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(G.opt,o);saveOpt();snd.init();snd.setVol(G.opt.vol);
  G.attract=false;G.app='match';G.diff=DIFF[G.opt.diff];G.startAtk=G.opt.side==='atk';const quick=G.opt.len===0;G.target=quick?4:7;G.halfRounds=quick?3:6;G.maxRounds=quick?6:12;G.limit=(quick?20:40)*60;
  loadMap(G.opt.map);setupMatch(false);hud.show(true);['menu','keys','over','pause'].forEach(id=>$(id).hidden=true);document.body.classList.add('playing');lock();snd.ambience(MAPS[G.opt.map].mood,true);}
 function setupMatch(attract){roster(attract);G.score=[0,0];G.half=0;G.round=0;G.roundInHalf=0;G.matchT=0;G.lossStreak=[0,0];G.ot=false;G.feedLog=[];G.history=[];G.roundsWon=[0,0];hud.clearFeed();startRound(true);}
@@ -297,17 +299,10 @@ function updateAgent(a,dt){const c=a.ctl;a.blind=Math.max(0,a.blind-dt);
  const f=fx.inFire(a.pos.x,a.pos.z,a.pos.y);if(f){a.fireAcc=(a.fireAcc||0)+dt;if(a.fireAcc>.25){a.fireAcc=0;damage(a,f.owner&&G.side(f.owner)!==G.side(a)?f.owner:f.owner===a?a:null,10,'legs',{id:'inc',ap:1},{from:new V(f.x,f.y,f.z)});}}}
 
 /* ================= player input ================= */
-const keys={},mouse={l:false,r:false,semiLock:false,dx:0,dy:0};let locked=false;
-function lock(){if(G.app!=='match')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='match'&&!hud.buyOpen)pause(true);});
-canvas.addEventListener('mousedown',e=>{if(G.app==='match'&&!locked&&!hud.buyOpen){lock();return;}});
-addEventListener('mousedown',e=>{if(G.app!=='match'||!locked)return;if(e.button===0)mouse.l=true;if(e.button===2){mouse.r=true;altFire();}if(G.player&&!G.player.alive&&(e.button===0||e.button===2))specNext(e.button===0?1:-1);});
-addEventListener('mouseup',e=>{if(e.button===0){mouse.l=false;mouse.semiLock=false;}if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app!=='match'||!locked||!G.player||!G.player.alive)return;const P=G.player;const order=[1,2,3,4,5].filter(s=>s<=3?P.slots[s]:s===4?NADE_ORDER.some(k=>P.nades[k]>0):P.hasBomb);let i=order.indexOf(P.cur);i=(i+(e.deltaY>0?1:-1)+order.length)%order.length;switchTo(P,order[i]);},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
+const I=controls(canvas,{canLock:()=>G.app==='match',clickLock:()=>G.app==='match'&&!hud.buyOpen,onLock:(on,was)=>{if(was&&!on&&G.app==='match'&&!hud.buyOpen)pause(true);},
+ onDown:e=>{if(G.app!=='match'||!I.locked)return true;if(e.button===2)altFire();if(G.player&&!G.player.alive&&(e.button===0||e.button===2))specNext(e.button===0?1:-1);},
+ onWheel:e=>{if(G.app!=='match'||!I.locked||!G.player||!G.player.alive)return;const P=G.player;const order=[1,2,3,4,5].filter(s=>s<=3?P.slots[s]:s===4?NADE_ORDER.some(k=>P.nades[k]>0):P.hasBomb);let i=order.indexOf(P.cur);i=(i+(e.deltaY>0?1:-1)+order.length)%order.length;switchTo(P,order[i]);},
+ onKey:(e,first)=>{if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(hud.buyOpen){hud.closeBuy();lock();return;}if(G.app==='match')pause(true);else if(G.app==='paused')pause(false);return;}
  if(G.app!=='match'||!first)return;const P=G.player;if(!P)return;
  if(e.code==='Tab')hud.board(true);
@@ -318,20 +313,19 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=
  if(e.code==='KeyR')startReload(P);
  if(e.code==='KeyX'){if(P.cur===5||P.cur===4&&false)dropBomb(P,true);else if(P.cur===1||P.cur===2){dropGun(P,P.cur,false);}}
  if(e.code==='KeyF'&&VM)VM.inspect();
- if(e.code==='KeyE'){if(!(P.hasBomb&&L.site(P.pos.x,P.pos.z))&&!(G.side(P)==='def'&&G.bomb.state==='planted'&&P.pos.distanceTo(G.bomb.pos)<1.7))useDrop(P);}});
-addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab')hud.board(false);});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+ if(e.code==='KeyE'){if(!(P.hasBomb&&L.site(P.pos.x,P.pos.z))&&!(G.side(P)==='def'&&G.bomb.state==='planted'&&P.pos.distanceTo(G.bomb.pos)<1.7))useDrop(P);}},onKeyUp:e=>{if(e.code==='Tab')hud.board(false);}});
+const {keys,mouse,lock,unlock}=I;mouse.semiLock=false;addEventListener('mouseup',e=>{if(e.button===0)mouse.semiLock=false;});
 function altFire(){const P=G.player;if(!P||!P.alive)return;const g=P.gun();if(g&&g.def.scope&&P.switchT<=0&&P.reloadT<=0){P.zoom=(P.zoom+1)%3;snd.reload('draw');return;}if(g&&g.def.cls==='knife'&&G.time>=P.nextFire){P.nextFire=G.time+1;knife(P,true);return;}
  if(P.cur===4&&P.switchT<=0&&P.nades[P.nadeSel]>0)throwNade(P,P.nadeSel,null,true);}
 function readPlayer(dt){const P=G.player,c=P.ctl;const sens=.0022*G.opt.sens*(P.zoom===1?.42:P.zoom===2?.2:1);
- if(locked&&P.alive){P.yaw-=mouse.dx*sens;P.pitch-=mouse.dy*sens;P.pitch=cl(P.pitch,-1.45,1.45);}VM&&(VM.mdx=mouse.dx,VM.mdy=mouse.dy);
+ if(I.locked&&P.alive){P.yaw-=mouse.dx*sens;P.pitch-=mouse.dy*sens;P.pitch=cl(P.pitch,-1.45,1.45);}VM&&(VM.mdx=mouse.dx,VM.mdy=mouse.dy);
  const f=(keys.KeyW?1:0)-(keys.KeyS?1:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0);const sy=Math.sin(P.yaw),cy=Math.cos(P.yaw);c.mx=-sy*f+cy*s;c.mz=-cy*f-sy*s;
  c.walk=!!keys.ShiftLeft||!!keys.ShiftRight;c.crouch=!!keys.ControlLeft||!!keys.KeyC||!!keys.ControlRight;c.jump=!!keys.Space;c.use=!!keys.KeyE;c.reload=false;c.slot=null;
- const g=P.gun();c.fire=mouse.l&&locked&&!(g&&g.def.semi&&mouse.semiLock)&&!hud.buyOpen;if(P.cur===4)c.fire=false;
+ const g=P.gun();c.fire=mouse.l&&I.locked&&!(g&&g.def.semi&&mouse.semiLock)&&!hud.buyOpen;if(P.cur===4)c.fire=false;
  // grenade: throw on click (overhand)
- if(P.cur===4&&mouse.l&&locked&&P.switchT<=0&&!mouse.semiLock){mouse.semiLock=true;throwNade(P,P.nadeSel,null,false);}
+ if(P.cur===4&&mouse.l&&I.locked&&P.switchT<=0&&!mouse.semiLock){mouse.semiLock=true;throwNade(P,P.nadeSel,null,false);}
  // gamepad (basic)
- const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.18?v:0;const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
+ const gp=gamepad();if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.18);const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
   if(lx||ly){c.mx=-sy*(-ly)+cy*lx;c.mz=-cy*(-ly)-sy*lx;}P.yaw-=rx*dt*2.6*G.opt.sens;P.pitch=cl(P.pitch-ry*dt*2,-1.45,1.45);if(bt[7]&&bt[7].value>.4)c.fire=true;if(bt[0]&&bt[0].pressed)c.jump=true;if(bt[1]&&bt[1].pressed)c.crouch=true;if(bt[2]&&bt[2].pressed){c.use=true;}
   const pr=G.padPrev||{};if(bt[3]&&bt[3].pressed&&!pr.y)switchTo(P,P.cur===1?2:1);if(bt[6]&&bt[6].value>.4&&!pr.lt)altFire();if(bt[4]&&bt[4].pressed&&!pr.lb)startReload(P);if(bt[5]&&bt[5].pressed&&!pr.rb)switchTo(P,4);if(bt[9]&&bt[9].pressed&&!pr.st)pause(true);
   G.padPrev={y:bt[3]&&bt[3].pressed,lt:bt[6]&&bt[6].value>.4,lb:bt[4]&&bt[4].pressed,rb:bt[5]&&bt[5].pressed,st:bt[9]&&bt[9].pressed};}
@@ -431,13 +425,12 @@ function best(){return bestScore('breachpoint');}
 /* ================= HUD + menus ================= */
 const hud=new HUD(G,{SIDE,WPN,NADE,GEAR,NADE_ORDER,MAPS,ECON,ROUND_T,BUY_WINDOW,buy:(id)=>{if(G.player&&G.canBuy(G.player))G.buy(G.player,id);},autobuy:()=>{const P=G.player;if(!P||!G.canBuy(P))return;botBuy(P,G);hud.refreshBuy();snd.buy(true);}});
 G.hud=hud;
-const seg=(id,key,num=true)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',(num?+b.dataset.v:b.dataset.v)===v));if(key==='map'&&G.app==='menu'&&!init){attractMode();}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
-seg('o-map','map');seg('o-side','side',false);seg('o-diff','diff');seg('o-len','len');seg('o-ot','ot');seg('o-sens','sens');seg('o-vol','vol');
+const seg=pickers(G.opt);
+seg('o-map','map',true,()=>{if(G.app==='menu')attractMode();});seg('o-side','side',false);seg('o-diff','diff');seg('o-len','len');seg('o-ot','ot');seg('o-sens','sens');seg('o-vol','vol');
 $('o-vol').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>snd.setVol(G.opt.vol)));
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Breach Point\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\nMap: ${a.map||''} · Side: ${a.side||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('breachpoint',a.pts||0,body);};
+postButton($('post'),'breachpoint',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Breach Point\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\nMap: ${a.map||''} · Side: ${a.side||''} · CPU ${a.diff||''}`];});
 
 /* ================= loop ================= */
 attractMode();

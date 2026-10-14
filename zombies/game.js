@@ -11,7 +11,9 @@ import {WPN,BOX_POOL,stats,gunModel,ViewModel,gunMats} from './weapons.js';
 import {FX} from './fx.js';
 import {Sound} from './sound.js';
 import {HUD,mmss,PUP} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,TAU=Math.PI*2,smooth=(a,b,x)=>{const t=cl((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const DIFFS=[{n:'CASUAL',hp:.75,dmg:.6,count:.8,spd:.92,run:.7,alive:16,spawn:1.25,start:750,boss:.75},{n:'SURVIVOR',hp:1,dmg:1,count:1,spd:1,run:1,alive:22,spawn:1,start:500,boss:1},{n:'NIGHTMARE',hp:1.3,dmg:1.35,count:1.2,spd:1.07,run:1.35,alive:26,spawn:.8,start:500,boss:1.35}];
@@ -61,7 +63,7 @@ const crateLight=new THREE.PointLight(0xffc070,0,12,1.6);scene.add(crateLight);c
 const fx=new FX(scene,T),snd=new Sound(),hud=new HUD();const vm=new ViewModel(T.flash);vmCam.add(vm.root);
 const G={app:'loading',opt:{len:12,diff:1,ally:1,sens:1,vol:.8,fov:90},diff:DIFFS[1],round:0,phase:'pre',phaseT:0,toSpawn:[],spawnT:0,zombies:[],clock:720,nightLen:720,time:0,player:null,ally:null,solo:false,fieldP:new Int16Array(W*H).fill(-1),fieldA:new Int16Array(W*H).fill(-1),fieldT:0,
  pup:{double:0,insta:0},drops:[],dropsRound:0,killsSinceDrop:0,projs:[],power:false,stats:null,hurtFx:0,attract:true,map,fx,snd,hud,shake:0,god:false,areaName:'',crossSpread:0,result:null,endT:0,repairPts:0};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_nightfall_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_nightfall_opt',G.opt);
 G.targets=()=>G.attract?[]:[G.player,G.solo?null:G.ally];
 G.wstats=w=>stats(w.id,w.up);
 G.reviveTime=byAlly=>byAlly?(G.player.perks.has('wind')?1.6:3):(G.player.perks.has('wind')?1.5:3);
@@ -119,7 +121,6 @@ function attract(){G.attract=true;G.app='menu';clearZombies();clearDrops();clear
 function clearZombies(){for(const z of G.zombies){scene.remove(z.root);z.dispose();}G.zombies.length=0;}
 function clearDrops(){for(const d of G.drops)scene.remove(d.mesh);G.drops.length=0;}
 function clearProjs(){for(const p of G.projs)scene.remove(p.mesh);G.projs.length=0;}
-function saveOpt(){try{localStorage.setItem('pxd_nightfall_opt',JSON.stringify(G.opt));}catch(e){}}
 
 /* ================= rounds ================= */
 function roundHp(n){return(n<=9?150+100*(n-1):950*Math.pow(1.1,n-9))*G.diff.hp;}
@@ -289,29 +290,20 @@ function doUse(u,edge,dt){const p=P();if(!u)return;
  else if(u.k==='perk')buyPerk(u.o);else if(u.k==='crate')crateUse();else if(u.k==='forge')useForge();else if(u.k==='power')setPower(true);}
 
 /* ================= input ================= */
-const keys={},mouse={l:false,r:false,dx:0,dy:0};let locked=false,useEdge=false,jumpEdge=false,padUse=false;
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',()=>{if(G.app==='play'&&!locked)lock();});
-addEventListener('mousedown',e=>{if(G.app!=='play'||!locked)return;if(e.button===0)mouse.l=true;if(e.button===2)mouse.r=true;if(e.button===1){e.preventDefault();swapWeapon(1);}});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app!=='play'||!locked)return;swapWeapon(e.deltaY>0?1:-1);},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+const I=controls(canvas,{canLock:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onDown:e=>{if(G.app!=='play'||!I.locked)return true;if(e.button===1){e.preventDefault();swapWeapon(1);}},onWheel:e=>{if(G.app!=='play'||!I.locked)return;swapWeapon(e.deltaY>0?1:-1);},
+ onKey:(e,first)=>{if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='paused')pause(false);else if(G.app==='play')pause(true);return;}if(G.app!=='play'||!first)return;
  if(e.code==='Space')jumpEdge=true;if(e.code==='KeyE')useEdge=true;if(e.code==='KeyR')startReload();if(e.code==='KeyV')knife();if(e.code==='KeyQ')throwNade();if(e.code==='KeyF'){P().flashOn=!P().flashOn;snd.dry();}
- if(e.code==='Digit1')equip(0);if(e.code==='Digit2')equip(1);if(e.code==='Tab')swapWeapon(1);});
-addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='KeyE')P().useHold=0;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+ if(e.code==='Digit1')equip(0);if(e.code==='Digit2')equip(1);if(e.code==='Tab')swapWeapon(1);},onKeyUp:e=>{if(e.code==='KeyE')P().useHold=0;}});
+const {keys,mouse,lock,unlock}=I;let useEdge=false,jumpEdge=false,padUse=false;
 function pause(on){if(on&&G.app==='play'){G.app='paused';$('pause').hidden=false;document.body.classList.remove('playing');unlock();mouse.l=mouse.r=false;}else if(!on&&G.app==='paused'){G.app='play';$('pause').hidden=true;document.body.classList.add('playing');lock();}}
 let padPrev={};
 function readInput(){const p=P();const f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
- const inp={f,s,sprint:!!(keys.ShiftLeft||keys.ShiftRight),jump:jumpEdge,use:useEdge,fire:mouse.l&&locked,ads:mouse.r&&locked};jumpEdge=false;useEdge=false;
- const sens=.0022*G.opt.sens*(p.ads?.7:1);if(locked){p.yaw-=mouse.dx*sens;p.pitch=cl(p.pitch-mouse.dy*sens,-1.45,1.45);}vm.mdx=mouse.dx;vm.mdy=mouse.dy;mouse.dx=mouse.dy=0;
- const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;padUse=false;
- if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.18?v:0;const b=i=>bt[i]&&(bt[i].pressed||bt[i].value>.4);const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);if(lx||ly){inp.f=-ly;inp.s=lx;}
+ const inp={f,s,sprint:!!(keys.ShiftLeft||keys.ShiftRight),jump:jumpEdge,use:useEdge,fire:mouse.l&&I.locked,ads:mouse.r&&I.locked};jumpEdge=false;useEdge=false;
+ const sens=.0022*G.opt.sens*(p.ads?.7:1);if(I.locked){p.yaw-=mouse.dx*sens;p.pitch=cl(p.pitch-mouse.dy*sens,-1.45,1.45);}vm.mdx=mouse.dx;vm.mdy=mouse.dy;mouse.dx=mouse.dy=0;
+ const gp=gamepad();padUse=false;
+ if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.18);const b=i=>bt[i]&&(bt[i].pressed||bt[i].value>.4);const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);if(lx||ly){inp.f=-ly;inp.s=lx;}
   p.yaw-=rx*.05*G.opt.sens*(p.ads?.55:1);p.pitch=cl(p.pitch-ry*.04*G.opt.sens*(p.ads?.55:1),-1.45,1.45);if(b(7))inp.fire=true;if(b(6))inp.ads=true;if(b(10))inp.sprint=true;if(b(0)&&!padPrev.a)inp.jump=true;
   if(b(2)){padUse=true;if(!padPrev.x){inp.use=true;if(!useCur)startReload();}}if(b(1)&&!padPrev.b)knife();if(b(5)&&!padPrev.rb)throwNade();if(b(3)&&!padPrev.y)swapWeapon(1);if(b(9)&&!padPrev.st)pause(true);
   padPrev={a:b(0),x:b(2),b:b(1),rb:b(5),y:b(3),st:b(9)};}
@@ -437,12 +429,11 @@ function render(){const w=innerWidth,h=innerHeight;if(RR.domElement.width!==Math
  if(fxStack.composer)fxStack.render();else{RR.autoClear=true;RR.render(scene,cam);if(vm.root.visible&&G.app==='play'){RR.autoClear=false;RR.clearDepth();RR.render(vmScene,vmCam);RR.autoClear=true;}}}
 
 /* ================= menus ================= */
-const seg=(id,key,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===+v));if(!init){saveOpt();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
-seg('o-len','len');seg('o-diff','diff');seg('o-ally','ally');seg('o-sens','sens');seg('o-vol','vol',v=>snd.setVol(v));seg('o-fov','fov');
+const seg=pickers(G.opt,saveOpt);
+seg('o-len','len');seg('o-diff','diff');seg('o-ally','ally');seg('o-sens','sens');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-fov','fov');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='menu';toMenu();};
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Nightfall\nScore: ${a.pts||0}\nResult: ${a.won?'survived until dawn':'overrun'} · round ${a.round||0}\nKills: ${a.kills||0} (${a.heads||0} headshots)\nNight: ${a.len||0} min · ${a.diff||''} · ${a.solo?'solo':'with Rook'}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('nightfall',a.pts||0,body);};
+postButton($('post'),'nightfall',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Nightfall\nScore: ${a.pts||0}\nResult: ${a.won?'survived until dawn':'overrun'} · round ${a.round||0}\nKills: ${a.kills||0} (${a.heads||0} headshots)\nNight: ${a.len||0} min · ${a.diff||''} · ${a.solo?'solo':'with Rook'}`];});
 
 /* ================= loop ================= */
 attract();$('loading').classList.add('done');
