@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dustwater · Pixel Arcade</title>
+<meta name="description" content="Dustwater: an open-world western bounty hunter in full 3D. Pick a contract off the sheriff's board, ride out across desert, canyon and river country, track the gang to their camp and bring the leader in alive with your lasso, or settle it with a quick-draw duel.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="west.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="de"></div><div id="dmg"></div><div id="bars"><i></i><i></i></div>
+<div id="hud" hidden>
+  <div id="marks"></div>
+  <div id="cross"><b></b><i></i></div><div id="hitm"></div>
+  <div id="job"><p class="eye" id="jgang">THE CRANE GANG</p><b id="jlead">SILAS CRANE</b><p id="jobj">Track the gang.</p><div id="jcount"></div></div>
+  <div id="clockw"><span>SUNDOWN IN</span><b id="clock">8:00</b></div>
+  <div id="cash"><b id="money">$0</b><div id="hon"><span>HONOUR</span><div><i id="honi"></i></div></div></div>
+  <div id="feed"></div>
+  <div id="radar"><canvas id="mini" width="220" height="220"></canvas>
+    <div id="cores"><div class="core" id="cH"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle class="v" cx="20" cy="20" r="16"/></svg><span>♥</span></div>
+      <div class="core" id="cS"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle class="v" cx="20" cy="20" r="16"/></svg><span>»</span></div>
+      <div class="core de" id="cD"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle class="v" cx="20" cy="20" r="16"/></svg><span>◎</span></div>
+      <div class="core hz" id="cHS"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle class="v" cx="20" cy="20" r="16"/></svg><span>H</span></div></div></div>
+  <div id="wpn"><div id="wsel"><span data-w="revolver">1</span><span data-w="rifle">2</span><span data-w="lasso">3</span></div><p id="wname">CATTLEMAN SIX</p><div id="ammo"><svg id="cyl" viewBox="0 0 60 60"></svg><b id="mag">6</b><span id="res">/ 36</span></div></div>
+  <div id="gait"></div>
+  <div id="prompt"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="duelui" hidden><p id="duelt">STEADY…</p></div>
+</div>
+<div id="board" hidden>
+  <p class="eye">DUSTWATER SHERIFF'S OFFICE · BOUNTY BOARD</p>
+  <h2>PICK A CONTRACT<em>.</em></h2>
+  <div id="posters"></div>
+  <p class="note">Alive pays the full bounty. Dead pays half. Each outlaw in the gang pays extra — more if you hogtie them.</p>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · OPEN-WORLD WESTERN</p>
+  <h1>DUST<br>WATER<em>.</em></h1>
+  <p class="how">Take a bounty off the sheriff's board, saddle up and ride out across the desert before sundown. Track the gang to their camp, shoot it out with six-gun, rifle and Dead Eye, rope the leader and bring him back alive — or face him in a quick-draw duel.</p>
+  <div class="opts">
+    <label>OUTLAWS</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>SUNDOWN</label><div class="seg" id="o-time"><button data-v="6">6 MIN</button><button data-v="8">8 MIN</button><button data-v="12">12 MIN</button></div>
+    <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">ON</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">RIDE OUT</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · sprint · jump</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>Space</kbd></td></tr>
+    <tr><td>Aim · fire (hold or spam)</td><td><kbd>RMB</kbd> <kbd>LMB</kbd></td></tr>
+    <tr><td>Revolver · rifle · lasso</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>Wheel</kbd></td></tr>
+    <tr><td>Dead Eye · reload</td><td><kbd>Q</kbd> <kbd>R</kbd></td></tr>
+    <tr><td>Call horse · mount / use</td><td><kbd>H</kbd> <kbd>E</kbd></td></tr>
+    <tr><td>Horse: spur to gallop · walk</td><td><kbd>Shift</kbd> <kbd>C</kbd></td></tr>
+    <tr><td>Duel · map · pause</td><td><kbd>F</kbd> <kbd>M</kbd> <kbd>Esc</kbd></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+    <tr><td>Gamepad</td><td><span class="pad">sticks · RT fire · LT aim · A jump · X use · Y horse · RB Dead Eye</span></td></tr>
+  </table>
+  <p>Dead Eye slows time: click to paint up to a cylinder of targets, then press Q to fire them all. Lasso an outlaw, then hold close and press E to hogtie. Carry a tied leader to your horse and hand him to the sheriff.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>YOUR<br>HORSES<em>.</em></h1><p class="how">Click resume to take the reins again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.6">LOW</button><button data-v="1">MED</button><button data-v="1.5">HIGH</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">CONTRACT</p>
+  <p class="res" id="ores">BOUNTY COLLECTED</p>
+  <p class="cashb" id="ocash">$0</p>
+  <div id="ostats"></div>
+  <div id="ohon"><span>HONOUR</span><div><i id="ohoni"></i></div><b id="ohonn">GOOD</b></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEW CONTRACT</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="opost"></div>
+<div id="fullmap" hidden><canvas id="fullmapc" width="640" height="640"></canvas><p><kbd>M</kbd> CLOSE MAP</p></div>
+<div id="lock" hidden><b>CLICK TO RIDE</b><span>mouse is captured · Esc to pause</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
