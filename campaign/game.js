@@ -30,7 +30,7 @@ const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(78,1,.08,120
 const vmScene=new THREE.Scene(),vmCam=new THREE.PerspectiveCamera(58,1,.01,10);vmScene.add(vmCam);
 const vmHemi=new THREE.HemisphereLight(0xfff0e0,0x302820,.6),vmKey=new THREE.DirectionalLight(0xffffff,1.1),vmRim=new THREE.DirectionalLight(0xffc080,.6);vmKey.position.set(-1,2,1);vmRim.position.set(2,.5,-1.5);vmScene.add(vmHemi,vmKey,vmRim);
 const VM=new Viewmodel(vmCam);const snd=new Sound();
-const parts=new Particles(scene,5000),smoke=new Particles(scene,1800,true),beams=new Beams(scene,160),shocks=new Shocks(scene,10),decals=new Decals(scene,160),lights=new LightPool(scene,5);shocks.H=(x,z)=>G.W?G.W.H(x,z):-1e9;
+const parts=new Particles(scene,5000),smoke=new Particles(scene,1800,true),beams=new Beams(scene,160),shocks=new Shocks(scene,10),decals=new Decals(scene,160),lights=new LightPool(scene,5);shocks.H=(x,z)=>G.W?G.W.H(x,z):-1e9;shocks.B=(p,r)=>{const o=[];if(G.W)G.W.query(p.x-r,p.z-r,p.x+r,p.z+r,b=>{if(b.dead)return;const d=Math.hypot(Math.max(b.a[0]-p.x,0,p.x-b.b[0]),Math.max(b.a[1]-p.y,0,p.y-b.b[1]),Math.max(b.a[2]-p.z,0,p.z-b.b[2]));if(d<r)o.push([d,b]);});return o.sort((a,b)=>a[0]-b[0]).map(e=>e[1]);};
 // energy bolts: one instanced mesh of stretched glowing spheres
 const MAXB=320,boltMesh=new THREE.InstancedMesh(new THREE.SphereGeometry(.13,10,8),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}),MAXB);
 boltMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);boltMesh.frustumCulled=false;boltMesh.setColorAt(0,new THREE.Color());boltMesh.count=0;boltMesh.renderOrder=6;scene.add(boltMesh);
@@ -522,7 +522,7 @@ window.STARFALL={G,step,render,start,startMission,toMenu,pause,visuals:dt=>visua
  get state(){return G.app==='play'?G.phase:G.app;},get app(){return G.app;},get phase(){return G.phase;},get score(){return G.stats?missionScore(G.phase==='end'?G.missionWon:false).pts:0;},
  get me(){return G.me;},get player(){return G.me;},get actors(){return G.actors;},get bots(){return G.actors.filter(a=>a.ai);},get enemies(){return G.actors.filter(a=>a.team===1);},get squad(){return G.actors.filter(a=>a.squad);},
  get vehicles(){return G.vehicles;},get mission(){return G.def.id;},get stepI(){return G.stepI;},get objective(){return G.objText;},get clock(){return G.clock;},setClock(s){G.clock=s;},get stats(){return G.stats;},get results(){return G.results;},get camp(){return G.camp;},
- get W(){return G.W;},get D(){return G.D;},scene,cam,R,VM,snd,setQuality:applyQuality,get gfx(){return gfx;},
+ get W(){return G.W;},get D(){return G.D;},scene,cam,R,VM,shocks,snd,setQuality:applyQuality,get gfx(){return gfx;},
  nextStep(){enterStep(G.stepI+1);},complete:completeMission,fail:failMission,showCampaign,
  killGroup(id){for(const a of G.actors)if(a.team===1&&a.alive&&(!id||a.group===id))damage(a,99999,G.me,{weapon:'ar',point:a.pos.clone()});},
  damage(a,n,b){damage(a,n,b||null,{weapon:'ar',point:a.pos.clone()});},teleport(x,y,z){const me=G.me;if(me.veh)exitVehicle(me);if(y==null){y=G.W.groundBelow(x,me.pos.y+3,z);if(!(y>G.W.H(x,z)-.2))y=G.W.groundBelow(x,400,z);}me.pos.set(x,y+.05,z);me.vel.set(0,0,0);G.snapCam=true;},

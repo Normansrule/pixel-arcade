@@ -34,7 +34,7 @@ let seed=3;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
 
 const MOODS={
  dusk:{sky:{top:0x1d2a52,mid:0x6a4a78,hor:0xf39a5c,sun:new V(-.6,.06,.78).normalize(),sunCol:0xffa060,stars:.2},hemi:[0x8e9cc8,0x3a2a24,.5],fog:[0x4a3c4a,.008],exp:1.05,bloom:.55,thr:.86,sat:1.08,tint:0xfff0e4,outAmb:[.075,.065,.085],street:0xffa860,inAmb:[.03,.026,.022]},
- night:{sky:{top:0x05070e,mid:0x0e1424,hor:0x2a2c3c,sun:new V(.3,.5,-.8).normalize(),sunCol:0x8090b0,stars:.5},hemi:[0x55607e,0x1a1a20,.42],fog:[0x141820,.012],exp:1.12,bloom:.75,thr:.8,sat:1.02,tint:0xe6ecff,outAmb:[.03,.034,.05],street:0xd8e4ff,inAmb:[.026,.024,.026]}};
+ night:{sky:{top:0x05070e,mid:0x0e1424,hor:0x2a2c3c,sun:new V(.3,.5,-.8).normalize(),sunCol:0x8090b0,stars:.5},hemi:[0x55607e,0x1a1a20,.42],fog:[0x141820,.012],exp:1.12,bloom:.5,thr:.92,sat:1.02,tint:0xe6ecff,outAmb:[.03,.034,.05],street:0xd8e4ff,lampI:11,lampBulb:[1.7,1.85,2.1],inAmb:[.026,.024,.026]}};
 
 function makeSky(o){const g=new THREE.SphereGeometry(450,32,16);const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
  uniforms:{top:{value:new THREE.Color(o.top)},mid:{value:new THREE.Color(o.mid)},hor:{value:new THREE.Color(o.hor)},sunDir:{value:o.sun.clone()},sunCol:{value:new THREE.Color(o.sunCol)},st:{value:o.stars},time:{value:0}},
@@ -58,7 +58,7 @@ export function makeLamps(L,mood){const def=L.def,out=[];const M=MOODS[mood];con
   const col=kind==='grand'?0xffe2c4:kind==='vault'?0xdcecff:kind==='sec'?0xa8c0ff:kind==='staff'?0xeef2ff:0xfff0dc;const I=kind==='grand'?(bank?9:7):kind==='vault'?10:kind==='sec'?3.5:kind==='staff'?5:6;
   const sp=kind==='grand'?6.5:4.6;const nx=Math.max(1,Math.round(w/sp)),nz=Math.max(1,Math.round(d/sp));
   for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const x=x0+w*(i+.5)/nx,z=z0+d*(j+.5)/nz;const y=kind==='grand'?h-1.4:h-.18;add(x,y,z,col,I,kind==='grand'?13:9,{kind,ceil:h});}}
- for(const[c,r]of def.lamps){const p=L.P([c,r]);const off=r<def.H/2+8&&def.id==='bank'?0:0;add(p.x,5.6,p.z+off,M.street,26,17,{kind:'street'});}
+ for(const[c,r]of def.lamps){const p=L.P([c,r]);const off=r<def.H/2+8&&def.id==='bank'?0:0;add(p.x,5.6,p.z+off,M.street,M.lampI||26,17,{kind:'street'});}
  // alley floodlight over the van + entrance sconces
  const vz=L.P(def.van.door);add(vz.x+2,4.2,vz.z+2,0xfff0d0,14,13,{kind:'flood'});
  return out;}
@@ -172,7 +172,7 @@ export function buildWorld(L,TX,R,mood){const group=new THREE.Group();const def=
   else if(k==='S'){gb('steel').box(p.x0,0,p.z0,p.x1,p.hgt,p.z1,[.4,.42,.46],bk,{s:.8});}
   else if(k==='z'||k==='Z')carModel(p,k==='Z');
   else if(k==='l'){gb('dark').add(CY(.07,.1,5.6,8),M4(x,2.8,z),[.12,.12,.13],bk);const ld=L.def.H/2;gb('dark').box(x-.08,5.5,z-.08,x+.08,5.62,z+.9,[.12,.12,.13],bk);
-   const bulb=new THREE.Mesh(BX(.3,.08,.5),new THREE.MeshBasicMaterial({color:night?new THREE.Color(4,4.4,5):new THREE.Color(5,3.2,1.4)}));bulb.position.set(x,5.46,z+.7);dyn.add(bulb);}}
+   const bulb=new THREE.Mesh(BX(.3,.08,.5),new THREE.MeshBasicMaterial({color:night?new THREE.Color(...M.lampBulb):new THREE.Color(5,3.2,1.4)}));bulb.position.set(x,5.46,z+.7);dyn.add(bulb);}}
  // loot meshes: cash pallets (2 stacks each), gold (bars), safe contents
  for(const lo of L.loot){const p=lo.prop;if(lo.kind==='cash'&&p.ch==='P'){const a=cashStack(p.x-.2,.14,p.z,.36,.9,.5),b=cashStack(p.x+.2,.14,p.z,.36,1.05,.5);dyn.add(a,b);lootVis.set(lo,[b,a]);}
   else if(lo.kind==='gold'&&p.ch==='A'){const grp=new THREE.Group();const bars=[];for(let j=0;j<4;j++)for(let i=0;i<3;i++)for(let k2=0;k2<2;k2++){const g2=new THREE.BoxGeometry(.24,.08,.12);if(j%2){g2.rotateY(Math.PI/2);g2.translate((k2-.5)*.26,.54+j*.085,(i-1)*.24*.6);}else g2.translate((i-1)*.24,.54+j*.085,(k2-.5)*.26);bars.push(g2);}grp.add(new THREE.Mesh(mergeN(bars),DM.gold));grp.position.set(p.x,0,p.z);dyn.add(grp);lootVis.set(lo,[grp]);}

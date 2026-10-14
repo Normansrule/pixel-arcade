@@ -41,11 +41,13 @@ export class Beams{
   if(!on){for(let k=0;k<4;k++)w[i*4+k]=0;}});
   for(const n of['a','b','col','w'])this.g.attributes[n].needsUpdate=true;}}
 
-export class Shocks{constructor(scene,n=8){this.list=[];const geo=new THREE.SphereGeometry(1,32,16);for(let i=0;i<n;i++){const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uC:{value:new THREE.Color()},uA:{value:0},uG:{value:-1e9},uF:{value:1}},
-  vertexShader:'varying vec3 vN,vV;varying float vY;void main(){vY=(modelMatrix*vec4(position,1.)).y;vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
-  fragmentShader:'uniform vec3 uC;uniform float uA,uG,uF;varying vec3 vN,vV;varying float vY;void main(){float f=pow(1.-abs(dot(vN,vV)),2.2)*smoothstep(uG,uG+uF,vY);gl_FragColor=vec4(uC*f*uA,1.);}'}));m.visible=false;m.renderOrder=6;scene.add(m);this.list.push({m,t:0,d:1,r:1});}}
- // the shell fades out over a band above the ground under it (this.H(x,z), set by the game) so it never shows a hard flat cut where it meets the terrain
- fire(p,col,radius,dur){const s=this.list.find(s=>!s.m.visible)||this.list[0],U=s.m.material.uniforms;s.m.position.copy(p);U.uC.value.copy(col);U.uG.value=this.H?this.H(p.x,p.z):-1e9;U.uF.value=Math.max(.8,radius*.35);s.t=0;s.d=dur;s.r=radius;s.m.visible=true;}
+export class Shocks{constructor(scene,n=8){this.list=[];const geo=new THREE.SphereGeometry(1,32,16);for(let i=0;i<n;i++){const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uC:{value:new THREE.Color()},uA:{value:0},uG:{value:-1e9},uF:{value:1},uBa:{value:Array.from({length:6},()=>new THREE.Vector3(1e9,1e9,1e9))},uBb:{value:Array.from({length:6},()=>new THREE.Vector3(1e9,1e9,1e9))}},
+  vertexShader:'varying vec3 vN,vV,vW;void main(){vW=(modelMatrix*vec4(position,1.)).xyz;vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+  fragmentShader:'uniform vec3 uC,uBa[6],uBb[6];uniform float uA,uG,uF;varying vec3 vN,vV,vW;void main(){float f=pow(clamp(1.-abs(dot(normalize(vN),normalize(vV))),0.,1.),2.2)*smoothstep(uG,uG+uF,vW.y);for(int i=0;i<6;i++)f*=smoothstep(0.,uF,length(max(max(uBa[i]-vW,vW-uBb[i]),0.)));gl_FragColor=vec4(uC*f*uA,1.);}'}));m.visible=false;m.renderOrder=6;scene.add(m);this.list.push({m,t:0,d:1,r:1});}}
+ // the shell fades out over a band above the ground under it (this.H(x,z), set by the game) and near the up-to-6 nearest solid boxes it overlaps
+ // (this.B(p,r) -> [{a,b}], set by the game): an analytic depth fade, so it never shows a hard cut where it meets terrain or a building wall
+ fire(p,col,radius,dur){const s=this.list.find(s=>!s.m.visible)||this.list[0],U=s.m.material.uniforms;s.m.position.copy(p);U.uC.value.copy(col);U.uG.value=this.H?this.H(p.x,p.z):-1e9;U.uF.value=Math.max(.8,radius*.35);
+  const bx=this.B?this.B(p,radius+U.uF.value).slice(0,6):[];for(let i=0;i<6;i++){const b=bx[i];if(b){U.uBa.value[i].fromArray(b.a);U.uBb.value[i].fromArray(b.b);}else{U.uBa.value[i].setScalar(1e9);U.uBb.value[i].setScalar(1e9);}}s.t=0;s.d=dur;s.r=radius;s.m.visible=true;}
  clear(){for(const s of this.list)s.m.visible=false;}
  update(dt){for(const s of this.list){if(!s.m.visible)continue;s.t+=dt;const k=s.t/s.d;if(k>=1){s.m.visible=false;continue;}s.m.scale.setScalar(.3+s.r*(1-Math.pow(1-k,3)));s.m.material.uniforms.uA.value=(1-k)*(1-k)*1.6;}}}
 

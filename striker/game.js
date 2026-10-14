@@ -9,7 +9,7 @@ import {S,setupMatch,fixed,afterGoal,minute,clockText,setCtl,skipBreak,beginSP,f
 import {active} from './ai.js';
 import {Sound} from './sound.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
-import {controls,deadzone} from '../js/kit3d/input.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
 import {stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=Math.random,hyp=Math.hypot;
 const DT=1/60;
@@ -145,7 +145,8 @@ const {keys,edge:edgeK}=I;
 const KB=[{u:['KeyW'],d:['KeyS'],l:['KeyA'],r:['KeyD'],spr:['ShiftLeft'],pass:['KeyF'],shoot:['Space'],lob:['KeyR'],thru:['KeyT'],skill:['KeyE'],sw:['KeyQ']},
  {u:['ArrowUp'],d:['ArrowDown'],l:['ArrowLeft'],r:['ArrowRight'],spr:['ShiftRight','NumpadAdd'],pass:['Period','Numpad1'],shoot:['Slash','Numpad2'],lob:['Semicolon','Numpad3'],thru:['KeyL','Numpad5'],skill:['Comma','Numpad4'],sw:['Enter','Numpad0']}];
 const any=a=>a.some(k=>keys[k]);let padPrevA=[false,false];
-function pads(){return navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];}
+// pad 1 is the kit's gamepad(); 2-player matches give the second human the next connected pad (the kit only hands out the first)
+function pads(){const a=gamepad();if(!a)return[];const b=[...navigator.getGamepads()].find(g=>g&&g!==a);return b?[a,b]:[a];}
 const cr=new V(),cf=new V();
 function readInputs(){cr.set(1,0,0).applyQuaternion(cam.quaternion);cr.y=0;cr.normalize();cf.set(0,0,-1).applyQuaternion(cam.quaternion);cf.y=0;if(cf.lengthSq()<1e-4)cf.set(cr.z,0,-cr.x);cf.normalize();
  const solo=S.humans.length===1,gl=pads();
