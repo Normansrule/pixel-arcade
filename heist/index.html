@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halcyon Heist · Pixel Arcade</title>
+<meta name="description" content="Halcyon Heist: a first-person co-op heist shooter in the browser. Case the bank in plain clothes, mask up, crack the vault with your three CPU crew, then hold off police assault waves and bag the take to the van.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="heist.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="maskov"></div><div id="hurtov"></div>
+<div id="hud" hidden>
+  <div id="top"><span id="phase">STEALTH</span><b id="clock">0:00</b><div id="abar"><i></i></div></div>
+  <div id="lt">
+    <div id="take"><span class="lb">TAKE</span><b id="tval">$0</b><span id="tbags"></span><em id="tloose"></em></div>
+    <ul id="objl"></ul>
+    <div id="crewp"></div>
+  </div>
+  <div id="feed"></div>
+  <div id="vitals"><div class="bars"><p class="ar"><i id="arb"></i></p><p class="hp"><i id="hpb"></i></p></div><b id="hpt">100</b></div>
+  <div id="wpn"><div id="kit"></div><p class="nm" id="wname"></p><p class="am"><b id="amag"></b><span id="ares"></span></p></div>
+  <div id="cross"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><em></em></div>
+  <div id="hit"><i></i><i></i><i></i><i></i></div>
+  <div id="dmgind"></div>
+  <div id="det"></div>
+  <div id="prompt"><span id="ptxt"></span><div class="bar"><i id="pbar"></i></div></div>
+  <div id="drillw" hidden><span id="drillt"></span><div class="bar"><i id="drillb"></i></div></div>
+  <div id="toast"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="downov" hidden><b>YOU'RE DOWN</b><span id="bleed"></span><em>A CREWMATE IS COMING · KEEP SHOOTING</em></div>
+  <div id="orders"><kbd>Z</kbd> FOLLOW <kbd>X</kbd> HOLD <kbd>V</kbd> CARRY LOOT <kbd>F</kbd> SHOUT</div>
+</div>
+<div id="lockov" hidden><b>CLICK TO PLAY</b><span>MOUSE LOCK LOST · ESC PAUSES</span></div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · CO-OP HEIST · YOU + 3 CPU CREW</p>
+  <h1>HALCYON<br>HEIST<em>.</em></h1>
+  <p class="how" id="brief"></p>
+  <div class="opts">
+    <label>JOB</label><div class="seg" id="o-map"><button data-v="0">HALCYON SAVINGS · DUSK</button><button data-v="1">LUMEN &amp; CO. · NIGHT RAIN</button></div>
+    <label>POLICE</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>WEAPON</label><div class="seg" id="o-gun"><button data-v="falco">FALCO AR</button><button data-v="kite">KITE SMG</button><button data-v="mastiff">MASTIFF 12G</button><button data-v="whisper">WHISPER .45</button></div>
+    <label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.8">MED-</button><button data-v="1">MED</button><button data-v="1.5">HIGH</button><button data-v="2.2">MAX</button></div>
+    <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">START THE HEIST</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · sprint · crouch</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>C</kbd>/<kbd>Ctrl</kbd></td></tr>
+    <tr><td>Mask up (casing ends)</td><td><kbd>M</kbd></td></tr>
+    <tr><td>Fire · aim down sights</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Use · pick · bag · tie (hold)</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Shout down civilians / guards</td><td><kbd>F</kbd></td></tr>
+    <tr><td>Throw bag · reload · swap</td><td><kbd>Q</kbd> <kbd>R</kbd> <kbd>1</kbd> <kbd>2</kbd></td></tr>
+    <tr><td>Crew: follow · hold · carry loot</td><td><kbd>Z</kbd> <kbd>X</kbd> <kbd>V</kbd></td></tr>
+    <tr><td>Pause · graphics quality</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Unmasked you are just a customer: walk in, find the keycard, spot the cameras. Masked, every guard, camera and civilian can raise the alarm. Shout civilians down and tie them, answer guard pagers, kill the camera operator. When it goes loud, drill the vault, fix the drill when it jams, carry bags to the van and leave before the clock runs out.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>LAY<br>LOW<em>.</em></h1><p class="how">The heist clock is stopped. Click resume to lock the mouse again.</p>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">ABANDON HEIST</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">HEIST OVER</p>
+  <div class="resrow"><p class="res" id="ores">GOT AWAY</p><p class="grade" id="ograde">A</p></div>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">RUN IT AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
