@@ -59,7 +59,7 @@ function makePost(){fxPost=cinematic(R,scene,cam,{...postOpts,quality:gfx});fxPo
 function clearFighters(){for(const v of FV){for(const o of[v.rig.root,v.swoosh.mesh,v.scarf&&v.scarf.mesh,v.ring])if(o){scene.remove(o);o.traverse(m=>{if(m.geometry&&m.geometry!==ringGeo)m.geometry.dispose();if(m.material)m.material.dispose();});}}FV=[];}
 const ringGeo=new THREE.RingGeometry(.42,.56,40).rotateX(-Math.PI/2);
 function addVis(f,alt){const rig=makeRig(f.def,alt);scene.add(rig.root);const glowC=new THREE.Color(alt?new THREE.Color(f.def.look.glow).offsetHSL(.4,0,0):f.def.look.glow);
- const swoosh=new Trail(scene,12,.2,new THREE.Color(1.5,1.5,1.6),{minD:.0015,taper:.05});const scarf=rig.fx.scarfAnchor?new Trail(scene,18,.09,glowC.clone().multiplyScalar(.9),{minD:.003,taper:.35}):null;
+ const swoosh=new Trail(scene,12,.2,new THREE.Color(1.5,1.5,1.6),{minD:.0015,taper:.05,soft:1});const scarf=rig.fx.scarfAnchor?new Trail(scene,18,.09,glowC.clone().multiplyScalar(.9),{minD:.003,taper:.35}):null;
  const ring=new THREE.Mesh(ringGeo,new THREE.MeshBasicMaterial({color:new THREE.Color(SIDE[f.side]).multiplyScalar(1.4),transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false}));ring.renderOrder=3;scene.add(ring);
  const v={f,rig,swoosh,scarf,ring,glowC,css:css(glowC),cb:0,cbT:0,cbD:0,lag:1,winPose:['w1','w2','bow'][rnd(3)|0]};FV[f.side]=v;f.vis=v;return v;}
 function makeWorld(i1,i2,o={}){clearFighters();const boss2=o.boss;
@@ -135,7 +135,7 @@ function ev(type,a,b,c,d){if(!world||app==='menu')return;const quiet=app!=='matc
  switch(type){
   case 'hit':{const info=c,m=info.m,p=tv.set(info.pos.x,info.pos.y,info.pos.z),k=Math.min(1,info.dmg/110),fire=m.fx==='fire'||(a.def.id==='ryker'&&a.rage),dm=info.sup&&info.i<m.h.length-1?.4:1;
    const cc=fire?FX.fire:[a.vis.glowC.clone().multiplyScalar(1.6),new THREE.Color(2,1.8,1.4)];
-   sparks.fire(p,(info.counter?new THREE.Color(2.4,.6,.3):cc[0]).clone().multiplyScalar(.8),.7+k*1.3,.12+k*.08);sparks.fire(p,new THREE.Color(1.6,1.6,1.6),.4+k*.5,.08);
+   sparks.fire(p,(info.counter?new THREE.Color(2.4,.6,.3):cc[0]).clone().multiplyScalar(dm<1?.6:.8),(.7+k*1.3)*(dm<1?.6:1),.12+k*.08);sparks.fire(p,new THREE.Color(1.6,1.6,1.6).multiplyScalar(dm<1?.5:1),(.4+k*.5)*(dm<1?.5:1),.08);
    parts.burst(p,(8+(k*26|0))*dm|0,3+k*7,[cc[0],cc[1],new THREE.Color(1.4,1.4,1.4)],.05+k*.04,.18+k*.25,{drag:3,grav:5,flat:.8});
    if(info.heavy||info.launch||info.sup)shocks.fire(p,cc[0].clone().multiplyScalar(.3),.3+k*.6,.16+k*.06);
    shake=Math.max(shake,.1+k*.6+(info.sup?.3:0));bloomKick=Math.max(bloomKick,k*.3*dm);flash.position.copy(p).lerp(cam.position,.25);flash.position.y+=.3;flash.color.copy(cc[0]);const mc=Math.max(flash.color.r,flash.color.g,flash.color.b,1);flash.color.multiplyScalar(1/mc);flash.intensity=Math.max(flash.intensity,(1.5+k*5)*dm);
@@ -228,15 +228,22 @@ function flow(dt){phaseT+=dt;
  if(cineF&&world.freeze<=0){const m=cineF.move;if(!(m&&m.sup&&cineF.st==='atk')&&cineF.st!=='throw'){cineF=null;$('cine').classList.remove('on');$('bars').classList.remove('on');}}}
 
 /* ================= visuals ================= */
-const projVis=new Map();const PG={disc:new THREE.TorusGeometry(.22,.06,8,24),orb:new THREE.SphereGeometry(1,20,14),kunai:new THREE.ConeGeometry(.04,.32,6).rotateX(Math.PI/2),ring:new THREE.RingGeometry(.6,1,32).rotateX(-Math.PI/2),beam:new THREE.CylinderGeometry(1,1,1,20,1,true).rotateX(Math.PI/2).translate(0,0,.5),pillar:new THREE.CylinderGeometry(1,1,1,24,1,true)};
+const discProf=[[0,.032],[.042,.032],[.05,.02],[.14,.012],[.172,.02],[.198,.027],[.214,.021],[.226,0],[.214,-.021],[.198,-.027],[.172,-.02],[.14,-.012],[.05,-.02],[.042,-.032],[0,-.032]].map(([x,y])=>new THREE.Vector2(x,y));   // halo disc: thin web, bevelled rim, hub
+const projVis=new Map();const PG={disc:new THREE.LatheGeometry(discProf,48),discIn:new THREE.RingGeometry(.118,.138,48).rotateX(-Math.PI/2),discRim:new THREE.TorusGeometry(.205,.005,6,64).rotateX(Math.PI/2),discHub:new THREE.CylinderGeometry(.026,.026,.07,16),
+ discTooth:new THREE.BoxGeometry(.075,.012,.022),orb:new THREE.SphereGeometry(1,20,14),kunai:new THREE.ConeGeometry(.04,.32,6).rotateX(Math.PI/2),ring:new THREE.RingGeometry(.6,1,32).rotateX(-Math.PI/2),beam:new THREE.CylinderGeometry(1,1,1,20,1,true).rotateX(Math.PI/2).translate(0,0,.5),pillar:new THREE.CylinderGeometry(1,1,1,24,1,true)};
 const shared=new Set(Object.values(PG));function disposeVis(o){scene.remove(o);o.traverse(m=>{if(m.geometry&&!shared.has(m.geometry))m.geometry.dispose();if(m.material)m.material.dispose();});}
 const addM=c=>new THREE.MeshBasicMaterial({color:c,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false});
 function projMesh(p){const c=p.o.vis.glowC,g=new THREE.Group();
- if(p.kind==='disc'){const t=new THREE.Mesh(PG.disc,addM(c.clone().multiplyScalar(2.4)));t.rotation.x=Math.PI/2;g.add(t);const h=new THREE.Mesh(PG.orb,addM(c.clone().multiplyScalar(.5)));h.scale.setScalar(.3);g.add(h);}
+ if(p.kind==='disc'){const tilt=new THREE.Group(),sp=new THREE.Group();tilt.rotation.z=.55;tilt.add(sp);g.add(tilt);   // rolled toward the side camera so its face reads; sp spins
+  const metal=new THREE.MeshStandardMaterial({color:0xdde4ee,metalness:.85,roughness:.22,emissive:c,emissiveIntensity:.1}),dark=new THREE.MeshStandardMaterial({color:0x26304a,metalness:.7,roughness:.35}),inl=addM(c.clone().multiplyScalar(1.6));
+  sp.add(new THREE.Mesh(PG.disc,metal));for(const y of[1,-1]){const r=new THREE.Mesh(PG.discIn,inl);r.position.y=y*.0145;if(y<0)r.rotation.x=Math.PI;sp.add(r);const e=new THREE.Mesh(PG.discRim,inl);e.position.y=y*.025;sp.add(e);}
+  const hub=new THREE.Mesh(PG.discHub,dark);sp.add(hub);const core=new THREE.Mesh(PG.orb,addM(c.clone().multiplyScalar(1.4)));core.scale.setScalar(.022);core.position.y=.036;sp.add(core);const core2=core.clone();core2.position.y=-.036;sp.add(core2);
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2,t=new THREE.Mesh(PG.discTooth,dark);t.position.set(Math.cos(a)*.232,0,Math.sin(a)*.232);t.rotation.y=-a-Math.PI/2+.5;sp.add(t);}
+  const h=new THREE.Mesh(PG.orb,addM(c.clone().multiplyScalar(.1)));h.scale.setScalar(.28);g.add(h);}
  else if(p.kind==='kunai'){for(const a of[-.18,0,.18]){const k=new THREE.Mesh(PG.kunai,new THREE.MeshStandardMaterial({color:0x8890a0,metalness:.9,roughness:.25,emissive:c,emissiveIntensity:.8}));k.rotation.y=a;k.position.x=a*.6;g.add(k);}}
  else if(p.kind==='orb'){const o=new THREE.Mesh(PG.orb,addM(new THREE.Color(2.4,1.8,.8)));o.scale.setScalar(p.r*.6);g.add(o);const h=new THREE.Mesh(PG.orb,addM(c.clone().multiplyScalar(.6)));h.scale.setScalar(p.r*1.1);g.add(h);}
  else if(p.kind==='quake'){const r=new THREE.Mesh(PG.ring,addM(new THREE.Color(1.6,.9,.4)));r.scale.setScalar(.7);g.add(r);}
- g.userData.tr=p.kind!=='quake'?new Trail(scene,14,p.r*.7,c.clone().multiplyScalar(1.4),{minD:.004}):null;scene.add(g);return g;}
+ g.userData.tr=p.kind!=='quake'?new Trail(scene,14,p.r*.7,c.clone().multiplyScalar(1.4),{minD:.004,soft:1}):null;scene.add(g);return g;}
 const beamM=addM(new THREE.Color(1,1,1)),beam=new THREE.Mesh(PG.beam,beamM),beamCore=new THREE.Mesh(PG.beam,addM(new THREE.Color(2.5,2.5,2.5)));beam.add(beamCore);beamCore.scale.set(.4,.4,1);beam.visible=false;scene.add(beam);
 const pillar=new THREE.Mesh(PG.pillar,addM(new THREE.Color(1,1,1)));pillar.visible=false;scene.add(pillar);
 const tq=new V(),tq2=new V();let ambAcc=0;
@@ -250,9 +257,9 @@ function visuals(dt,rdt=dt){const t=time;
    // flashes: hit, super-ready shimmer, rage
    const U=rig.U;if(f.flash>0){const lk=f.st==='sup'||f.mname==='sup';U.uFlC.value.setRGB(1,1,1);U.uFl.value=lk?Math.min(.28,f.flash/8):f.flash/6;}else if(cineF===f&&frozen){U.uFlC.value.copy(v.glowC);U.uFl.value=.5+.3*Math.sin(t*30);}else if(f.rage){U.uFlC.value.setRGB(1,.25,.1);U.uFl.value=.12+.08*Math.sin(t*9);}else U.uFl.value=0;
    U.uRimS.value=.38+(f.meter>=100?.35+.2*Math.sin(t*6):0);
-   // swoosh on the striking limb
+   // swoosh on the striking limb (supers: saturated hue, capped brightness, so a flurry's overlapping streaks don't blow out to white)
    let swing=false;if(f.st==='atk'&&f.move)for(const h of f.move.h)if(f.mt>=h.s-1&&f.mt<=h.e+1)swing=true;rig.root.updateMatrixWorld(true);rig.limb(f.move&&f.move.lb||'hR').getWorldPosition(tq);
-   v.swoosh.col.copy(f.move&&f.move.fx==='fire'?new THREE.Color(2.4,1,.2):v.glowC).multiplyScalar(1.2).addScalar(.15);v.swoosh.w=f.move&&f.move.sup?.32:.2;if(!swing&&v.swoosh.str<.05)v.swoosh.clear();v.swoosh.push(tq,swing&&!stop,adt||1e-3,26);
+   const sm=f.move&&f.move.sup,sc=v.swoosh.col.copy(f.move&&f.move.fx==='fire'?new THREE.Color(2.4,1,.2):v.glowC);sc.multiplyScalar(sm?2.4/Math.max(sc.r,sc.g,sc.b,.05):1.2).addScalar(sm?0:.15);v.swoosh.w=sm?.36:.2;if(!swing&&v.swoosh.str<.05)v.swoosh.clear();v.swoosh.push(tq,swing&&!stop,adt||1e-3,26);
    if(v.scarf){rig.fx.scarfAnchor.getWorldPosition(tq);v.scarf.push(tq,true,rdt||1e-3,10);const P=v.scarf.pts;for(let i=1;i<P.length;i++){P[i].y-=rdt*.5*i*.06;P[i].x-=f.fx*rdt*.25;P[i].z-=f.fz*rdt*.25;}}
    if(f.rage&&rnd()<.4&&app==='match')parts.emit(f.x+rnd(.8)-.4,f.y+rnd(f.H),f.z+rnd(.8)-.4,0,1.4,0,2.2,.5,.15,.07,.5,0,1);
    if(f.meter>=100&&rnd()<.25&&app==='match')parts.emit(f.x+rnd(.7)-.35,f.y+rnd(f.H),f.z+rnd(.7)-.35,0,1.1,0,v.glowC.r*1.6,v.glowC.g*1.6,v.glowC.b*1.6,.05,.6,0,1);
@@ -260,7 +267,7 @@ function visuals(dt,rdt=dt){const t=time;
    if(f.st==='dash'&&rnd()<.3)dust(f,1);}
   // projectiles
   const seen=new Set();for(const p of world.proj){seen.add(p.id);let g=projVis.get(p.id);if(!g){g=projMesh(p);projVis.set(p.id,g);}g.position.set(p.x,p.y,p.z);g.rotation.y=Math.atan2(p.vx,p.vz);
-   if(p.kind==='disc')g.children[0].rotation.z+=dt*24;if(p.kind==='orb')g.children[1].scale.setScalar(p.r*(1.05+Math.sin(t*20)*.1));
+   if(p.kind==='disc')g.children[0].children[0].rotation.y+=dt*24;if(p.kind==='orb')g.children[1].scale.setScalar(p.r*(1.05+Math.sin(t*20)*.1));
    if(p.kind==='quake'){g.children[0].scale.setScalar(.6+Math.sin(t*30)*.1);if(rnd()<.9)parts.emit(p.x+(rnd()-.5)*.6,.05,p.z+(rnd()-.5)*.6,(rnd()-.5),2+rnd(2),(rnd()-.5),.6,.5,.4,.12,.5,8,1);if(rnd()<.5)parts.emit(p.x,.1,p.z,0,1,0,2.2,1,.3,.18,.25);}
    if(g.userData.tr)g.userData.tr.push(g.position,true,dt||1e-3,14);}
   for(const[id,g]of projVis){if(!seen.has(id)){if(g.userData.tr)disposeVis(g.userData.tr.mesh);disposeVis(g);projVis.delete(id);}}
@@ -291,15 +298,16 @@ function cameraUpdate(dt){const[a,b]=world.f;const aspect=innerWidth/innerHeight
   if(Math.hypot(pos.x,pos.z)>CR){const ang2=Math.atan2(f.fx,f.fz)-side*(.8-cineT*.4);pos.set(f.x+Math.sin(ang2)*d,pos.y,f.z+Math.cos(ang2)*d);}look.set(f.x,f.y+1.35*f.H/1.8,f.z);fov=30;k=cineT<.05?1:1-Math.exp(-dt*12);}
  else{// side-on: the camera sits on the perpendicular of the fighters' axis, swinging round when a wall is in the way
   const n1=Math.atan2(-az,ax),n2=n1+Math.PI;let tgt=Math.abs(angD(camYaw,n1))<Math.abs(angD(camYaw,n2))?n1:n2;
-  let dist=cl(sep*.75+3.7,4.6,9.6);if(cineF&&cineF.locked){orbitT+=dt;dist=4.4;tgt=camYaw+dt*.8;}
+  let dist=cl(sep*.75+3.7,4.6,9.6)*(1+Math.max(0,1-aspect)*.25);if(cineF&&cineF.locked){orbitT+=dt;dist=4.4;tgt=camYaw+dt*.8;}
   const out=y=>Math.hypot(mx+Math.sin(y)*dist,mz+Math.cos(y)*dist);if(out(tgt)>CR){const o2=tgt===n1?n2:n1;if(out(o2)<out(tgt)-.4)tgt=o2;}
   if(phase==='intro'){const s=Math.max(0,1-phaseT/1.8);tgt+=s*1.2;dist+=s*2.5;}
   camYaw+=angD(camYaw,tgt)*(camSnap?1:1-Math.exp(-dt*(cineF?2:3)));
   let d=dist;for(let i=0;i<12&&Math.hypot(mx+Math.sin(camYaw)*d,mz+Math.cos(camYaw)*d)>CR;i++)d*=.92;d=Math.max(d,2.6);
   camDist+=(d-camDist)*(camSnap?1:1-Math.exp(-dt*3));pos.set(mx+Math.sin(camYaw)*camDist,1.35+camDist*.07+Math.max(a.y,b.y)*.3,mz+Math.cos(camYaw)*camDist);
   if(phase==='ko'&&kodSide>=0){const v=world.f[kodSide];look.lerp(tq.set(v.x,.9,v.z),.35);}}
- camPos.lerp(pos,k);camLook.lerp(look,k);camSnap=false;
- shake=Math.max(0,shake-dt*2.6);const sa=shake*shake*.12;cam.fov+=(fov-cam.fov)*Math.min(1,dt*6);
+ const camSnap0=camSnap;camPos.lerp(pos,k);camLook.lerp(look,k);camSnap=false;
+ shake=Math.max(0,shake-dt*2.6);const sa=shake*shake*.12;if(aspect<1.6)fov=Math.min(88,2*Math.atan(Math.tan(fov*Math.PI/360)*1.6/aspect)*180/Math.PI);   // narrow / portrait: keep the horizontal framing
+ cam.fov+=(fov-cam.fov)*Math.min(1,camSnap0?1:dt*6);
  cam.position.set(camPos.x+(rnd()-.5)*sa,camPos.y+(rnd()-.5)*sa,camPos.z+(rnd()-.5)*sa);cam.lookAt(camLook);
  const W=innerWidth,H=innerHeight;if(app==='menu')cam.setViewOffset(W,H,-W*(W>1100?.22:.04),H*(W>1100?.06:0),W,H);else if(app==='over')cam.setViewOffset(W,H,-W*(W>900?.24:.03),0,W,H);else cam.clearViewOffset();cam.updateProjectionMatrix();
  cam.updateMatrixWorld();camR.setFromMatrixColumn(cam.matrixWorld,0);camR.y=0;camR.normalize();camF.set(camLook.x-cam.position.x,0,camLook.z-cam.position.z).normalize();
@@ -320,11 +328,12 @@ function hud(dt){if(annT>0){annT-=dt;if(annT<=0)$('ann').classList.remove('on');
 /* ================= rendering ================= */
 function applyQuality(q){gfx=q;key.castShadow=q>0;R.shadowMap.enabled=q>0;key.shadow.mapSize.set(q>=2?2048:1024,q>=2?2048:1024);if(key.shadow.map){key.shadow.map.dispose();key.shadow.map=null;}R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:1));fxPost=null;scene.traverse(o=>{if(o.material&&o.material.needsUpdate!==undefined)o.material.needsUpdate=true;});}
 bindQualityKey(()=>gfx,q=>applyQuality(q));
-function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);if(fxPost)fxPost.w=0;}
+function render(){   // during a super, bloom is held back so the flurry keeps its shape and colour
+ const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);if(fxPost)fxPost.w=0;}
  parts.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));
  for(const v of FV){v.swoosh.update(cam);if(v.scarf)v.scarf.update(cam);}for(const g of projVis.values())if(g.userData.tr)g.userData.tr.update(cam);
  if(!fxPost)makePost();if(fxPost.w!==w*9999+h){fxPost.w=w*9999+h;fxPost.setSize(w,h);}
- if(fxPost.bloom)fxPost.bloom.strength=(postOpts.bloom??.5)+bloomKick;if(fxPost.grade){fxPost.grade.uniforms.ca.value=.0012+bloomKick*.004+(world&&world.freeze>0?.004:0);fxPost.grade.uniforms.sat.value=(postOpts.saturation??1.1)*(phase==='ko'&&timeScale<1?.5:1);}
+ if(fxPost.bloom){const su=!!(cineF&&cineF.move&&cineF.move.sup);fxPost.bloom.strength=su?(postOpts.bloom??.5)*.55+bloomKick*.3:(postOpts.bloom??.5)+bloomKick;fxPost.bloom.threshold=Math.min(.97,(postOpts.bloomThreshold??.85)+(su?.08:0));}if(fxPost.grade){fxPost.grade.uniforms.ca.value=.0012+bloomKick*.004+(world&&world.freeze>0?.004:0);fxPost.grade.uniforms.sat.value=(postOpts.saturation??1.1)*(phase==='ko'&&timeScale<1?.5:1);}
  fxPost.render();}
 addEventListener('resize',()=>{if(fxPost)fxPost.w=0;});
 

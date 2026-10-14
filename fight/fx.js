@@ -17,9 +17,12 @@ export class Particles{constructor(scene,n=4000){this.n=n;this.p=new Float32Arra
  clear(){this.life.fill(0);}}
 
 // camera-facing ribbon following a point
+let SOFT=null;function softTex(){if(SOFT)return SOFT;const c=document.createElement('canvas');c.width=4;c.height=64;const x=c.getContext('2d'),g=x.createLinearGradient(0,0,0,64);
+ g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.3,'rgb(70,70,70)');g.addColorStop(.46,'rgb(190,190,190)');g.addColorStop(.5,'#fff');g.addColorStop(.54,'rgb(190,190,190)');g.addColorStop(.7,'rgb(70,70,70)');g.addColorStop(1,'rgba(0,0,0,1)');x.fillStyle=g;x.fillRect(0,0,4,64);return SOFT=new THREE.CanvasTexture(c);}
 export class Trail{constructor(scene,n,width,color,o={}){this.n=n;this.w=width;this.col=color.clone();this.pts=[];this.pos=new Float32Array(n*2*3);this.c=new Float32Array(n*2*3);const idx=[];for(let i=0;i<n-1;i++){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(this.pos,3).setUsage(THREE.DynamicDrawUsage));g.setAttribute('color',new THREE.BufferAttribute(this.c,3).setUsage(THREE.DynamicDrawUsage));g.setIndex(idx);
-  this.mesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,blending:o.normal?THREE.NormalBlending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,opacity:o.opacity??1}));this.mesh.frustumCulled=false;this.mesh.renderOrder=4;scene.add(this.mesh);this.str=0;this.minD=o.minD??.0025;this.taper=o.taper??.25;}
+  if(o.soft){const uv=new Float32Array(n*4);for(let i=0;i<n;i++){uv[i*4]=uv[i*4+2]=i/(n-1);uv[i*4+1]=0;uv[i*4+3]=1;}g.setAttribute('uv',new THREE.BufferAttribute(uv,2));}   // soft: feathered edges + hot core across the ribbon's width
+  this.mesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,blending:o.normal?THREE.NormalBlending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,opacity:o.opacity??1,map:o.soft?softTex():null}));this.mesh.frustumCulled=false;this.mesh.renderOrder=4;scene.add(this.mesh);this.str=0;this.minD=o.minD??.0025;this.taper=o.taper??.25;}
  push(p,on,dt,rate=10){this.str+=((on?1:0)-this.str)*Math.min(1,dt*(on?rate*2:rate*.6));const last=this.pts[0];if(!last||last.distanceToSquared(p)>this.minD){this.pts.unshift(p.clone());if(this.pts.length>this.n)this.pts.pop();}else last.copy(p);}
  clear(){this.pts.length=0;this.str=0;}
  update(cam){const P=this.pts,n=P.length,tmp=new V(),side=new V(),tan=new V();if(n<2||this.str<.01){this.mesh.visible=false;return;}this.mesh.visible=true;

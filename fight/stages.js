@@ -166,28 +166,32 @@ function arena(R,grp,out,add,q){
 
 /* ================= THRONE ================= */
 function throne(R,grp,out,add,q){
- out.env=makeEnv(R,0x1a0612,0x8a2a10,0x080404,[[0xffa040,0,6,-30,30,6],[0x8a3aff,-30,20,10,20,10]]);out.fog={c:0x200810,near:25,far:110};out.bg=0x100408;
- out.light={hemi:[0xffb0a0,0x2a0a14,.45],key:[0xffd8b0,2.4,[-4,13,6]],rim:[0xff7a20,2.6,[0,4,-10]],rim2:[0xa040ff,2.2,[9,6,6]]};out.post={exposure:.9,bloom:.45,bloomThreshold:.88,saturation:1.1,vignette:.52,tint:0xfff0e8};
- const S=sky({top:0x0a0210,hor:0x7a1a10,bot:0x0a0204,sun:[0,.22,-1],sunC:0xffb040,neb:1.2,disc:1});out.sky=S;add(S);
- // obsidian floor with gold inlay
- const ob=ctex(512,512,(x,w,h)=>{x.fillStyle='#0c0a10';x.fillRect(0,0,w,h);for(let i=0;i<40;i++){x.strokeStyle=`rgba(90,70,120,${rnd(.25)})`;x.lineWidth=rnd(2);x.beginPath();let px=rnd(w),py=rnd(h);x.moveTo(px,py);for(let j=0;j<6;j++){px+=rnd(80)-40;py+=rnd(80)-40;x.lineTo(px,py);}x.stroke();}});ob.repeat.set(4,4);
- add(M(new THREE.CircleGeometry(30,64).rotateX(-Math.PI/2),std({map:ob,roughness:.16,metalness:.3,envMapIntensity:1.3}),0,0,0,false));
- const gold=new THREE.MeshStandardMaterial({color:0xd8a840,metalness:.95,roughness:.28,emissive:0x3a2004,emissiveIntensity:.6});
+ // gilded marble: white stone and gold under a cool dusk sky; warm key, cool fill and shadows so whites, golds and blues all read
+ out.env=makeEnv(R,0x1a2244,0x8a90b0,0x14141c,[[0x9a8a68,0,10,-30,30,8],[0x6a8aff,-30,20,10,20,10],[0xffffff,20,26,12,14,8]]);out.fog={c:0x232a42,near:28,far:120};out.bg=0x10142a;
+ out.light={hemi:[0xd8e0ff,0x2a2440,.55],key:[0xfff0dc,2.6,[-4,13,6]],rim:[0xffc860,1.4,[0,10,-10]],rim2:[0x6a90ff,2.0,[9,6,6]]};out.post={exposure:.9,bloom:.3,bloomThreshold:.92,saturation:1.08,vignette:.5,tint:0xf4f4ff};
+ const S=sky({top:0x080c22,hor:0x5a4a6a,bot:0x0a0a14,sun:[0,.22,-1],sunC:0xffd890,neb:.8,disc:1});out.sky=S;add(S);
+ // white marble floor with grey-blue veins and gold inlay
+ const ob=ctex(512,512,(x,w,h)=>{x.fillStyle='#e8e4dc';x.fillRect(0,0,w,h);for(let i=0;i<60;i++){x.fillStyle=`rgba(${200+rnd(40)|0},${196+rnd(40)|0},${190+rnd(40)|0},.25)`;x.beginPath();x.arc(rnd(w),rnd(h),10+rnd(50),0,TAU);x.fill();}
+  for(let i=0;i<34;i++){x.strokeStyle=`rgba(${70+rnd(30)|0},${80+rnd(30)|0},${110+rnd(30)|0},${.15+rnd(.35)})`;x.lineWidth=.5+rnd(2);x.beginPath();let px=rnd(w),py=rnd(h);x.moveTo(px,py);for(let j=0;j<7;j++){px+=rnd(90)-45;py+=rnd(90)-45;x.lineTo(px,py);}x.stroke();}
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++)if((i+j)&1){x.fillStyle='rgba(52,60,84,.78)';x.fillRect(i*w/4,j*h/4,w/4,h/4);}x.strokeStyle='rgba(40,44,60,.5)';x.lineWidth=2;for(let i=0;i<=4;i++){x.strokeRect(i*w/4-1,-2,0,h+4);x.strokeRect(-2,i*h/4-1,w+4,0);}});ob.repeat.set(5,5);
+ add(M(new THREE.CircleGeometry(30,64).rotateX(-Math.PI/2),std({map:ob,color:0xc4c2c2,roughness:.42,metalness:.0,envMapIntensity:.7}),0,0,0,false));
+ const gold=new THREE.MeshStandardMaterial({color:0xe8bc50,metalness:.95,roughness:.24,emissive:0x2a1a04,emissiveIntensity:.4});
  for(const r of[2.2,4.6,7.0])add(M(new THREE.TorusGeometry(r,.045,6,96).rotateX(Math.PI/2),gold,0,.01,0,false));
  for(let i=0;i<12;i++){const a=i/12*TAU;const b=add(M(new THREE.BoxGeometry(.06,.02,4.6),gold,Math.sin(a)*4.6,.01,Math.cos(a)*4.6,false));b.rotation.y=a;}
- // molten channel just outside the wall ring
+ // channel of liquid gold just outside the wall ring (pale gold, not a lava wash)
  const lava=new THREE.ShaderMaterial({uniforms:{uT:{value:0}},vertexShader:'varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
-  fragmentShader:'uniform float uT;varying vec3 vW;float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}void main(){float a=atan(vW.z,vW.x)*8.;vec2 p=vec2(a+uT*.3,length(vW.xz)*2.);float v=n(p*1.5)*.6+n(p*4.+uT)*.4;vec3 c=mix(vec3(.7,.14,.02),vec3(2.,1.1,.25),pow(v,2.5));gl_FragColor=vec4(c,1.);}'});
+  fragmentShader:'uniform float uT;varying vec3 vW;float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}void main(){float a=atan(vW.z,vW.x)*8.;vec2 p=vec2(a+uT*.3,length(vW.xz)*2.);float v=n(p*1.5)*.6+n(p*4.+uT)*.4;vec3 c=mix(vec3(.42,.28,.08),vec3(1.5,1.18,.6),pow(v,2.5));gl_FragColor=vec4(c,1.);}'});
  add(M(new THREE.RingGeometry(7.5,8.4,96).rotateX(-Math.PI/2),lava,0,-.05,0,false,false));
  add(M(new THREE.TorusGeometry(7.45,.12,8,96).rotateX(Math.PI/2),gold,0,.05,0,false));add(M(new THREE.TorusGeometry(8.45,.12,8,96).rotateX(Math.PI/2),gold,0,.05,0,false));
- const lg=add(new THREE.PointLight(0xff7020,5,12,1.8));lg.position.set(0,.3,-8);
+ const lg=add(new THREE.PointLight(0xffd080,3,12,1.8));lg.position.set(0,.3,-8);
  // colonnade
- const stone=std({color:0x2a2028,roughness:.55,metalness:.1});
+ const veinT=ctex(256,512,(x,w,h)=>{x.fillStyle='#f0ece4';x.fillRect(0,0,w,h);for(let i=0;i<14;i++){x.strokeStyle=`rgba(90,100,130,${.15+rnd(.3)})`;x.lineWidth=.5+rnd(1.5);x.beginPath();let px=rnd(w),py=0;x.moveTo(px,py);while(py<h){px+=rnd(40)-20;py+=20+rnd(40);x.lineTo(px,py);}x.stroke();}});
+ const stone=std({map:veinT,color:0xe6e2dc,roughness:.35,metalness:0});
  for(let i=0;i<10;i++){const a=i/10*TAU+.31;if(Math.abs(((a%TAU)+TAU)%TAU-Math.PI)<.35)continue;const x=Math.sin(a)*11.5,z=Math.cos(a)*11.5;add(M(new THREE.CylinderGeometry(.62,.72,11,16),stone,x,5.5,z));add(M(new THREE.CylinderGeometry(.95,.8,.6,16),gold,x,11.2,z));add(M(new THREE.CylinderGeometry(.9,.9,.5,16),gold,x,.25,z));
-  const ban=add(M(new THREE.PlaneGeometry(1.4,5.5),std({color:0x8a1020,roughness:.8,side:THREE.DoubleSide,emissive:0x2a0004}),x*.92,7,z*.92,false));ban.lookAt(0,7,0);}
+  const ban=add(M(new THREE.PlaneGeometry(1.4,5.5),std({color:i%2?0x1a2a6a:0x8a1424,roughness:.8,side:THREE.DoubleSide,emissive:i%2?0x020414:0x140002}),x*.92,7,z*.92,false));ban.lookAt(0,7,0);}
  // the throne behind the ring
  const th=new THREE.Group();th.position.set(0,0,-14.5);th.add(M(new THREE.BoxGeometry(8,1.2,5),stone,0,.6,0));th.add(M(new THREE.BoxGeometry(6,.6,4),stone,0,1.5,0));th.add(M(new THREE.BoxGeometry(3,1.2,2.4),gold,0,2.4,.2));
  th.add(M(new THREE.BoxGeometry(3.2,7,.6),gold,0,6,-1));for(let i=0;i<7;i++){const s=M(new THREE.ConeGeometry(.3,2+(3-Math.abs(i-3))*.9,4),gold,(i-3)*.5,9.4+(3-Math.abs(i-3))*.45,-1);th.add(s);}
- for(const x of[-1.7,1.7])th.add(M(new THREE.BoxGeometry(.5,1.2,2.4),gold,x,3.2,.2));th.add(M(new THREE.SphereGeometry(.4,16,12),glow(0xb060ff,4),0,8.2,-.6,false));add(th);
- out.amb={n:q>=1?40:16,r:8.5,y0:0,y1:1,v:[0,1.2,0],col:[new THREE.Color(2.6,1.1,.2),new THREE.Color(2.2,.6,.1)],size:.06,life:3,ember:1};
- out.upd.push((t)=>{lava.uniforms.uT.value=t;S.material.uniforms.uT.value=t;lg.intensity=5+Math.sin(t*3)*1+Math.sin(t*7.3)*.5;});}
+ for(const x of[-1.7,1.7])th.add(M(new THREE.BoxGeometry(.5,1.2,2.4),gold,x,3.2,.2));th.add(M(new THREE.SphereGeometry(.4,16,12),glow(0x9ab8ff,3),0,8.2,-.6,false));add(th);
+ out.amb={n:q>=1?40:16,r:8.5,y0:0,y1:1,v:[0,1.2,0],col:[new THREE.Color(2.2,1.8,.9),new THREE.Color(1.4,1.5,2)],size:.045,life:3,ember:1};
+ out.upd.push((t)=>{lava.uniforms.uT.value=t;S.material.uniforms.uT.value=t;lg.intensity=3+Math.sin(t*3)*.6+Math.sin(t*7.3)*.3;});}
