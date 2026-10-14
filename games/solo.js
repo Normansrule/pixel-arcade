@@ -34,12 +34,19 @@ A.add({id:'stack',name:'TOWER STACK',cat:'CLASSICS',how:'A DROPS THE BLOCK. OVER
 
 /* ---- SLIDE 15 ---- */
 A.add({id:'slide',name:'SLIDE 15',cat:'PUZZLE',low:1,how:'ARROWS SLIDE A TILE INTO THE GAP. ORDER 1-15.',make(){
- const g={over:null,score:0},fx=X.fx();let b=[...Array(16).keys()].map(i=>(i+1)%16),an={i:-1,dx:0,dy:0};const gap=()=>b.indexOf(0);
+ const g={over:null,score:0},fx=X.fx();let b=[...Array(16).keys()].map(i=>(i+1)%16),an={i:-1,dx:0,dy:0},glow=Array(16).fill(0);const gap=()=>b.indexOf(0);
  for(let i=0;i<300;i++){const e=gap(),ds=[e%4>0?e-1:-1,e%4<3?e+1:-1,e>3?e-4:-1,e<12?e+4:-1].filter(v=>v>=0),t=ds[ri(ds.length)];b[e]=b[t];b[t]=0;}
- g.update=()=>{an.dx*=.55;an.dy*=.55;const h=A.hit(0),e=gap();let t=-1;if(h.l&&e%4<3)t=e+1;if(h.r&&e%4>0)t=e-1;if(h.u&&e<12)t=e+4;if(h.d&&e>3)t=e-4;if(t>=0){b[e]=b[t];b[t]=0;an={i:e,dx:((t%4)-(e%4))*40,dy:(((t/4)|0)-((e/4)|0))*40};g.score++;S('blip');if(b[e]===e+1)fx.spark(80+(e%4)*40+19,40+((e/4)|0)*40+19,'#3ddc84',5,1.5);if(b.every((v,i)=>v===(i+1)%16)){g.over='SOLVED! WIN';S('win');}}};
- g.draw=()=>{X.cache('slidebg',()=>{X.vg(0,0,W,H,['#3a2418','#1e120a']);X.rr(72,32,176,176,8,X.lg(0,32,0,208,['#7a4a2a','#4a2a14']));X.rr(78,38,164,164,4,'#1a0e06');});const c=A.c;
-  b.forEach((v,i)=>{if(!v)return;const x=80+(i%4)*40+(an.i===i?an.dx:0),y=40+((i/4)|0)*40+(an.i===i?an.dy:0),ok=v===i+1;c.fillStyle='rgba(0,0,0,.4)';c.fillRect(x+2,y+3,38,38);X.rr(x,y,38,38,4,X.lg(0,y,0,y+38,ok?['#b8f0a0','#6ac050','#3a8a2a']:['#f8d8a0','#e0a860','#a8743a']));c.fillStyle='rgba(0,0,0,.08)';for(let k=4;k<38;k+=6)c.fillRect(x+2,y+k,34,1);c.fillStyle='rgba(255,255,255,.35)';c.fillRect(x+3,y+2,32,2);X.rrs(x+.5,y+.5,37,37,4,'rgba(60,30,10,.6)',1);T(v,x+19,y+13,ok?'#1a4a10':'#5a3010',2,'c',1);});
-  fx.draw();X.bar('MOVES '+g.score,'',' ',K.w);T('IN PLACE '+b.filter((v,i)=>v===i+1).length+'/15',W-6,6,K.g,1,'r');};
+ g.update=()=>{an.dx*=.55;an.dy*=.55;glow=glow.map(v=>v?v-1:0);const h=A.hit(0),e=gap();let t=-1;if(h.l&&e%4<3)t=e+1;if(h.r&&e%4>0)t=e-1;if(h.u&&e<12)t=e+4;if(h.d&&e>3)t=e-4;if(t>=0){b[e]=b[t];b[t]=0;an={i:e,dx:((t%4)-(e%4))*40,dy:(((t/4)|0)-((e/4)|0))*40};g.score++;S('blip');if(b[e]===e+1){glow[e]=24;fx.spark(80+(e%4)*40+19,40+((e/4)|0)*40+19,'#3ddc84',8,1.8);fx.ring(80+(e%4)*40+19,40+((e/4)|0)*40+19,'#3ddc84',26,16);S('coin');}else if(b[t]===0&&b[e]===t+1){A.shake=1;}if(b.every((v,i)=>v===(i+1)%16)){g.over='SOLVED! WIN';S('win');A.confetti();fx.flash('#3ddc84',8);}}};
+ const bg=()=>{const c=A.c;X.wood(0,0,W,H,'#3a2416');X.vg(0,0,W,H,['rgba(255,190,120,.10)','rgba(0,0,0,.3)']);X.glow(160,60,190,'#ffcf8a',.22);X.shadow(162,214,100,10,.45);
+  X.rr(66,26,188,188,12,X.lg(0,26,0,214,['#a06a3a','#7a4a24','#4a2a12']));c.fillStyle='rgba(255,255,255,.18)';c.fillRect(76,27,168,1.5);X.rrs(66.5,26.5,187,187,12,'rgba(0,0,0,.5)',1);X.rr(76,36,168,168,5,'#120a04');X.vg(76,36,168,14,['rgba(0,0,0,.6)','rgba(0,0,0,0)']);for(let i=0;i<16;i++){const x=80+(i%4)*40,y=40+((i/4)|0)*40;X.rrs(x+.5,y+.5,37,37,4,'rgba(255,220,160,.06)',1);}
+  for(const[x,y]of[[72,32],[248,32],[72,208],[248,208]]){X.disc(x,y,2.2,'#d8b070');X.disc(x-.5,y-.6,.8,'rgba(255,255,255,.6)');}
+  X.panel(6,40,58,82,'#ffcf3f');A.text('GOAL',35,45,'#ffcf3f',1,'c');for(let i=0;i<15;i++){const x=11+(i%4)*12,y=57+((i/4)|0)*15;X.rr(x,y,11,13,2,X.lg(0,y,0,y+13,['#c8f0b0','#6ac050']));A.text(String(i+1),x+5.5,y+4,'#1a4a10',1,'c');}
+  X.panel(258,40,56,160,'#3ddc84');A.text('PLACED',286,45,'#3ddc84',1,'c');X.vignette(.5);};
+ g.draw=()=>{X.cache('slidebg2',bg);const c=A.c,e=gap(),n=b.filter((v,i)=>v===i+1).length;
+  {const x=80+(e%4)*40,y=40+((e/4)|0)*40;X.rr(x+2,y+2,34,34,4,'rgba(255,207,63,'+(.06+.04*Math.sin(A.t*.12)).toFixed(3)+')');}
+  b.forEach((v,i)=>{if(!v)return;const x=80+(i%4)*40+(an.i===i?an.dx:0),y=40+((i/4)|0)*40+(an.i===i?an.dy:0),ok=v===i+1;X.rr(x+1.5,y+3.5,38,38,5,'rgba(0,0,0,.45)');if(ok&&glow[i]&&A.gfx!=='off')X.glow(x+19,y+19,30+glow[i],'#3ddc84',glow[i]/40);X.rr(x,y,38,38,5,X.lg(0,y,0,y+38,ok?['#d0f8b8','#7ad060','#3a8a2a']:['#fce4b4','#e8b070','#a8743a']));c.fillStyle=ok?'rgba(0,60,0,.07)':'rgba(90,40,0,.09)';for(let k=5;k<36;k+=5)c.fillRect(x+3,y+k+(i%3),32,1);c.fillStyle='rgba(255,255,255,.45)';c.fillRect(x+4,y+2,30,2);c.fillStyle='rgba(0,0,0,.18)';c.fillRect(x+4,y+35,30,1.5);X.rrs(x+.5,y+.5,37,37,5,ok?'rgba(20,80,10,.7)':'rgba(70,35,10,.6)',1);X.disc(x+19,y+19,12,ok?'rgba(255,255,255,.18)':'rgba(255,240,210,.22)');T(v,x+19.5,y+14,'rgba(255,255,255,.5)',2,'c',1);T(v,x+19,y+13,ok?'#1a4a10':'#5a3010',2,'c',1);});
+  X.meter(279,56,14,136,0,'#3ddc84');const mh=134*n/15;if(mh>0)X.rr(280,57+134-mh,12,mh,5,X.lg(0,57,0,191,['#b8ffb0','#3ddc84','#1a8a4a']));T(n+'/15',286,194,K.g,1,'c');
+  fx.draw();X.bar('MOVES '+g.score,'',' ',K.w);T(n===15?'SOLVED!':'IN PLACE '+n+'/15',W-6,6,K.g,1,'r');};
  return g;}});
 
 /* ---- PINBALL ---- */
