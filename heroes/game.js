@@ -175,8 +175,8 @@ function spawnBolt(f,p,dir,kind){const spd=kind==='ember'?WPN.ember.speed:kind==
  const pr={kind,pos:p.clone(),vel:v,owner:f,team:f.team,life:kind==='shock'?1.1:5,mesh:m,light:kind==='rocket'?null:lights.grab(null,kind==='ember'?0xff8a30:kind==='bio'?0x80ff60:kind==='well'?0xa060ff:0x60c0ff,8,7),grav:kind==='ember'?WPN.ember.grav:kind==='rocket'?0:kind==='well'?2:PHY.g*.8,age:0};G.proj.push(pr);return pr;}
 function fireRocket(f){const eye=eyeOf(f,new V()),fw=dirOf(f.yaw+rnd(.06)-.03,f.pitch+rnd(.05)-.02,new V());const p=eye.addScaledVector(fw,.8);p.x+=rnd(.4)-.2;p.y+=rnd(.3)-.1;spawnBolt(f,p,fw,'rocket');snd.play('volley',f.pos,f===G.me?.9:1);if(f===G.me){VM.fire();G.shake=Math.max(G.shake,.12);}}
 function killProj(p){scene.remove(p.mesh);if(p.light)lights.release(p.light);p.dead=true;}
-function updateProj(dt){const ho={n:new V()};for(let i=G.proj.length-1;i>=0;i--){const p=G.proj[i];p.life-=dt;p.age+=dt;
-  p.vel.y-=p.grav*dt;const step=p.vel.length()*dt,dir=tv.copy(p.vel).normalize();const sh=shieldHit(p.pos,dir,step+.1,p.team);
+function updateProj(dt){const ho={n:new V()},pd=new V();for(let i=G.proj.length-1;i>=0;i--){const p=G.proj[i];p.life-=dt;p.age+=dt;
+  p.vel.y-=p.grav*dt;const step=p.vel.length()*dt,dir=pd.copy(p.vel).normalize();const sh=shieldHit(p.pos,dir,step+.1,p.team);
   const wt=G.W.ray(p.pos,dir,step+.12,ho);const ally=p.kind==='bio';const fh=rayFighters(p.pos,dir,Math.min(wt,sh?sh.t:1e9)+.15,p.age<.12?p.owner:null,o=>o!==p.owner&&(ally||G.enemy(p.owner,o)));
   let boom=null,direct=null;
   if(fh.length){boom=p.pos.clone().addScaledVector(dir,fh[0].t);direct=fh[0].f;}else if(sh&&sh.t<=step+.1){boom=p.pos.clone().addScaledVector(dir,sh.t);absorb(sh.s,p.kind==='ember'?100:p.kind==='rocket'?50:60,p.owner);}
