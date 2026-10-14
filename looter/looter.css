@@ -157,3 +157,7 @@ body.playing a.back{display:none}body.playing{cursor:none}
 @media (max-height:760px){h1{font-size:3.6rem}#vault{max-height:22vh}#radar{width:100px;height:100px;bottom:120px}}
 @media (max-width:640px){.scr{padding:0 16px 5vh}#menu{padding-top:3vh}.seg button{padding:7px 9px;font-size:.6rem}.dest,.cls,.slot{width:100%}#obj{width:220px}#team{display:none}#vit{width:46vw}}
 #stats{display:block;overflow-x:auto;max-width:92vw;flex-shrink:0}#over>*{flex-shrink:0}.itm .nw{text-decoration:none}
+/* short windows (≤620px tall, e.g. 960×540): compact results so the action buttons stay on screen */
+@media (max-height:620px){#over{padding-top:3vh;padding-bottom:4vh}#over .eye{margin-bottom:4px;font-size:.62rem}#over .res{font-size:2.4rem}#over .fs{margin:4px 0 6px;font-size:.62rem}#opow{font-size:1.2rem}
+ #stats{margin:6px 0 2px}#stats th{padding:3px 8px}#stats td{padding:4px 8px}#over .lh{margin:6px 0 4px}#oloot{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));max-width:900px;gap:5px}#oloot .itm{padding:6px 8px 6px 11px;min-height:54px}
+ #over .tok{margin:6px 0 8px}#over .row button{padding:11px 24px}}

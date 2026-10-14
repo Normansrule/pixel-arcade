@@ -7,7 +7,7 @@ import {ARCH} from './loot.js';
 import {PHY} from './world.js';
 
 export const DIFF=[
- {n:'ADEPT',lvl:-10,hp:.85,dmg:.8,acc:.65,rate:.8,aggro:.7,ally:{err:.04,track:7,react:.35},drop:0,pts:1},
+ {n:'ADEPT',lvl:-10,hp:.85,dmg:1.35,acc:.8,rate:1,aggro:.95,ally:{err:.04,track:7,react:.35},drop:0,pts:1},
  {n:'VETERAN',lvl:0,hp:1,dmg:1,acc:.8,rate:1,aggro:1,ally:{err:.035,track:7.5,react:.3},drop:1,pts:1.5},
  {n:'LEGEND',lvl:15,hp:1.35,dmg:1.45,acc:1,rate:1.25,aggro:1.3,ally:{err:.03,track:8.5,react:.25},drop:2,pts:2.3}];
 export const ALLY_NAMES=['CASSIA-7','ORRIN VALE','THESSALY','KADE-9','IONA','BRAMBLE','SOREN','MIRE-4'];

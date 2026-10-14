@@ -30,7 +30,7 @@ const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(78,1,.08,120
 const vmScene=new THREE.Scene(),vmCam=new THREE.PerspectiveCamera(58,1,.01,10);vmScene.add(vmCam);
 const vmHemi=new THREE.HemisphereLight(0xfff0e0,0x302820,.6),vmKey=new THREE.DirectionalLight(0xffffff,1.1),vmRim=new THREE.DirectionalLight(0xffc080,.6);vmKey.position.set(-1,2,1);vmRim.position.set(2,.5,-1.5);vmScene.add(vmHemi,vmKey,vmRim);
 const VM=new Viewmodel(vmCam);const snd=new Sound();
-const parts=new Particles(scene,5000),smoke=new Particles(scene,1800,true),beams=new Beams(scene,160),shocks=new Shocks(scene,10),decals=new Decals(scene,160),lights=new LightPool(scene,5);
+const parts=new Particles(scene,5000),smoke=new Particles(scene,1800,true),beams=new Beams(scene,160),shocks=new Shocks(scene,10),decals=new Decals(scene,160),lights=new LightPool(scene,5);shocks.H=(x,z)=>G.W?G.W.H(x,z):-1e9;
 // energy bolts: one instanced mesh of stretched glowing spheres
 const MAXB=320,boltMesh=new THREE.InstancedMesh(new THREE.SphereGeometry(.13,10,8),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}),MAXB);
 boltMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);boltMesh.frustumCulled=false;boltMesh.setColorAt(0,new THREE.Color());boltMesh.count=0;boltMesh.renderOrder=6;scene.add(boltMesh);

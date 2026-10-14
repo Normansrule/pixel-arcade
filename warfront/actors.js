@@ -98,7 +98,7 @@ export class Rig{
   this.b={};for(const o of bones)this.b[o.name]=o;
   this.flash=new THREE.Mesh(new THREE.PlaneGeometry(.45,.45),KIT.flash);this.flash.position.set(0,.01,.82);this.flash.visible=false;const f2=new THREE.Mesh(new THREE.PlaneGeometry(.55,.3),KIT.flash);f2.rotation.y=PI/2;f2.position.z=.12;this.flash.add(f2);if(type!=='vip')this.b.gun.add(this.flash);else this.b.gun.visible=false;
   this.phase=rnd()*6;this.die=0;this.dieDir=1;this.flinch=0;this.kick=0;this.aimK=0;this.sprK=0;this.relK=0;this.ang=0;this.angV=0;this.throwT=0;this.hy=.95;this.idleT=rnd()*10;}
- // st: {speed, vf, vs (local fwd/side speed), crouch, pitch, aim (0/1), sprint, reload (0..1 progress or -1), dead, seat (seated crew pose: thighs level, rifle stowed)}
+ // st: {speed, vf, vs (local fwd/side speed), crouch, pitch, aim (0/1), sprint, reload (0..1 progress or -1), dead, seat (seated crew pose: thighs level, rifle stowed), stow (rifle stowed only: hatch commander)}
  update(dt,st){const B=this.b,r=this.root;this.idleT+=dt;
   if(st.dead){this.topple(dt);return;}
   if(this.die){this.die=0;this.ang=0;this.angV=0;this.mesh.rotation.set(0,0,0);this.mesh.position.set(0,0,0);}
@@ -121,7 +121,7 @@ export class Rig{
    if(st.seat){th=-1.5;kn=1.45;tz=s==='L'?.08:-.08;ft=.05;}
    B['thigh'+s].rotation.x+=(th-B['thigh'+s].rotation.x)*k;B['thigh'+s].rotation.z+=(tz+(s==='L'?.02:-.02)-B['thigh'+s].rotation.z)*k;B['shin'+s].rotation.x+=(kn-B['shin'+s].rotation.x)*k;B['foot'+s].rotation.x+=(ft-B['foot'+s].rotation.x)*k;}
   // weapon pose: low-ready ↔ shouldered ↔ sprint carry ↔ reload tilt
-  const g=B.gun;g.scale.setScalar(st.seat?1e-3:1);if(this.type==='vip'){this.vipArms(dt);return;}
+  const g=B.gun;g.scale.setScalar(st.seat||st.stow?1e-3:1);if(this.type==='vip'){this.vipArms(dt);return;}
   const a=this.aimK*(1-this.sprK),lr=(1-this.aimK)*(1-this.sprK);
   g.position.set(-.085+this.sprK*.1,.14*a+.03*lr+.05*this.sprK-.04*this.relK,.3*a+.3*lr+.2*this.sprK-this.kick*.05);
   tE.set(.5*lr+.25*this.sprK-pitch*.55*a+.15*this.relK-this.kick*.12+Math.sin(this.idleT*1.1)*.01*lr,.95*this.sprK-.05*a,-.6*this.relK*Math.min(1,st.reload>=0?Math.sin(Math.max(0,st.reload)*PI)*1.5:1));g.quaternion.setFromEuler(tE);

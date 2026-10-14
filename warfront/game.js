@@ -165,8 +165,9 @@ G.bump=(v,imp)=>{if(imp>9)vehDamage(v,(imp-9)*30,G.time-v.lastHitT<8?v.lastHitBy
 function explode(p,owner,K,direct,skipVeh){const pr=BLAST[K];const gy=W.height(p.x,p.z);
  if(pr.fx>=.6)fx.explode(p,pr.fx,p.y<gy+3);else{fx.sparks.burst(p,10,5,[new THREE.Color(3,1.6,.5)],.4,.25,{drag:3,jit:.5,up:true});fx.smoke.burst(p,3,2,new THREE.Color(.3,.28,.26),.8,1.4,{drag:2,grow:1.2,up:true});fx.lights.flash(p,0xff8a3a,30,10,.15);}
  const d=cam.position.distanceTo(p);if(pr.fx>=.6||d<60)snd.play(K==='shell'?'cannon':'boom',Math.max(.1,(1-d/(220*pr.fx))*(pr.fx<.6?.4:1)),panOf(p));if(P&&P.alive){const k=Math.max(0,1-d/(35*pr.fx));P.shake=Math.max(P.shake,k*1.2);if(d<8&&!P.veh)HUD.flash(.3*(1-d/8));}
- for(const a of G.actors){if(!a.alive||a.veh)continue;chestOf(a,tv);const dd=tv.distanceTo(p);if(dd>pr.r)continue;if(owner&&a.team===owner.team&&a!==owner)continue;const los=W.los(tv2.copy(p).setY(p.y+.4),tv);
-  let dm=pr.inf*(1-dd/pr.r)*(los?1:.25);if(a===owner)dm*=.5;if(owner&&!owner.isPlayer&&a.isPlayer)dm*=Math.max(.55,G.diff.dmg);if(a.downed){if(dm>25)die(a,owner,{wname:pr.name},false);continue;}if(dm>2)damage(a,dm,owner,'body',tv3.subVectors(tv,p).normalize(),pr.name,'blast');}
+ // exposed jeep riders catch splash too; a low blast off the hull is partly soaked by it (seated driver more than the standing gunner)
+ for(const a of G.actors){if(!a.alive||a.veh&&a.veh.kind!=='jeep')continue;let cov=1;if(a.veh){const v=a.veh;riderAt(a,v,tv).y+=1.2;if(p.y<v.p.y+1.4&&Math.hypot(p.x-v.p.x,p.z-v.p.z)>1.8)cov=a.seat===1?.7:.35;}else chestOf(a,tv);const dd=tv.distanceTo(p);if(dd>pr.r)continue;if(owner&&a.team===owner.team&&a!==owner)continue;const los=W.los(tv2.copy(p).setY(p.y+.4),tv);
+  let dm=pr.inf*(1-dd/pr.r)*(los?1:.25)*cov;if(a===owner)dm*=.5;if(owner&&!owner.isPlayer&&a.isPlayer)dm*=Math.max(.55,G.diff.dmg);if(a.downed){if(dm>25)die(a,owner,{wname:pr.name},false);continue;}if(dm>2)damage(a,dm,owner,'body',tv3.subVectors(tv,p).normalize(),pr.name,'blast');}
  for(const v of G.vehicles){if(!v.alive||v===skipVeh||owner&&v===owner.veh)continue;if(owner&&v.team===owner.team)continue;if(v===direct){vehDamage(v,pr.ap||pr.veh,owner,'ap',tv3.subVectors(v.p,p).normalize());continue;}
   const dd=Math.max(0,v.p.distanceTo(p)-(v.kind==='tank'?2.6:2));if(dd<pr.r)vehDamage(v,pr.veh*(1-dd/pr.r),owner,'blast',null);}
  const L=W.near(p.x,p.z,pr.r).slice();for(const i of L){const b=W.boxes[i];if(b.dead)continue;const cx=cl(p.x,b.x0,b.x1),cy=cl(p.y,b.y0,b.y1),cz=cl(p.z,b.z0,b.z1),dd=Math.hypot(p.x-cx,p.y-cy,p.z-cz);if(dd>pr.r)continue;
@@ -485,7 +486,7 @@ function riderAt(a,v,o){const s=CREW.jeep[a.seat],cy=Math.cos(v.yaw),sy=Math.sin
 const RP={pos:new V(),crouchV:0};function hitRider(a,o,d,maxT){const v=a.veh;riderAt(a,v,RP.pos);const h=hitActor(RP,o.x,o.y,o.z,d.x,d.y,d.z,maxT);if(!h||o.y+d.y*h.t<v.p.y+1.4)return null;return h;}
 G.riderAt=riderAt;G.hitRider=hitRider;
 function rideVeh(a,v,dt){const r=a.rig,s=CREW[v.kind][a.seat];if(!s||!v.alive||cam.position.distanceTo(v.p)>(v.kind==='jet'||v.kind==='heli'?170:130)){r.root.visible=false;return;}r.root.visible=true;
- if(s[0]){const pt=v.model[s[0]];pt.updateWorldMatrix(true,false);r.root.position.set(s[1],s[2],s[3]);pt.localToWorld(r.root.position);pt.getWorldQuaternion(r.root.quaternion);r.mesh.castShadow=v.kind==='tank';r.update(dt,{speed:0,seat:s[4],reload:-1});r.flash.visible=false;return;}
+ if(s[0]){const pt=v.model[s[0]];pt.updateWorldMatrix(true,false);r.root.position.set(s[1],s[2],s[3]);pt.localToWorld(r.root.position);pt.getWorldQuaternion(r.root.quaternion);r.mesh.castShadow=v.kind==='tank';r.update(dt,{speed:0,seat:s[4],stow:1,reload:-1});r.flash.visible=false;return;}
  const g=a.seat===1;riderAt(a,v,r.root.position);r.root.rotation.set(0,g?v.yaw+v.tYaw:v.yaw,0);r.mesh.castShadow=true;r.update(dt,{speed:0,seat:!g,pitch:g?v.gEl:0,aim:g,reload:-1});r.flash.visible=g&&v.fireT>.04;}
 /* ================= viewmodel ================= */
 let shownGun=null;

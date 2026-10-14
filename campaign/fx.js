@@ -41,10 +41,11 @@ export class Beams{
   if(!on){for(let k=0;k<4;k++)w[i*4+k]=0;}});
   for(const n of['a','b','col','w'])this.g.attributes[n].needsUpdate=true;}}
 
-export class Shocks{constructor(scene,n=8){this.list=[];const geo=new THREE.SphereGeometry(1,32,16);for(let i=0;i<n;i++){const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uC:{value:new THREE.Color()},uA:{value:0}},
-  vertexShader:'varying vec3 vN,vV;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
-  fragmentShader:'uniform vec3 uC;uniform float uA;varying vec3 vN,vV;void main(){float f=pow(1.-abs(dot(vN,vV)),2.2);gl_FragColor=vec4(uC*f*uA,1.);}'}));m.visible=false;m.renderOrder=6;scene.add(m);this.list.push({m,t:0,d:1,r:1});}}
- fire(p,col,radius,dur){const s=this.list.find(s=>!s.m.visible)||this.list[0];s.m.position.copy(p);s.m.material.uniforms.uC.value.copy(col);s.t=0;s.d=dur;s.r=radius;s.m.visible=true;}
+export class Shocks{constructor(scene,n=8){this.list=[];const geo=new THREE.SphereGeometry(1,32,16);for(let i=0;i<n;i++){const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uC:{value:new THREE.Color()},uA:{value:0},uG:{value:-1e9},uF:{value:1}},
+  vertexShader:'varying vec3 vN,vV;varying float vY;void main(){vY=(modelMatrix*vec4(position,1.)).y;vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+  fragmentShader:'uniform vec3 uC;uniform float uA,uG,uF;varying vec3 vN,vV;varying float vY;void main(){float f=pow(1.-abs(dot(vN,vV)),2.2)*smoothstep(uG,uG+uF,vY);gl_FragColor=vec4(uC*f*uA,1.);}'}));m.visible=false;m.renderOrder=6;scene.add(m);this.list.push({m,t:0,d:1,r:1});}}
+ // the shell fades out over a band above the ground under it (this.H(x,z), set by the game) so it never shows a hard flat cut where it meets the terrain
+ fire(p,col,radius,dur){const s=this.list.find(s=>!s.m.visible)||this.list[0],U=s.m.material.uniforms;s.m.position.copy(p);U.uC.value.copy(col);U.uG.value=this.H?this.H(p.x,p.z):-1e9;U.uF.value=Math.max(.8,radius*.35);s.t=0;s.d=dur;s.r=radius;s.m.visible=true;}
  clear(){for(const s of this.list)s.m.visible=false;}
  update(dt){for(const s of this.list){if(!s.m.visible)continue;s.t+=dt;const k=s.t/s.d;if(k>=1){s.m.visible=false;continue;}s.m.scale.setScalar(.3+s.r*(1-Math.pow(1-k,3)));s.m.material.uniforms.uA.value=(1-k)*(1-k)*1.6;}}}
 
