@@ -98,7 +98,7 @@ export class Rig{
   this.b={};for(const o of bones)this.b[o.name]=o;
   this.flash=new THREE.Mesh(new THREE.PlaneGeometry(.45,.45),KIT.flash);this.flash.position.set(0,.01,.82);this.flash.visible=false;const f2=new THREE.Mesh(new THREE.PlaneGeometry(.55,.3),KIT.flash);f2.rotation.y=PI/2;f2.position.z=.12;this.flash.add(f2);if(type!=='vip')this.b.gun.add(this.flash);else this.b.gun.visible=false;
   this.phase=rnd()*6;this.die=0;this.dieDir=1;this.flinch=0;this.kick=0;this.aimK=0;this.sprK=0;this.relK=0;this.ang=0;this.angV=0;this.throwT=0;this.hy=.95;this.idleT=rnd()*10;}
- // st: {speed, vf, vs (local fwd/side speed), crouch, pitch, aim (0/1), sprint, reload (0..1 progress or -1), dead}
+ // st: {speed, vf, vs (local fwd/side speed), crouch, pitch, aim (0/1), sprint, reload (0..1 progress or -1), dead, seat (seated crew pose: thighs level, rifle stowed)}
  update(dt,st){const B=this.b,r=this.root;this.idleT+=dt;
   if(st.dead){this.topple(dt);return;}
   if(this.die){this.die=0;this.ang=0;this.angV=0;this.mesh.rotation.set(0,0,0);this.mesh.position.set(0,0,0);}
@@ -118,9 +118,10 @@ export class Rig{
   const legs=[['L',0],['R',PI]];for(const[s,o]of legs){const p=ph+o;let th=-Math.sin(p)*amp*.75*fk,kn=Math.max(0,Math.sin(p+1.3))*amp*1.25+.06,tz=Math.sin(p)*amp*.35*sk*(s==='L'?1:-1),ft=0;
    if(!moving){th=s==='L'?-.05:.08;kn=.08;tz=s==='L'?.06:-.06;}
    const ct=s==='L'?-1.25:-.35,ck=s==='L'?1.95:2.2;th=th*(1-cr)+(ct+th*.3)*cr;kn=kn*(1-cr)+ck*cr;ft=-(th+kn)*(cr*.9)+(moving?Math.min(0,Math.sin(p+.4))*.3*amp:0);
+   if(st.seat){th=-1.5;kn=1.45;tz=s==='L'?.08:-.08;ft=.05;}
    B['thigh'+s].rotation.x+=(th-B['thigh'+s].rotation.x)*k;B['thigh'+s].rotation.z+=(tz+(s==='L'?.02:-.02)-B['thigh'+s].rotation.z)*k;B['shin'+s].rotation.x+=(kn-B['shin'+s].rotation.x)*k;B['foot'+s].rotation.x+=(ft-B['foot'+s].rotation.x)*k;}
   // weapon pose: low-ready ↔ shouldered ↔ sprint carry ↔ reload tilt
-  const g=B.gun;if(this.type==='vip'){this.vipArms(dt);return;}
+  const g=B.gun;g.scale.setScalar(st.seat?1e-3:1);if(this.type==='vip'){this.vipArms(dt);return;}
   const a=this.aimK*(1-this.sprK),lr=(1-this.aimK)*(1-this.sprK);
   g.position.set(-.085+this.sprK*.1,.14*a+.03*lr+.05*this.sprK-.04*this.relK,.3*a+.3*lr+.2*this.sprK-this.kick*.05);
   tE.set(.5*lr+.25*this.sprK-pitch*.55*a+.15*this.relK-this.kick*.12+Math.sin(this.idleT*1.1)*.01*lr,.95*this.sprK-.05*a,-.6*this.relK*Math.min(1,st.reload>=0?Math.sin(Math.max(0,st.reload)*PI)*1.5:1));g.quaternion.setFromEuler(tE);
@@ -140,7 +141,7 @@ export class Rig{
   if(this.die>.06){const tq_=Math.sin(Math.abs(this.ang))*18+5;this.angV+=Math.sign(this.dieDir)*tq_*dt;this.ang+=this.angV*dt;if(Math.abs(this.ang)>1.42){this.ang=Math.sign(this.ang)*1.42;this.angV*=-.22;if(Math.abs(this.angV)<.3)this.angV=0;}}
   const e=Math.abs(this.ang)/1.42;m.rotation.x=-this.ang;m.position.y=e*.16;B.spine.rotation.x=.25*e*Math.sign(this.dieDir);B.neck.rotation.x=.4*e;
   for(const s of['L','R']){const sx=s==='L'?1:-1;B['arm'+s].quaternion.setFromEuler(tE.set(-.9*e*Math.sign(this.dieDir)+(s==='L'?.2:-.3),0,sx*(.15+e*.45)));B['fore'+s].quaternion.setFromEuler(tE.set(-.5-e*.3,0,0));}
-  B.gun.position.set(-.25-e*.2,-.1,.1);B.gun.rotation.set(1.2*e,.6,.8*e);this.flash.visible=false;}
+  B.gun.scale.setScalar(1);B.gun.position.set(-.25-e*.2,-.1,.1);B.gun.rotation.set(1.2*e,.6,.8*e);this.flash.visible=false;}
  throwAnim(){this.throwT=.6;}
 }
 

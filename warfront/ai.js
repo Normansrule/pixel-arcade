@@ -11,7 +11,7 @@ const tv=new V(),tv2=new V(),eye=new V(),tgt=new V();
 export const eyeOf=(a,o)=>o.set(a.pos.x,a.pos.y+(a.crouchV>.5?CEYE:EYE),a.pos.z);
 export const chestOf=(a,o)=>o.set(a.pos.x,a.pos.y+1.2-(a.crouchV||0)*.42,a.pos.z);
 // any target (soldier or vehicle): centre of mass
-export function centerOf(t,o){if(t.isVeh)return o.set(t.p.x,t.p.y+(t.kind==='tank'?1.6:t.kind==='jeep'?1.1:1.2),t.p.z);return chestOf(t,o);}
+export function centerOf(t,o){if(t.isVeh){if(t.kind==='jeep'&&t.seats[1]){return o.set(t.p.x-Math.sin(t.yaw)*1.75,t.p.y+2.6,t.p.z-Math.cos(t.yaw)*1.75);}return o.set(t.p.x,t.p.y+(t.kind==='tank'?1.6:t.kind==='jeep'?1.1:1.2),t.p.z);}return chestOf(t,o);}
 export const posOf=t=>t.isVeh?t.p:t.pos;
 export function newBrain(o={}){return{state:'idle',target:null,seen:0,last:null,lastT:-99,path:null,pathT:-99,goal:null,obj:null,objT:-99,react:0,think:Math.random()*.4,strafe:0,strafeT:0,burst:0,pauseT:0,nadeT:rr(5,12),onT:0,stuckT:0,lastPos:new V(),kitT:rr(6,20),spotT:rr(2,8),
  job:null,jobT:0,vehGoal:null,crouchE:false,hurtT:-99,lastAttacker:null,lookYaw:0,lookT:0,squad:o.squad??0,leader:false,useRPG:false};}

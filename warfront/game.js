@@ -109,7 +109,7 @@ function enterVehicle(a,v){const s=v.freeSeat();if(s<0||!v.alive)return false;v.
  if(a.isPlayer){snd.play('enter');P.cyaw=v.yaw;P.cpitch=v.kind==='jet'?v.pitch:-.12;P.zoom=false;P.vslot=0;P.adsV=0;HUD.ann(G,`${VSPEC[v.kind].name} · ${VSPEC[v.kind].seats[s]}`,2);}return true;}
 function exitVehicle(a,force){const v=a.veh;if(!v)return;v.seats[a.seat]=null;a.veh=null;a.seat=-1;const e=v.exitPos(new V());
  if(v.kind==='heli'||v.kind==='jet'){e.copy(v.p);e.y-=2.5;}const g=W.ground(e.x,e.z,e.y+1,.3);a.pos.set(e.x,Math.max(g,e.y),e.z);a.vel.set(v.vel.x*.3,0,v.vel.z*.3);a.chute=a.pos.y-g>6;
- if(!force&&a.pos.y-g<1.2){W.collide(a.pos,PR,1.8);}a.yaw=v.yaw;if(a.rig){a.rig.root.visible=true;a.ai.path=null;a.ai.state='idle';a.ai.obj=null;}
+ if(!force&&a.pos.y-g<1.2){W.collide(a.pos,PR,1.8);}a.yaw=v.yaw;if(a.rig){a.rig.root.visible=true;a.rig.root.rotation.set(0,a.yaw,0);a.ai.path=null;a.ai.state='idle';a.ai.obj=null;}
  if(a.isPlayer){snd.play('enter');P.pitch=0;P.yaw=P.cyaw;P.onGround=false;showGun();snd.engine(null);}}
 G.enterVehicle=enterVehicle;G.exitVehicle=a=>exitVehicle(a);
 
@@ -118,14 +118,14 @@ const tv=new V(),tv2=new V(),tv3=new V(),eye=new V(),hn=new V(),hitOut={t:0,i:-1
 function panOf(p){tv.subVectors(p,cam.position);const y=G.viewYaw,rx=-Math.cos(y),rz=Math.sin(y);return cl((tv.x*rx+tv.z*rz)/(tv.length()+1)*1.1,-1,1);}
 function award(a,n,label){a.stats.score+=n;if(a.isPlayer)HUD.xp(G,n,label);}
 function shootRay(sh,o,d,w,range,pellet=1,vdm){W.ray(o.x,o.y,o.z,d.x,d.y,d.z,range,hitOut);let best=hitOut.t,ha=null,part=null,hv=null;const si=hitOut.i;hn.copy(hitOut.n);
- for(const b of G.actors){if(!b.alive||b===sh||b.team===sh.team||b.veh)continue;const rx=b.pos.x-o.x,rz=b.pos.z-o.z,pr=rx*d.x+rz*d.z;if(pr<-1||pr>best+1)continue;const h=hitActor(b,o.x,o.y,o.z,d.x,d.y,d.z,best);if(h&&h.t<best){best=h.t;ha=b;part=h.part;}}
+ for(const b of G.actors){if(!b.alive||b===sh||b.team===sh.team||b.veh&&b.veh.kind!=='jeep')continue;const q=b.veh?riderAt(b,b.veh,RP.pos):b.pos,rx=q.x-o.x,rz=q.z-o.z,pr=rx*d.x+rz*d.z;if(pr<-1||pr>best+1)continue;const h=b.veh?hitRider(b,o,d,best):hitActor(b,o.x,o.y,o.z,d.x,d.y,d.z,best);if(h&&h.t<best){best=h.t;ha=b;part=h.part;}}
  for(const v of G.vehicles){if(v===sh.veh||!v.model.root.visible)continue;const t=hitVehicle(v,o,d,best);if(t<best){best=t;hv=v;ha=null;}}
  const p=new V().copy(o).addScaledVector(d,Math.min(best,range));
  if(ha){fx.blood(p,d);if(ha.downed){if(sh.isPlayer||Math.random()<.25)die(ha,sh,{wname:w.name},false);}else{let dm=dmgAt(w,best)*(part==='head'?w.head:part==='legs'?.85:1);if(!sh.isPlayer)dm*=ha.isPlayer?G.diff.dmg:sh.team===1?G.diff.foe:.8;if(sh.isPlayer)sh.stats.hits+=1/pellet;damage(ha,dm,sh,part,d,w.name);}}
  else if(hv){fx.impact(p,hn.set(-d.x,-d.y,-d.z),'metal');if(hv.alive&&hv.team!==sh.team)vehDamage(hv,vdm??dmgAt(w,best)*.6,sh,'bullet',d);}
  else if(best<range)fx.impact(p,hn,W.matOf(si));
  return{p,a:ha,v:hv,t:best};}
-function damage(v,dm,att,part,dir,wname,kind){if(!v.alive||v.downed||v.veh||!(G.app==='play'||G.app==='menu'))return;if(v.god||G.time<(v.prot||0))return;v.hp-=dm;v.hurtT=G.time;if(att&&att!==v)v.dmgBy.set(att.id,(v.dmgBy.get(att.id)||0)+dm);
+function damage(v,dm,att,part,dir,wname,kind){if(!v.alive||v.downed||v.veh&&v.veh.kind!=='jeep'||!(G.app==='play'||G.app==='menu'))return;if(v.god||G.time<(v.prot||0))return;v.hp-=dm;v.hurtT=G.time;if(att&&att!==v)v.dmgBy.set(att.id,(v.dmgBy.get(att.id)||0)+dm);
  if(att&&att.team!==v.team)G.stats.dmg[att.team]+=dm;
  if(v.ai&&att&&att.team!==v.team){const ai=v.ai;ai.lastAttacker=att;ai.hurtT=G.time;ai.alerted=true;ai.last=(att.veh?att.veh.p:att.pos).clone();ai.lastT=G.time;}
  if(v.rig)v.rig.flinch=1;
@@ -139,7 +139,7 @@ function account(v,att,info){v.stats.deaths++;G.tickets[v.team]=Math.max(0,G.tic
   if(v.spotT>G.time)for(const b of G.actors)if(b.isPlayer&&b.team===att.team&&b.lastSpot===v.id&&b!==att)award(b,25,'SPOT ASSIST');}
  for(const[id,d]of v.dmgBy){if(att&&id===att.id||d<25)continue;const b=G.actors.find(x=>x.id===id);if(b&&b.team!==v.team){b.stats.assists++;award(b,40,'ASSIST');}}
  HUD.feed(G,att,v,info.wname||'',head);}
-function down(v,att,info){v.downed=true;v.hp=0;v.downT=v.isPlayer?14:11;v.reviver=null;v.reloadT=0;account(v,att,info);if(v.rig){const f=tv.set(Math.sin(v.yaw),0,Math.cos(v.yaw));v.rig.dieDir=info.dir&&f.dot(info.dir)>0?-1:1;v.rig.flash.visible=false;}
+function down(v,att,info){if(v.veh)exitVehicle(v,true);v.downed=true;v.hp=0;v.downT=v.isPlayer?14:11;v.reviver=null;v.reloadT=0;account(v,att,info);if(v.rig){const f=tv.set(Math.sin(v.yaw),0,Math.cos(v.yaw));v.rig.dieDir=info.dir&&f.dot(info.dir)>0?-1:1;v.rig.flash.visible=false;}
  if(v.isPlayer){P.cook=-1;P.adsV=0;P.attackerPos=att&&att.pos?att.pos.clone():null;HUD.dead(G,'down',att,info.wname);}}
 function die(v,att,info,fresh){if(!v.alive)return;if(!v.downed)account(v,att,info);v.downed=false;v.alive=false;v.hp=0;v.deadT=0;v.respawnT=rr(7.5,10.5);v.reviver=null;if(v.veh)exitVehicle(v,true);
  if(v.rig&&fresh!==undefined){const f=tv.set(Math.sin(v.yaw),0,Math.cos(v.yaw));if(!v.rig.die)v.rig.dieDir=info.dir&&f.dot(info.dir)>0?-1:1;v.rig.flash.visible=false;}
@@ -209,7 +209,7 @@ function stepProj(dt){for(let i=G.proj.length-1;i>=0;i--){const q=G.proj[i];q.t+
   segO.copy(q.p);q.p.addScaledVector(q.v,dt);segD.subVectors(q.p,segO);const L=segD.length();segD.multiplyScalar(1/L);
   W.ray(segO.x,segO.y,segO.z,segD.x,segD.y,segD.z,L,hitOut);let best=hitOut.t,hv=null,ha=null;const wi=hitOut.i;
   for(const v of G.vehicles){if(v===q.veh&&q.t<1||!v.model.root.visible)continue;const t=hitVehicle(v,segO,segD,best);if(t<best){best=t;hv=v;}}
-  for(const a of G.actors){if(!a.alive||a.veh||a===q.owner||a.team===q.owner.team)continue;const h=hitActor(a,segO.x,segO.y,segO.z,segD.x,segD.y,segD.z,best);if(h&&h.t<best){best=h.t;ha=a;hv=null;}}
+  for(const a of G.actors){if(!a.alive||a.veh&&a.veh.kind!=='jeep'||a===q.owner||a.team===q.owner.team)continue;const h=a.veh?hitRider(a,segO,segD,best):hitActor(a,segO.x,segO.y,segO.z,segD.x,segD.y,segD.z,best);if(h&&h.t<best){best=h.t;ha=a;hv=null;}}
   q.m.position.copy(q.p);q.m.lookAt(tv.copy(q.p).add(q.v));if(Math.random()<(q.kind==='shell'?.5:.9))fx.trail(q.p,q.kind==='shell'?.9:.8,q.kind==='shell'?.5:.9,q.kind==='missile'?2.6:1.6);
   if(best<L){const hp=segO.clone().addScaledVector(segD,best);remProj(i);if(wi===-3&&!hv&&!ha&&best>=hitOut.t-1e-3){fx.impact(hp,new V(0,1,0),'water');fx.smoke.burst(hp,10,4,new THREE.Color(.85,.9,.95),.8,1.4,{dir:bUp,spread:.3,drag:2,grow:1});snd.play('boom',.3,panOf(hp));continue;}
    hp.addScaledVector(segD,-.3);explode(hp,q.owner,q.kind,hv);continue;}
@@ -463,7 +463,7 @@ function updateBots(dt){G.pathBudget=3;frame++;const live=G.app==='menu'||(G.app
  for(const a of G.actors){if(a.isPlayer)continue;const r=a.rig;
   if(!a.alive){a.deadT+=dt;if(r.root.visible){r.update(dt,{dead:true});r.root.position.copy(a.pos);if(a.deadT>8)r.root.visible=false;}a.respawnT-=dt;if(a.respawnT<=0&&live)respawnBot(a);continue;}
   if(a.downed){a.downT-=dt;r.update(dt,{dead:true});r.root.position.copy(a.pos);if(a.downT<=0)die(a,null,{wname:'BLED OUT'});continue;}
-  if(a.veh){if(live)crew(a,G,dt);if(a.veh){const v=a.veh;a.pos.set(v.p.x,v.p.y+1,v.p.z);a.fireT-=dt;if(v.kind==='jeep')rideJeep(a,v,dt);continue;}}
+  if(a.veh){if(live)crew(a,G,dt);if(a.veh){const v=a.veh;a.pos.set(v.p.x,v.p.y+1,v.p.z);a.fireT-=dt;rideVeh(a,v,dt);continue;}}
   const dx=a.pos.x-cx,dz=a.pos.z-cz,dist=Math.hypot(dx,dz);a.far=dist>120;
   if(live)drive(a,G,dt);else{a.move.set(0,0,0);a.crouch=false;}
   const k=1-Math.exp(-10*dt);a.vel.x+=(a.move.x-a.vel.x)*k;a.vel.z+=(a.move.z-a.vel.z)*k;a.pos.x+=a.vel.x*dt;a.pos.z+=a.vel.z*dt;
@@ -482,9 +482,16 @@ function updateBots(dt){G.pathBudget=3;frame++;const live=G.app==='menu'||(G.app
  imp.count=ni;imp.instanceMatrix.needsUpdate=true;if(imp.instanceColor)imp.instanceColor.needsUpdate=true;
  G.noises=G.noises.filter(n=>G.time-n.t<.7);}
 
-// jeep crews stay visible: driver seated, gunner standing at the pintle mount
-function rideJeep(a,v,dt){const r=a.rig,g=a.seat===1,lx=g?0:.5,lz=g?-1.75:-.15,ly=g?1.35:.92,cy=Math.cos(v.yaw),sy=Math.sin(v.yaw);if(cam.position.distanceTo(v.p)>130){r.root.visible=false;return;}
- r.root.visible=true;r.root.position.set(v.p.x+lx*cy+lz*sy,v.p.y+ly,v.p.z-lx*sy+lz*cy);r.root.rotation.y=g?v.yaw+v.tYaw:v.yaw;r.mesh.castShadow=true;r.update(dt,{speed:0,crouch:g?0:1,pitch:g?v.gEl:0,aim:g,reload:-1});r.flash.visible=g&&v.fireT>.04;}
+// crews stay visible: jeep driver seated + gunner standing at the pintle mount, tank commander up in the hatch, pilots seated under the canopy
+// seat: [part, x, y, z (rig root in that part's frame), seated]; jeep seats use the hull yaw (gunner turns with the MG)
+const CREW={jeep:[[null,.5,.55,-.15,1],[null,0,1.35,-1.75,0]],tank:[['tur',-.5,.02,-.5,0]],heli:[['body',0,.4,1.75,1]],jet:[['body',0,-.72,3.15,1]]};
+function riderAt(a,v,o){const s=CREW.jeep[a.seat],cy=Math.cos(v.yaw),sy=Math.sin(v.yaw);return o.set(v.p.x+s[1]*cy+s[3]*sy,v.p.y+s[2],v.p.z-s[1]*sy+s[3]*cy);}
+// exposed jeep rider: soldier volume at the seat, hits below the hull rail belong to the jeep
+const RP={pos:new V(),crouchV:0};function hitRider(a,o,d,maxT){const v=a.veh;riderAt(a,v,RP.pos);const h=hitActor(RP,o.x,o.y,o.z,d.x,d.y,d.z,maxT);if(!h||o.y+d.y*h.t<v.p.y+1.4)return null;return h;}
+G.riderAt=riderAt;G.hitRider=hitRider;
+function rideVeh(a,v,dt){const r=a.rig,s=CREW[v.kind][a.seat];if(!s||!v.alive||cam.position.distanceTo(v.p)>(v.kind==='jet'||v.kind==='heli'?170:130)){r.root.visible=false;return;}r.root.visible=true;
+ if(s[0]){const pt=v.model[s[0]];pt.updateWorldMatrix(true,false);r.root.position.set(s[1],s[2],s[3]);pt.localToWorld(r.root.position);pt.getWorldQuaternion(r.root.quaternion);r.mesh.castShadow=v.kind==='tank';r.update(dt,{speed:0,seat:s[4],reload:-1});r.flash.visible=false;return;}
+ const g=a.seat===1;riderAt(a,v,r.root.position);r.root.rotation.set(0,g?v.yaw+v.tYaw:v.yaw,0);r.mesh.castShadow=true;r.update(dt,{speed:0,seat:!g,pitch:g?v.gEl:0,aim:g,reload:-1});r.flash.visible=g&&v.fireT>.04;}
 /* ================= viewmodel ================= */
 let shownGun=null;
 function showGun(){if(!P||!P.slots)return;const s=P.slots[P.cur];for(const k in VM.guns)VM.guns[k].visible=false;const g=VM.guns[s.id];g.visible=true;applyAttachments(g,s.id,s.att);shownGun=g;}

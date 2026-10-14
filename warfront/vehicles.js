@@ -6,12 +6,12 @@ import {WL,PLAY,EXT} from './terrain.js';
 
 export const VSPEC={
  tank:{name:'BASTION MBT',cls:'MAIN BATTLE TANK',hp:1000,seats:['DRIVER · GUNNER'],speed:13,acc:7,turn:.9,circ:[[2.1,1.75],[0,1.85],[-2.1,1.75]],eye:[0,3.6,-1],respawn:40,armor:{bullet:0,blast:1}},
- jeep:{name:'RANGER LSV',cls:'LIGHT VEHICLE',hp:360,seats:['DRIVER','GUNNER'],speed:24,acc:11,turn:1.9,circ:[[1.3,1.15],[-1.3,1.15]],eye:[0,2.4,0],respawn:22,armor:{bullet:.35,blast:1.3}},
+ jeep:{name:'RANGER LSV',cls:'LIGHT VEHICLE',hp:360,seats:['DRIVER','GUNNER'],speed:24,acc:11,turn:1.9,circ:[[1.3,1.15],[0,1.15],[-1.3,1.15]],eye:[0,2.4,0],respawn:22,armor:{bullet:.35,blast:1.3}},
  heli:{name:'HORNET AH-9',cls:'ATTACK HELICOPTER',hp:640,seats:['PILOT · GUNNER'],speed:44,circ:[[0,2.4]],respawn:50,armor:{bullet:.16,blast:1}},
  jet:{name:'SABRE F-12',cls:'STRIKE JET',hp:420,seats:['PILOT'],speed:135,circ:[[0,3]],respawn:50,armor:{bullet:.2,blast:1}}};
 const std=o=>new THREE.MeshStandardMaterial(o);
 let MATS=null;function mats(TX){if(MATS)return MATS;MATS={dark:std({color:0x2b2b2a,roughness:.55,metalness:.6}),steel:std({color:0x4a4b4a,roughness:.4,metalness:.75}),rubber:std({color:0x1d1c1b,roughness:.85,metalness:.1}),
- glass:std({color:0x16222c,roughness:.05,metalness:.9}),wreck:std({color:0x1b1816,roughness:1,metalness:.25}),lamp:std({color:0xffffff,emissive:0xfff2d0,emissiveIntensity:1.4}),
+ glass:std({color:0x16222c,roughness:.05,metalness:.9}),canopy:std({color:0x3a5468,roughness:.04,metalness:.55,transparent:true,opacity:.42,depthWrite:false}),wreck:std({color:0x1b1816,roughness:1,metalness:.25}),lamp:std({color:0xffffff,emissive:0xfff2d0,emissiveIntensity:1.4}),
  paint:[std({map:TX.camoA,roughness:.6,metalness:.35}),std({map:TX.camoB,roughness:.6,metalness:.35})],team:[std({color:0x111111,emissive:new THREE.Color(.25,.55,1.6),emissiveIntensity:1,roughness:.4}),std({color:0x111111,emissive:new THREE.Color(1.7,.25,.18),emissiveIntensity:1,roughness:.4})],
  flame:new THREE.MeshBasicMaterial({color:new THREE.Color(5,2.2,.7),transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false}),disc:new THREE.MeshBasicMaterial({color:0x111111,transparent:true,opacity:.14,depthWrite:false,side:THREE.DoubleSide})};return MATS;}
 const mk=(g,mat,x=0,y=0,z=0,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(g,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;return o;};
@@ -49,9 +49,9 @@ function jeepModel(TX,team){const m=mats(TX),paint=m.paint[team],root=new THREE.
  body.add(mk(BX(1.4,.06,.5),m.team[team],0,1.40,-.3));
  return{root,body,tur,gun,muzzle,wheels};}
 function heliModel(TX,team){const m=mats(TX),paint=m.paint[team],root=new THREE.Group(),body=new THREE.Group();root.add(body);
- body.add(mk(merge([{geo:prof([[-2.6,.7],[1.8,.6],[3.2,.9],[3.7,1.5],[3.2,2.0],[1.4,2.3],[-1.4,2.6],[-2.6,2.2]],1.5,.2,6)},{geo:prof([[-8.6,1.9],[-2.4,1.4],[-2.4,2.4],[-8.6,2.3]],.5,.08)},{geo:BX(.12,1.7,1.1),m:M4(0,2.75,-8.3,.35)},{geo:BX(2.4,.08,.6),m:M4(0,2.05,-7.4)},
+ body.add(mk(merge([{geo:prof([[-2.6,.7],[1.8,.6],[3.2,.9],[3.7,1.5],[3.15,1.5],[.2,1.62],[-.35,2.5],[-1.4,2.6],[-2.6,2.2]],1.5,.2,6)},{geo:prof([[-8.6,1.9],[-2.4,1.4],[-2.4,2.4],[-8.6,2.3]],.5,.08)},{geo:BX(.12,1.7,1.1),m:M4(0,2.75,-8.3,.35)},{geo:BX(2.4,.08,.6),m:M4(0,2.05,-7.4)},
   {geo:BX(4.6,.12,.9),m:M4(0,1.45,-.4)},{geo:BX(1.4,.5,2.4),m:M4(0,2.6,-.6)}]),paint));
- body.add(mk(merge([{geo:prof([[.3,1.95],[1.5,1.9],[3.0,1.5],[2.6,2.2],[1.0,2.55],[-.2,2.6]],1.2,.06)}]),m.glass));
+ body.add(mk(merge([{geo:prof([[-.1,1.58],[3.15,1.45],[2.7,2.15],[1.1,2.55],[-.25,2.62]],1.24,.06)}]),m.canopy));
  const pods=[];for(const s of[-1,1]){const pd=mk(CY(.24,.24,1.6,10),m.dark,s*2.0,1.2,-.3,PI/2);body.add(pd);pods.push(pd);body.add(mk(CY(.06,.06,.6,6),m.dark,s*1.4,1.1,-.3));}
  body.add(mk(merge([{geo:BX(.08,.08,3),m:M4(.8,.15,0)},{geo:BX(.08,.08,3),m:M4(-.8,.15,0)},{geo:BX(.06,.7,.06),m:M4(.7,.5,.9,0,0,.3)},{geo:BX(.06,.7,.06),m:M4(-.7,.5,.9,0,0,-.3)},{geo:BX(.06,.7,.06),m:M4(.7,.5,-.9,0,0,.3)},{geo:BX(.06,.7,.06),m:M4(-.7,.5,-.9,0,0,-.3)}]),m.dark));
  const chin=new THREE.Group();chin.position.set(0,.55,3.0);body.add(chin);chin.add(mk(SP(.28,10,8),m.dark));const cgun=new THREE.Group();chin.add(cgun);cgun.add(mk(CY(.05,.05,1.3,8),m.steel,0,-.05,.6,PI/2));const muzzle=new THREE.Object3D();muzzle.position.set(0,-.05,1.3);cgun.add(muzzle);
@@ -61,12 +61,12 @@ function heliModel(TX,team){const m=mats(TX),paint=m.paint[team],root=new THREE.
  body.add(mk(BX(.2,.06,1.4),m.team[team],0,2.62,-4.5));
  return{root,body,rotor:blades,disc,tr,chin,cgun,muzzle,pods};}
 function jetModel(TX,team){const m=mats(TX),paint=m.paint[team],root=new THREE.Group(),body=new THREE.Group();root.add(body);
- const fu=new THREE.LatheGeometry([[0,-7.4],[.35,-6.4],[.75,-4.6],[.95,-2],[1.0,1.5],[.95,4.2],[.8,5.6],[.7,6.4]].map(([r,z])=>new THREE.Vector2(Math.max(.01,r),z)),14);fu.rotateX(PI/2);fu.scale(1,.85,-1);
+ const fu=new THREE.LatheGeometry([[0,-7.4],[.35,-6.4],[.75,-4.6],[.95,-2],[1.0,1.5],[.95,4.2],[.8,5.6],[.7,6.4]].map(([r,z])=>new THREE.Vector2(Math.max(.01,r),z)),14);fu.rotateX(-PI/2);fu.scale(1,.85,1);
  const wing=(s)=>{const sh=new THREE.Shape();sh.moveTo(0,-2.4);sh.lineTo(s*5.6,2.6);sh.lineTo(s*5.6,3.6);sh.lineTo(0,4.4);sh.closePath();const g=new THREE.ExtrudeGeometry(sh,{depth:.14,bevelEnabled:false});g.rotateX(PI/2);g.translate(0,0,0);return g;};
  const fin=(s)=>{const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(2.2,2.6);sh.lineTo(3.2,2.6);sh.lineTo(2.6,0);sh.closePath();const g=new THREE.ExtrudeGeometry(sh,{depth:.1,bevelEnabled:false});g.rotateY(-PI/2);g.rotateZ(s*.35);g.translate(s*.55,.4,-6.4);return g;};
  const tail=(s)=>{const sh=new THREE.Shape();sh.moveTo(0,-5.2);sh.lineTo(s*2.6,-6.8);sh.lineTo(s*2.6,-7.4);sh.lineTo(0,-7.2);sh.closePath();const g=new THREE.ExtrudeGeometry(sh,{depth:.1,bevelEnabled:false});g.rotateX(PI/2);return g;};
  body.add(mk(merge([{geo:fu},{geo:wing(1)},{geo:wing(-1)},{geo:fin(1)},{geo:fin(-1)},{geo:tail(1)},{geo:tail(-1)},{geo:BX(.9,.6,2.8),m:M4(1.05,-.1,-1.2)},{geo:BX(.9,.6,2.8),m:M4(-1.05,-.1,-1.2)}]),paint));
- body.add(mk(SP(.62,14,10),m.glass,0,.62,3.2,0,0,0));body.children[1].scale.set(1,.85,2.6);
+ body.add(mk(SP(.62,14,10),m.canopy,0,.8,3.1,0,0,0));body.children[1].scale.set(1,.95,2.6);
  body.add(mk(merge([{geo:CY(.62,.55,.8,14),m:M4(0,0,-7.5,PI/2)},{geo:CY(.12,.12,2.4,6),m:M4(3.6,-.3,.2,PI/2)},{geo:CY(.12,.12,2.4,6),m:M4(-3.6,-.3,.2,PI/2)}]),m.dark));
  const flame=new THREE.Mesh(new THREE.ConeGeometry(.5,3.4,12,1,true),m.flame);flame.rotation.x=-PI/2;flame.position.set(0,0,-9.4);body.add(flame);
  const gear=new THREE.Group();for(const[x,z]of[[0,4],[1.6,-1.2],[-1.6,-1.2]]){gear.add(mk(CY(.06,.06,1.1,6),m.steel,x,-1.1,z));gear.add(mk(CY(.3,.3,.2,10),m.rubber,x,-1.6,z,0,0,PI/2));}body.add(gear);
