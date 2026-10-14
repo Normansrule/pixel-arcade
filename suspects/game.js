@@ -8,7 +8,9 @@ import {buildShip,drawFog,FOG,makeEnv,Particles,buildSpace} from './world.js';
 import {makeCrew,animate,setGhost,makeBody,animateBody,portrait,HATS} from './crew.js';
 import {TaskUI} from './tasks.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
@@ -28,7 +30,7 @@ const cam=new THREE.PerspectiveCamera(40,1,.5,500);
 const snd=new Sound(),tasks=new TaskUI(snd);
 
 /* ================= state ================= */
-let opt={role:0,sabs:2,diff:1,clock:720,conf:1,color:0,hat:0};try{Object.assign(opt,JSON.parse(localStorage.getItem('pxd_suspects_opt'))||{});}catch(e){}
+let opt={role:0,sabs:2,diff:1,clock:720,conf:1,color:0,hat:0};const saveOpt=stored('pxd_suspects_opt',opt);
 opt.hat=cl(opt.hat|0,0,HATS.length-1);
 let sim=null,app='menu',introT=0,overT=0,overShown=false,ffwd=false,time=0,mapOpen=false,shake=0,lastAward=null,stepT=0,fogR=7,camLook=new V(),camPos=new V(),camSnap=true,menuT=0,ejectRig=null,ejectT=0;
 let rigs=[],labels=[],bodyRigs=new Map(),selT=null,lastSay=0,chatN=0,meetStage='',quickBuilt=false,winners=[],confT=0;
@@ -39,7 +41,7 @@ function buildRigs(){for(const r of rigs)scene.remove(r);for(const r of bodyRigs
 function newSim(o){sim=new Sim(o);buildRigs();camSnap=true;}
 
 /* ================= match flow ================= */
-function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o.opt||{});try{localStorage.setItem('pxd_suspects_opt',JSON.stringify(opt));}catch(e){}snd.init();
+function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o.opt||{});saveOpt();snd.init();
  const role=o.role||(opt.role===2?(Math.random()<.22?'sab':'crew'):opt.role===1?'sab':'crew');
  newSim({role,sabs:opt.sabs,diff:opt.diff,clock:o.clock??opt.clock,confirm:!!opt.conf,color:opt.color,hat:HATS[opt.hat].id,seed:o.seed??null,autopilot:!!o.autopilot,discuss:o.discuss,vote:o.vote});
  app='intro';introT=o.skipIntro?0:3.8;overShown=false;ffwd=false;mapOpen=false;$('map').hidden=true;tasks.close();
@@ -70,8 +72,8 @@ document.querySelectorAll('#acts .a').forEach(b=>b.addEventListener('click',()=>
 const padPrev={};
 function readInput(){const p=sim.player;let x=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),z=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
  if(p.vent)x=z=0;let fx=null,fz=null;
- const g=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;
- if(g){const ax=g.axes,dz=v=>Math.abs(v)>.2?v:0;if(!p.vent){x+=dz(ax[0]||0);z+=dz(ax[1]||0);}const rx=dz(ax[2]||0),ry=dz(ax[3]||0);if(rx||ry){const l=Math.hypot(rx,ry);fx=rx/l;fz=ry/l;mouse.t=-99;}
+ const g=gamepad();
+ if(g){const ax=g.axes,dz=v=>deadzone(v,.2);if(!p.vent){x+=dz(ax[0]||0);z+=dz(ax[1]||0);}const rx=dz(ax[2]||0),ry=dz(ax[3]||0);if(rx||ry){const l=Math.hypot(rx,ry);fx=rx/l;fz=ry/l;mouse.t=-99;}
   const bt=i=>g.buttons[i]&&g.buttons[i].pressed;const edge=(i,n)=>{const v=bt(i);const r=v&&!padPrev[n];padPrev[n]=v;return r;};
   if(app==='play'&&sim.phase==='play'&&!tasks.active){if(edge(0,'a'))act('use');if(edge(1,'b'))act('report');if(edge(2,'x'))act('kill');if(edge(3,'y'))toggleMap();if(edge(7,'rt'))act('vent');if(p.vent){if(edge(4,'lb'))sim.ventMove(p,-1);if(edge(5,'rb'))sim.ventMove(p,1);}}
   if(edge(9,'st')){if(app==='play')pause(true);else if(app==='paused')pause(false);else if(app==='menu')start();}padPrev.hold=bt(0);}
@@ -321,14 +323,13 @@ addEventListener('resize',()=>{fxW=0;if(fxSpace)fxSpace.w=0;});
 
 /* ================= menu wiring ================= */
 function preview(){$('pv').src=portrait(CREW[opt.color].css,HATS[opt.hat].id,false,160);$('pvn').textContent=`${CREW[opt.color].n} · ${HATS[opt.hat].n}`;}
-const seg=(id,k)=>{const el=$(id);const set=v=>{opt[k]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));if(k==='color'||k==='hat')preview();};set(opt[k]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
+const seg=pickers(opt);
 $('o-color').innerHTML=CREW.map((c,i)=>`<button data-v="${i}" title="${c.n}" style="background:${c.css}"></button>`).join('');
 $('o-hat').innerHTML=HATS.map((h,i)=>`<button data-v="${i}" title="${h.n}"><img src="${portrait('#c9d2e6',h.id,false,48)}" alt="${h.n}"></button>`).join('');
-seg('o-role','role');seg('o-sabs','sabs');seg('o-diff','diff');seg('o-clock','clock');seg('o-conf','conf');seg('o-color','color');seg('o-hat','hat');
+seg('o-role','role');seg('o-sabs','sabs');seg('o-diff','diff');seg('o-clock','clock');seg('o-conf','conf');seg('o-color','color',true,preview);seg('o-hat','hat',true,preview);
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Starship Suspects\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} as ${a.role||''} (${WIN[a.why]||''})\n${a.role==='saboteur'?`Knock-outs: ${a.kills||0}`:`Tasks: ${a.tasks||0} · Correct votes: ${a.right||0}`}\nBots: ${a.diff||''} · Saboteurs: ${a.sabs||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('suspects',a.pts||0,body);};
+postButton($('post'),'suspects',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Starship Suspects\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} as ${a.role||''} (${WIN[a.why]||''})\n${a.role==='saboteur'?`Knock-outs: ${a.kills||0}`:`Tasks: ${a.tasks||0} · Correct votes: ${a.right||0}`}\nBots: ${a.diff||''} · Saboteurs: ${a.sabs||''}`];});
 
 toMenu();
 let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);

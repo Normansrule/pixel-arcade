@@ -8,7 +8,9 @@ import {SKILL,think,hostile,leadPoint,gunnerAim} from './ai.js';
 import {MISSIONS,DOGFIGHT,CARRIER_START,CARRIER_DIR,CARRIER_SPEED,PORT} from './missions.js';
 import {HUD} from './hud.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,postButton,toast as line} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,Qt=THREE.Quaternion,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a,rs=(a=1)=>(Math.random()*2-1)*a;
 const DT=1/60,ID='skylancers';
@@ -35,8 +37,8 @@ let cockpit=null;
 
 /* ================= state ================= */
 const opts={mode:'campaign',mi:0,plane:'wren',clock:300,diff:1,cpus:5,sens:1};
-try{Object.assign(opts,JSON.parse(localStorage.getItem('pxd_skylancers_opt'))||{});}catch(e){}
-let prog={stars:{},best:{}};try{prog=Object.assign(prog,JSON.parse(localStorage.getItem('pxd_skylancers_prog'))||{});}catch(e){}
+const saveOpts=stored('pxd_skylancers_opt',opts);
+const prog={stars:{},best:{}},saveProg=stored('pxd_skylancers_prog',prog);
 const G={app:'menu',planes:[],sites:[],time:0,clock:0,mission:null,player:null,lives:0,stats:null,rng:Math.random,opts,attract:true,score:0,result:null,endT:0,ffa:false,landBonus:false};
 const carrier={mesh:carrierMesh,p:new V(),dir:new V(),speed:CARRIER_SPEED,hp:100,max:100,target:null,ciwsT:[0,0,0,0]};
 let playerDead=null,rigQ=new Qt(),look={yaw:0,pitch:0},camMode='chase',lockT=0,lockTgt=null,mslCd=0,shake=0,dmgFlash=0,bounds=0,hudTarget=null,ccip=null,ccipT=0,menuCamT=0,menuFocus=null,menuSwitch=0,slowmo=1,warnState=0,lastWarn='';
@@ -98,7 +100,7 @@ function endSortie(res){if(G.result)return;G.result=res;G.endT=0;slowmo=.35;cons
  banner(res==='win'?(G.ffa?'VICTORY':'MISSION COMPLETE'):G.clock<=0&&!G.ffa?'TIME UP':G.ffa?'DEFEAT':'MISSION FAILED',res==='win'?'RETURNING TO BASE':'',3,res==='win'?'#5dff9a':'#ff3b30');}
 function showOver(){G.app='over';unlock();$('hud').hidden=true;document.body.classList.remove('playing');snd.off();const M=G.mission,s=G.stats,won=G.result==='win';
  const stars=won?1+(G.score>=M.stars[0]?1:0)+(G.score>=M.stars[1]?1:0):0;G.stars=stars;
- if(!G.ffa&&won){prog.stars[M.id]=Math.max(prog.stars[M.id]||0,stars);}prog.best[M.id]=Math.max(prog.best[M.id]||0,G.score);try{localStorage.setItem('pxd_skylancers_prog',JSON.stringify(prog));}catch(e){}
+ if(!G.ffa&&won){prog.stars[M.id]=Math.max(prog.stars[M.id]||0,stars);}prog.best[M.id]=Math.max(prog.best[M.id]||0,G.score);saveProg();
  $('o-eye').textContent=`${M.tag} · ${M.name}${G.ffa?` · ${SKILL[opts.diff].n}`:''}`;$('o-res').textContent=won?(G.ffa?'VICTORY':'MISSION COMPLETE'):(G.ffa?'DEFEAT':G.failWhy==='time'?'TIME UP':'MISSION FAILED');$('o-res').style.color=won?'#5dff9a':'#ff5a4a';
  $('o-stars').innerHTML=[0,1,2].map(i=>`<i class="${i<stars?'on':''}">★</i>`).join('');
  const acc=s.shots?Math.round(s.hits/s.shots*100):0;
@@ -111,7 +113,6 @@ let lastAward=null;
 function award(pts,won){lastAward={pts,won,mission:G.mission.name,stars:G.stars,kills:G.stats.kills,plane:AC[opts.plane].name,clock:opts.clock};const tok=5+Math.min(60,pts/60|0);
  addRound(tok,won);saveBest(ID,pts);return tok;}
 function best(){return bestScore(ID);}
-function saveOpts(){try{localStorage.setItem('pxd_skylancers_opt',JSON.stringify(opts));}catch(e){}}
 
 /* ================= scoring + damage ================= */
 function addScore(n,why,pos){G.score+=n;G.stats.score=G.score;if(why)toast((n>0?'+':'')+n+' '+why,n<0);}
@@ -169,20 +170,17 @@ function deckLocal(p){return p.clone().sub(carrier.p).applyQuaternion(_iy);}
 function deckWorld(l){return l.clone().applyQuaternion(_yaw).add(carrier.p);}
 
 /* ================= input ================= */
-const keys={},edge={};let mouseL=false,mouseR=false,padMode=false,mdx=0,mdy=0,locked=false;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+let padMode=false;
+const I=controls(canvas,{canLock:()=>G.app==='play',clickThrough:true,menu:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onDown:e=>{if(G.app!=='play')return true;if(e.button===2)edge.Fire2=true;if(e.button===1)e.preventDefault();},
+ look:e=>{if(G.app!=='play')return false;if(Math.abs(e.movementX)+Math.abs(e.movementY)>2)padMode=false;return true;},
+ onKey:e=>{if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='play')pause(true);else if(G.app==='paused')pause(false);}
  if(e.code==='Enter'&&G.app==='brief')launch();
- if(G.app!=='play')return;if(e.code==='KeyV')toggleCam();if(e.code==='KeyM'){snd.on=!snd.on;toast(snd.on?'SOUND ON':'SOUND OFF');}if(e.code==='KeyL'&&G.player)G.player.gearManual=!G.player.gearManual;});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouseL=mouseR=false;});
-canvas.addEventListener('mousedown',e=>{if(G.app!=='play')return;if(!locked)lock();if(e.button===0)mouseL=true;if(e.button===2){mouseR=true;edge.Fire2=true;}if(e.button===1){e.preventDefault();}});
-addEventListener('mouseup',e=>{if(e.button===0)mouseL=false;if(e.button===2)mouseR=false;});addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(G.app!=='play')return;mdx+=e.movementX||0;mdy+=e.movementY||0;if(Math.abs(e.movementX)+Math.abs(e.movementY)>2)padMode=false;});
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play')pause(true);});
+ if(G.app!=='play')return;if(e.code==='KeyV')toggleCam();if(e.code==='KeyM'){snd.on=!snd.on;toast(snd.on?'SOUND ON':'SOUND OFF');}if(e.code==='KeyL'&&G.player)G.player.gearManual=!G.player.gearManual;}});
+const {keys,edge,mouse}=I,{lock,unlock}=I;
 const padPrev={};
-function readPad(){const gp=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean)[0]:null;if(!gp)return null;const a=gp.axes,b=gp.buttons,dz=v=>Math.abs(v)>.15?(v-Math.sign(v)*.15)/.85:0;
+function readPad(){const gp=gamepad();if(!gp)return null;const a=gp.axes,b=gp.buttons,dz=v=>deadzone(v,.15,true);
  const P={lx:dz(a[0]||0),ly:dz(a[1]||0),rx:dz(a[2]||0),ry:dz(a[3]||0),rt:b[7]?.value||0,lt:b[6]?.value||0,A:b[0]?.pressed,B:b[1]?.pressed,X:b[2]?.pressed,Y:b[3]?.pressed,LB:b[4]?.pressed,RB:b[5]?.pressed,back:b[8]?.pressed,start:b[9]?.pressed,up:b[12]?.pressed,down:b[13]?.pressed};
  const ed=k=>P[k]&&!padPrev[k];P.e={};for(const k of['A','B','X','Y','back','start','up','down'])P.e[k]=ed(k);for(const k of['A','B','X','Y','back','start','up','down'])padPrev[k]=P[k];P.e.LT=P.lt>.5&&!padPrev.LT;padPrev.LT=P.lt>.5;
  if(Math.abs(P.lx)+Math.abs(P.ly)>.05)padMode=true;return P;}
@@ -205,7 +203,7 @@ function playerInput(pl,dt,P){const c=pl.ctrl;
  if(keys.ArrowLeft||keys.ArrowRight)c.roll=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);if(keys.ArrowUp||keys.ArrowDown)c.pitch=(keys.ArrowDown?1:0)-(keys.ArrowUp?.6:0);
  if(keys.KeyW)thrSet=Math.min(1,thrSet+dt*.7);if(keys.KeyS)thrSet=Math.max(0,thrSet-dt*.7);if(P&&P.up)thrSet=Math.min(1,thrSet+dt*.7);if(P&&P.down)thrSet=Math.max(0,thrSet-dt*.7);
  c.thr=thrSet;c.ab=!!(keys.ShiftLeft||keys.ShiftRight||P&&P.A);c.brake=!!(keys.ControlLeft||keys.ControlRight||P&&P.lt>.5&&!P.X);
- c.fire=mouseL||!!keys.KeyK||!!(P&&P.rt>.3);c.flare=!!(keys.KeyF||keys.KeyX||P&&P.B);c.bomb=!!(edge.Space||P&&P.e.X);c.mslPress=!!(edge.Fire2||edge.KeyR||P&&P.e.Y);
+ c.fire=mouse.l||!!keys.KeyK||!!(P&&P.rt>.3);c.flare=!!(keys.KeyF||keys.KeyX||P&&P.B);c.bomb=!!(edge.Space||P&&P.e.X);c.mslPress=!!(edge.Fire2||edge.KeyR||P&&P.e.Y);
  if((edge.KeyJ||P&&P.e.back)&&pl.alive&&!pl.doomed&&!pl.landed)eject(pl);}
 function eject(pl){pl.ejected=true;pl.chute=fx.chute(pl.p.clone().add(new V(0,4,0)),pl.v,0);snd.play('eject');if(pl.mesh.userData.canopy)pl.mesh.userData.canopy.visible=false;doom(pl,null);toast('EJECTED',true);}
 
@@ -293,9 +291,9 @@ function frame(dt){const playing=G.app==='play'||G.app==='brief'||G.app==='menu'
   const sdt=dt*slowmo;G.acc=(G.acc||0)+sdt;let n=0;while(G.acc>=DT&&n<6){sim(DT);G.acc-=DT;n++;}if(n>=6)G.acc=0;
   if(G.app==='play'){flow(dt);}else{menuDirector(dt);}}
  // mouse aim
- if(G.app==='play'&&G.player){const sens=.0021*(opts.sens||1);if(keys.KeyC){look.yaw-=mdx*sens*1.4;look.pitch=cl(look.pitch-mdy*sens*1.4,-1.2,1.2);}else{if(!padMode)rotateRig(mdx*sens,mdy*sens);look.yaw*=Math.exp(-dt*6);look.pitch*=Math.exp(-dt*6);}
+ if(G.app==='play'&&G.player){const sens=.0021*(opts.sens||1);if(keys.KeyC){look.yaw-=mouse.dx*sens*1.4;look.pitch=cl(look.pitch-mouse.dy*sens*1.4,-1.2,1.2);}else{if(!padMode)rotateRig(mouse.dx*sens,mouse.dy*sens);look.yaw*=Math.exp(-dt*6);look.pitch*=Math.exp(-dt*6);}
   if(padMode&&G.player.alive){const f=G.player.fwd(_f);_m.lookAt(new V(),f,Math.abs(f.y)<.92?UPW:_u.set(0,1,0).applyQuaternion(rigQ));_qa.setFromRotationMatrix(_m);rigQ.slerp(_qa,Math.min(1,dt*5));}}
- mdx=mdy=0;for(const k in edge)delete edge[k];
+ mouse.dx=mouse.dy=0;I.flush();
  visuals(dt);camera(dt);hudUpdate(dt);}
 function flow(dt){const M=G.mission,pl=G.player;
  if(!G.result){G.clock-=dt;if(G.clock<=0){G.clock=0;const r=M.clockEnd(G);G.failWhy='time';endSortie(r);}else{const r=M.tick(G,dt);if(r){G.failWhy=r==='lose'?'obj':'';endSortie(r);}}}
@@ -348,9 +346,9 @@ function camera(dt){const pl=G.player;let fov=62;
 const ovc={};function ov(id,v){v=Math.round(v*50)/50;if(ovc[id]===v)return;ovc[id]=v;const e=$(id);e.style.display=v>0?'block':'none';e.style.opacity=v;}
 const hc={};function setTxt(id,v){if(hc[id]!==v){hc[id]=v;$(id).textContent=v;}}
 const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
-function feed(t,cls=''){const d=document.createElement('div');d.textContent=t;d.className=cls;$('feed').prepend(d);setTimeout(()=>d.remove(),5000);while($('feed').children.length>6)$('feed').lastChild.remove();}
+function feed(t,cls=''){const d=line($('feed'),'',5000,6);d.textContent=t;d.className=cls;}
 let banT=0;function banner(t,s,dur=2.4,col){$('bt').textContent=t;$('bt').style.color=col||'';$('bs').textContent=s||'';$('bs').hidden=!s;$('banner').classList.add('on');banT=dur;if(G.app==='play')snd.play('banner');}
-function toast(t,bad){const d=document.createElement('div');d.textContent=t;if(bad)d.className='bad';$('toasts').appendChild(d);setTimeout(()=>d.remove(),1800);while($('toasts').children.length>4)$('toasts').firstChild.remove();}
+function toast(t,bad){const d=line($('toasts'),'',1800,4,false);d.textContent=t;if(bad)d.className='bad';}
 function sndAt(k,p,a=1){const d=p.distanceTo(cam.position);if(d<6000)snd.play(k,a*Math.min(1,500/(d+150)));}
 const SEEK=.21;
 function hudUpdate(dt){if(banT>0){banT-=dt;if(banT<=0)$('banner').classList.remove('on');}
@@ -414,9 +412,8 @@ function renderMenu(){if(!unlocked(opts.plane))opts.plane='wren';if(!mUnlocked(o
 $('go').onclick=()=>{snd.init();snd.play('ui');brief();};$('launch').onclick=()=>launch();$('b-back').onclick=()=>toMenu();
 $('resume').onclick=()=>pause(false);$('quit').onclick=()=>toMenu();$('again').onclick=()=>{brief();};$('o-menu').onclick=()=>toMenu();
 $('o-next').onclick=()=>{opts.mi=Math.min(MISSIONS.length-1,opts.mi+1);const rec=MISSIONS[opts.mi].plane;if(unlocked(rec))opts.plane=rec;saveOpts();brief();};
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Sky Lancers\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} · ${a.mission||''} · ${'★'.repeat(a.stars||0)}\nAir kills: ${a.kills||0}\nAircraft: ${a.plane||''} · Time limit ${fmt(a.clock||0)}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Sky Lancers\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} · ${a.mission||''} · ${'★'.repeat(a.stars||0)}\nAir kills: ${a.kills||0}\nAircraft: ${a.plane||''} · Time limit ${fmt(a.clock||0)}`];});
 
 /* ================= loop ================= */
 attract();renderMenu();showPanel('menu');
@@ -425,7 +422,7 @@ let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(
 /* ================= test hooks ================= */
 window.SKYLANCERS={get state(){return G.app;},G,opts,step:frame,render,start(o={}){start(o);},brief(o={}){Object.assign(opts,o);brief();},launch,toMenu,pause,
  get player(){return G.player;},get planes(){return G.planes;},get sites(){return G.sites;},carrier,get mission(){return G.mission;},get stats(){return G.stats;},get score(){return G.score;},get result(){return G.result;},
- setClock(s){G.clock=s;},get clock(){return G.clock;},keys,edge,setMouse(l,r){mouseL=l;if(r&&!mouseR)edge.Fire2=true;mouseR=r;},aim(dx,dy){mdx+=dx;mdy+=dy;},setAim(dir){const f=dir.clone().normalize();_m.lookAt(new V(),f,UPW);rigQ.setFromRotationMatrix(_m);},
+ setClock(s){G.clock=s;},get clock(){return G.clock;},keys,edge,setMouse(l,r){mouse.l=l;if(r&&!mouse.r)edge.Fire2=true;mouse.r=r;},aim(dx,dy){mouse.dx+=dx;mouse.dy+=dy;},setAim(dir){const f=dir.clone().normalize();_m.lookAt(new V(),f,UPW);rigQ.setFromRotationMatrix(_m);},
  killAll(team=1){for(const p of G.planes)if(p.alive&&(team===null||p.team===team||team===-1&&!p.human&&p.team===-1))destroy(p,G.player,true);},killSites(){for(const s of G.sites)if(!s.dead&&s.team===1)siteHit(s,9999,G.player);},
  killPlayer(){if(G.player&&G.player.alive){doom(G.player,null);destroy(G.player,null,true);}},win(){endSortie('win');},lose(){endSortie('lose');},
  unlockAll(){MISSIONS.forEach(m=>prog.stars[m.id]=Math.max(1,prog.stars[m.id]||0));renderMenu();},get prog(){return prog;},setQuality:applyQuality,toggleCam,get camMode(){return camMode;},

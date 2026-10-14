@@ -11,7 +11,9 @@ import {Particles} from './fx.js';
 import {Enemy,Projectiles,Waves,KIND} from './actors.js';
 import {makePlayer,resetPlayer,updatePlayer,updateCamera,makeCam,upgradeSword,useStam} from './player.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton,toast as line} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const ID='wildquest';
@@ -93,7 +95,7 @@ function spawnSeeds(){for(const s of seeds)scene.remove(s.m);seeds.length=0;for(
 const fires=S.fires;
 
 /* ================= run state ================= */
-let app='menu',opt={diff:1,len:20};try{Object.assign(opt,JSON.parse(localStorage.getItem('pxd_wq_opt'))||{});}catch(e){}
+let app='menu',opt={diff:1,len:20};const saveOpt=stored('pxd_wq_opt',opt);
 let run=null,lastAward=null,menuT=0;
 function newRun(){return{clock:opt.len*60,len:opt.len*60,tod:.36,dayLen:opt.len*24,day:1,shrines:0,golemDead:false,bossDead:false,victory:false,end:false,gems:0,chests:0,regions:new Set(),cur:null,rainT:70,rainOn:false,thunderT:8,
  respawn:{x:POI.start.x,y:POI.start.h,z:POI.start.z+2,yaw:Math.PI},hintI:0,hintT:3,endT:0,overReason:'',score:0,killScore:0,discover:0,deaths:0,enemies0:0};}
@@ -113,7 +115,7 @@ function resetWorldState(){S.shrines.forEach(s=>{s.done=false;s.col.setRGB(1.6,.
   if(r.cube){const c2=r.cube;phys.move(c2.b,r.ox-5-c2.x,0,9-c2.z);c2.x=r.ox-5;c2.z=9;c2.m.position.set(c2.x,.9,c2.z);}});
  G.proj.clear();G.waves.clear();parts.clear();sparks.clear();smoke.clear();}
 
-function start(o={}){Object.assign(opt,o);try{localStorage.setItem('pxd_wq_opt',JSON.stringify(opt));}catch(e){}snd.init();
+function start(o={}){Object.assign(opt,o);saveOpt();snd.init();
  timers.length=0;const D=DIFF[opt.diff];G.dm=D;G.tokens=D.tokens;run=newRun();resetWorldState();spawnEnemies();spawnPickups();spawnSeeds();
  P.maxHp=D.hearts*4;P.hp=P.maxHp;P.tmp=0;P.stMax=100;P.st=100;P.ex=false;P.arrows=20;P.inv={apple:1};P.dishes=[];P.buffs={};P.seeds=0;P.kills=0;P.cooked=0;P.falls=0;P.sword='traveler';P.swordMul=1;
  if(P.rig.sword.userData.kind==='rune')upgradeSword(G,'traveler');
@@ -129,7 +131,7 @@ function toMenu(){app='menu';hideAll();$('menu').hidden=false;$('keys').hidden=f
 let banT=0,locT=0;
 function banner(t,s,col,dur=2.4){$('bt').textContent=t;$('bt').style.color=col||'#fff';$('bs').textContent=s||'';$('bs').style.display=s?'':'none';$('banner').classList.add('on');banT=dur;}
 G.banner=banner;
-function toast(t,cls='g'){const d=document.createElement('div');d.textContent=t;if(cls)d.className=cls;$('toasts').prepend(d);setTimeout(()=>d.remove(),3400);while($('toasts').children.length>5)$('toasts').lastChild.remove();}
+function toast(t,cls='g'){const d=line($('toasts'),'',3400,5);d.textContent=t;if(cls)d.className=cls;}
 G.toast=toast;
 function region(name){const el=$('loc');el.querySelector('b').textContent=name.toUpperCase();el.classList.add('on');locT=3.2;}
 G.shake=(a,p)=>{const d=p?P.p.distanceTo(p):0;G.cam.shake=Math.max(G.cam.shake,a*(1-Math.min(1,d/40)));};
@@ -165,7 +167,7 @@ function die(kind){P.dead=true;P.deadT=0;P.atk=null;P.aim=false;P.lock=null;P.fl
  G.after(.9,()=>{if(app==='play'&&P.dead){$('dead').hidden=false;$('deads').textContent=G.dm.pen?`The Crimson Moon draws ${G.dm.pen}s nearer…`:'On HARD there is no second chance.';}});
  G.after(3.2,()=>{if(!run||run.end||!P.dead)return;$('dead').hidden=true;if(!G.dm.pen){endRun('fallen');return;}run.clock-=G.dm.pen;if(run.clock<=0){endRun('moon');return;}
   if(G.room){exitRoom(false);}const r=run.respawn;resetPlayer(G,r.x,r.y,r.z,r.yaw);G.cam.yaw=r.yaw;P.hp=P.maxHp;P.st=P.stMax;P.ex=false;fade();toast('You wake, shaken but alive.','');});}
-function dmgNum(p,v,crit){const s=p.clone().project(camera);if(s.z>1)return;const d=document.createElement('div');d.className='mk dmg'+(crit?' crit':'');d.textContent=v;d.style.left=(s.x*.5+.5)*innerWidth+'px';d.style.top=(-s.y*.5+.5)*innerHeight+'px';$('marks').appendChild(d);setTimeout(()=>d.remove(),900);}
+function dmgNum(p,v,crit){const s=p.clone().project(camera);if(s.z>1)return;const d=line($('marks'),'',900,0,false);d.className='mk dmg'+(crit?' crit':'');d.textContent=v;d.style.left=(s.x*.5+.5)*innerWidth+'px';d.style.top=(-s.y*.5+.5)*innerHeight+'px';}
 G.damageEnemy=(e,dmg,o={})=>{if(e.dead)return;const K=e.K;const at=o.at||new V(e.p.x,e.p.y+K.bodyY+.3,e.p.z);let crit=!!o.head||!!o.sneak;
  if(e.kind==='golem'&&o.head&&o.kind==='arrow'&&e.state!=='stunned'&&e.state!=='dormant'){e.state='stunned';e.t=0;toast('Struck its eye! The Colossus staggers.','t');snd.play('crit');}
  if(e.kind==='boss'&&o.kind==='orb'){e.state='stunned';e.t=0;dmg=60;crit=true;toast('Its own fire! The Warden reels.','t');}
@@ -249,37 +251,31 @@ $('mapc').onclick=e=>{const b=$('mapc').getBoundingClientRect();const wx=(e.clie
 function warpTo(s){snd.play('warp');fade(true);const x=s.enter.x+s.fx*1.5,z=s.enter.z+s.fz*1.5;resetPlayer(G,x,Math.max(heightAt(x,z),s.y),z,Math.atan2(s.fx,s.fz));G.cam.yaw=P.yaw;toast('Warped to '+s.name,'t');}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={b:[false,false,false],e:[false,false,false]};let mdx=0,mdy=0,locked=false;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
- if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+let midE=false;
+const I=controls(canvas,{canLock:()=>app==='play'&&!G.noPauseOnUnlock,clickThrough:true,onDown:e=>{if(e.button===1)midE=true;},onWheel:e=>{if(app==='play')G.cam.zoom=cl(G.cam.zoom+Math.sign(e.deltaY)*.1,.6,1.6);},
+ menu:e=>e.target===canvas,onLock:(on,was)=>{if(was&&!on&&app==='play'&&!G.noPauseOnUnlock)pause(true);},
+ onKey:e=>{if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(app==='panel'){if(!$('bless').hidden)return;closePanels();}else if(app==='play')pause(true);else if(app==='paused')pause(false);}
- if(app==='panel'){if(!$('cook').hidden){const n=+e.key;if(n>=1&&n<=7)addPot(ORDER[n-1]);if(e.code==='Backspace'){pot.pop();drawCook();}if(e.code==='Enter')cook();if(e.code==='KeyE'&&edge.KeyE&&false)closePanels();}
+ if(app==='panel'){if(!$('cook').hidden){const n=+e.key;if(n>=1&&n<=7)addPot(ORDER[n-1]);if(e.code==='Backspace'){pot.pop();drawCook();}if(e.code==='Enter')cook();}
   if(!$('inv').hidden){const n=+e.key;if(n>=1&&n<=9&&G.invItems&&G.invItems[n-1]){const it=G.invItems[n-1];eat(it.d||it.k);drawInv();}if(e.code==='Tab')closePanels();}
-  if(!$('map').hidden&&e.code==='KeyM')closePanels();if(!$('bless').hidden){if(e.key==='1')bless('heart');if(e.key==='2')bless('stamina');}}});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.b=[false,false,false];});
-canvas.addEventListener('mousedown',e=>{if(app==='play'&&!locked)lockPointer();mouse.b[e.button]=true;mouse.e[e.button]=true;});addEventListener('mouseup',e=>{mouse.b[e.button]=false;});
-canvas.addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(locked){mdx+=e.movementX;mdy+=e.movementY;}});
-addEventListener('wheel',e=>{if(app==='play')G.cam.zoom=cl(G.cam.zoom+Math.sign(e.deltaY)*.1,.6,1.6);},{passive:true});
-function lockPointer(){if(G.noPauseOnUnlock)return;try{const p=canvas.requestPointerLock&&canvas.requestPointerLock();if(p&&p.catch)p.catch(()=>{});}catch(e){}}
-function unlockPointer(){try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&app==='play'&&!G.noPauseOnUnlock)pause(true);});
+  if(!$('map').hidden&&e.code==='KeyM')closePanels();if(!$('bless').hidden){if(e.key==='1')bless('heart');if(e.key==='2')bless('stamina');}}}});
+const {keys,edge,mouse}=I,lockPointer=I.lock,unlockPointer=I.unlock;
 function pause(on){if(on&&app==='play'){app='paused';$('pause').hidden=false;document.body.classList.remove('playing');unlockPointer();}else if(!on&&app==='paused'){app='play';$('pause').hidden=true;document.body.classList.add('playing');lockPointer();}}
 const padPrev={};
 function readInput(dt){const k=c=>!!keys[c],e=c=>!!edge[c];const inp={mx:(k('KeyD')?1:0)-(k('KeyA')?1:0),my:(k('KeyW')?1:0)-(k('KeyS')?1:0),sprint:k('ShiftLeft')||k('ShiftRight'),walk:false,jumpEdge:e('Space'),
-  atkEdge:mouse.e[0]||e('KeyJ'),atkHeld:mouse.b[0]||k('KeyJ'),aim:mouse.b[2]||k('KeyK'),block:k('KeyF'),roll:e('KeyC')||e('KeyR'),letGo:e('KeyC')||e('KeyR'),lockEdge:e('KeyQ')||mouse.e[1],interact:e('KeyE'),eat:e('KeyH'),inv:e('Tab'),map:e('KeyM'),rdt:dt};
- let lx=0,ly=0;const pads=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];const gp=pads[0];
- if(gp){const dz=v=>Math.abs(v)>.15?v:0,b=i=>!!(gp.buttons[i]&&gp.buttons[i].pressed),be=i=>b(i)&&!padPrev[i];lx=dz(gp.axes[0]||0);ly=dz(gp.axes[1]||0);if(lx||ly){inp.mx=lx;inp.my=-ly;}
+  atkEdge:mouse.le||e('KeyJ'),atkHeld:mouse.l||k('KeyJ'),aim:mouse.r||k('KeyK'),block:k('KeyF'),roll:e('KeyC')||e('KeyR'),letGo:e('KeyC')||e('KeyR'),lockEdge:e('KeyQ')||midE,interact:e('KeyE'),eat:e('KeyH'),inv:e('Tab'),map:e('KeyM'),rdt:dt};
+ let lx=0,ly=0;const gp=gamepad();
+ if(gp){const dz=deadzone,b=i=>!!(gp.buttons[i]&&gp.buttons[i].pressed),be=i=>b(i)&&!padPrev[i];lx=dz(gp.axes[0]||0);ly=dz(gp.axes[1]||0);if(lx||ly){inp.mx=lx;inp.my=-ly;}
   const rx=dz(gp.axes[2]||0),ry=dz(gp.axes[3]||0);G.cam.yaw-=rx*dt*2.6;G.cam.pitch=cl(G.cam.pitch+ry*dt*1.8,-1.1,1.3);
   if(b(1))inp.sprint=true;if(be(0))inp.jumpEdge=true;if(be(2))inp.atkEdge=true;if(b(2))inp.atkHeld=true;if((gp.buttons[7]?.value||0)>.5)inp.aim=true;if(be(5))inp.fire=true;if(b(4))inp.block=true;if(be(11))inp.roll=true;if(be(1))inp.letGo=true;
   const lt=(gp.buttons[6]?.value||0)>.5;if(lt&&!padPrev.lt)inp.lockEdge=true;padPrev.lt=lt;if(be(3))inp.interact=true;if(be(10))inp.eat=true;if(be(8))inp.map=true;if(be(9))pause(app==='play');
   for(let i=0;i<16;i++)padPrev[i]=b(i);}
  if(inp.aim&&inp.atkEdge){inp.fire=true;inp.atkEdge=false;}if(inp.aim)inp.atkHeld=false;
  // camera
- const sens=.0024;G.cam.yaw-=mdx*sens;G.cam.pitch=cl(G.cam.pitch+mdy*sens,-1.1,1.3);mdx=mdy=0;
+ const sens=.0024;G.cam.yaw-=mouse.dx*sens;G.cam.pitch=cl(G.cam.pitch+mouse.dy*sens,-1.1,1.3);mouse.dx=mouse.dy=0;
  const ak=(k('ArrowLeft')?1:0)-(k('ArrowRight')?1:0),av=(k('ArrowDown')?1:0)-(k('ArrowUp')?1:0);G.cam.yaw+=ak*dt*2.4;G.cam.pitch=cl(G.cam.pitch-av*dt*1.6,-1.1,1.3);
  if(G.scripted)Object.assign(inp,G.scripted);
- for(const c in edge)delete edge[c];mouse.e=[false,false,false];return inp;}
+ I.flush();mouse.le=mouse.re=midE=false;return inp;}
 
 /* ================= simulation ================= */
 let hintList=[['WASD to move · mouse to look · Space to jump',''],['Walk into a cliff to climb it · watch your stamina wheel',''],['Press Space in mid-air to open your glider',''],['Beams of light mark the Lumen Shrines',''],['E to forage · cook at a campfire for buffs','']];
@@ -434,13 +430,12 @@ addEventListener('resize',()=>{if(fx)fx.w=0;});
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 
 /* ================= menu wiring ================= */
-const seg=(id,key)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
+const seg=pickers(opt);
 seg('o-diff','diff');seg('o-len','len');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{if(run)run.end=true;toMenu();};
 $('cookgo').onclick=cook;$('cookx').onclick=closePanels;$('bh').onclick=()=>bless('heart');$('bs2').onclick=()=>bless('stamina');
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Wild Quest\nPoints: ${a.pts||0}\nResult: ${a.won?'victory':'defeat'} in ${a.time||''}\nShrines: ${a.shrines||0}/4 · Foes: ${a.kills||0} · Seeds: ${a.seeds||0}/20\nChallenge: ${a.diff||''} · Moon: ${a.len||20} min\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Wild Quest\nPoints: ${a.pts||0}\nResult: ${a.won?'victory':'defeat'} in ${a.time||''}\nShrines: ${a.shrines||0}/4 · Foes: ${a.kills||0} · Seeds: ${a.seeds||0}/20\nChallenge: ${a.diff||''} · Moon: ${a.len||20} min`];});
 
 /* ================= loop ================= */
 toMenu();

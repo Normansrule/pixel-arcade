@@ -6,7 +6,9 @@ import {W,L,GW,GH,GD,RB,CAR,SP} from './physics.js';
 import {TEAM,makeEnv,buildArena,buildPads,makeCar,makeBall,Particles,Trail,Shocks,Mirror} from './models.js';
 import {DIFF,assignRoles,think} from './ai.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const NAMES=['VOLT','NOVA','RIFT','BLITZ','COMET','ZEPHYR','JINX','ORBIT','TORQUE','QUASAR','FLUX','RAVEN','EMBER','HALO','PISTON','SPARK','DYNAMO','KESTREL'];
@@ -30,7 +32,7 @@ const ball=new PH.Ball(),snd=new Sound();
 const mainCam=new THREE.PerspectiveCamera(60,1,.3,2400);mainCam.layers.enable(1);
 
 /* ================= game state ================= */
-let opt={size:2,humans:1,diff:1};try{Object.assign(opt,JSON.parse(localStorage.getItem('pxd_rocket_opt'))||{});}catch(e){}
+let opt={size:2,humans:1,diff:1};const saveOpt=stored('pxd_rocket_opt',opt);
 let app='menu',phase='countdown',cars=[],views=[],score=[0,0],clock=MATCH,overtime=false,otT=0,cdT=3,goT=0,goalT=0,endT=0,time=0,acc=0,timeScale=1;
 let hideBall=false,kickTouched=false,kickT=0,goalInfo=null,rec=[],recTick=0,replay=null,bloomKick=0,hype=0,freeplay=false,attract=true,lastBeep=-1,lastClockSec=-1;
 let pred=[],preGoal=null,world=null,diff=DIFF[1],fpReset=0;
@@ -53,7 +55,7 @@ function setupViews(){const host=$('views');host.innerHTML='';views=[];const hum
  $('mini').hidden=hum.length>1;}
 
 /* ================= match flow ================= */
-function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o);try{localStorage.setItem('pxd_rocket_opt',JSON.stringify(opt));}catch(e){}snd.init();
+function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o);saveOpt();snd.init();
  freeplay=opt.size===0;attract=false;app='match';diff=DIFF[opt.diff];roster({humans:opt.humans,size:opt.size,freeplay});cars.forEach(c=>c.inf=freeplay);
  score=[0,0];clock=MATCH;overtime=false;otT=0;rec=[];replay=null;pads.forEach(p=>p.t=0);setupViews();kickoff();
  $('menu').hidden=true;$('keys').hidden=true;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=false;document.body.classList.add('playing');$('feed').innerHTML='';$('board').style.visibility=freeplay?'hidden':'';}
@@ -117,16 +119,14 @@ function respawn(c){const[x,z]=PH.RESPAWN[Math.random()*4|0],s=c.team?-1:1;c.pla
  parts.burst(tv.copy(c.p),40,10,TEAM[c.team].glow,.9,.7,{up:true});const v=views.find(v=>v.car===c);if(v)v.snap=true;}
 
 /* ================= input ================= */
-const keys={},edge={};
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
+const I=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)||(app==='match'&&e.code==='Slash'))e.preventDefault();
  if(e.code==='Escape'){if(app==='match')pause(true);else if(app==='paused')pause(false);}
  if(app!=='match')return;
  if(e.code==='KeyC'&&views[0])views[0].ballCam=!views[0].ballCam;
  if((e.code==='Backslash'||e.code==='Numpad1')&&views[1])views[1].ballCam=!views[1].ballCam;
- if(e.code==='KeyR'&&freeplay)fpReset=1;});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='KeyR'&&freeplay)fpReset=1;}});
+const {keys,edge}=I;
 const KB=[{f:['KeyW'],b:['KeyS'],l:['KeyA'],r:['KeyD'],j:['Space'],bo:['ShiftLeft'],hb:['ControlLeft','KeyB'],rl:['KeyQ'],rr:['KeyE']},
  {f:['ArrowUp'],b:['ArrowDown'],l:['ArrowLeft'],r:['ArrowRight'],j:['Enter','Slash','Numpad0'],bo:['Period','ShiftRight','NumpadDecimal'],hb:['Comma','ControlRight'],rl:['Semicolon'],rr:['Quote']}];
 const any=a=>a.some(k=>keys[k]);const padPrev=[{},{}];
@@ -134,7 +134,7 @@ function gp(i){const list=navigator.getGamepads?[...navigator.getGamepads()].fil
 function readHuman(c){const k=c.ctrl,i=c.human,solo=cars.filter(x=>x.human>=0).length===1;const maps=solo?[KB[0],KB[1]]:[KB[i]];
  const on=n=>maps.some(m=>any(m[n]));k.thr=(on('f')?1:0)-(on('b')?1:0);k.steer=(on('l')?1:0)-(on('r')?1:0);k.jump=on('j');k.boost=on('bo');k.hb=on('hb');k.roll=(on('rr')?1:0)-(on('rl')?1:0);
 
- const g=gp(i);if(g){const ax=g.axes,bt=g.buttons,pr=padPrev[i],dz=v=>Math.abs(v)>.18?v:0;const sx=dz(ax[0]||0),sy=dz(ax[1]||0),rt=bt[7]?.value||0,lt=bt[6]?.value||0;
+ const g=gp(i);if(g){const ax=g.axes,bt=g.buttons,pr=padPrev[i],dz=v=>deadzone(v,.18);const sx=dz(ax[0]||0),sy=dz(ax[1]||0),rt=bt[7]?.value||0,lt=bt[6]?.value||0;
   if(sx)k.steer=-sx;if(!c.ground){if(sy)k.thr=-sy;}else if(rt>.05||lt>.05)k.thr=rt-lt;
   if(bt[0]?.pressed)k.jump=true;if(bt[1]?.pressed)k.boost=true;if(bt[2]?.pressed)k.hb=true;if(bt[4]?.pressed)k.roll=-1;if(bt[5]?.pressed)k.roll=1;
   const v=views.find(v=>v.car===c);if(bt[3]?.pressed&&!pr.y&&v)v.ballCam=!v.ballCam;if(bt[9]?.pressed&&!pr.st)pause(app==='match');if(bt[8]?.pressed&&!pr.bk&&freeplay)fpReset=1;
@@ -159,7 +159,7 @@ let roleT=0;
 function step(dt){dt=Math.min(dt,.1);
  // per-frame input
  if(app==='match'){for(const c of cars)if(c.human>=0)readHuman(c);}
- const skip=edge.Space||edge.Enter||edge.PadA;for(const k in edge)delete edge[k];
+ const skip=edge.Space||edge.Enter||edge.PadA;I.flush();
  if(app==='paused'||app==='over'){if(app==='over')overT+=dt;visuals(dt);return;}
  // state machine
  if(phase==='countdown'){cdT-=dt;const n=Math.ceil(cdT);if(n!==lastBeep&&n>0){lastBeep=n;if(!attract)snd.play('beep',0);}if(cdT<=0){phase='play';goT=1;if(!attract)snd.play('beep',1);}}
@@ -223,7 +223,7 @@ function cameras(dt){if(app==='match'||app==='paused'){views.forEach(v=>camFor(v
 
 /* ================= HUD ================= */
 let feedEl=$('feed'),banT=0;const mini=$('mini').getContext('2d');
-function feed(t,team){const d=document.createElement('div');d.textContent=t;d.className=team===0?'b':team===1?'o':'';feedEl.prepend(d);setTimeout(()=>d.remove(),4200);while(feedEl.children.length>5)feedEl.lastChild.remove();}
+function feed(t,team){const d=toast(feedEl,'',4200,5);d.textContent=t;d.className=team===0?'b':team===1?'o':'';}
 function banner(t,s,col,dur){$('bt').textContent=t;$('bt').style.color=col;$('bs').textContent=s;$('banner').classList.add('on');banT=dur;}
 const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 function setTxt(el,v,cache,key){if(cache[key]!==v){cache[key]=v;el.textContent=v;}}
@@ -269,12 +269,11 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 addEventListener('resize',()=>{fxFull&&(fxFull.w=0);fxSplit.forEach(f=>f&&(f.w=0));});
 
 /* ================= menu wiring ================= */
-const seg=(id,key)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
+const seg=pickers(opt);
 seg('o-mode','size');seg('o-pl','humans');seg('o-diff','diff');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Rocket Arena\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nGoals: ${a.goals||0} · Saves: ${a.saves||0}\nMode: ${a.mode||''}${a.split?' split-screen':''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('rocket3d',a.pts||0,body);};
+postButton($('post'),'rocket3d',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Rocket Arena\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nGoals: ${a.goals||0} · Saves: ${a.saves||0}\nMode: ${a.mode||''}${a.split?' split-screen':''} · CPU ${a.diff||''}`];});
 
 /* ================= loop ================= */
 toMenu();drawJumbo();

@@ -1,25 +1,22 @@
 // VOXEL FRONTIER — synthesized audio: material-aware digging, steps and placing; pickups, crafting, combat,
 // creature voices, explosions; day birdsong / night crickets and a slow generative piano-and-pad score.
+import {boot,master,gain,noiseBuf,reverb,bed,panTo,tone,hiss} from '../js/kit3d/audio.js';
 const R=Math.random;
 const MAT={grass:[900,.5,.09],dirt:[700,.5,.09],sand:[1400,.4,.08],stone:[2200,1.4,.07],wood:[600,2.2,.08],leaf:[3000,.4,.06],glass:[4200,3,.05],snow:[1800,.3,.09],water:[500,.6,.12],cloth:[1000,.3,.06]};
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.mus=.5;this.cam={x:0,y:0,z:0,yaw:0};this.nextNote=0;this.amb=0;this.nightAmt=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=3;comp.connect(ac.destination);this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);
-  this.sfx=ac.createGain();this.sfx.connect(this.master);this.mbus=ac.createGain();this.mbus.gain.value=this.mus*.5;this.mbus.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=R()*2-1;this.noise=b;
-  const il=ac.sampleRate*2.4,ib=ac.createBuffer(2,il,ac.sampleRate);for(let c=0;c<2;c++){const x=ib.getChannelData(c);for(let i=0;i<il;i++)x[i]=(R()*2-1)*Math.pow(1-i/il,3);}this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.5;this.verbIn.connect(this.verb);this.verb.connect(this.mbus);
+ init(){boot(this,ac=>{this.master=master(ac,this.vol,-14,3);this.sfx=gain(ac,1,this.master);this.mbus=gain(ac,this.mus*.5,this.master);
+  this.noise=noiseBuf(ac);this.verbIn=reverb(ac,2.4,3,.5,this.mbus);
   // ambient bed: wind noise
-  const ws=ac.createBufferSource();ws.buffer=this.noise;ws.loop=true;const wf=ac.createBiquadFilter();wf.type='lowpass';wf.frequency.value=420;this.wind=ac.createGain();this.wind.gain.value=0;ws.connect(wf);wf.connect(this.wind);this.wind.connect(this.sfx);ws.start();
-  this.timer=setInterval(()=>this.tick(),120);}catch(e){this.ac=null;}}
+  this.wind=bed(ac,this.noise,'lowpass',420,null,this.sfx).g;
+  this.timer=setInterval(()=>this.tick(),120);});}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
  setMusic(v){this.mus=v;if(this.mbus)this.mbus.gain.setTargetAtTime(v*.5,this.ac.currentTime,.3);}
  listener(x,y,z,yaw){Object.assign(this.cam,{x,y,z,yaw});}
  at(p){if(!p)return[1,0];const c=this.cam,dx=p.x-c.x,dy=(p.y||0)-c.y,dz=p.z-c.z,d=Math.hypot(dx,dy,dz)||1;const rx=Math.cos(c.yaw),rz=-Math.sin(c.yaw);return[1/(1+Math.max(0,d-2)/7),(dx*rx+dz*rz)/d];}
- _bus(pan){if(!pan)return this.sfx;const s=this.ac.createStereoPanner();s.pan.value=Math.max(-1,Math.min(1,pan));s.connect(this.sfx);return s;}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0){if(!this.ac||vol<.003)return;const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(Math.max(30,f0),t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(this._bus(pan));s.start(t,R()*1.5);s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0,pan=0,atk=.004,bus){if(!this.ac||vol<.003)return;const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+atk);g.gain.exponentialRampToValueAtTime(.0008,t+dur);o.connect(g);g.connect(bus||this._bus(pan));o.start(t);o.stop(t+dur+.03);}
+ _bus(pan){return panTo(this.ac,pan,this.sfx);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0){if(!this.ac||vol<.003)return;hiss(this.ac,this.noise,this._bus(pan),this.ac.currentTime+delay,dur,f0,f1,q,vol,type);}
+ _o(type,f0,f1,dur,vol,delay=0,pan=0,atk=.004,bus){if(!this.ac||vol<.003)return;tone(this.ac,bus||this._bus(pan),this.ac.currentTime+delay,type,f0,f1,dur,vol,atk);}
  dig(mat){const m=MAT[mat]||MAT.stone;const v=.85+R()*.3;this._n(m[2],m[0]*v,m[0]*.6*v,m[1],.22,'bandpass');if(mat==='stone')this._o('square',180*v,120,.03,.03);}
  brk(mat){const m=MAT[mat]||MAT.stone;this._n(.22,m[0]*1.1,m[0]*.4,m[1]*.8,.4,'bandpass');this._n(.12,m[0]*.5,200,.7,.25,'lowpass',.02);if(mat==='glass'){for(let i=0;i<5;i++)this._o('triangle',2400+R()*2400,1800,.12,.06,i*.02);}if(mat==='wood')this._o('triangle',160,90,.12,.18);}
  place(mat){const m=MAT[mat]||MAT.stone;this._n(.07,m[0]*.8,m[0]*.5,m[1],.28,'bandpass');this._o('sine',140,80,.08,.18);}

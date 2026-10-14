@@ -11,7 +11,9 @@ import {Sound} from './sound.js';
 import {sandbags} from './props.js';
 import {textures} from './tex.js';
 import {Rig,pose} from './actors.js';
-import {addRound,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id);
 const ID='longshot';
@@ -254,17 +256,14 @@ function bodyFound(b,q,bp){const acc=b.deathInfo&&(b.deathInfo.accident||b.death
  for(const o of G.L.people)if(o.alive&&!o.gone&&o!==q&&(o.role==='civ'||o.role==='staff')&&o.pos.distanceTo(bp)<12&&!acc)o.panic(bp);}
 
 /* ================= input ================= */
-const keys={},edge={};let locked=false,mouseDX=0,mouseDY=0;
-function lock(){if(G.app!=='play'||G.intel)return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play'&&!G.intel&&G.phase!=='end')pause(true);});
-addEventListener('mousemove',e=>{if(locked||e.buttons&4){mouseDX+=e.movementX;mouseDY+=e.movementY;}});
-canvas.addEventListener('mousedown',e=>{snd.resume();if(G.app==='brief'){return;}if(G.app!=='play')return;if(!locked&&e.button===0&&!G.intel){lock();return;}
- if(e.button===0){if(G.phase==='bulletcam'){skipBulletCam();return;}if(G.binos)tag();else fireShot();}else if(e.button===2){if(G.binos){G.binos=false;}G.scopeOn=!G.scopeOn;snd.play('zoom');}});
-canvas.addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('wheel',e=>{if(G.app!=='play')return;zoomBy(e.deltaY>0?-1:1);},{passive:true});
+const I=controls(canvas,{canLock:()=>G.app==='play'&&!G.intel,clickLock:()=>false,menu:e=>e.target===canvas,look:e=>I.locked||e.buttons&4,
+ onLock:(on,was)=>{if(was&&!on&&G.app==='play'&&!G.intel&&G.phase!=='end')pause(true);},onWheel:e=>{if(G.app!=='play')return;zoomBy(e.deltaY>0?-1:1);},
+ onDown:e=>{snd.resume();if(G.app!=='play')return true;if(!I.locked&&e.button===0&&!G.intel){I.lock();return true;}
+  if(e.button===0){if(G.phase==='bulletcam'){skipBulletCam();return true;}if(G.binos)tag();else fireShot();}else if(e.button===2){if(G.binos){G.binos=false;}G.scopeOn=!G.scopeOn;snd.play('zoom');}return true;},
+ onKey});
+const {keys,mouse}=I,{lock,unlock}=I;
 function zoomBy(s){if(G.binos){G.bzoom=clamp(G.bzoom*(s>0?1.15:1/1.15),4,24);snd.play('zoom');}else if(G.scopeOn){G.zoom=clamp(G.zoom*(s>0?1.12:1/1.12),G.scope.min,G.scope.max);snd.play('zoom');}}
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
+function onKey(e){
  if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='play'&&G.intel){closeIntel();return;}if(G.app==='play')pause(true);else if(G.app==='paused')pause(false);return;}
  if(G.app==='brief'&&(e.code==='Space'||e.code==='Enter')){begin();return;}
@@ -281,11 +280,10 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.c
  if(e.code==='KeyW'||e.code==='ArrowUp'){G.zero=clampZero(G.zero+25);snd.play('zoom');}if(e.code==='KeyS'||e.code==='ArrowDown'){G.zero=clampZero(G.zero-25);snd.play('zoom');}
  if(e.code==='KeyZ'){if(G.diff<2&&G.range>0){G.zero=clampZero(G.range);snd.play('ui');}else hud.toast('NO RANGEFINDER ON ELITE — USE THE MIL-DOTS','bad',2);}
  if(e.code==='Digit1'||e.code==='Digit2'||e.code==='Digit3')relocate(+e.code.slice(5)-1);
- if(e.code==='KeyP')relocate((G.perch+1)%G.perches.length);});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='KeyP')relocate((G.perch+1)%G.perches.length);}
 function tag(){const p=G.look;if(!p)return;p.tag=!p.tag;snd.play('tag');if(p.tag)hud.toast('TAGGED','',1.2);}
 const padPrev={};
-function readPad(dt){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(!gp)return;const ax=gp.axes,bt=gp.buttons,pr=padPrev,dz=v=>Math.abs(v)>.15?v:0;const on=i=>bt[i]&&bt[i].pressed,eg=i=>on(i)&&!pr[i];
+function readPad(dt){const gp=gamepad();if(!gp)return;const ax=gp.axes,bt=gp.buttons,pr=padPrev,dz=deadzone;const on=i=>bt[i]&&bt[i].pressed,eg=i=>on(i)&&!pr[i];
  if(G.app==='play'&&!G.intel){const k=1.9*dt*(cam.fov/60);G.yaw-=dz(ax[2]||0)*k;G.pitch-=dz(ax[3]||0)*k;const lt=(bt[6]?.value||0)>.4;if(lt!==pr.lt){G.scopeOn=lt;if(lt)G.binos=false;}pr.lt=lt;
   if(eg(7)){if(G.phase==='bulletcam')skipBulletCam();else if(G.binos)tag();else fireShot();}if(on(4))zoomBy(-dt*3>0?-1:-1),G.zoom=clamp(G.zoom/Math.pow(1.6,dt),G.scope.min,G.scope.max);if(on(5))G.zoom=clamp(G.zoom*Math.pow(1.6,dt),G.scope.min,G.scope.max);
   G.padBreath=on(0);if(eg(3)){G.binos=!G.binos;if(G.binos)G.scopeOn=false;}if(eg(2))tag();if(eg(1))reload();if(eg(12))G.zero=clampZero(G.zero+25);if(eg(13))G.zero=clampZero(G.zero-25);if(eg(11))relocate((G.perch+1)%G.perches.length);
@@ -294,7 +292,7 @@ function readPad(dt){const gp=navigator.getGamepads?[...navigator.getGamepads()]
  if(eg(9)){if(G.app==='play')pause(true);else if(G.app==='paused')pause(false);}for(let i=0;i<17;i++)pr[i]=on(i);}
 
 /* ================= aim + sway ================= */
-function aim(dt){const sens=.0021*(cam.fov/60);G.yaw-=mouseDX*sens;G.pitch-=mouseDY*sens;mouseDX=mouseDY=0;
+function aim(dt){const sens=.0021*(cam.fov/60);G.yaw-=mouse.dx*sens;G.pitch-=mouse.dy*sens;mouse.dx=mouse.dy=0;
  G.yaw=G.yaw0+clamp(((G.yaw-G.yaw0+Math.PI*3)%(Math.PI*2))-Math.PI,-1.35,1.35);G.pitch=clamp(G.pitch,-1.05,.6);
  const want=(keys.ShiftLeft||keys.ShiftRight||G.padBreath)&&G.scoped>.5&&!G.binos;if(want&&G.breath>0&&G.gasp<=0){if(!G.holding){G.holding=true;snd.play('inhale');}G.breath-=20*dt;G.hbT=(G.hbT||0)-dt;if(G.hbT<=0){G.hbT=.78;snd.play('heart');}if(G.breath<=0){G.breath=0;G.gasp=3;G.holding=false;snd.play('gasp');}}
  else{if(G.holding){G.holding=false;snd.play('exhale');}G.breath=Math.min(100,G.breath+(G.gasp>0?9:17)*dt);}G.gasp=Math.max(0,G.gasp-dt);
@@ -348,7 +346,7 @@ function step(dt){dt=Math.min(dt,.1);readPad(dt);if(hud.banT>0&&G.app!=='play')h
  if(G.bc){updateBulletCam(dt);}else if(G.phase!=='relocate'||true){if(!G.bc)aim(dt);}
  if(G.phase==='end'&&!G.bc){G.endT+=dt;if(G.endT>2.6)showOver();}
  G.rangeT-=dt;if(G.rangeT<=0&&!G.bc){G.rangeT=.1;rangefind();}
- if(!G.hint||G.hint.startsWith('RMB')||G.hint.startsWith('SHIFT')||G.hint.startsWith('CLICK'))G.hint=!locked?'CLICK TO AIM':G.binos?'':G.scoped>.5?'SHIFT · HOLD BREATH    W/S · RANGE DIAL    Z · AUTO-ZERO':'RMB · SCOPE    B · BINOCULARS    TAB · INTEL';
+ if(!G.hint||G.hint.startsWith('RMB')||G.hint.startsWith('SHIFT')||G.hint.startsWith('CLICK'))G.hint=!I.locked?'CLICK TO AIM':G.binos?'':G.scoped>.5?'SHIFT · HOLD BREATH    W/S · RANGE DIAL    Z · AUTO-ZERO':'RMB · SCOPE    B · BINOCULARS    TAB · INTEL';
  visuals(dt,sdt);hud.update(G,dt);}
 function visuals(dt,sdt){const W=G.W;if(!W)return;W.update(sdt,G.t,G.wind);add.update(sdt,G.wind);smk.update(sdt,G.wind);flash.intensity*=Math.exp(-sdt*7);
  if(ring.visible){const u=ring.userData;u.t+=sdt;const k=u.t/u.dur;ring.scale.setScalar(.1+k*u.size);ring.material.opacity=Math.max(0,1-k);if(k>=1)ring.visible=false;}
@@ -394,9 +392,8 @@ function buildMenu(){const o=save.opt,ts=totalStars();
  $('tot').innerHTML=`<b>★ ${ts}</b> / 18 STARS`;}
 $('go').onclick=()=>start({reload:true});$('begin').onclick=()=>begin();$('again').onclick=()=>start({reload:true});$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='play';toMenu();};$('restart').onclick=()=>start({reload:true});
 $('next').onclick=()=>{if(G.mi<MISSIONS.length-1){save.opt.mission=G.mi+1;persist();start({reload:true});}else toMenu();};
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Long Shot\nPoints: ${a.pts||0}\nMission: ${a.mission||''} · ${a.won?'complete':'failed'} · ${a.stars||0} stars\nDifficulty: ${a.diff||''} · Rifle: ${a.rifle||''}\nLongest shot: ${a.longest||0} m · Accuracy: ${a.acc||0}%\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Long Shot\nPoints: ${a.pts||0}\nMission: ${a.mission||''} · ${a.won?'complete':'failed'} · ${a.stars||0} stars\nDifficulty: ${a.diff||''} · Rifle: ${a.rifle||''}\nLongest shot: ${a.longest||0} m · Accuracy: ${a.acc||0}%`];});
 
 /* ================= render ================= */
 function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio()))R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();

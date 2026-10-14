@@ -1,21 +1,21 @@
 // SKY LANCERS — synthesized audio: prop/jet engines, wind, guns, missile lock + warning tones, explosions.
+import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.gunT=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.connect(ac.destination);
-  this.out=ac.createGain();this.out.gain.value=.75;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);let l=0;for(let i=0;i<n;i++){d[i]=Math.random()*2-1;}this.noise=b;
+ init(){boot(this,ac=>{this.out=master(ac,.75,-14,12);
+  const n=ac.sampleRate*2,b=this.noise=noiseBuf(ac);let l=0;
   const bb=ac.createBuffer(1,n,ac.sampleRate),db=bb.getChannelData(0);for(let i=0;i<n;i++){l=(l+.02*(Math.random()*2-1))/1.02;db[i]=l*3.5;}this.brown=bb;
-  const loop=(buf,type,f,q)=>{const s=ac.createBufferSource();s.buffer=buf;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(this.out);s.start(0,Math.random()*1.5);return{s,f:fl,g};};
+  const loop=(buf,type,f,q)=>bed(ac,buf,type,f,q,this.out,0,Math.random()*1.5);
   // prop engine: two detuned saws + chop LFO
   const o1=ac.createOscillator(),o2=ac.createOscillator();o1.type='sawtooth';o2.type='square';const pf=ac.createBiquadFilter();pf.type='lowpass';pf.frequency.value=600;const chop=ac.createGain();chop.gain.value=.6;
-  const lfo=ac.createOscillator();lfo.frequency.value=30;const lg=ac.createGain();lg.gain.value=.4;lfo.connect(lg);lg.connect(chop.gain);const pg=ac.createGain();pg.gain.value=0;o1.connect(pf);o2.connect(pf);pf.connect(chop);chop.connect(pg);pg.connect(this.out);o1.start();o2.start();lfo.start();
+  const lfo=ac.createOscillator();lfo.frequency.value=30;const lg=ac.createGain();lg.gain.value=.4;lfo.connect(lg);lg.connect(chop.gain);const pg=gain(ac,0,this.out);o1.connect(pf);o2.connect(pf);pf.connect(chop);chop.connect(pg);o1.start();o2.start();lfo.start();
   this.prop={o1,o2,pf,lfo,g:pg};
-  this.jet=loop(b,'bandpass',900,.7);this.whine=(()=>{const o=ac.createOscillator();o.type='sine';o.frequency.value=2400;const g=ac.createGain();g.gain.value=0;o.connect(g);g.connect(this.out);o.start();return{o,g};})();
+  this.jet=loop(b,'bandpass',900,.7);this.whine=(()=>{const o=ac.createOscillator();o.type='sine';o.frequency.value=2400;const g=gain(ac,0,this.out);o.connect(g);o.start();return{o,g};})();
   this.burner=loop(this.brown,'lowpass',260,.8);this.wind=loop(b,'lowpass',500,.5);this.rumble=loop(this.brown,'lowpass',120,.7);
   // lock + warning tones
-  const lt=ac.createOscillator();lt.type='square';lt.frequency.value=900;const lf=ac.createBiquadFilter();lf.type='lowpass';lf.frequency.value=2500;const lgn=ac.createGain();lgn.gain.value=0;const am=ac.createOscillator();am.frequency.value=18;const amg=ac.createGain();amg.gain.value=0;am.connect(amg);amg.connect(lt.frequency);lt.connect(lf);lf.connect(lgn);lgn.connect(this.out);lt.start();am.start();this.lock={o:lt,g:lgn,am:amg};
-  const wt=ac.createOscillator();wt.type='square';wt.frequency.value=1250;const wg=ac.createGain();wg.gain.value=0;const wl=ac.createBiquadFilter();wl.type='lowpass';wl.frequency.value=3000;wt.connect(wl);wl.connect(wg);wg.connect(this.out);wt.start();this.warn={o:wt,g:wg};
- }catch(e){this.ac=null;}}
+  const lt=ac.createOscillator();lt.type='square';lt.frequency.value=900;const lf=ac.createBiquadFilter();lf.type='lowpass';lf.frequency.value=2500;const lgn=gain(ac,0,this.out);const am=ac.createOscillator();am.frequency.value=18;const amg=ac.createGain();amg.gain.value=0;am.connect(amg);amg.connect(lt.frequency);lt.connect(lf);lf.connect(lgn);lt.start();am.start();this.lock={o:lt,g:lgn,am:amg};
+  const wt=ac.createOscillator();wt.type='square';wt.frequency.value=1250;const wg=gain(ac,0,this.out);const wl=ac.createBiquadFilter();wl.type='lowpass';wl.frequency.value=3000;wt.connect(wl);wl.connect(wg);wt.start();this.warn={o:wt,g:wg};
+ });}
  suspend(on){if(this.ac){if(on)this.ac.suspend();else this.ac.resume();}}
  // per-frame player audio
  engine(st){if(!this.ac)return;const t=this.ac.currentTime,k=.08;const on=st.on?1:0;
@@ -29,8 +29,8 @@ export class Sound{
   const L=st.lock;this.lock.g.gain.setTargetAtTime(on&&L?.035:0,t,.03);if(L){this.lock.o.frequency.setTargetAtTime(L===2?1650:780,t,.02);this.lock.am.gain.setTargetAtTime(L===2?0:140,t,.02);}
   const w=st.warn&&(Math.floor(this.ac.currentTime*(st.warn>1?9:4))%2===0);this.warn.g.gain.setTargetAtTime(on&&w?.045:0,t,.01);}
  off(){if(!this.ac)return;const t=this.ac.currentTime;for(const g of[this.prop.g,this.jet.g,this.whine.g,this.burner.g,this.wind.g,this.rumble.g,this.lock.g,this.warn.g])g.gain.setTargetAtTime(0,t,.05);}
- _n(dur,f0,f1,q,vol,type='lowpass',buf){const ac=this.ac,t=ac.currentTime,s=ac.createBufferSource();s.buffer=buf||this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random());s.stop(t+dur+.05);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.02);}
+ _n(dur,f0,f1,q,vol,type='lowpass',buf){hiss(this.ac,buf||this.noise,this.out,this.ac.currentTime,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  play(k,a=1){if(!this.ac||!this.on)return;try{switch(k){
   case'mg':this._n(.06,3200,500,.8,.09,'bandpass');this._o('square',140,60,.05,.04);break;
   case'cannon':this._n(.09,2400,200,.7,.16,'bandpass');this._o('sine',120,40,.1,.14);break;

@@ -19,7 +19,7 @@
 //   onDown(e)         canvas mousedown, before the button is recorded; return true to swallow it
 //   look(e)           mousemove counts towards dx/dy when true (default: while locked)
 //   onWheel(e)        replaces the default wheel accumulation
-//   menu()            block the context menu while true (default: always)
+//   menu(e)           block the context menu while true (default: always); e is the contextmenu event
 //   onKey(e,first)    after keydown updated keys/edge (keydowns in <input> fields are ignored); onKeyUp(e) after keyup
 //  Window blur releases every key and mouse button.
 //
@@ -36,7 +36,7 @@ export function controls(canvas,o={}){
  if(ov)ov.onclick=()=>I.lock();
  canvas.addEventListener('mousedown',e=>{if(!I.locked&&(o.clickLock||can)()){I.lock();if(!o.clickThrough)return;}if(o.onDown&&o.onDown(e))return;if(e.button===0)mouse.l=mouse.le=true;if(e.button===2)mouse.r=mouse.re=true;});
  addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
- addEventListener('contextmenu',e=>{if(!o.menu||o.menu())e.preventDefault();});
+ addEventListener('contextmenu',e=>{if(!o.menu||o.menu(e))e.preventDefault();});
  addEventListener('mousemove',e=>{if(o.look?o.look(e):I.locked){mouse.dx+=e.movementX;mouse.dy+=e.movementY;}});
  addEventListener('wheel',e=>{if(o.onWheel)o.onWheel(e);else if(can()&&I.locked)mouse.wheel+=Math.sign(e.deltaY);},{passive:true});
  addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];if(first)edge[e.code]=true;keys[e.code]=true;if(o.onKey)o.onKey(e,first);});

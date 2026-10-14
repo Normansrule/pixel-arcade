@@ -13,7 +13,9 @@ import {Sound} from './sound.js';
 import {initGadgets} from './gadgets.js';
 import {planRound,teamTick,think,Brain} from './ai.js';
 import {HUD} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest,userName} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,D2R=Math.PI/180;
 const END_T=5.5,PLANT_T=6,DISARM_T=6,DEFUSE_RUN=45,CAP_T=10,REIN_T=2.6,BAR_T=1.2,HREIN_T=2.2,GRAV=15,DT=1/60,REIN_POOL=10;
@@ -35,7 +37,7 @@ let TX=null,world=null,L=null,fx=null,VM=null,GX=null,hud=null;
 const G={app:'loading',opt:{side:'atk',diff:1,len:1,mode:'secure',bans:1,sens:1,vol:.8,atkOp:'volt',defOp:'bastion',spawn:'street',site:'server',torch:1},
  agents:[],player:null,score:[0,0],round:0,phase:'prep',timer:45,endT:0,time:0,matchT:0,events:[],view:'body',camI:0,bans:{atk:[],def:[]},
  defuser:{state:'none'},cap:0,siteKnown:false,spotT:{atk:{},def:{}},rein:REIN_POOL,feedLog:[],history:[],attract:true,spec:null,mvpLast:null,scanHits:[],stats:{breaches:0}};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_siege_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_siege_opt',G.opt);
 const LEN=[{n:'QUICK',target:3,half:2,prep:30,act:150,limit:18*60},{n:'FULL',target:4,half:3,prep:45,act:180,limit:30*60}];
 G.len=()=>LEN[G.opt.len]||LEN[1];
 function sideOfSquad(s){const half=Math.floor(G.round/G.len().half)%2;let atk=s===0?G.startAtk:!G.startAtk;if(half)atk=!atk;return atk?'atk':'def';}
@@ -62,7 +64,7 @@ function roster(attract){for(const a of G.agents)if(a.rig)scene.remove(a.rig.roo
  for(let s=0;s<2;s++)for(let i=0;i<5;i++){const human=!attract&&s===0&&i===0;G.agents.push(new Agent(id++,human?(user?user.toUpperCase().slice(0,10):'YOU'):names.pop(),s,human));}G.player=G.agents.find(a=>a.human)||null;}
 
 /* ================= match flow ================= */
-function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(G.opt,o);try{localStorage.setItem('pxd_siege_opt',JSON.stringify(G.opt));}catch(e){}snd.init();snd.setVol(G.opt.vol);
+function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(G.opt,o);saveOpt();snd.init();snd.setVol(G.opt.vol);
  G.attract=false;G.diff=DIFF[G.opt.diff];G.startAtk=G.opt.side==='atk';G.score=[0,0];G.round=0;G.matchT=0;G.feedLog=[];G.history=[];G.stats={breaches:0};G.limit=G.len().limit;roster(false);hud.clearFeed();
  ['menu','keys','over','pause'].forEach(id=>$(id).hidden=true);document.body.classList.add('playing');snd.ambience('dusk',true);
  G.bans={atk:[],def:[]};if(G.opt.bans&&!o.skipPick){G.app='ban';hud.showBan();}else{if(G.opt.bans)cpuBans();toPick();}}
@@ -266,20 +268,15 @@ function updateAgent(a,dt){const c=a.ctl;a.blind=Math.max(0,a.blind-dt);a.stunT=
  const d=G.defuser;if(d.state==='dropped'&&side(a)==='atk'&&a.pos.distanceTo(d.pos)<1.2){d.state='carried';d.carrier=a;if(a===G.player)hud.toast('YOU PICKED UP THE DEFUSER');}}
 
 /* ================= player input ================= */
-const keys={},mouse={l:false,r:false,dx:0,dy:0};let locked=false;
-function lock(){if(G.app!=='match')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='match')pause(true);});
-canvas.addEventListener('mousedown',()=>{if(G.app==='match'&&!locked)lock();});
-addEventListener('mousedown',e=>{if(G.app!=='match'||!locked)return;if(e.button===0)mouse.l=true;if(e.button===2)mouse.r=true;const P=G.player;if(!P)return;
+const I=controls(canvas,{canLock:()=>G.app==='match',onLock:(on,was)=>{if(was&&!on&&G.app==='match')pause(true);},
+ onDown:e=>{if(G.app!=='match'||!I.locked)return true;const P=G.player;if(!P)return;
  if(G.view==='drone'&&e.button===0){const d=P.drone;if(d&&d.alive&&!d.jammed){const yaw=d.yaw,p=d.pitch;ping(P,GX.droneEye(d),new V(-Math.sin(yaw)*Math.cos(p),Math.sin(p),-Math.cos(yaw)*Math.cos(p)),'atk');}}
  else if(G.view==='cam'){const c=GX.cams[G.camI];if(e.button===0&&c&&c.dis<=0)ping(P,c.pos,new V(-Math.sin(c.yaw)*Math.cos(c.pitch),Math.sin(c.pitch),-Math.cos(c.yaw)*Math.cos(c.pitch)),'def');if(e.button===2)camNext(1);}
- else if(!P.alive)specNext(e.button===0?1:-1);});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app!=='match'||!locked||!G.player||!G.player.alive||G.view!=='body')return;const P=G.player;const order=[1,2,3,4].filter(s=>s<=2||s===3&&(P.gn>0||P.op.gad==='scan'||GX.list.some(o=>o.alive&&o.owner===P&&o.type==='charge'))||s===4&&P.un>0);let i=order.indexOf(P.cur);i=(i+(e.deltaY>0?1:-1)+order.length)%order.length;switchTo(P,order[i]);},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
+ else if(!P.alive)specNext(e.button===0?1:-1);},
+ onWheel:e=>{if(G.app!=='match'||!I.locked||!G.player||!G.player.alive||G.view!=='body')return;const P=G.player;const order=[1,2,3,4].filter(s=>s<=2||s===3&&(P.gn>0||P.op.gad==='scan'||GX.list.some(o=>o.alive&&o.owner===P&&o.type==='charge'))||s===4&&P.un>0);let i=order.indexOf(P.cur);i=(i+(e.deltaY>0?1:-1)+order.length)%order.length;switchTo(P,order[i]);},
+ onKey,onKeyUp:e=>{if(e.code==='Tab')hud.board(false);if(e.code==='KeyF'&&G.player)G.player.useLock=false;}});
+const {keys,mouse}=I,{lock,unlock}=I;
+function onKey(e,first){if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='match'){if(G.view==='drone'||G.view==='cam'){exitView();return;}pause(true);}else if(G.app==='paused')pause(false);return;}
  if(G.app==='pick'&&e.code==='Enter'){G.confirmPick();return;}
  if(G.app!=='match'||!first)return;const P=G.player;if(!P)return;
@@ -291,19 +288,17 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=
  if(e.code.startsWith('Digit')){const n=+e.code.slice(5);if(n>=1&&n<=4)switchTo(P,n);}
  if(e.code==='KeyR')startReload(P);if(e.code==='KeyV')P.ctl.melee=true;if(e.code==='KeyX')P.ctl.det=true;if(e.code==='Space')P.ctl.jump=true;
  if(e.code==='KeyC'){P.ctl.crouchT=!P.ctl.crouchT;P.ctl.proneT=false;}if(e.code==='KeyZ'){P.ctl.proneT=!P.ctl.proneT;P.ctl.crouchT=false;}
- if(e.code==='KeyT'){G.opt.torch=G.opt.torch?0:1;snd.reload('draw');}if(e.code==='KeyF')P.useLock=false;});
-addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab')hud.board(false);if(e.code==='KeyF'&&G.player)G.player.useLock=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+ if(e.code==='KeyT'){G.opt.torch=G.opt.torch?0:1;snd.reload('draw');}if(e.code==='KeyF')P.useLock=false;}
 function readPlayer(dt){const P=G.player,c=P.ctl;const sens=.0021*G.opt.sens*(P.ads>.5?(P.gun()&&P.gun().def.scope?.42:.7):1);
  const f=(keys.KeyW?1:0)-(keys.KeyS?1:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0);
- if(G.view==='drone'){const d=P.drone;c.mx=c.mz=0;c.fire=false;c.use=false;if(d&&d.alive){if(locked){d.yaw-=mouse.dx*sens;d.pitch=cl(d.pitch-mouse.dy*sens,-.9,.7);}d.ctl.mx=s;d.ctl.mz=f;d.ctl.jump=!!keys.Space;d.ctl.world=false;if(G.forceCtl&&G.forceCtl.drone)Object.assign(d.ctl,G.forceCtl.drone);snd.drone(Math.min(1,(d.speed||0)/4));}else exitView();mouse.dx=mouse.dy=0;return;}
- if(G.view==='cam'){const cm=GX.cams[G.camI];c.mx=c.mz=0;c.fire=false;c.use=false;if(cm&&locked){cm.yaw=cl(cm.yaw-mouse.dx*sens*.7,cm.yaw0-1.1,cm.yaw0+1.1);cm.pitch=cl(cm.pitch-mouse.dy*sens*.7,cm.pitch0-.6,cm.pitch0+.5);}mouse.dx=mouse.dy=0;return;}
+ if(G.view==='drone'){const d=P.drone;c.mx=c.mz=0;c.fire=false;c.use=false;if(d&&d.alive){if(I.locked){d.yaw-=mouse.dx*sens;d.pitch=cl(d.pitch-mouse.dy*sens,-.9,.7);}d.ctl.mx=s;d.ctl.mz=f;d.ctl.jump=!!keys.Space;d.ctl.world=false;if(G.forceCtl&&G.forceCtl.drone)Object.assign(d.ctl,G.forceCtl.drone);snd.drone(Math.min(1,(d.speed||0)/4));}else exitView();mouse.dx=mouse.dy=0;return;}
+ if(G.view==='cam'){const cm=GX.cams[G.camI];c.mx=c.mz=0;c.fire=false;c.use=false;if(cm&&I.locked){cm.yaw=cl(cm.yaw-mouse.dx*sens*.7,cm.yaw0-1.1,cm.yaw0+1.1);cm.pitch=cl(cm.pitch-mouse.dy*sens*.7,cm.pitch0-.6,cm.pitch0+.5);}mouse.dx=mouse.dy=0;return;}
  if(P.drone&&P.drone.alive){P.drone.ctl.mx=P.drone.ctl.mz=0;P.drone.ctl.jump=false;}
- if(locked&&P.alive){P.yaw-=mouse.dx*sens;P.pitch=cl(P.pitch-mouse.dy*sens,-1.5,1.5);}VM&&(VM.mdx=mouse.dx,VM.mdy=mouse.dy);
+ if(I.locked&&P.alive){P.yaw-=mouse.dx*sens;P.pitch=cl(P.pitch-mouse.dy*sens,-1.5,1.5);}VM&&(VM.mdx=mouse.dx,VM.mdy=mouse.dy);
  const sy=Math.sin(P.yaw),cy=Math.cos(P.yaw);c.mx=-sy*f+cy*s;c.mz=-cy*f-sy*s;c.sprint=!!(keys.ShiftLeft||keys.ShiftRight);c.sprintOk=f>0;
- c.crouch=!!(keys.ControlLeft||keys.ControlRight)||!!c.crouchT;c.prone=!!c.proneT;c.lean=(keys.KeyE?1:0)-(keys.KeyQ?1:0);c.use=!!keys.KeyF&&!P.useLock;c.ads=mouse.r&&locked;c.fire=mouse.l&&locked;
+ c.crouch=!!(keys.ControlLeft||keys.ControlRight)||!!c.crouchT;c.prone=!!c.proneT;c.lean=(keys.KeyE?1:0)-(keys.KeyQ?1:0);c.use=!!keys.KeyF&&!P.useLock;c.ads=mouse.r&&I.locked;c.fire=mouse.l&&I.locked;
  const g=P.gun();if(g&&g.def.semi&&c.fire){if(mouse.semi)c.fire=false;else mouse.semi=true;}if(!mouse.l)mouse.semi=false;c.slot=null;c.reload=false;
- const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.18?v:0;const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
+ const gp=gamepad();if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.18);const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
   if(lx||ly){c.mx=-sy*(-ly)+cy*lx;c.mz=-cy*(-ly)-sy*lx;c.sprintOk=ly<-.5;}P.yaw-=rx*dt*2.6*G.opt.sens;P.pitch=cl(P.pitch-ry*dt*2,-1.5,1.5);if(bt[7]&&bt[7].value>.4)c.fire=true;if(bt[6]&&bt[6].value>.4)c.ads=true;if(bt[0]&&bt[0].pressed)c.jump=true;if(bt[1]&&bt[1].pressed)c.crouch=true;if(bt[2]&&bt[2].pressed)c.use=true;if(bt[10]&&bt[10].pressed)c.sprint=true;
   const pr=G.padPrev||{};if(bt[3]&&bt[3].pressed&&!pr.y)switchTo(P,P.cur===1?2:1);if(bt[4]&&bt[4].pressed&&!pr.lb)c.lean=-1;if(bt[5]&&bt[5].pressed)c.lean=1;if(bt[11]&&bt[11].pressed&&!pr.rs)c.melee=true;if(bt[9]&&bt[9].pressed&&!pr.st)pause(true);
   G.padPrev={y:bt[3]&&bt[3].pressed,lb:bt[4]&&bt[4].pressed,rs:bt[11]&&bt[11].pressed,st:bt[9]&&bt[9].pressed};}
@@ -410,13 +405,11 @@ function boot(){TX=makeTextures();L=new Level();L.dyn=[];world=buildWorld(L,TX,R
  fx=new FX(scene,TX,L);VM=buildViewmodel(TX);vmCam.add(VM.root);GX=initGadgets(C);world.onThunder=()=>{if(G.app==='match'||G.app==='menu')setTimeout(()=>snd.thunder(),400+R()*1500);};
  hud=new HUD(G,C,{SIDE,OPS,ATK_OPS,DEF_OPS,GAD,WPN,THR,SITES,SPAWNS,L});G.hud=hud;
  applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));$('loading').hidden=true;attractMode();}
-const seg=(id,key,num=true)=>{const el=$(id);if(!el)return;const set=v=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',(num?+b.dataset.v:b.dataset.v)===v));};set(G.opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
-seg('o-side','side',false);seg('o-diff','diff');seg('o-len','len');seg('o-mode','mode',false);seg('o-bans','bans');seg('o-sens','sens');seg('o-vol','vol');
-$('o-vol').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>snd.setVol(G.opt.vol)));
+const seg=pickers(G.opt);
+seg('o-side','side',false);seg('o-diff','diff');seg('o-len','len');seg('o-mode','mode',false);seg('o-bans','bans');seg('o-sens','sens');seg('o-vol','vol',true,v=>snd.setVol(v));
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Fortress Breach\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\nMode: ${a.mode||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('fortbreach',a.pts||0,body);};
+postButton($('post'),'fortbreach',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Fortress Breach\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0}\nMode: ${a.mode||''} · CPU ${a.diff||''}`];});
 let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{if(world){step(dt);render();}}catch(e){console.error(e);}if(!window.__manual)requestAnimationFrame(loop);}
 setTimeout(()=>{boot();requestAnimationFrame(loop);},30);
 

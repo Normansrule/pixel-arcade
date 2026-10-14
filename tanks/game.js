@@ -10,7 +10,9 @@ import {DIFF,initBot,botStep,canSee} from './ai.js';
 import {Sound} from './sound.js';
 import {HUD} from './hud.js';
 import {crateTex} from './tex.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),R=(a=1)=>Math.random()*a;
 const DT=1/60;
@@ -20,10 +22,8 @@ const DROPK=[{k:'repair',n:'REPAIR KIT',c:0x2fbf5a,w:.35},{k:'dmg',n:'DOUBLE DAM
 
 /* ================= persistence ================= */
 const GK='pxd_ironclad';
-function loadGarage(){let g=null;try{g=JSON.parse(localStorage.getItem(GK));}catch(e){}return Object.assign({credits:600,own:{bulwark:1,talon:1},lv:{},hull:'bulwark',turret:'talon',paint:'olive'},g||{});}
-const garage=loadGarage();function saveGarage(){try{localStorage.setItem(GK,JSON.stringify(garage));}catch(e){}}
-const opt={mode:'tdm',map:'desert',diff:1,time:8,sens:1};try{Object.assign(opt,JSON.parse(localStorage.getItem(GK+'_opt'))||{});}catch(e){}
-function saveOpt(){try{localStorage.setItem(GK+'_opt',JSON.stringify(opt));}catch(e){}}
+const garage={credits:600,own:{bulwark:1,talon:1},lv:{},hull:'bulwark',turret:'talon',paint:'olive'},saveGarage=stored(GK,garage);
+const opt={mode:'tdm',map:'desert',diff:1,time:8,sens:1},saveOpt=stored(GK+'_opt',opt);
 
 /* ================= renderer + scene ================= */
 const canvas=$('c');const RR=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});RR.setPixelRatio(Math.min(devicePixelRatio,1.5));
@@ -233,30 +233,24 @@ function feed(html,team,me,raw){hud.feed(html,team,me,raw);}
 function msgFor(txt,col){hud.msg(txt,col);}
 
 /* ================= input ================= */
-const keys={},edge={};let mouseL=false,locked=false,camYaw=0,camPitch=.14,camDist=11,zoom=false,zoomLv=1,tabOn=false;const ZOOMS=[2.5,5,9];
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
- if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&app!=='menu')e.preventDefault();
+let camYaw=0,camPitch=.14,camDist=11,zoom=false,zoomLv=1,tabOn=false;const ZOOMS=[2.5,5,9];
+const I=controls(canvas,{canLock:()=>app==='match',clickThrough:true,menu:()=>app==='match'||app==='paused',onLock:(on,was)=>{if(was&&!on&&app==='match')pause(true);},
+ onDown:e=>{if(app==='paused'){pause(false);return true;}if(app!=='match')return true;if(e.button===2){toggleZoom();return true;}},
+ look:e=>{if(app!=='match')return false;if(!I.locked&&!(e.buttons&1))return false;const z=zoom?ZOOMS[zoomLv]:1,s=[.0012,.0021,.0034][opt.sens]/Math.pow(z,.85);camYaw-=e.movementX*s;camPitch=cl(camPitch+e.movementY*s,-.55,.62);return false;},
+ onWheel:e=>{if(app!=='match')return;if(zoom){zoomLv=cl(zoomLv+(e.deltaY<0?1:-1),-1,2);if(zoomLv<0){zoom=false;zoomLv=0;camDist=7;}hud.zoom(zoom,ZOOMS[zoomLv]);}else{camDist=cl(camDist+e.deltaY*.01,6,22);if(e.deltaY<0&&camDist<=6.01){zoom=true;zoomLv=0;hud.zoom(true,ZOOMS[0]);}}},
+ onKey:e=>{if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&app!=='menu')e.preventDefault();
  if(e.code==='Escape'){if(app==='match')pause(true);else if(app==='paused')pause(false);}
  if(app==='match'&&(e.code==='ShiftLeft'||e.code==='ShiftRight')&&!e.repeat)toggleZoom();
- if(app==='match'&&e.code==='KeyM'){snd.on=!snd.on;msgFor(snd.on?'SOUND ON':'SOUND OFF','#fff');}});
-addEventListener('keyup',e=>{keys[e.code]=false;});
+ if(app==='match'&&e.code==='KeyM'){snd.on=!snd.on;msgFor(snd.on?'SOUND ON':'SOUND OFF','#fff');}}});
+const {keys,edge,mouse}=I,{lock,unlock}=I;
 for(const ev of['pointerdown','keydown'])addEventListener(ev,()=>{snd.init();snd.resume();},{capture:true});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouseL=false;});
-canvas.addEventListener('mousedown',e=>{if(app==='paused'){pause(false);return;}if(app!=='match')return;if(!locked)lock();if(e.button===0)mouseL=true;if(e.button===2)toggleZoom();});
-addEventListener('mouseup',e=>{if(e.button===0)mouseL=false;});
-addEventListener('contextmenu',e=>{if(app==='match'||app==='paused')e.preventDefault();});
-addEventListener('mousemove',e=>{if(app!=='match')return;if(!locked&&!(e.buttons&1))return;const z=zoom?ZOOMS[zoomLv]:1,s=[.0012,.0021,.0034][opt.sens]/Math.pow(z,.85);camYaw-=e.movementX*s;camPitch=cl(camPitch+e.movementY*s,-.55,.62);});
-addEventListener('wheel',e=>{if(app!=='match')return;if(zoom){zoomLv=cl(zoomLv+(e.deltaY<0?1:-1),-1,2);if(zoomLv<0){zoom=false;zoomLv=0;camDist=7;}hud.zoom(zoom,ZOOMS[zoomLv]);}else{camDist=cl(camDist+e.deltaY*.01,6,22);if(e.deltaY<0&&camDist<=6.01){zoom=true;zoomLv=0;hud.zoom(true,ZOOMS[0]);}}},{passive:true});
 function toggleZoom(){if(!G.player||!G.player.alive)return;zoom=!zoom;if(zoom)zoomLv=Math.max(0,Math.min(zoomLv,2));hud.zoom(zoom,ZOOMS[zoomLv]);snd.play('click');}
-function lock(){if(app!=='match')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&app==='match')pause(true);});
 function pause(on){if(on&&app==='match'){app='paused';$('pause').hidden=false;document.body.classList.remove('playing');snd.mute();unlock();}else if(!on&&app==='paused'){app='match';$('pause').hidden=true;document.body.classList.add('playing');lock();}}
 const padPrev={};
 function readInput(dt){const P=G.player,c=P.ctrl;const k=n=>n.some(x=>keys[x]);
- let thr=(k(['KeyW','ArrowUp'])?1:0)-(k(['KeyS','ArrowDown'])?1:0),steer=(k(['KeyA','ArrowLeft'])?1:0)-(k(['KeyD','ArrowRight'])?1:0);let fire=mouseL||keys.Space;
- const gp=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean)[0]:null;
- if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.15?v:0;if(dz(ax[1]||0))thr=-ax[1];if(dz(ax[0]||0))steer=-ax[0];const rx=dz(ax[2]||0),ry=dz(ax[3]||0);const z=zoom?ZOOMS[zoomLv]:1;camYaw-=rx*dt*2.4/z;camPitch=cl(camPitch+ry*dt*1.6/z,-.55,.62);
+ let thr=(k(['KeyW','ArrowUp'])?1:0)-(k(['KeyS','ArrowDown'])?1:0),steer=(k(['KeyA','ArrowLeft'])?1:0)-(k(['KeyD','ArrowRight'])?1:0);let fire=mouse.l||keys.Space;
+ const gp=gamepad();
+ if(gp){const ax=gp.axes,bt=gp.buttons,dz=deadzone;if(dz(ax[1]||0))thr=-ax[1];if(dz(ax[0]||0))steer=-ax[0];const rx=dz(ax[2]||0),ry=dz(ax[3]||0);const z=zoom?ZOOMS[zoomLv]:1;camYaw-=rx*dt*2.4/z;camPitch=cl(camPitch+ry*dt*1.6/z,-.55,.62);
   if((bt[7]?.value||0)>.3)fire=true;const lt=(bt[6]?.value||0)>.4;if(lt!==!!padPrev.lt){if(lt!==zoom)toggleZoom();}padPrev.lt=lt;if(bt[5]?.pressed&&!padPrev.rb&&zoom){zoomLv=Math.min(2,zoomLv+1);hud.zoom(true,ZOOMS[zoomLv]);}if(bt[4]?.pressed&&!padPrev.lb&&zoom){zoomLv=Math.max(0,zoomLv-1);hud.zoom(true,ZOOMS[zoomLv]);}
   if(bt[9]?.pressed&&!padPrev.st)pause(true);tabOn=!!bt[8]?.pressed;padPrev.rb=bt[5]?.pressed;padPrev.lb=bt[4]?.pressed;padPrev.st=bt[9]?.pressed;}
  c.thr=thr;c.steer=steer;c.fire=fire&&phase==='play';}
@@ -281,7 +275,7 @@ function fixed(dt){G.time+=dt;const P=G.player;
  if((roleT-=dt)<=0){roleT=2.5;assignRoles();}
  if((navT-=dt)<=0&&G.W.navDirty){navT=1;G.W.navDirty=false;navGrid(G.W,G.nav);}}
 function step(dt){dt=Math.min(dt,.1);
- if(app==='match'){readInput(dt);}for(const k in edge)delete edge[k];
+ if(app==='match'){readInput(dt);}I.flush();
  if(app==='paused'){visuals(0);return;}
  if(app==='over'){overT+=dt;visuals(dt);return;}
  if(app==='menu'){G.time+=dt;const t=G.player;if(t){t.ctrl.thr=t.ctrl.steer=0;t.ctrl.fire=false;t.ctrl.aim.set(t.p.x+Math.sin(G.time*.4)*30,t.p.y+3,t.p.z+Math.cos(G.time*.4)*30);t.step(dt,G.W,G.tanks,G);}visuals(dt);return;}
@@ -317,7 +311,7 @@ function visuals(dt){const time=G.time;G.W.update(dt,cam);
   const h=Math.abs(c.prog);c.cloth.position.y=1.2+h*5;waveCloth(c.cg,time+c.x,1);c.fill.material.opacity=.06+(c.cnt[0]&&c.cnt[1]?.08+Math.sin(time*8)*.05:0);}
  const P=G.player;fx.update(dt,cam,innerHeight*Math.min(devicePixelRatio,1.5)/(2*Math.tan(cam.fov*Math.PI/360)));
  cameras(dt);
- if(app==='match'||app==='paused'){const pr=P.alive?ball.predict(P):null;hud.update(dt,{phase,cdT,clock,goal,zoom,zoomLv:ZOOMS[zoomLv],pred:pr,tab:tabOn||keys.Tab,camYaw,cam,locked});}
+ if(app==='match'||app==='paused'){const pr=P.alive?ball.predict(P):null;hud.update(dt,{phase,cdT,clock,goal,zoom,zoomLv:ZOOMS[zoomLv],pred:pr,tab:tabOn||keys.Tab,camYaw,cam,locked:I.locked});}
  if(snd.ac&&app==='match'&&P.alive)snd.engine(P.v,P.H.speed,P.ctrl.thr||P.ctrl.steer,P.travV||0,true);else if(snd.ac)snd.mute();}
 
 /* ================= camera ================= */
@@ -373,13 +367,12 @@ $('garage').addEventListener('click',e=>{const b=e.target.closest('button');if(!
  renderGarage();});
 
 /* ================= menu wiring ================= */
-const seg=(id,key,num,cb)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',(num?+b.dataset.v:b.dataset.v)===v));saveOpt();cb&&cb(v);};set(opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>{snd.init();snd.play('click');set(num?+b.dataset.v:b.dataset.v);});};
+const pick=pickers(opt,saveOpt),seg=(id,key,num,cb)=>pick(id,key,num,v=>{snd.init();snd.play('click');cb&&cb(v);});
 seg('o-mode','mode',false);seg('o-diff','diff',true);seg('o-time','time',true);seg('o-sens','sens',true);
 seg('o-map','map',false,v=>{if(app==='menu'&&G.W&&G.W.id!==v){loadMap(v);toMenu();}});
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Ironclad\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0} · Damage: ${a.dmg||0}\nMode: ${a.mode||''} · Map: ${a.map||''} · CPU ${a.diff||''}\nTank: ${a.tank||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('ironclad',a.pts||0,body);};
+postButton($('post'),'ironclad',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Ironclad\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nKills: ${a.k||0} · Deaths: ${a.d||0} · Damage: ${a.dmg||0}\nMode: ${a.mode||''} · Map: ${a.map||''} · CPU ${a.diff||''}\nTank: ${a.tank||''}`];});
 
 /* ================= loop ================= */
 loadMap(opt.map);toMenu();
@@ -391,5 +384,5 @@ window.IRONCLAD={get state(){return app==='match'?phase:app;},get app(){return a
  get world(){return G.W;},G,garage,saveGarage,renderGarage,get result(){return result;},get lastAward(){return lastAward;},
  skipCountdown(){cdT=0;},setScore(team,n){G.score[team]=n;},kill(t,by){G.damage(t,by||null,t.hp+1,{p:t.p.clone().setY(t.p.y+1),face:'side',part:'hull',kind:'test'});},
  aim(x,y,z){if(x==null){G.aimOverride=null;return;}camYaw=Math.atan2(x-G.player.p.x,z-G.player.p.z);G.aimOverride=(G.aimOverride||new V3()).set(x,y,z);G.player.ctrl.aim.set(x,y,z);},setCam(yaw,pitch,dist){camYaw=yaw;if(pitch!=null)camPitch=pitch;if(dist!=null)camDist=dist;},
- setZoom(on,lv=1){zoom=on;zoomLv=lv;hud.zoom(on,ZOOMS[lv]);},keys,setMouse(on){mouseL=on;},setQuality:applyQuality,spawnDrop,get drops(){return G.drops;},get flags(){return G.flags;},get cps(){return G.cps;},
+ setZoom(on,lv=1){zoom=on;zoomLv=lv;hud.zoom(on,ZOOMS[lv]);},keys,setMouse(on){mouse.l=on;},setQuality:applyQuality,spawnDrop,get drops(){return G.drops;},get flags(){return G.flags;},get cps(){return G.cps;},
  freeze(team,on=true){G.tanks.forEach(t=>{if(t.team===team&&!t.human)t.frozen=on;});},scene,cam,RR,fx,ball,MODES,DIFF};

@@ -1,6 +1,7 @@
 // LONG SHOT — HUD: DOM panels + a 2D overlay canvas for the scope (first-focal-plane mil-dot reticle, BDC chevron,
 // rangefinder, breath arc, lens parallax), spotter binoculars (trait read-out, tagging), world markers and hit markers.
 import * as THREE from '../vendor/three.module.min.js';
+import {toast} from '../js/kit3d/ui.js';
 const $=id=>document.getElementById(id);
 const _v=new THREE.Vector3();
 export const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
@@ -10,7 +11,7 @@ export class HUD{
  set(id,v){if(this.c[id]!==v){this.c[id]=v;$(id).textContent=v;}}
  html(id,v){if(this.c['h'+id]!==v){this.c['h'+id]=v;$(id).innerHTML=v;}}
  banner(t,s,col='#fff',dur=2.4){$('bt').textContent=t;$('bt').style.color=col;$('bs').textContent=s||'';$('bs').style.display=s?'':'none';$('banner').classList.add('on');this.banT=dur;}
- toast(h,cls='',dur=3.2){const d=document.createElement('div');d.innerHTML=h;if(cls)d.className=cls;$('toast').prepend(d);setTimeout(()=>d.remove(),dur*1000);while($('toast').children.length>4)$('toast').lastChild.remove();}
+ toast(h,cls='',dur=3.2){const d=toast($('toast'),h,dur*1000,4);if(cls)d.className=cls;}
  clearToasts(){$('toast').innerHTML='';$('banner').classList.remove('on');this.banT=0;}
  objectives(list){this.html('objs',list.map(o=>o.h?`<h5>${o.h}</h5>`:`<div class="${o.state}${o.pri?' pri':''}"><i></i><span>${o.n}</span></div>`).join(''));}
  update(G,dt){if(this.banT>0){this.banT-=dt;if(this.banT<=0)$('banner').classList.remove('on');}

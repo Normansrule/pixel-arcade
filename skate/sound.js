@@ -1,17 +1,17 @@
 // SKATE CITY — synthesized audio (no files): urethane roll, metal grind scrape, pops, landings, pickups and a lo-fi beat.
+import {boot,master,gain,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.music=true;this.nextBeat=0;this.step=0;}
- init(){if(this.ac)return;try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);
-  this.out=ac.createGain();this.out.gain.value=.75;this.out.connect(comp);this.mus=ac.createGain();this.mus.gain.value=.22;this.mus.connect(this.out);
+ init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,.75,-24,12);this.mus=gain(ac,.22,this.out);
   const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<n;i++){const w=Math.random()*2-1;last=(last+.02*w)/1.02;d[i]=w*.6+last*3;}this.noise=b;
-  const loop=(type,f,q)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(this.out);s.start();return{fl,g};};
+  const loop=(type,f,q)=>bed(ac,b,type,f,q,this.out);
   this.roll=loop('bandpass',500,.7);this.rumble=loop('lowpass',120,.5);this.grind=loop('bandpass',3200,5);
-  const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=1900;const og=ac.createGain();og.gain.value=0;const of=ac.createBiquadFilter();of.type='highpass';of.frequency.value=1500;o.connect(of);of.connect(og);og.connect(this.out);o.start();this.squeal={o,g:og};
-  this.wind=loop('bandpass',900,.4);}catch(e){this.ac=null;}}
+  const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=1900;const og=gain(ac,0,this.out);const of=ac.createBiquadFilter();of.type='highpass';of.frequency.value=1500;o.connect(of);of.connect(og);o.start();this.squeal={o,g:og};
+  this.wind=loop('bandpass',900,.4);});}
  update(dt,sk){if(!this.ac)return;const t=this.ac.currentTime,sp=sk?Math.min(1,sk.speed/15):0,mode=sk?sk.mode:'';const gr=mode==='ground',gd=mode==='grind';
   const T=(p,v,k=.06)=>p.setTargetAtTime(this.on?v:0,t,k);
-  T(this.roll.g.gain,gr?.05+sp*.16:0);this.roll.fl.frequency.setTargetAtTime(300+sp*900,t,.08);T(this.rumble.g.gain,gr?.08+sp*.25:0);
-  T(this.grind.g.gain,gd?.12+sp*.1:0,.03);this.grind.fl.frequency.setTargetAtTime(2600+Math.random()*900,t,.02);T(this.squeal.g.gain,gd?.012:0,.03);this.squeal.o.frequency.setTargetAtTime(1700+Math.random()*500,t,.02);
+  T(this.roll.g.gain,gr?.05+sp*.16:0);this.roll.f.frequency.setTargetAtTime(300+sp*900,t,.08);T(this.rumble.g.gain,gr?.08+sp*.25:0);
+  T(this.grind.g.gain,gd?.12+sp*.1:0,.03);this.grind.f.frequency.setTargetAtTime(2600+Math.random()*900,t,.02);T(this.squeal.g.gain,gd?.012:0,.03);this.squeal.o.frequency.setTargetAtTime(1700+Math.random()*500,t,.02);
   T(this.wind.g.gain,mode==='air'?.02+sp*.08:0,.15);
   this.beat();}
  // lo-fi boom-bap loop scheduled ahead of time
@@ -26,8 +26,8 @@ export class Sound{
  snare(t){this._n(.18,2200,900,.8,.3,'bandpass',t,this.mus);this.tone(t,'triangle',190,.1,.12,this.mus);}
  hat(t,v){this._n(.04,9000,7000,1,v,'highpass',t,this.mus);}
  tone(t,type,f,dur,vol,dest,att=.005){const ac=this.ac,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+att);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(dest||this.out);o.start(t);o.stop(t+dur+.05);}
- _n(dur,f0,f1,q,vol,type='lowpass',t,dest){const ac=this.ac;t=t??ac.currentTime;const s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(dest||this.out);s.start(t,Math.random());s.stop(t+dur);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.02);}
+ _n(dur,f0,f1,q,vol,type='lowpass',t,dest){hiss(this.ac,this.noise,dest||this.out,t??this.ac.currentTime,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  play(k,a=1){if(!this.ac||!this.on)return;try{const ac=this.ac;switch(k){
   case'pop':this._n(.05,3500,1500,1.2,.35,'bandpass');this._o('sine',140,60,.12,.25);break;
   case'land':this._o('sine',110,45,.18,Math.min(.5,.15+a*.03));this._n(.12,1200,200,.8,Math.min(.4,.1+a*.03));break;

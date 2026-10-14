@@ -12,7 +12,9 @@ import {makeTextures} from './tex.js';
 import {makeMaterials,buildLevel} from './build.js';
 import {Particles,SpeedLines} from './fx.js';
 import {Sound} from './sound.js';
-import {addRound,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,fmtN=n=>Math.round(n).toLocaleString('en-US');
 const RUN=120,DT=1/120,ID='skatecity',SAVE='pxd_skatecity';
@@ -106,7 +108,7 @@ function ev(type,sk,a,b){const o=sk.owner,me=o===player&&app==='run',c=o&&o.comb
 const near=sk=>!cam||sk.p.distanceToSquared(cam.position)<900;
 let lastTrickT=0;function trickName(n,sp){const el=$('tname');el.textContent=n;el.className='';void el.offsetWidth;el.className='on'+(sp?' sp':'');}
 let comboShow=0,comboKind='',comboPts=0;function comboFlash(k,pts){comboKind=k;comboPts=pts;comboShow=k==='bail'?1.4:1.6;}
-function pop(text,cls,sub){const d=document.createElement('div');d.className='pop '+(cls||'');d.innerHTML=text+(sub?`<small>${sub}</small>`:'');$('pops').appendChild(d);setTimeout(()=>d.remove(),1750);while($('pops').children.length>4)$('pops').firstChild.remove();}
+function pop(text,cls,sub){toast($('pops'),text+(sub?`<small>${sub}</small>`:''),1750,4,false).className='pop '+(cls||'');}
 
 /* ================= goals ================= */
 function checkGoals(){if(!run)return;const g=L.goals,S=save.goals[L.id]||(save.goals[L.id]={});const test={hs:run.score>=g.score[0],pro:run.score>=g.score[1],sick:run.score>=g.score[2],skate:run.letters.every(x=>x),tape:run.tape,gaps:g.gaps.every(n=>run.gaps.has(n)),combo:run.best>=g.combo};
@@ -116,8 +118,8 @@ function pickups(){if(!run||run.phase==='intro')return;const sk=player.sk;if(sk.
  const t=lvl.tape;if(!t.got&&c.distanceTo(t.pos)<1.35){t.got=true;run.tape=true;pop('SECRET TAPE!','tape');snd.play('tape');sparks.burst(t.pos,90,7,[new THREE.Color(2.4,.6,2.6),new THREE.Color(.6,2,3)],.3,1.1,{grav:3,drag:1});checkGoals();}}
 
 /* ================= input ================= */
-const keys={},edge={};let seqU=-9,seqD=-9;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;const rep=e.repeat;keys[e.code]=true;
+let seqU=-9,seqD=-9;
+const I=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{const rep=e.repeat;
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(app==='run')pause(true);else if(app==='paused')pause(false);else if(!$('skater').hidden)closeEditor();}
  if(rep)return;const t=performance.now()/1000;
@@ -126,23 +128,23 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.c
  if(e.code==='KeyI')queueManual(keys.KeyS||keys.ArrowDown?'nose':'man');
  if(e.code==='KeyC')camMode=(camMode+1)%2;
  if(e.code==='KeyN'){save.music=!save.music;snd.music=save.music;persist();}
- if(e.code==='KeyR'&&app==='run'&&player&&player.sk.mode!=='bail'&&run.phase==='play'){player.combo.fail();player.sk.respawn(player.sk.p.x,player.sk.p.z);}});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='KeyR'&&app==='run'&&player&&player.sk.mode!=='bail'&&run.phase==='play'){player.combo.fail();player.sk.respawn(player.sk.p.x,player.sk.p.z);}}});
+const {keys,edge}=I;
 let manQ=null;function queueManual(k){manQ=k;}
 const any=a=>a.some(k=>keys[k]);let padPrev={};
 function readPlayer(){const c=player.sk.ctl;c.x=(any(['KeyD','ArrowRight'])?1:0)-(any(['KeyA','ArrowLeft'])?1:0);c.y=(any(['KeyW','ArrowUp'])?1:0)-(any(['KeyS','ArrowDown'])?1:0);
  c.ollie=!!keys.Space;c.flip=!!keys.KeyJ;c.grab=!!keys.KeyK;c.grind=!!keys.KeyL;c.revert=any(['KeyQ','KeyE']);c.special=any(['ShiftLeft','ShiftRight']);
- const g=gp();if(g){const ax=g.axes,bt=g.buttons,dz=v=>Math.abs(v)>.25?v:0;const sx=dz(ax[0]||0),sy=dz(ax[1]||0);if(sx)c.x=sx;if(sy)c.y=-sy;
+ const g=gp();if(g){const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.25);const sx=dz(ax[0]||0),sy=dz(ax[1]||0);if(sx)c.x=sx;if(sy)c.y=-sy;
   if(bt[12]?.pressed)c.y=1;if(bt[13]?.pressed)c.y=-1;if(bt[14]?.pressed)c.x=-1;if(bt[15]?.pressed)c.x=1;
   if(bt[0]?.pressed)c.ollie=true;if(bt[2]?.pressed)c.flip=true;if(bt[1]?.pressed)c.grab=true;if(bt[3]?.pressed)c.grind=true;if(bt[4]?.pressed||bt[5]?.pressed)c.revert=true;if((bt[6]?.value||0)>.4)c.special=true;
   const rt=(bt[7]?.value||0)>.4;if(rt&&!padPrev.rt)manQ=c.y<-.4?'nose':'man';padPrev.rt=rt;
   if(bt[9]?.pressed&&!padPrev.st)pause(app==='run');padPrev.st=bt[9]?.pressed;if(bt[0]?.pressed&&!padPrev.a)edge.PadA=true;padPrev.a=bt[0]?.pressed;}
  if(manQ){if(manQ==='nose')c.nose=true;else c.manual=true;manQ=null;}}
-function gp(){const l=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];return l[0]||null;}
+const gp=gamepad;
 
 /* ================= simulation ================= */
 function fixed(dt){for(const o of skaters)o.sk.step(dt);}
-function step(dt){dt=Math.min(dt,.1);time+=dt;const skip=edge.Space||edge.Enter||edge.PadA;for(const k in edge)delete edge[k];
+function step(dt){dt=Math.min(dt,.1);time+=dt;const skip=edge.Space||edge.Enter||edge.PadA;I.flush();
  const g=gp();if(g&&app!=='run'){const a=g.buttons[0]?.pressed,s=g.buttons[9]?.pressed;if(app==='paused'&&s&&!padPrev.st)pause(false);else if((app==='menu'||app==='over')&&a&&!padPrev.a&&$('skater').hidden)start();padPrev.a=a;padPrev.st=s;}
  if(app==='paused'){visuals(0);return;}
  if(app==='run'){const r=run;
@@ -242,9 +244,8 @@ function menuUI(){const o=save.opt;
 function seg(id,key){const el=$(id);el.querySelectorAll('button').forEach(b=>{b.classList.toggle('on',+b.dataset.v===save.opt[key]);b.onclick=()=>{save.opt[key]=+b.dataset.v;persist();menuUI();};});}
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;$('restart').onclick=()=>{app='run';start();};
 $('next').onclick=()=>{if(unlocked(li+1)){save.opt.level=li+1;start();}};
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Skate City\nPoints: ${a.pts||0}\nPark: ${a.level||''}\nBest combo: ${a.best||0}\nGoals: ${a.goals||0}/7${a.vs?'\nRival: '+a.vs+(a.won?' (won)':' (lost)'):''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Skate City\nPoints: ${a.pts||0}\nPark: ${a.level||''}\nBest combo: ${a.best||0}\nGoals: ${a.goals||0}/7${a.vs?'\nRival: '+a.vs+(a.won?' (won)':' (lost)'):''}`];});
 // skater editor
 const STATN={air:'AIR',speed:'SPEED',spin:'SPIN',balance:'BALANCE',flip:'FLIP'};
 function openEditor(){$('skater').hidden=false;$('sName').value=save.look.name;editorUI();}

@@ -1,18 +1,17 @@
 // LONG SHOT — WebAudio synthesis (no audio files): rifle reports with valley echo, suppressed shots, bolt work,
 // impacts, explosions, incoming fire, heartbeat on a held breath, alarm siren, slow-motion filter and ambient beds.
+import {boot,master,gain,noiseBuf,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.amb=[];this.slow=0;}
- init(){if(this.ac)return;try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();this.comp=ac.createDynamicsCompressor();this.comp.threshold.value=-14;this.comp.connect(ac.destination);
-  this.lp=ac.createBiquadFilter();this.lp.type='lowpass';this.lp.frequency.value=20000;this.lp.connect(this.comp);this.out=ac.createGain();this.out.gain.value=.8;this.out.connect(this.lp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
+ init(){if(this.ac)return;boot(this,ac=>{this.lp=ac.createBiquadFilter();this.lp.type='lowpass';this.lp.frequency.value=20000;this.out=master(ac,.8,-14,12,this.lp);
+  const n=ac.sampleRate*2;this.noise=noiseBuf(ac);
   // brown noise for wind / surf beds
   const bb=ac.createBuffer(1,n,ac.sampleRate),bd=bb.getChannelData(0);let l=0;for(let i=0;i<n;i++){l=(l+.02*(Math.random()*2-1))/1.02;bd[i]=l*3.5;}this.brown=bb;
-  this.ambG=ac.createGain();this.ambG.gain.value=.0;this.ambG.connect(this.out);}catch(e){this.ac=null;}}
+  this.ambG=gain(ac,0,this.out);});}
  resume(){if(this.ac&&this.ac.state==='suspended')this.ac.resume();}
  _src(buf,loop){const s=this.ac.createBufferSource();s.buffer=buf;s.loop=!!loop;return s;}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0,dest){const ac=this.ac,t=ac.currentTime+delay,s=this._src(this.noise);const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.004);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(dest||this.out);s.start(t,Math.random());s.stop(t+dur+.05);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.05);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0,dest){hiss(this.ac,this.noise,dest||this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,.004,20);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  play(k,a=1,b=0){if(!this.ac||!this.on)return;try{switch(k){
   case'shot':{this._n(.09,9000,1800,.6,.75*a);this._o('sine',140,38,.45,.7*a);this._n(.5,1600,120,.7,.5*a);for(let i=1;i<=5;i++)this._n(.7,900/i+200,90,.6,.22*a/i,'lowpass',.22*i+Math.random()*.1);break;}
   case'shotS':this._n(.08,2400,300,.8,.5);this._o('sine',120,50,.12,.35);this._n(.05,6000,4000,4,.12,'bandpass',.02);break;

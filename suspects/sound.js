@@ -1,19 +1,19 @@
 // STARSHIP SUSPECTS — synthesized sound (no audio files): ship hum, footsteps, task blips, kills, alarms, meetings.
+import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.alarmG=null;}
- init(){if(this.ac)return;try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=.65;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
+ init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,.65,-24,12);const b=this.noise=noiseBuf(ac);
   // ship hum: two detuned low oscillators + rumbling filtered noise
-  this.hum=ac.createGain();this.hum.gain.value=.05;this.hum.connect(this.out);
-  for(const f of[46,46.7,92.3]){const o=ac.createOscillator();o.type=f>90?'triangle':'sawtooth';o.frequency.value=f;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=180;const g=ac.createGain();g.gain.value=f>90?.25:.5;o.connect(lp);lp.connect(g);g.connect(this.hum);o.start();}
-  const ns=ac.createBufferSource();ns.buffer=b;ns.loop=true;const nf=ac.createBiquadFilter();nf.type='lowpass';nf.frequency.value=260;const ng=ac.createGain();ng.gain.value=.6;ns.connect(nf);nf.connect(ng);ng.connect(this.hum);ns.start();
+  this.hum=gain(ac,.05,this.out);
+  for(const f of[46,46.7,92.3]){const o=ac.createOscillator();o.type=f>90?'triangle':'sawtooth';o.frequency.value=f;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=180;o.connect(lp);lp.connect(gain(ac,f>90?.25:.5,this.hum));o.start();}
+  bed(ac,b,'lowpass',260,null,this.hum,.6);
   // alarm klaxon (gated)
-  this.alarmG=ac.createGain();this.alarmG.gain.value=0;this.alarmG.connect(this.out);const ao=ac.createOscillator();ao.type='square';ao.frequency.value=440;const lfo=ac.createOscillator();lfo.frequency.value=1.4;const lg=ac.createGain();lg.gain.value=180;lfo.connect(lg);lg.connect(ao.frequency);const af=ac.createBiquadFilter();af.type='lowpass';af.frequency.value=1400;ao.connect(af);af.connect(this.alarmG);ao.start();lfo.start();
- }catch(e){this.ac=null;}}
+  this.alarmG=gain(ac,0,this.out);const ao=ac.createOscillator();ao.type='square';ao.frequency.value=440;const lfo=ac.createOscillator();lfo.frequency.value=1.4;lfo.connect(gain(ac,180,ao.frequency));const af=ac.createBiquadFilter();af.type='lowpass';af.frequency.value=1400;ao.connect(af);af.connect(this.alarmG);ao.start();lfo.start();
+ });}
  alarm(on){if(!this.ac)return;this.alarmG.gain.setTargetAtTime(on&&this.on?.05:0,this.ac.currentTime,.1);}
  humLevel(v){if(this.ac)this.hum.gain.setTargetAtTime(v,this.ac.currentTime,.4);}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random());s.stop(t+dur);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.02);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  play(k,a=1){if(!this.ac||!this.on)return;try{switch(k){
   case'step':this._o('sine',180+Math.random()*40,90,.07,.05*a);this._n(.05,1200+Math.random()*300,400,1.2,.02*a,'bandpass');break;
   case'click':this._o('square',1400,1200,.04,.04);break;

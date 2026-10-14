@@ -9,7 +9,9 @@ import {OUTFITS,EMOTES,makeRig,animRig,hold,muzzleWorld,makeBus} from './actor.j
 import {Particles,Tracers,Flashes,Shocks,Debris,makeStorm} from './fx.js';
 import {DIFF,initBot,planDrop,thinkBot} from './ai.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton,toast as line} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 const BOTS=24,MATCH=600,RAD=.38,HT=1.8,STEP=.6,GRAV=26,MATMAX=500;
@@ -40,7 +42,7 @@ const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64
 const rocketGeo=new THREE.CylinderGeometry(.07,.09,.6,8);rocketGeo.rotateX(Math.PI/2);const rocketMat=new THREE.MeshStandardMaterial({color:0x5a6a4a,emissive:0x220800});
 
 /* ================= state ================= */
-let opt={diff:1,build:1};try{Object.assign(opt,JSON.parse(localStorage.getItem('pxd_royale_opt'))||{});}catch(e){}
+let opt={diff:1,build:1};const saveOpt=stored('pxd_royale_opt',opt);
 let app='menu',phase='bus',time=0,mt=0,actors=[],player=null,loot=[],containers=[],rockets=[],diff=DIFF[1],bus=null,busT=0,stormS=null,timeScale=1,endT=0,winner=null,spec=null,result=null,stormTick=0,lastStorm=0,buildOn=true,shake=0,camYaw=0,camPitch=0,menuT=0,lobby=[];
 const tv=new V(),tv2=new V(),tv3=new V(),sup={h:0,p:null};
 
@@ -53,7 +55,7 @@ function resetActor(a){Object.assign(a,{god:false,frozen:false,hp:100,sh:0,alive
  a.vel.set(0,0,0);a.rig.root.visible=false;a.rig.die=0;a.rig.body.rotation.set(0,0,0);a.rig.root.scale.set(1,1,1);hold(a.rig,'none');}
 
 /* ================= match flow ================= */
-function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o);try{localStorage.setItem('pxd_royale_opt',JSON.stringify(opt));}catch(e){}snd.init();
+function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o);saveOpt();snd.init();
  diff=DIFF[opt.diff];buildOn=!!opt.build;clearLobby();
  // world reset
  build.clear();world.reset();world.spawnStructures(build);clearLoot();parts.clear();smoke.clear();tracers.clear();debris.clear();rockets.forEach(r=>scene.remove(r.mesh));rockets=[];
@@ -70,7 +72,7 @@ function start(o={}){if(document.activeElement&&document.activeElement.blur)docu
  time=0;mt=0;phase='bus';timeScale=1;endT=0;winner=null;spec=null;result=null;camYaw=Math.atan2(dir.x,dir.z)+.7;camPitch=-.32;shake=0;player.emote=-1;
  app='match';$('menu').hidden=true;$('keys').hidden=true;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=false;$('fullmap').hidden=true;document.body.classList.add('playing');$('feed').innerHTML='';
  banner('THE SKY BARGE IS AIRBORNE','PRESS SPACE TO JUMP',3);snd.play('storm');hudDirty=true;}
-function toMenu(){app='menu';$('menu').hidden=false;$('keys').hidden=false;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=true;$('fullmap').hidden=true;document.body.classList.remove('playing');if(document.pointerLockElement)document.exitPointerLock();
+function toMenu(){app='menu';$('menu').hidden=false;$('keys').hidden=false;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=true;$('fullmap').hidden=true;document.body.classList.remove('playing');IN.unlock();
  for(const a of actors){a.rig.root.visible=false;}busMesh.visible=false;storm.update(0,0,1,0,false,0);build.showGhost(null);
  if(!build.all.size){world.spawnStructures(build);}setupLobby();snd.set('wind',0);snd.set('storm',0);snd.set('engine',0);}
 function setupLobby(){clearLobby();const m=world.pois[5].mill,base=new V(m.x+12,0,m.z+1);const outs=[OUTFITS[0],OUTFITS[3],OUTFITS[1],OUTFITS[7]],offs=[[0,0],[-1.6,-1.5],[-1.2,1.6],[-3,.2]],em=[-1,0,1,2];
@@ -279,7 +281,7 @@ function finish(byClock){if(byClock){const al=actors.filter(a=>a.alive).sort((a,
  if(winner&&winner.player){phase='won';endT=0;timeScale=.35;player.emote=0;player.emoteT=99;snd.play('win');banner('#1','STORM CHAMPION',4,'#ffcf3f');}
  else{phase='end';endT=0;if(player.alive)snd.play('lose');banner(byClock?'TIME!':'MATCH OVER',winner?winner.name+' WINS':'',2.5,'#ff4d00');}
  for(const a of actors)if(a.bot)a.in.fire=false;}
-function showOver(){app='over';phase='done';document.body.classList.remove('playing');if(document.pointerLockElement)document.exitPointerLock();$('hud').hidden=true;$('fullmap').hidden=true;build.showGhost(null);
+function showOver(){app='over';phase='done';document.body.classList.remove('playing');IN.unlock();$('hud').hidden=true;$('fullmap').hidden=true;build.showGhost(null);
  const me=player,place=me.place||1,won=place===1;const surv=me.alive||won?mt:me.deadMt;
  $('oeye').textContent=won?'MATCH COMPLETE · '+fmt(mt):'MATCH COMPLETE · '+fmt(mt)+' · '+(winner?winner.name+' TOOK #1':'');
  $('oplace').innerHTML=`#${place}<small>/${BOTS+1}</small>`;$('oplace').style.color=won?'#ffcf3f':place<=5?'#ff4d00':'#f2f2f2';
@@ -295,35 +297,30 @@ function award(pts,won,place,kills){lastAward={pts,won,place,kills,diff:diff.n.t
 function best(){return bestScore('stormroyale');}
 
 /* ================= input ================= */
-const keys={},edge={};let mouseL=false,mouseR=false,mouseEdge=false,wheel=0,recoil=0,locked=false,wasLocked=false,sens=.0024,ffwd=false;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
- if(['Space','Tab','KeyM'].includes(e.code)&&app==='match')e.preventDefault();
- if(e.code==='Escape'){if(app==='match'&&!document.pointerLockElement)pause(true);else if(app==='paused')pause(false);}});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouseL=mouseR=false;});
-canvas.addEventListener('mousedown',e=>{if(app!=='match')return;if(!document.pointerLockElement){try{canvas.requestPointerLock();}catch(err){}}if(e.button===0){mouseL=true;mouseEdge=true;}if(e.button===2)mouseR=true;});
-addEventListener('mouseup',e=>{if(e.button===0)mouseL=false;if(e.button===2)mouseR=false;});
-addEventListener('contextmenu',e=>{if(app==='match')e.preventDefault();});
-addEventListener('wheel',e=>{if(app==='match')wheel+=Math.sign(e.deltaY);},{passive:true});
-addEventListener('mousemove',e=>{if(document.pointerLockElement!==canvas||app!=='match')return;const s=sens*(isAds()?.55/(scopeZoom()>2?2.2:1):1);camYaw-=e.movementX*s;camPitch=cl(camPitch-e.movementY*s,-1.45,1.35);});
-document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===canvas;if(locked)wasLocked=true;else if(app==='match'&&wasLocked)pause(true);});
-function pause(on){if(on&&app==='match'){app='paused';$('pause').hidden=false;document.body.classList.remove('playing');mouseL=mouseR=false;}else if(!on&&app==='paused'){app='match';$('pause').hidden=true;document.body.classList.add('playing');try{canvas.requestPointerLock();}catch(e){}}}
+let wheel=0,recoil=0,wasLocked=false,sens=.0024,ffwd=false;
+const IN=controls(canvas,{canLock:()=>app==='match',clickThrough:true,onDown:()=>app!=='match',menu:()=>app==='match',onWheel:e=>{if(app==='match')wheel+=Math.sign(e.deltaY);},
+ look:e=>{if(IN.locked&&app==='match'){const s=sens*(isAds()?.55/(scopeZoom()>2?2.2:1):1);camYaw-=e.movementX*s;camPitch=cl(camPitch-e.movementY*s,-1.45,1.35);}return false;},
+ onLock:on=>{if(on)wasLocked=true;else if(app==='match'&&wasLocked)pause(true);},
+ onKey:e=>{if(['Space','Tab','KeyM'].includes(e.code)&&app==='match')e.preventDefault();
+ if(e.code==='Escape'){if(app==='match'&&!document.pointerLockElement)pause(true);else if(app==='paused')pause(false);}}});
+const {keys,edge,mouse}=IN;
+function pause(on){if(on&&app==='match'){app='paused';$('pause').hidden=false;document.body.classList.remove('playing');mouse.l=mouse.r=false;}else if(!on&&app==='paused'){app='match';$('pause').hidden=true;document.body.classList.add('playing');IN.lock();}}
 function isAds(){const a=player;if(!a||!a.alive||a.state!=='ground')return false;const it=a.sel>0?a.inv[a.sel-1]:null;return a.in.aim&&it&&it.kind==='gun';}
 function scopeZoom(){const it=player&&player.sel>0?player.inv[player.sel-1]:null;return it&&it.kind==='gun'?GUNS[it.t].zoom:1;}
 const padPrev={};
 function readPlayer(dt){const a=player,I=a.in,k=keys;const ed=c=>{const v=edge[c];return v;};
- I.mz=(k.KeyW?1:0)-(k.KeyS?1:0);I.mx=(k.KeyD?1:0)-(k.KeyA?1:0);I.sprint=!!(k.ShiftLeft||k.ShiftRight);I.jump=!!k.Space;I.fire=mouseL;I.firePress=mouseEdge;I.aim=mouseR;
+ I.mz=(k.KeyW?1:0)-(k.KeyS?1:0);I.mx=(k.KeyD?1:0)-(k.KeyA?1:0);I.sprint=!!(k.ShiftLeft||k.ShiftRight);I.jump=!!k.Space;I.fire=mouse.l;I.firePress=mouse.le;I.aim=mouse.r;
  let slotEdge=-1,build_=null,interact_=!!ed('KeyE'),reload_=!!ed('KeyR'),emote_=!!ed('KeyB'),mat_=!!ed('KeyZ'),map_=!!ed('KeyM')||!!ed('Tab');
  for(let i=1;i<=5;i++)if(ed('Digit'+i))slotEdge=i;if(ed('KeyX')||ed('Digit0')||ed('Backquote'))slotEdge=0;
  if(ed('KeyQ'))build_='wall';if(ed('KeyF'))build_='floor';if(ed('KeyC'))build_='ramp';if(ed('KeyV'))build_='roof';
  // gamepad
- const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.16?v:0,pr=padPrev,b=i=>bt[i]&&bt[i].pressed,eb=i=>b(i)&&!pr[i];
+ const gp=gamepad();if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.16),pr=padPrev,b=i=>bt[i]&&bt[i].pressed,eb=i=>b(i)&&!pr[i];
   if(dz(ax[0])||dz(ax[1])){I.mx=dz(ax[0]);I.mz=-dz(ax[1]);}const lx=dz(ax[2]||0),ly=dz(ax[3]||0),s=(isAds()?1.3:2.8)*dt;camYaw-=lx*Math.abs(lx)*s*1.2;camPitch=cl(camPitch-ly*Math.abs(ly)*s,-1.45,1.35);
   if(b(7)){I.fire=true;if(!pr[7])I.firePress=true;}if(b(6))I.aim=true;if(b(0))I.jump=true;if(b(10))I.sprint=true;
   if(eb(2)){if(nearInteract(a))interact_=true;else reload_=true;}if(eb(1)){if(a.bmode)slotEdge=a.sel||0;else build_=a.piece;}if(eb(3))slotEdge=0;if(eb(8))emote_=true;if(eb(12))map_=true;if(eb(9))pause(true);if(eb(11))mat_=true;
   if(eb(5)){if(a.bmode)build_=['wall','floor','ramp','roof'][(['wall','floor','ramp','roof'].indexOf(a.piece)+1)%4];else wheel++;}if(eb(4)){if(a.bmode)build_=['wall','floor','ramp','roof'][(['wall','floor','ramp','roof'].indexOf(a.piece)+3)%4];else wheel--;}
   for(let i=0;i<16;i++)pr[i]=b(i);}
- mouseEdge=false;
+ mouse.le=false;
  if(map_){$('fullmap').hidden=!$('fullmap').hidden;if(!$('fullmap').hidden)drawFull();}
  if(phase==='bus'){if(I.jump&&busT>1)jump(a);I.jump=false;return;}
  if(phase==='spec'||phase==='end'||phase==='won')return;
@@ -339,11 +336,10 @@ function readPlayer(dt){const a=player,I=a.in,k=keys;const ed=c=>{const v=edge[c
 /* ================= main step ================= */
 let hurtFlash=0,hurtDir=0,hurtDirT=0,hudDirty=true;
 function step(dt){dt=Math.min(dt,.05);
- for(const k in edge){}// (edges consumed in readPlayer)
- if(app==='paused'||app==='over'||app==='menu'){for(const k in edge)delete edge[k];if(app==='menu')menuStep(dt);visuals(dt);return;}
+ if(app==='paused'||app==='over'||app==='menu'){IN.flush();if(app==='menu')menuStep(dt);visuals(dt);return;}
  const sdt=dt*timeScale*(phase==='spec'&&(keys.KeyF||ffwd)?4:1);
  const n=sdt>.034?Math.ceil(sdt/.034):1;
- if(app==='match')readPlayer(dt);for(const k in edge)delete edge[k];
+ if(app==='match')readPlayer(dt);IN.flush();
  for(let i=0;i<n;i++)sim(sdt/n);
  if(phase==='won'||phase==='end'){endT+=dt;if(endT>(phase==='won'?4.2:2.6)){timeScale=1;showOver();}}
  visuals(dt);}
@@ -427,7 +423,7 @@ function lerpAng(a,b,t){return a+angDiff(a,b)*t;}
 const mini=$('mini').getContext('2d'),fullC=$('fullmapc'),full=fullC.getContext('2d');let banT=0,toastT=0,hudT=0,dnums=[];
 function banner(t,s,dur,col='#fff'){$('bt').textContent=t;$('bt').style.color=col;$('bs').textContent=s||'';$('banner').classList.add('on');banT=dur;}
 function toast(t,dur=1.6){$('toast').textContent=t;$('toast').classList.add('on');toastT=dur;}
-function feed(t,cls){const d=document.createElement('div');d.textContent=t;if(cls)d.className=cls;$('feed').prepend(d);setTimeout(()=>d.remove(),6000);while($('feed').children.length>6)$('feed').lastChild.remove();}
+function feed(t,cls){const d=line($('feed'),'',6000,6);d.textContent=t;if(cls)d.className=cls;}
 function hitMarker(head,harvest){const h=$('hitm');h.className=head?'on head':harvest?'on harv':'on';clearTimeout(h._t);h._t=setTimeout(()=>h.className='',140);}
 function matPop(t,n){const el=$('m'+t);if(!el)return;el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
 function dmgNum(v,d,head,shieldOnly){const el=document.createElement('div');el.className='dn'+(head?' head':shieldOnly||v.sh>0?' sh':'');el.textContent=d;$('dnums').appendChild(el);dnums.push({el,p:new V(v.pos.x+(Math.random()-.5)*.6,v.pos.y+1.9,v.pos.z+(Math.random()-.5)*.6),t:0});}
@@ -465,7 +461,7 @@ function hud(dt){if(banT>0){banT-=dt;if(banT<=0)$('banner').classList.remove('on
  set('m0',a.mats[0]);set('m1',a.mats[1]);set('m2',a.mats[2]);for(let i=0;i<3;i++)$('m'+i).parentElement.classList.toggle('sel',a.bmat===i&&a.bmode);
  $('buildbar').hidden=!a.bmode||!buildOn;if(a.bmode)for(const p of['wall','floor','ramp','roof'])$('bp-'+p).classList.toggle('on',a.piece===p);set('bmat',['WOOD','STONE','METAL'][a.bmat]);
  if(it&&it.kind==='gun'&&!a.bmode){set('ammo',it.mag);set('ammor','/ '+a.ammo[GUNS[it.t].ammo]+' '+AMMO[GUNS[it.t].ammo].n);$('wname').textContent=RAR[it.r].n+' '+GUNS[it.t].n;$('wname').style.color=RAR[it.r].c;$('ammobox').hidden=false;}else $('ammobox').hidden=true;}
-let specPrev=false;function edgeSpec(){const on=!!(keys.Space||mouseL);const r=on&&!specPrev;specPrev=on;return r;}
+let specPrev=false;function edgeSpec(){const on=!!(keys.Space||mouse.l);const r=on&&!specPrev;specPrev=on;return r;}
 function finishSpectate(){if(phase!=='spec')return;// fast-forward: resolve the rest of the match instantly
  showOver();}
 const hc={};
@@ -498,12 +494,11 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 addEventListener('resize',()=>{if(fxStack)fxStack.setSize(innerWidth,innerHeight);fullC.width=fullC.height=Math.min(700,innerHeight*.86|0);});fullC.width=fullC.height=Math.min(700,innerHeight*.86|0);
 
 /* ================= menu wiring ================= */
-const seg=(id,key)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>{set(+b.dataset.v);snd.init();snd.play('click');});};
-seg('o-diff','diff');seg('o-build','build');
-$('go').onclick=()=>{start();try{canvas.requestPointerLock();}catch(e){}};$('again').onclick=()=>{start();try{canvas.requestPointerLock();}catch(e){}};$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{pause(false);toMenu();};$('specres').onclick=()=>finishSpectate();
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Storm Royale\nPoints: ${a.pts||0}\nPlacement: #${a.place||'?'} of ${BOTS+1}\nEliminations: ${a.kills||0}\nBots: ${a.diff||''} · Mode: ${a.mode||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('stormroyale',a.pts||0,body);};
+const seg=pickers(opt),click=()=>{snd.init();snd.play('click');};
+seg('o-diff','diff',true,click);seg('o-build','build',true,click);
+$('go').onclick=()=>{start();IN.lock();};$('again').onclick=()=>{start();IN.lock();};$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{pause(false);toMenu();};$('specres').onclick=()=>finishSpectate();
+postButton($('post'),'stormroyale',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Storm Royale\nPoints: ${a.pts||0}\nPlacement: #${a.place||'?'} of ${BOTS+1}\nEliminations: ${a.kills||0}\nBots: ${a.diff||''} · Mode: ${a.mode||''}`];});
 
 /* ================= context for the bots ================= */
 const G={world,build,get actors(){return actors;},get loot(){return loot;},get containers(){return containers;},get storm(){const s=stormS;return{state:s.state,phase:s.phase,count:s.count,cur:s.cur,next:s.next||s.cur,left:s.left};},get time(){return time;},get diff(){return diff;},get busT(){return busT;},get buildOn(){return buildOn;},
@@ -526,7 +521,7 @@ window.ROYALE={get state(){return app==='match'?phase:app;},get app(){return app
  aim(yaw,pitch){camYaw=yaw;camPitch=pitch;player.yaw=yaw;player.pitch=pitch;},
  aimAt(x,y,z){for(let i=0;i<4;i++){cameras(0);const c=camera.position;camYaw=Math.atan2(x-c.x,z-c.z);camPitch=Math.atan2(y-c.y,Math.hypot(x-c.x,z-c.z));player.yaw=camYaw;player.pitch=camPitch;}cameras(0);camera.updateMatrixWorld();},setQuality:applyQuality,get spec(){return spec;},finishSpectate,get result(){return lastAward;},parts,
  press(code){edge[code]=true;},
- mouse(l,r=false){if(l&&!mouseL)mouseEdge=true;mouseL=!!l;mouseR=!!r;},
+ mouse(l,r=false){if(l&&!mouse.l)mouse.le=true;mouse.l=!!l;mouse.r=!!r;},
  freezeBots(on=true){for(const a of actors)if(a.bot)a.frozen=on;},castShot,los};
 // frozen bots (tests): skip their brains
 {const orig=thinkBot;}

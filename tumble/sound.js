@@ -1,11 +1,10 @@
 // TUMBLE ROYALE — synthesized sound (no audio files): boings, bonks, crowd, fanfares and a bouncy show tune.
+import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.music=true;this.mT=0;this.step=0;this.timer=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);
-  this.out=ac.createGain();this.out.gain.value=.75;this.out.connect(comp);this.mus=ac.createGain();this.mus.gain.value=.0;this.mus.connect(this.out);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  const cs=ac.createBufferSource();cs.buffer=b;cs.loop=true;const cf=ac.createBiquadFilter();cf.type='bandpass';cf.frequency.value=900;cf.Q.value=.5;this.crowd=ac.createGain();this.crowd.gain.value=.02;cs.connect(cf);cf.connect(this.crowd);this.crowd.connect(this.out);cs.start();
-  this.mT=ac.currentTime+.1;this.timer=setInterval(()=>this.sched(),40);}catch(e){this.ac=null;}}
+ init(){boot(this,ac=>{this.out=master(ac,.75,-24,12);this.mus=gain(ac,0,this.out);
+  const b=this.noise=noiseBuf(ac);this.crowd=bed(ac,b,'bandpass',900,.5,this.out,.02).g;
+  this.mT=ac.currentTime+.1;this.timer=setInterval(()=>this.sched(),40);});}
  setMusic(on,vol=.11){this.music=on;if(this.mus)this.mus.gain.setTargetAtTime(on?vol:0,this.ac.currentTime,.3);}
  hype(v){if(this.crowd)this.crowd.gain.setTargetAtTime(.02+v*.16,this.ac.currentTime,.3);}
  sched(){const ac=this.ac;if(!ac)return;const spb=60/126/2;while(this.mT<ac.currentTime+.2){const s=this.step++%64,t=this.mT;this.mT+=spb;if(!this.music)continue;
@@ -16,8 +15,8 @@ export class Sound{
   if(s%2===1)this._nz(t,.03,7000,.05,this.mus);if(s%8===4)this._nz(t,.12,1800,.18,this.mus);}}
  _t(type,f,t,dur,vol,dest){const ac=this.ac,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(dest||this.out);o.start(t);o.stop(t+dur+.02);}
  _nz(t,dur,f,vol,dest){const ac=this.ac,s=ac.createBufferSource();s.buffer=this.noise;const fl=ac.createBiquadFilter();fl.type='highpass';fl.frequency.value=f;const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(fl);fl.connect(g);g.connect(dest||this.out);s.start(t,Math.random());s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.02);}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random());s.stop(t+dur);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.01);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
  play(k,a=1){if(!this.ac||!this.on)return;try{switch(k){
   case'jump':this._o('sine',260,620,.16,.13);break;
   case'land':this._o('sine',140,60,.12,Math.min(.22,a*.012));break;
