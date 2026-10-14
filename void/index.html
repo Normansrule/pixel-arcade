@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voidwing · Pixel Arcade</title>
+<meta name="description" content="Voidwing: cockpit starfighter combat in full 3D. Fly an interceptor, fighter or bomber in 5v5 squadron dogfights and fleet battles — route power, boost and drift, lock missiles, break enemy capital-ship shields and subsystems.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="void.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="dmg"></div><div id="flash"></div>
+<div id="hud" hidden>
+  <canvas id="hudc"></canvas>
+  <div id="top"><div class="tm t0"><i id="t0n">AURORA</i><b id="t0s">0</b><s id="t0b"></s></div><div class="clk"><b id="clock">8:00</b><span id="modeTag">DOGFIGHT</span></div><div class="tm t1"><i id="t1n">VESPER</i><b id="t1s">0</b><s id="t1b"></s></div></div>
+  <div id="objbox"><span class="lab">OBJECTIVE</span><p id="obj"></p><div class="sc"><b id="score">0</b><i>PTS</i><span id="kd"></span></div></div>
+  <div id="feed"></div>
+  <canvas id="radar" width="180" height="180"></canvas>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="warn"></div>
+  <div id="toasts"></div>
+  <div id="dead" hidden><p>SHIP DESTROYED</p><b id="killer"></b><em id="rsp">RELAUNCH IN 5</em></div>
+  <div id="board" hidden></div>
+  <div id="keyhint">1·2·3 POWER &nbsp; T TARGET &nbsp; E SUBSYSTEM &nbsp; F COUNTERMEASURES &nbsp; V VIEW</div>
+</div>
+<div id="menu">
+  <div class="col">
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · STARFIGHTER COMBAT</p>
+    <h1>VOID<br>WING<em>.</em></h1>
+    <p class="how">Strap into the cockpit. Route power, boost and drift through the rocks, lock your missiles — then tear down a capital ship's shields piece by piece.</p>
+    <label class="lab">MODE</label>
+    <div class="seg big" id="o-mode"><button data-v="dogfight">DOGFIGHT 5V5</button><button data-v="fleet">FLEET BATTLE</button></div>
+    <p class="note" id="m-note"></p>
+    <label class="lab">STARFIGHTER</label>
+    <div id="ships"></div>
+    <div class="opts">
+      <label>SECTOR</label><div class="seg" id="o-map"><button data-v="0">KESSLER DRIFT</button><button data-v="1">EMBERVEIL RIFT</button></div>
+      <label>CPU SKILL</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+      <label>TIME LIMIT</label><div class="seg" id="o-clock"><button data-v="300">5:00</button><button data-v="480">8:00</button><button data-v="720">12:00</button></div>
+      <label>VIEW</label><div class="seg" id="o-view"><button data-v="cockpit">COCKPIT</button><button data-v="chase">THIRD PERSON</button></div>
+      <label>MOUSE</label><div class="seg" id="o-aim"><button data-v="direct">DIRECT</button><button data-v="stick">VIRTUAL STICK</button></div>
+      <label>SENSITIVITY</label><div class="seg" id="o-sens"><button data-v="0.6">LOW</button><button data-v="1">MED</button><button data-v="1.5">HIGH</button></div>
+    </div>
+    <div class="row"><button id="go" class="go">LAUNCH</button><span class="best" id="best"></span></div>
+  </div>
+</div>
+<div class="card" id="keys">
+  <h3>FLIGHT CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Pitch · yaw</td><td><kbd>Mouse</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Throttle · roll</td><td><kbd>W</kbd><kbd>S</kbd> · <kbd>A</kbd><kbd>D</kbd> <span class="pad">D-pad LB RB</span></td></tr>
+    <tr><td>Lasers (hold or spam) · missile</td><td><kbd>LMB</kbd> <kbd>RMB</kbd> <span class="pad">RT LT</span></td></tr>
+    <tr><td>Boost · drift (while boosting)</td><td><kbd>Shift</kbd> · <kbd>Space</kbd> <span class="pad">A B</span></td></tr>
+    <tr><td>Countermeasures</td><td><kbd>F</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Power: engines · weapons · shields · balance</td><td><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> <span class="pad">D-pad</span></td></tr>
+    <tr><td>Target ahead · subsystem · attacker</td><td><kbd>T</kbd> <kbd>E</kbd> <kbd>R</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>View · free look · scores</td><td><kbd>V</kbd> · <kbd>C</kbd> · <kbd>Tab</kbd></td></tr>
+    <tr><td>Pause · graphics · sound</td><td><kbd>Esc</kbd> · <kbd>G</kbd> · <kbd>M</kbd></td></tr>
+  </table>
+  <p>Shields recharge out of fire; lasers overheat — watch the left arc. Turning is sharpest in the green throttle band. Boost, then hold Space to drift: your ship slides while the nose swings free. Capital ships: drop the shield, then hit the marked subsystems.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLDING<br>POSITION<em>.</em></h1><p class="how">Click resume to recapture the mouse.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">ABORT SORTIE</button></div></div>
+<div id="lock" hidden><b>CLICK TO FLY</b><span>mouse is captured · Esc pauses</span></div>
+<div id="over" hidden>
+  <p class="eye" id="o-eye"></p>
+  <p class="res" id="o-res"></p>
+  <p class="sub" id="o-sub"></p>
+  <div class="tables"><table id="o-stats"></table><table id="o-board"></table></div>
+  <p class="tok" id="o-tok"></p>
+  <div class="row"><button id="again" class="go">FLY AGAIN</button><button id="o-menu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
