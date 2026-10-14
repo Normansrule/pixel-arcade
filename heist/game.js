@@ -12,7 +12,9 @@ import {buildViewmodel} from './viewmodel.js';
 import {Sound} from './sound.js';
 import {DIFF,thinkCiv,thinkGuard,thinkCop,thinkCrew,goTo,yawTo} from './ai.js';
 import {HUD,fmt,money} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest,userName} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,D2R=Math.PI/180,GID='halcyonheist';
 const GRAV=15,DT=1/60;
@@ -42,7 +44,7 @@ let TXC={},WC={},TX=null,world=null,L=null,fx=null,VM=null;
 /* ================= state ================= */
 const G={app:'menu',opt:{map:0,diff:1,gun:'falco',sens:1,vol:.8},agents:[],player:null,crew:[],time:0,loud:false,events:[],bags:[],drops:[],secured:[],loose:0,pagers:[],pagersUsed:0,pend:[],ties:4,hasCard:false,
  wave:{phase:'none',t:0,dur:1,n:0},stats:{kills:0,civKills:0,crewKills:0,downs:0,hs:0,shots:0,hits:0,pagers:0,ties:0},timeLeft:0,limit:0,drill:null,diff:DIFF[1],attract:true,camsOn:true,smallCash:[],keycard:null,ammoBag:3,docBag:4,orders:'standby'};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_heist_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_heist_opt',G.opt);
 G.WPN=WPN;
 
 /* ================= agents ================= */
@@ -93,7 +95,7 @@ function spawnLoose(){// keycard + small cash + reset
  const kc=G.def.keycards[R()*G.def.keycards.length|0];const p=L.P(kc);const m=new THREE.Group();const card=new THREE.Mesh(new THREE.BoxGeometry(.09,.006,.055),new THREE.MeshStandardMaterial({color:0xf2f2f2,emissive:0x3a6aff,emissiveIntensity:.6,roughness:.4}));m.add(card);
  const st=new THREE.Mesh(new THREE.BoxGeometry(.06,.007,.012),new THREE.MeshBasicMaterial({color:new THREE.Color(.4,.8,2.4)}));st.position.set(0,.002,-.012);m.add(st);m.position.set(p.x+(R()-.5)*.3,kc[2]+.01,p.z+(R()-.5)*.2);m.rotation.y=R()*6;scene.add(m);G.keycard={mesh:m,pos:m.position};
  for(const c of G.def.cash){const p2=L.P(c);const s=world.cashStack(p2.x+(R()-.5)*.3,c[2]+.005,p2.z+(R()-.5)*.2,.16,.13,.08);s.rotation.y=R()*3;scene.add(s);G.smallCash.push({mesh:s,pos:s.position,v:1000+Math.round(R()*30)*100});}}
-function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(G.opt,o);try{localStorage.setItem('pxd_heist_opt',JSON.stringify(G.opt));}catch(e){}snd.init();snd.setVol(G.opt.vol);
+function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(G.opt,o);saveOpt();snd.init();snd.setVol(G.opt.vol);
  G.attract=false;G.app='play';G.diff=DIFF[G.opt.diff];loadMap(G.opt.map);resetLevel();
  Object.assign(G,{time:0,loud:false,events:[],secured:[],loose:0,pagers:[],pagersUsed:0,pend:[],ties:G.diff.ties,hasCard:false,stats:{kills:0,civKills:0,crewKills:0,downs:0,hs:0,shots:0,hits:0,pagers:0,ties:0},camsOn:true,ammoBag:3,docBag:4,orders:'standby',alarmMsg:'',endT:0});
  G.wave={phase:'none',t:0,dur:1,n:0};G.limit=G.timeLeft=G.def.limit[G.opt.diff];populate(false);spawnLoose();equipVM(G.player);
@@ -383,31 +385,23 @@ function updateAgent(a,dt){if(a.down){a.bleed-=dt;if(a.bleed<=0)custody(a);retur
  if(a.bag&&G.inVan(a.pos.x,a.pos.z))G.secureBag(a.bag,a);}
 
 /* ================= player input ================= */
-const keys={},mouse={l:false,r:false,semiLock:false,dx:0,dy:0};let locked=false,padUse=false;
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',()=>{if(G.app==='play'&&!locked)lock();});
-addEventListener('mousedown',e=>{if(G.app!=='play'||!locked)return;if(e.button===0)mouse.l=true;if(e.button===2)mouse.r=true;});
-addEventListener('mouseup',e=>{if(e.button===0){mouse.l=false;mouse.semiLock=false;}if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app==='play'&&locked&&G.player)switchTo(G.player,G.player.cur===1?2:1);},{passive:true});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','Tab'].includes(e.code))e.preventDefault();
+const IN=controls(canvas,{canLock:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},onDown:()=>G.app!=='play'||!IN.locked,
+ onWheel:()=>{if(G.app==='play'&&IN.locked&&G.player)switchTo(G.player,G.player.cur===1?2:1);},onKey:keyDown,onKeyUp:e=>{if(e.code==='Tab')$('hud').classList.remove('tab');}});
+const {keys,mouse,lock,unlock}=IN;mouse.semiLock=false;let padUse=false;
+addEventListener('mouseup',e=>{if(e.button===0)mouse.semiLock=false;});// a semi-auto gun fires again only after the button is released
+function keyDown(e,first){if(['Space','Tab'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='play')pause(true);else if(G.app==='paused')pause(false);return;}
  if(G.app!=='play'||!first)return;const P=G.player;if(!P||!P.alive)return;
  if(e.code==='KeyM'&&!P.masked)maskUp(P);
  if(P.down){if(e.code==='KeyR')startReload(P);return;}
  if(e.code==='Digit1')switchTo(P,1);if(e.code==='Digit2')switchTo(P,2);if(e.code==='KeyR')startReload(P);
  if(e.code==='KeyQ'&&P.bag)dropBag(P,true);if(e.code==='KeyF')shout();
- if(e.code==='KeyZ')order('follow');if(e.code==='KeyX')order('hold');if(e.code==='KeyV')order('loot');if(e.code==='Tab')$('hud').classList.add('tab');});
-addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab')$('hud').classList.remove('tab');});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+ if(e.code==='KeyZ')order('follow');if(e.code==='KeyX')order('hold');if(e.code==='KeyV')order('loot');if(e.code==='Tab')$('hud').classList.add('tab');}
 function readPlayer(dt){const P=G.player,c=P.ctl;P.ads=mouse.r&&P.masked&&!P.down&&P.reloadT<=0&&!(c.run&&false);const sens=.0022*G.opt.sens*(P.ads?.6:1);
- if(locked){P.yaw-=mouse.dx*sens;P.pitch-=mouse.dy*sens;P.pitch=cl(P.pitch,-1.45,1.45);}if(VM){VM.mdx=mouse.dx;VM.mdy=mouse.dy;}
+ if(IN.locked){P.yaw-=mouse.dx*sens;P.pitch-=mouse.dy*sens;P.pitch=cl(P.pitch,-1.45,1.45);}if(VM){VM.mdx=mouse.dx;VM.mdy=mouse.dy;}
  const f=(keys.KeyW?1:0)-(keys.KeyS?1:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0);const sy=Math.sin(P.yaw),cy=Math.cos(P.yaw);c.mx=-sy*f+cy*s;c.mz=-cy*f-sy*s;
- c.run=!!(keys.ShiftLeft||keys.ShiftRight)&&f>0;c.crouch=!!(keys.ControlLeft||keys.KeyC||keys.ControlRight);c.jump=!!keys.Space;const g=P.gun();c.fire=mouse.l&&locked&&P.masked&&!(g&&!g.def.auto&&mouse.semiLock)&&!(c.run&&Math.hypot(P.vel.x,P.vel.z)>4.6);
- padUse=false;const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.18?v:0;const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
+ c.run=!!(keys.ShiftLeft||keys.ShiftRight)&&f>0;c.crouch=!!(keys.ControlLeft||keys.KeyC||keys.ControlRight);c.jump=!!keys.Space;const g=P.gun();c.fire=mouse.l&&IN.locked&&P.masked&&!(g&&!g.def.auto&&mouse.semiLock)&&!(c.run&&Math.hypot(P.vel.x,P.vel.z)>4.6);
+ padUse=false;const gp=gamepad();if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.18);const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
   if(lx||ly){c.mx=-sy*(-ly)+cy*lx;c.mz=-cy*(-ly)-sy*lx;}P.yaw-=rx*dt*2.6*G.opt.sens;P.pitch=cl(P.pitch-ry*dt*2,-1.45,1.45);if(bt[7]&&bt[7].value>.4&&P.masked)c.fire=true;if(bt[6]&&bt[6].value>.4)P.ads=P.masked;if(bt[0]&&bt[0].pressed)c.jump=true;if(bt[1]&&bt[1].pressed)c.crouch=true;if(bt[2]&&bt[2].pressed)padUse=true;if(bt[10]&&bt[10].pressed)c.run=true;
   const pr=G.padPrev||{};if(bt[3]&&bt[3].pressed&&!pr.y)switchTo(P,P.cur===1?2:1);if(bt[4]&&bt[4].pressed&&!pr.lb)startReload(P);if(bt[5]&&bt[5].pressed&&!pr.rb){if(!P.masked)maskUp(P);else if(P.bag)dropBag(P,true);else shout();}if(bt[9]&&bt[9].pressed&&!pr.st)pause(true);
   G.padPrev={y:bt[3]&&bt[3].pressed,lb:bt[4]&&bt[4].pressed,rb:bt[5]&&bt[5].pressed,st:bt[9]&&bt[9].pressed};}
@@ -472,7 +466,7 @@ class VMPass extends Pass{constructor(){super();this.needsSwap=false;}render(r,w
 let gfx=quality(),fxStack=null,fxSize='';
 function applyQuality(q){gfx=q;Rr.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.2:.85));fxStack=null;}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
-function render(){const lo=$('lockov');if(lo){const h=G.app!=='play'||locked||G.idle||G.attract;if(lo.hidden!==h)lo.hidden=h;}const w=innerWidth,h=innerHeight;if(Rr.domElement.width!==Math.floor(w*Rr.getPixelRatio())||Rr.domElement.height!==Math.floor(h*Rr.getPixelRatio()))Rr.setSize(w,h,false);
+function render(){const lo=$('lockov');if(lo){const h=G.app!=='play'||IN.locked||G.idle||G.attract;if(lo.hidden!==h)lo.hidden=h;}const w=innerWidth,h=innerHeight;if(Rr.domElement.width!==Math.floor(w*Rr.getPixelRatio())||Rr.domElement.height!==Math.floor(h*Rr.getPixelRatio()))Rr.setSize(w,h,false);
  cam.aspect=w/h;cam.updateProjectionMatrix();vmCam.aspect=w/h;vmCam.updateProjectionMatrix();const sc=h*Rr.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));fx.sparks.U.uScale.value=fx.smoke.U.uScale.value=sc;
  const M=world.M;const key=w+'x'+h;if(!fxStack){fxStack=cinematic(Rr,scene,cam,{exposure:M.exp,bloom:M.bloom,bloomThreshold:M.thr,bloomRadius:.55,saturation:M.sat,tint:M.tint,vignette:.32,grain:.025,aoStrength:.8,quality:gfx});if(fxStack.composer)fxStack.composer.insertPass(new VMPass(),fxStack.ao?2:1);fxSize='';}
  if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);}
@@ -499,11 +493,11 @@ function award(pay,won,grade){lastAward={pts:Math.round(pay),won,grade,map:G.def
 
 /* ================= menus ================= */
 const hud=new HUD(G);G.hud=hud;
-const seg=(id,key,num=true)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',(num?+b.dataset.v:b.dataset.v)===v));if(key==='map'&&G.app==='menu'&&!init)attractMode();if(key==='map')$('brief').textContent=MAPS[G.opt.map].brief;};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
-seg('o-map','map');seg('o-diff','diff');seg('o-gun','gun',false);seg('o-sens','sens');seg('o-vol','vol');
-$('o-vol').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>snd.setVol(G.opt.vol)));
+const seg=pickers(G.opt),brief=()=>$('brief').textContent=MAPS[G.opt.map].brief;// options are saved when a heist starts
+seg('o-map','map',true,()=>{if(G.app==='menu')attractMode();brief();});brief();seg('o-diff','diff');seg('o-gun','gun',false);seg('o-sens','sens');seg('o-vol','vol',true,v=>snd.setVol(v));
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();const body=`Game: Halcyon Heist\nTake: $${a.pts||0}\nResult: ${a.won?'escaped':'busted'} · grade ${a.grade||'F'}${a.stealth?' · stealth':''}\nBags: ${a.bags||0} · Kills: ${a.kills||0}\nSite: ${a.map||''} · ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;postScore(GID,a.pts||0,body);};
+postButton($('post'),GID,()=>{const a=lastAward||{};return[a.pts||0,`Game: Halcyon Heist\nTake: $${a.pts||0}\nResult: ${a.won?'escaped':'busted'} · grade ${a.grade||'F'}${a.stealth?' · stealth':''}\nBags: ${a.bags||0} · Kills: ${a.kills||0}\nSite: ${a.map||''} · ${a.diff||''}`];});
+
 
 /* ================= loop ================= */
 attractMode();

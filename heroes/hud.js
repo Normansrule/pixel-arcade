@@ -5,6 +5,7 @@ import * as THREE from '../vendor/three.module.min.js';
 import {V,fmt,cl} from './util.js';
 import {WPN} from './weapons.js';
 import {HEROES,ROLES,ORDER} from './heroes.js';
+import {toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 export const TEAMS=[{n:'HALCYON',css:'#4aa8ff',suit:0x1d3e78,glow:[.35,.95,3.2]},{n:'VERMILION',css:'#ff4a3a',suit:0x7a1c22,glow:[3.2,.55,.35]}];
@@ -29,10 +30,10 @@ export class HUD{
   else E.obj.innerHTML=`<div class="cpt"><div class="tm a"><b id="pA">0%</b><i>${TEAMS[G.me.team].n}</i></div><div class="ring" id="cpRing"><svg viewBox="0 0 60 60"><circle class="bg" cx="30" cy="30" r="25"/><circle class="fg" id="cpArc" cx="30" cy="30" r="25"/></svg><b id="cpL">A</b></div><div class="tm b"><b id="pB">0%</b><i>${TEAMS[1-G.me.team].n}</i></div></div><div class="clk"><b id="clock">0:00</b><span id="ot">OVERTIME</span></div><div class="pst" id="plSt"></div>`,E.obj.className='cp';
   const chip=f=>`<div class="chip ${f===G.me?'me':''}" data-i="${G.fighters.indexOf(f)}"><img src="${G.portraits[f.hero]||''}"><s></s><b></b></div>`;
   E.rA.innerHTML=G.fighters.filter(f=>f.team===G.me.team).map(chip).join('');E.rB.innerHTML=G.fighters.filter(f=>f.team!==G.me.team).map(chip).join('');this.meHero='';}
- feed(k,v,w,crit,mine){const d=document.createElement('div');const nm=f=>`<span style="color:${TEAMS[f.team].css}"><img src="${this.G.portraits[f.hero]||''}">${f.name}</span>`;
-  d.innerHTML=(k&&k!==v?nm(k)+`<span class="w">${w}${crit?' <span class="hs">◉</span>':''}</span>`:`<span class="w">${w}</span>`)+nm(v);if(mine)d.className='me';
-  this.el.feed.prepend(d);setTimeout(()=>d.remove(),5200);while(this.el.feed.children.length>6)this.el.feed.lastChild.remove();}
- sys(t,col){const d=document.createElement('div');d.innerHTML=`<span class="w" style="margin:0;color:${col||''}">${t}</span>`;this.el.feed.prepend(d);setTimeout(()=>d.remove(),4200);}
+ feed(k,v,w,crit,mine){const nm=f=>`<span style="color:${TEAMS[f.team].css}"><img src="${this.G.portraits[f.hero]||''}">${f.name}</span>`;
+  const d=toast(this.el.feed,(k&&k!==v?nm(k)+`<span class="w">${w}${crit?' <span class="hs">◉</span>':''}</span>`:`<span class="w">${w}</span>`)+nm(v),5200,6);if(mine)d.className='me';}
+ sys(t,col){toast(this.el.feed,`<span class="w" style="margin:0;color:${col||''}">${t}</span>`,4200);}
+
  banner(t,s,col='#ffd23f',dur=2.2){const e=this.el.banner;e.querySelector('b').textContent=t;e.querySelector('b').style.color=col;e.querySelector('span').textContent=s||'';e.querySelector('span').style.display=s?'':'none';e.classList.add('on');this.banT=dur;}
  hit(kind){this.el.hitm.className=kind||'';this.hitT=kind==='k'?.45:.2;}
  damageFrom(ang){const i=document.createElement('i');i.style.transform=`rotate(${ang}rad)`;this.el.dmg.appendChild(i);setTimeout(()=>i.remove(),1100);while(this.el.dmg.children.length>6)this.el.dmg.firstChild.remove();}

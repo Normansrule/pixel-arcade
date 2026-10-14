@@ -1,7 +1,9 @@
 // VOIDWING — cockpit starfighter combat: 5v5 squadron dogfights and fleet battles against capital ships. Original game for Pixel Arcade.
 import * as THREE from '../vendor/three.module.min.js';
 import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest,userName} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton,toast as note} from '../js/kit3d/ui.js';
 import {V,C,cl,rnd,rs,fmt,pick,TAU} from './util.js';
 import {MAPS,ARENA,bakeSky,makePlanet,placePlanet,makeSun,placeSun,Asteroids,Dust} from './space.js';
 import {TEAMS,CLASSES,CLASS_IDS,buildFighter,buildCockpit,mats} from './ships.js';
@@ -35,7 +37,7 @@ applyQuality(gfx);
 
 /* ================= state ================= */
 const opts={mode:'dogfight',map:0,cls:'fighter',diff:1,clock:480,view:'cockpit',aim:'direct',sens:1};
-try{Object.assign(opts,JSON.parse(localStorage.getItem('pxd_voidwing_opt'))||{});}catch(e){}
+const saveOpts=stored('pxd_voidwing_opt',opts);
 const G={app:'menu',ships:[],caps:[],time:0,clock:0,player:null,score:0,stats:null,result:null,endT:0,tk:[0,0],cap:30,phase:0,ev:[],attract:true,target:null,lockK:0,dead:null,auto:false};
 const W={ships:G.ships,caps:G.caps,rocks:null,missiles,mode:'dogfight',arena:ARENA,humanBias:0,time:0};
 let camMode='cockpit',cockpit=null,cockpitKey='',shake=0,dmgFlash=0,shFlash=0,slowmo=1,bounds=0,menuFocus=null,menuSwitch=0,menuCamT=0,lastWarn=0,lookY=0,lookP=0;
@@ -81,7 +83,7 @@ function start(o={}){Object.assign(opts,o);saveOpts();snd.init();setupMatch(opts
 function toMenu(){unlock();attract();showPanel('menu');$('hud').hidden=true;document.body.classList.remove('playing');snd.off();renderMenu();}
 function showPanel(id){for(const p of['menu','pause','over'])$(p).hidden=p!==id;$('keys').hidden=id!=='menu';$('lock').hidden=true;}
 function pause(on){if(on&&G.app==='play'){G.app='paused';showPanel('pause');unlock();snd.suspend(true);}else if(!on&&G.app==='paused'){G.app='play';showPanel(null);lock();snd.suspend(false);}}
-function saveOpts(){try{localStorage.setItem('pxd_voidwing_opt',JSON.stringify(opts));}catch(e){}}
+
 function endMatch(res,why){if(G.result)return;G.result=res;G.why=why;G.endT=0;slowmo=.3;
  if(res==='win'){G.stats.bonus=(G.mode==='fleet'?2500:1200)+Math.round(G.clock*2)+[0,300,700][opts.diff];addScore(G.stats.bonus,null);snd.play('win');}else snd.play('lose');
  banner(res==='win'?'VICTORY':'DEFEAT',why,3.2,res==='win'?'#6dff9e':'#ff4a3d');}
@@ -151,20 +153,17 @@ function onMissile(m,ship,cap){const own=m.owner;sndAt('boom',m.p,1);
  for(const s of G.ships){if(!s.alive||s===ship||s.team===own.team)continue;const d=s.p.distanceTo(m.p);if(d<22)hurtShip(s,m.dmg*.5*(1-d/22),own,m.p.clone());}}
 
 /* ================= input ================= */
-const keys={},edge={};let mouseL=false,mouseR=false,mdx=0,mdy=0,locked=false,padMode=false;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
- if(e.code==='Escape'){if(G.app==='play')pause(true);else if(G.app==='paused')pause(false);}
- if(G.app!=='play')return;if(e.code==='KeyV')camMode=camMode==='cockpit'?'chase':'cockpit';if(e.code==='KeyM'){snd.on=!snd.on;toast(snd.on?'SOUND ON':'SOUND OFF');if(!snd.on)snd.off();}});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouseL=mouseR=false;});
-canvas.addEventListener('mousedown',e=>{if(G.app!=='play')return;if(!locked)lock();if(e.button===0)mouseL=true;if(e.button===2){mouseR=true;edge.Fire2=true;}if(e.button===1)e.preventDefault();});
-addEventListener('mouseup',e=>{if(e.button===0)mouseL=false;if(e.button===2)mouseR=false;});addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(G.app!=='play')return;mdx+=e.movementX||0;mdy+=e.movementY||0;if(Math.abs(e.movementX)+Math.abs(e.movementY)>2)padMode=false;});
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play')pause(true);});
+// mouse look counts whenever a match is live (locked or not); the click-to-play hint is shown per frame in frame()
+const I=controls(canvas,{canLock:()=>G.app==='play',clickThrough:true,menu:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onDown:e=>{if(G.app!=='play')return true;if(e.button===2)edge.Fire2=true;if(e.button===1)e.preventDefault();},
+ look:e=>{if(G.app!=='play')return false;if(Math.abs(e.movementX)+Math.abs(e.movementY)>2)padMode=false;return true;},
+ onKey:e=>{if(['Space','Tab','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
+  if(e.code==='Escape'){if(G.app==='play')pause(true);else if(G.app==='paused')pause(false);}
+  if(G.app!=='play')return;if(e.code==='KeyV')camMode=camMode==='cockpit'?'chase':'cockpit';if(e.code==='KeyM'){snd.on=!snd.on;toast(snd.on?'SOUND ON':'SOUND OFF');if(!snd.on)snd.off();}}});
+const {keys,edge,mouse,lock,unlock}=I;let padMode=false;
 $('lock').onclick=()=>lock();
 const padPrev={};
-function readPad(){const gp=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean)[0]:null;if(!gp)return null;const a=gp.axes,b=gp.buttons,dz=v=>Math.abs(v)>.15?(v-Math.sign(v)*.15)/.85:0;
+function readPad(){const gp=gamepad();if(!gp)return null;const a=gp.axes,b=gp.buttons,dz=v=>deadzone(v,.15,true);
  const P={lx:dz(a[0]||0),ly:dz(a[1]||0),rx:dz(a[2]||0),ry:dz(a[3]||0),rt:b[7]?.value||0,lt:b[6]?.value||0,A:b[0]?.pressed,B:b[1]?.pressed,X:b[2]?.pressed,Y:b[3]?.pressed,LB:b[4]?.pressed,RB:b[5]?.pressed,start:b[9]?.pressed,up:b[12]?.pressed,down:b[13]?.pressed,left:b[14]?.pressed,right:b[15]?.pressed};
  P.e={};for(const k of['X','Y','start','up','down','left','right'])P.e[k]=P[k]&&!padPrev[k];for(const k of['X','Y','start','up','down','left','right'])padPrev[k]=P[k];P.e.LT=P.lt>.5&&!padPrev.LT;padPrev.LT=P.lt>.5;
  if(Math.abs(P.lx)+Math.abs(P.ly)>.05)padMode=true;return P;}
@@ -176,7 +175,7 @@ function playerInput(s,dt,P){const k=s.ctrl;
  if(keys.KeyA||keys.KeyD)k.roll=(keys.KeyD?1:0)-(keys.KeyA?1:0); if(keys.ArrowLeft||keys.ArrowRight)k.yaw=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);if(keys.ArrowUp||keys.ArrowDown)k.pitch=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);
  if(keys.KeyW)k.thr=Math.min(1,k.thr+dt*.8);if(keys.KeyS)k.thr=Math.max(0,k.thr-dt*.8);if(P&&Math.abs(P.ry)>.2)k.thr=cl(k.thr-P.ry*dt*.8,0,1);
  const wasB=s.boosting;k.boost=!!(keys.ShiftLeft||keys.ShiftRight||P&&P.A);k.drift=!!(keys.Space||P&&P.B);if(k.boost&&!wasB&&s.boostE>.6)snd.play('boostOn');
- k.fire=mouseL||!!keys.KeyK||!!(P&&P.rt>.3);k.sec=!!(edge.Fire2||edge.KeyQ||P&&P.e.LT);k.cm=!!(edge.KeyF||edge.KeyX||P&&P.e.X);
+ k.fire=mouse.l||!!keys.KeyK||!!(P&&P.rt>.3);k.sec=!!(edge.Fire2||edge.KeyQ||P&&P.e.LT);k.cm=!!(edge.KeyF||edge.KeyX||P&&P.e.X);
  const rt=sys=>{s.route(sys);snd.play('pip',['eng','wpn','shd','bal'].indexOf(sys));};
  if(edge.Digit1||P&&P.e.left)rt('eng');if(edge.Digit2||P&&P.e.up)rt('wpn');if(edge.Digit3||P&&P.e.right)rt('shd');if(edge.Digit4||P&&P.e.down)rt('bal');
  if(edge.KeyT||P&&P.e.Y)selectTarget(s);if(edge.KeyE)cycleSub(s);if(edge.KeyR&&s.lastHitBy&&s.lastHitBy.alive!==false&&s.lastHitBy.c){G.target=s.lastHitBy;toast('TARGET · '+s.lastHitBy.name);}}
@@ -237,10 +236,10 @@ function sim(dt){G.time+=dt;W.time=G.time;const P=G.app==='play'?readPad():null;
 /* ================= per-frame update ================= */
 function frame(dt){if(G.app==='play'||G.app==='menu'){const sdt=dt*slowmo;G.acc=(G.acc||0)+sdt;let n=0;while(G.acc>=DT&&n<6){sim(DT);G.acc-=DT;n++;}if(n>=6)G.acc=0;if(G.app==='play')flow(dt);else menuDirector(dt);}
  // mouse -> stick / free look
- if(G.app==='play'&&G.player){const sens=opts.sens||1;if(keys.KeyC){lookY=cl(lookY-mdx*.003,-2.4,2.4);lookP=cl(lookP-mdy*.003,-1.2,1.2);}else{lookY*=Math.exp(-dt*6);lookP*=Math.exp(-dt*6);
-   if(opts.aim==='stick'){stick.x=cl(stick.x+mdx*.0028*sens,-1,1);stick.y=cl(stick.y+mdy*.0028*sens,-1,1);const l=Math.hypot(stick.x,stick.y);if(l>1){stick.x/=l;stick.y/=l;}}
-   else{const k=1/Math.max(dt,1/240)/900*sens;const tx=cl(mdx*k,-1,1),ty=cl(mdy*k,-1,1);const a=1-Math.exp(-dt*30);stick.x+=(tx-stick.x)*a;stick.y+=(ty-stick.y)*a;}}}
- mdx=mdy=0;for(const k in edge)delete edge[k];
+ if(G.app==='play'&&G.player){const sens=opts.sens||1;if(keys.KeyC){lookY=cl(lookY-mouse.dx*.003,-2.4,2.4);lookP=cl(lookP-mouse.dy*.003,-1.2,1.2);}else{lookY*=Math.exp(-dt*6);lookP*=Math.exp(-dt*6);
+   if(opts.aim==='stick'){stick.x=cl(stick.x+mouse.dx*.0028*sens,-1,1);stick.y=cl(stick.y+mouse.dy*.0028*sens,-1,1);const l=Math.hypot(stick.x,stick.y);if(l>1){stick.x/=l;stick.y/=l;}}
+   else{const k=1/Math.max(dt,1/240)/900*sens;const tx=cl(mouse.dx*k,-1,1),ty=cl(mouse.dy*k,-1,1);const a=1-Math.exp(-dt*30);stick.x+=(tx-stick.x)*a;stick.y+=(ty-stick.y)*a;}}}
+ mouse.dx=mouse.dy=0;I.flush();
  visuals(dt);camera(dt);hudUpdate(dt);}
 function flow(dt){const pl=G.player;
  if(!G.result){G.clock-=dt;
@@ -251,7 +250,7 @@ function flow(dt){const pl=G.player;
  if(G.dead)G.dead.t+=dt;
  // combat area
  if(pl&&pl.alive){const out=pl.p.length()>ARENA;bounds=out?bounds+dt:Math.max(0,bounds-dt*2);if(bounds>8)hurtShip(pl,dt*30,null,null);}
- $('lock').hidden=!(G.app==='play'&&!locked&&!navigator.webdriver);
+ $('lock').hidden=!(G.app==='play'&&!I.locked&&!navigator.webdriver);
  updObjective(true);}
 function menuDirector(dt){menuSwitch-=dt;if(!menuFocus||menuFocus.alive===false||menuFocus.dead||menuSwitch<=0){const al=G.ships.filter(p=>p.alive);const cs=G.caps.filter(c=>!c.dead);menuFocus=cs.length&&Math.random()<.3?pick(cs):pick(al)||null;menuSwitch=7+rnd(4);menuCamT=0;}}
 
@@ -294,9 +293,9 @@ const big0=f=>f&&!!f.L;
 /* ================= HUD ================= */
 const ovc={};function ov(id,v){v=Math.round(v*50)/50;if(ovc[id]===v)return;ovc[id]=v;const e=$(id);e.style.display=v>0?'block':'none';e.style.opacity=v;}
 const hc={};function setTxt(id,v){if(hc[id]!==v){hc[id]=v;$(id).textContent=v;}}function setHTML(id,v){if(hc[id]!==v){hc[id]=v;$(id).innerHTML=v;}}
-function feed(t,cls=''){if(G.attract)return;const d=document.createElement('div');d.textContent=t;d.className=cls;$('feed').prepend(d);setTimeout(()=>d.remove(),6000);while($('feed').children.length>6)$('feed').lastChild.remove();}
+function feed(t,cls=''){if(G.attract)return;const d=note($('feed'),'',6000,6);d.textContent=t;d.className=cls;}
 let banT=0;function banner(t,s,dur=2.4,col){if(G.attract)return;$('bt').textContent=t;$('bt').style.color=col||'';$('bs').textContent=s||'';$('bs').hidden=!s;$('banner').classList.add('on');banT=dur;snd.play('banner');}
-const toastSeen={};function toast(t,bad,key){if(G.attract)return;if(key){if(toastSeen[key]&&G.time-toastSeen[key]<3)return;toastSeen[key]=G.time;}const d=document.createElement('div');d.textContent=t;d.className=bad===true?'bad':bad||'';$('toasts').appendChild(d);setTimeout(()=>d.remove(),1800);while($('toasts').children.length>4)$('toasts').firstChild.remove();}
+const toastSeen={};function toast(t,bad,key){if(G.attract)return;if(key){if(toastSeen[key]&&G.time-toastSeen[key]<3)return;toastSeen[key]=G.time;}const d=note($('toasts'),'',1800,4,false);d.textContent=t;d.className=bad===true?'bad':bad||'';}
 function sndAt(k,p,a=1){const d=p.distanceTo(cam.position);if(d<4000)snd.play(k,a*Math.min(1,400/(d+120)));}
 function updObjective(tick){if(G.attract)return;let h='';
  if(G.mode==='dogfight'){h=`Destroy enemy starfighters. First squadron to <b>${G.cap}</b> kills wins.`;}
@@ -336,16 +335,16 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 addEventListener('resize',()=>{post=null;});
 
 /* ================= menu UI ================= */
-function renderMenu(){const seg=(id,key,num=true)=>$(id).querySelectorAll('button').forEach(b=>{const v=num?+b.dataset.v:b.dataset.v;b.classList.toggle('on',opts[key]===v);b.onclick=()=>{opts[key]=v;saveOpts();snd.init();snd.play('ui');renderMenu();};});
- seg('o-mode','mode',false);seg('o-map','map');seg('o-diff','diff');seg('o-clock','clock');seg('o-view','view',false);seg('o-aim','aim',false);seg('o-sens','sens');
+const seg=pickers(opts,saveOpts),pickUI=()=>{snd.init();snd.play('ui');renderMenu();};
+for(const[id,key,num]of[['o-mode','mode',false],['o-map','map'],['o-diff','diff'],['o-clock','clock'],['o-view','view',false],['o-aim','aim',false],['o-sens','sens']])seg(id,key,num??true,pickUI);
+function renderMenu(){seg.sync();
  $('m-note').innerHTML=opts.mode==='fleet'?'<b>FLEET BATTLE</b> — escort the bombers, destroy the two picket frigates to break the flagship\'s shield link, then drop its shields and strike its subsystems. Protect your own flagship.':'<b>DOGFIGHT</b> — five on five through the rocks. CPU wingmen fly with you. First squadron to the kill limit, or the leader when time runs out, wins.';
  $('ships').innerHTML=CLASS_IDS.map(id=>{const c=CLASSES[id];return`<button data-id="${id}" class="${id===opts.cls?'on':''}"><small>${c.role}</small><b>${c.names[0]}</b>${Object.entries(c.stats).map(([k,v])=>`<div class="bar"><span>${k}</span><i style="--v:${v}"></i></div>`).join('')}<p>${c.blurb}</p></button>`;}).join('');
  $('ships').querySelectorAll('button').forEach(b=>b.onclick=()=>{opts.cls=b.dataset.id;saveOpts();snd.init();snd.play('ui');renderMenu();});
  $('best').textContent=bestScore(ID)?'BEST '+bestScore(ID)+' PTS':'';$('go').textContent=opts.mode==='fleet'?'LAUNCH · FLEET BATTLE':'LAUNCH · DOGFIGHT';}
 $('go').onclick=()=>start();$('resume').onclick=()=>pause(false);$('quit').onclick=()=>toMenu();$('again').onclick=()=>start();$('o-menu').onclick=()=>toMenu();
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Voidwing\nPoints: ${a.pts||0}\nResult: ${a.won?'victory':'defeat'} · ${a.mode==='fleet'?'Fleet Battle':'Dogfight'} · ${a.map||''} · ${a.diff||''}\nKills: ${a.kills||0}\nStarfighter: ${a.cls||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Voidwing\nPoints: ${a.pts||0}\nResult: ${a.won?'victory':'defeat'} · ${a.mode==='fleet'?'Fleet Battle':'Dogfight'} · ${a.map||''} · ${a.diff||''}\nKills: ${a.kills||0}\nStarfighter: ${a.cls||''}`];});
 
 /* ================= loop ================= */
 setMap(opts.map);attract();renderMenu();showPanel('menu');
@@ -355,7 +354,8 @@ let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(
 window.VOIDWING={get state(){return G.app;},G,W,opts,step:frame,render,start(o={}){start(o);},toMenu,pause,
  get player(){return G.player;},get ships(){return G.ships;},get bots(){return G.ships.filter(s=>!s.human);},get caps(){return G.caps;},get stats(){return G.stats;},get score(){return G.score;},get result(){return G.result;},
  get round(){return{mode:G.mode,clock:G.clock,teamKills:G.tk.slice(),cap:G.cap,phase:G.mode==='fleet'?(G.flag[1].locked?1:G.flag[1].shieldUp()?2:3):0,result:G.result};},
- setClock(s){G.clock=s;},autopilot(on=true){G.auto=on;},keys,edge,setMouse(l,r){mouseL=l;if(r&&!mouseR)edge.Fire2=true;mouseR=r;},aim(dx,dy){mdx+=dx;mdy+=dy;},
+ setClock(s){G.clock=s;},autopilot(on=true){G.auto=on;},keys,edge,setMouse(l,r){mouse.l=l;if(r&&!mouse.r)edge.Fire2=true;mouse.r=r;},aim(dx,dy){mouse.dx+=dx;mouse.dy+=dy;},
+
  target:t=>{G.target=t;},selectTarget:()=>G.player&&selectTarget(G.player),cycleSub:()=>G.player&&cycleSub(G.player),get lockK(){return G.lockK;},
  killAll(team=1){for(const s of G.ships)if(s.alive&&s.team===team)killShip(s,G.player);},killCap,killSub,win:()=>endMatch('win','TEST'),lose:()=>endMatch('lose','TEST'),
  setQuality:applyQuality,get gfx(){return gfx;},toggleCam:()=>{camMode=camMode==='cockpit'?'chase':'cockpit';},get camMode(){return camMode;},setCam:m=>{camMode=m;},scene,R,cam,fx,bolts,missiles,env,THREE,menuFocus:f=>{menuFocus=f;menuSwitch=99;menuCamT=0;}};

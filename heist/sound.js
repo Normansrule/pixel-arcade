@@ -2,26 +2,22 @@
 // shouts, cash and bag foley, suspicion ticks, assault stingers and a small sequenced heist score (stealth pulse / loud drive).
 const SHOT={pistol:{f0:1500,f1:220,d:.16,v:.5,b:120,bd:.12,c:2600},silenced:{f0:900,f1:300,d:.07,v:.22,b:90,bd:.05,c:1800},smg:{f0:1900,f1:300,d:.11,v:.42,b:150,bd:.08,c:3000},
  rifle:{f0:1500,f1:180,d:.2,v:.6,b:100,bd:.15,c:2400},shotgun:{f0:900,f1:90,d:.34,v:.85,b:65,bd:.25,c:1500},heavy:{f0:1100,f1:120,d:.28,v:.75,b:85,bd:.2,c:1900}};
+import {boot,master,gain,noiseBuf,reverb,bed,panTo,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.music=.6;this.mode=null;this.beat=0;this.nextT=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.threshold.value=-16;comp.ratio.value=5;comp.connect(ac.destination);
-  this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);this.duck=ac.createGain();this.duck.connect(this.master);this.out=this.duck;this.mus=ac.createGain();this.mus.gain.value=this.music*.5;this.mus.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  const il=ac.sampleRate*1.6,ib=ac.createBuffer(2,il,ac.sampleRate);for(let c=0;c<2;c++){const x=ib.getChannelData(c);for(let i=0;i<il;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/il,3);}this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.3;this.verbIn.connect(this.verb);this.verb.connect(this.out);
-  const src=ac.createBufferSource();src.buffer=b;src.loop=true;this.ambF=ac.createBiquadFilter();this.ambF.type='lowpass';this.ambF.frequency.value=380;this.amb=ac.createGain();this.amb.gain.value=0;src.connect(this.ambF);this.ambF.connect(this.amb);this.amb.connect(this.master);src.start();
-  const src2=ac.createBufferSource();src2.buffer=b;src2.loop=true;const rf=ac.createBiquadFilter();rf.type='highpass';rf.frequency.value=2600;this.rainG=ac.createGain();this.rainG.gain.value=0;src2.connect(rf);rf.connect(this.rainG);this.rainG.connect(this.master);src2.start(0,.7);
+ init(){boot(this,ac=>{this.master=master(ac,this.vol,-16,5);this.duck=gain(ac,1,this.master);this.out=this.duck;this.mus=gain(ac,this.music*.5,this.master);
+  const b=this.noise=noiseBuf(ac);this.verbIn=reverb(ac,1.6,3,.3,this.out);
+  const a=bed(ac,b,'lowpass',380,null,this.master);this.ambF=a.f;this.amb=a.g;this.rainG=bed(ac,b,'highpass',2600,null,this.master,0,.7).g;
   // alarm bell + siren oscillators (gated)
   this.bell=ac.createOscillator();this.bell.type='square';this.bell.frequency.value=1650;this.bellAM=ac.createGain();this.bellAM.gain.value=0;const bf=ac.createBiquadFilter();bf.type='bandpass';bf.frequency.value=1700;bf.Q.value=3;this.bell.connect(bf);bf.connect(this.bellAM);this.bellAM.connect(this.master);this.bell.start();
   this.siren=ac.createOscillator();this.siren.type='sawtooth';this.siren.frequency.value=700;this.sirenG=ac.createGain();this.sirenG.gain.value=0;const sf=ac.createBiquadFilter();sf.type='lowpass';sf.frequency.value=1400;this.siren.connect(sf);sf.connect(this.sirenG);this.sirenG.connect(this.master);this.siren.start();
   this.drillO=ac.createOscillator();this.drillO.type='sawtooth';this.drillO.frequency.value=180;this.drillG=ac.createGain();this.drillG.gain.value=0;const df=ac.createBiquadFilter();df.type='bandpass';df.frequency.value=900;df.Q.value=1.2;this.drillO.connect(df);df.connect(this.drillG);this.drillG.connect(this.out);this.drillO.start();this.drillPan=null;
-  }catch(e){this.ac=null;}}
+  });}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
  ambience(mood,on){if(!this.ac)return;const t=this.ac.currentTime;this.mood=mood;this.amb.gain.setTargetAtTime(on?.05:0,t,.6);this.rainG.gain.setTargetAtTime(on&&mood==='night'?.04:0,t,.6);}
- _pan(p){if(!p)return this.out;const s=this.ac.createStereoPanner();s.pan.value=Math.max(-1,Math.min(1,p));s.connect(this.out);return s;}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,rev=false,dest){if(vol<.0015)return;const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(dest||this._pan(pan));if(rev)g.connect(this.verbIn);s.start(t,Math.random()*1.5);s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0,pan=0,rev=false,dest,at=.005){if(vol<.0015)return;const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+at);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
-  o.connect(g);g.connect(dest||this._pan(pan));if(rev)g.connect(this.verbIn);o.start(t);o.stop(t+dur+.03);}
+ _pan(p){return panTo(this.ac,p,this.out);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,rev=false,dest){if(vol<.0015)return;const g=hiss(this.ac,this.noise,dest||this._pan(pan),this.ac.currentTime+delay,dur,f0,f1,q,vol,type);if(rev)g.connect(this.verbIn);}
+ _o(type,f0,f1,dur,vol,delay=0,pan=0,rev=false,dest,at=.005){if(vol<.0015)return;const g=tone(this.ac,dest||this._pan(pan),this.ac.currentTime+delay,type,f0,f1,dur,vol,at);if(rev)g.connect(this.verbIn);}
  att(d,ref=8){return 1/(1+Math.max(0,d-2)/ref);}
  shot(kind,d=0,pan=0,mine=false){if(!this.ac)return;const s=SHOT[kind]||SHOT.rifle;const now=this.ac.currentTime;if(!mine){if(d>120||now-(this._ls||0)<.025)return;this._ls=now;}
   const a=mine?1:this.att(d,10)*.9,far=Math.min(1,d/60);const v=s.v*a;

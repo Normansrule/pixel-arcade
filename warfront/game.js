@@ -4,7 +4,9 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {Pass} from '../vendor/jsm/postprocessing/Pass.js';
 import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,postButton} from '../js/kit3d/ui.js';
 import {V,PI,cl,rr,ang} from './util.js';
 import {makeTextures} from './tex.js';
 import {World,POINTS,HQ,PLAY,WL,DECK,STEPUP} from './terrain.js';
@@ -57,10 +59,9 @@ const imp=new THREE.InstancedMesh(impGeo,new THREE.MeshStandardMaterial({color:0
 const G={THREE,scene,cam,fx,snd,TX,W,actors:[],vehicles:[],points:[],player:null,time:0,diff:DIFF[1],diffI:1,noises:[],pathBudget:4,app:'menu',over:null,nades:[],proj:[],kits:[],tmpC:[],objLoad:[[0,0,0,0,0],[0,0,0,0,0]],
  tickets:[300,300],maxTickets:300,clock:720,bleed:[0,0],deploy:false,spawnSel:'hq',viewPos:new V(),viewYaw:0,aimPt:new V(),reticle:{pt:new V(),sq:false},capPoint:null,oobT:0,stats:{kills:[0,0],dmg:[0,0],caps:0,vkills:0}};
 window.__G=G;
-let opt={diff:1,len:1,sens:1,vol:.8,cls:'assault',wsel:{}};try{Object.assign(opt,JSON.parse(localStorage.getItem('pxd_warfront_opt'))||{});}catch(e){}if(!CLASSES[opt.cls])opt.cls='assault';
+const opt={diff:1,len:1,sens:1,vol:.8,cls:'assault',wsel:{}};G.saveOpt=stored('pxd_warfront_opt',opt);if(!CLASSES[opt.cls])opt.cls='assault';
 for(const k of CLS)if(!CLASSES[k].prim.includes(opt.wsel[k]))opt.wsel[k]=CLASSES[k].prim[0];G.opt=opt;G.cls=opt.cls;G.wsel=opt.wsel;
-let prog={xp:0};try{Object.assign(prog,JSON.parse(localStorage.getItem('pxd_warfront_prog'))||{});}catch(e){}G.prog=prog;
-G.saveOpt=()=>{try{localStorage.setItem('pxd_warfront_opt',JSON.stringify(opt));}catch(e){}};
+const prog={xp:0},saveProg=stored('pxd_warfront_prog',prog);G.prog=prog;
 G.setClass=c=>{if(CLASSES[c]){G.cls=opt.cls=c;G.saveOpt();}};G.setWeapon=w=>{if(CLASSES[G.cls].prim.includes(w)){opt.wsel[G.cls]=w;G.saveOpt();}};
 
 /* ================= world scene ================= */
@@ -312,24 +313,18 @@ function event(p,kind,team,by){const mine=team===0;
   if(G.app==='play'&&team===0)HUD.ann(G,`WE ARE LOSING ${p.id} · ${p.name}`,2.4);}}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false,le:false,re:false};let locked=false;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
- if(['Space','Tab','ArrowUp','ArrowDown','KeyQ','ControlLeft','KeyF'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Tab')e.preventDefault();
- if(e.code==='Escape'){if(G.app==='paused')pause(false);else if(G.app==='play'&&!G.over&&!G.deploy)pause(true);}});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
-canvas.addEventListener('mousedown',e=>{if(G.app!=='play'||G.deploy)return;if(!locked&&!G.noLock)lockPointer();if(e.button===0){mouse.l=true;mouse.le=true;}if(e.button===2){mouse.r=true;mouse.re=true;}});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(locked||(G.app==='play'&&e.buttons&&!G.noLock&&!G.deploy)){mouse.dx+=e.movementX;mouse.dy+=e.movementY;}});
-addEventListener('wheel',e=>{if(G.app==='play'&&P&&P.alive&&!P.veh&&!P.downed){const n=P.slots.length;queueSwap((P.cur+(e.deltaY>0?1:n-1))%n);}},{passive:true});
-function lockPointer(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play'&&!G.over&&!G.deploy)pause(true);});
-function pause(on){if(on&&G.app==='play'){G.app='paused';HUD.showPause(true);document.body.classList.remove('playing');snd.engine(null);if(document.exitPointerLock&&locked)document.exitPointerLock();}
- else if(!on&&G.app==='paused'){G.app='play';HUD.showPause(false);document.body.classList.add('playing');if(!G.noLock&&!G.deploy)lockPointer();}}
+const live=()=>G.app==='play'&&!G.deploy&&!G.noLock;
+const I=controls(canvas,{canLock:live,clickThrough:true,menu:()=>G.app==='play',look:e=>I.locked||live()&&e.buttons,
+ onDown:()=>G.app!=='play'||G.deploy,onLock:(on,was)=>{if(was&&!on&&G.app==='play'&&!G.over&&!G.deploy)pause(true);},
+ onWheel:e=>{if(G.app==='play'&&P&&P.alive&&!P.veh&&!P.downed){const n=P.slots.length;queueSwap((P.cur+(e.deltaY>0?1:n-1))%n);}},
+ onKey:e=>{if(['Space','Tab','ArrowUp','ArrowDown','KeyQ','ControlLeft','KeyF'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Tab')e.preventDefault();
+  if(e.code==='Escape'){if(G.app==='paused')pause(false);else if(G.app==='play'&&!G.over&&!G.deploy)pause(true);}}});
+const {keys,edge,mouse,lock:lockPointer,unlock}=I;
+function pause(on){if(on&&G.app==='play'){G.app='paused';HUD.showPause(true);document.body.classList.remove('playing');snd.engine(null);unlock();}
+ else if(!on&&G.app==='paused'){G.app='play';HUD.showPause(false);document.body.classList.add('playing');lockPointer();}}
 G.pause=pause;
 const pad={prev:{}};
-function readPad(){const gps=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];const g=gps[0];if(!g)return null;const ax=g.axes,bt=g.buttons,dz=v=>Math.abs(v)>.15?(v-Math.sign(v)*.15)/.85:0;
+function readPad(){const g=gamepad();if(!g)return null;const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.15,true);
  const st={mx:dz(ax[0]||0),my:dz(ax[1]||0),lx:dz(ax[2]||0),ly:dz(ax[3]||0),fire:(bt[7]?.value||0)>.3,ads:(bt[6]?.value||0)>.3};const pr=pad.prev,b=i=>!!bt[i]?.pressed,e=i=>b(i)&&!pr[i];
  st.jump=e(0);st.jumpH=b(0);st.crouchE=e(1);st.crouchH=b(1);st.use=b(2);st.useE=e(2);st.swap=e(3);st.frag=e(5);st.ability=e(4);st.sprint=b(10);st.start=e(9);st.back=b(8);for(let i=0;i<17;i++)pr[i]=b(i);return st;}
 
@@ -452,7 +447,7 @@ G.vehWeaponText=()=>{const v=P.veh,k=v.kind;const r=t=>t>0?'RELOADING '+t.toFixe
 /* ================= deploy / spawn ================= */
 G.spawnOptions=()=>spawnOptions(0,null);
 G.respawnLeft=()=>P?Math.max(0,(P.respawnAt||0)-G.time):0;
-function openDeploy(){G.deploy=true;HUD.showDeploy(G,true);document.body.classList.remove('playing');snd.engine(null);if(document.exitPointerLock&&locked)document.exitPointerLock();}
+function openDeploy(){G.deploy=true;HUD.showDeploy(G,true);document.body.classList.remove('playing');snd.engine(null);unlock();}
 G.deployNow=(o={})=>{if(!G.deploy||G.app!=='play'||G.over)return false;if(G.respawnLeft()>0&&!o.force)return false;if(o.cls)G.setClass(o.cls);const opts=G.spawnOptions();const sel=opts.find(q=>q.id===(o.spawn||G.spawnSel))||opts[0];
  setupPlayer();spawnAtOption(P,sel);P.pitch=0;P.vel.set(0,0,0);G.deploy=false;HUD.showDeploy(G,false);HUD.dead(G,false);document.body.classList.add('playing');if(!G.noLock)lockPointer();HUD.banner(G,'DEPLOYED',sel.name,'#ffc95a',1.6);return true;};
 
@@ -576,27 +571,28 @@ function start(o={}){if(document.activeElement&&document.activeElement.blur)docu
  HUD.radio(G,'HQ','All units, take the valley. Capture and hold the flags to drain Korvan reinforcements.',true);}
 G.start=start;
 function toMenu(){G.app='menu';G.over=null;G.deploy=false;snd.engine(null);const len=LENS[1];resetMatchState(len);G.diff=DIFF[1];G.diffI=1;fillArmy(false);for(const a of G.actors)spawnAtOption(a,{kind:'hq'});G.camSnap=true;AT.t=0;
- snd.ambience('field',false);HUD.showMenu(G);document.body.classList.remove('playing');if(document.exitPointerLock&&locked)document.exitPointerLock();}
+ snd.ambience('field',false);HUD.showMenu(G);document.body.classList.remove('playing');unlock();}
 G.toMenu=toMenu;
 function endMatch(res,title,sub){if(G.over)return;G.over={res,title,sub,t:0};if(P&&P.veh)snd.engine(null);snd.play(res==='win'?'win':'lose');HUD.banner(G,title,sub||'',res==='win'?'#5fe08a':res==='draw'?'#ffd23f':'#ff3b30',3.2);}
 G.endMatch=endMatch;
-function finish(){const me=P,won=G.over.res==='win';const pts=Math.max(0,Math.round(me.stats.score+(won?500:G.over.res==='draw'?200:0)));const before=prog.xp;prog.xp+=pts;try{localStorage.setItem('pxd_warfront_prog',JSON.stringify(prog));}catch(e){}
+function finish(){const me=P,won=G.over.res==='win';const pts=Math.max(0,Math.round(me.stats.score+(won?500:G.over.res==='draw'?200:0)));const before=prog.xp;prog.xp+=pts;saveProg();
  const tok=5+Math.min(60,pts/60|0);addRound(tok,won);saveBest('warfront',pts);
  G.lastAward={pts,won,res:G.over.res,kills:me.stats.kills,deaths:me.stats.deaths,caps:me.stats.caps,revives:me.stats.revives,vkills:me.stats.vkills,diff:G.diff.n,len:G.lenName,xpBefore:before,xpAfter:prog.xp,tok,tickets:G.tickets.map(Math.ceil)};
- G.app='over';G.deploy=false;snd.engine(null);document.body.classList.remove('playing');if(document.exitPointerLock&&locked)document.exitPointerLock();HUD.showOver(G);render.vis(0);}
+ G.app='over';G.deploy=false;snd.engine(null);document.body.classList.remove('playing');unlock();HUD.showOver(G);render.vis(0);}
 G.best=()=>bestScore('warfront');
-G.postScore=()=>{const a=G.lastAward||{};const u=userName();
- postScore('warfront',a.pts||0,`Game: Iron Vanguard\nPoints: ${a.pts||0}\nResult: ${a.res||''} · tickets ${a.tickets?a.tickets.join(' - '):''}\nConquest · Ashvale Valley · ${a.len||''} · ${a.diff||''}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0} · Flags: ${a.caps||0} · Revives: ${a.revives||0} · Vehicles: ${a.vkills||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`);};
+postButton($('post'),'warfront',()=>{const a=G.lastAward||{};
+ return[a.pts||0,`Game: Iron Vanguard\nPoints: ${a.pts||0}\nResult: ${a.res||''} · tickets ${a.tickets?a.tickets.join(' - '):''}\nConquest · Ashvale Valley · ${a.len||''} · ${a.diff||''}\nKills: ${a.kills||0} · Deaths: ${a.deaths||0} · Flags: ${a.caps||0} · Revives: ${a.revives||0} · Vehicles: ${a.vkills||0}`];});
+
 
 /* ================= main step ================= */
 function step(dt){dt=Math.min(dt,.1);
- if(G.app==='paused'){for(const k in edge)delete edge[k];render.vis(dt);return;}
+ if(G.app==='paused'){I.flush();render.vis(dt);return;}
  G.time+=dt;
- if(G.app==='menu'||G.app==='over'){updateBots(dt);updateVehicles(dt);stepProj(dt);stepNades(dt);if(G.app==='menu'){updateConquest(dt);stepKits(dt);}fx.update(dt,smokeCol);S.update(cam.position,dt);sky.userData.U.uT.value=G.time;HUD.update(G,dt);for(const k in edge)delete edge[k];render.vis(dt);return;}
- const sdt=G.over?dt*.35:dt;if(G.over){G.over.t+=dt;if(G.over.t>3.2){finish();for(const k in edge)delete edge[k];return;}}
+ if(G.app==='menu'||G.app==='over'){updateBots(dt);updateVehicles(dt);stepProj(dt);stepNades(dt);if(G.app==='menu'){updateConquest(dt);stepKits(dt);}fx.update(dt,smokeCol);S.update(cam.position,dt);sky.userData.U.uT.value=G.time;HUD.update(G,dt);I.flush();render.vis(dt);return;}
+ const sdt=G.over?dt*.35:dt;if(G.over){G.over.t+=dt;if(G.over.t>3.2){finish();I.flush();return;}}
  if(!G.over&&!G.deploy)updatePlayer(sdt);else{mouse.dx=mouse.dy=0;mouse.le=mouse.re=false;if(P&&P.veh&&G.over){P.veh.ctrl.fire=P.veh.ctrl.fire2=false;}}
  updateBots(sdt);updateVehicles(sdt);stepProj(sdt);stepNades(sdt);stepKits(sdt);updateConquest(sdt);
- fx.update(sdt,smokeCol);S.update(cam.position,sdt);sky.userData.U.uT.value=G.time;snd.tick(dt);HUD.update(G,dt);for(const k in edge)delete edge[k];render.vis(dt);}
+ fx.update(sdt,smokeCol);S.update(cam.position,sdt);sky.userData.U.uT.value=G.time;snd.tick(dt);HUD.update(G,dt);I.flush();render.vis(dt);}
 const smokeCol=(()=>{const c=new THREE.Color(look.fog.c);return{r:Math.min(.85,c.r*.9+.15),g:Math.min(.85,c.g*.9+.15),b:Math.min(.88,c.b*.9+.17)};})();
 const render={vis(dt){updateViewmodel(dt);updateCamera(dt);updateShadow();}};
 

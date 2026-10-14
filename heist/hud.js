@@ -1,5 +1,6 @@
 // HALCYON HEIST — DOM HUD: phase + heist clock + assault bar, objectives, take counter, crew cards, vitals, ammo + kit,
 // crosshair/hitmarkers/damage arcs, interaction prompt with progress, detection meters over watchers, drill readout, feed.
+import {toast as stack} from '../js/kit3d/ui.js';
 const $=id=>document.getElementById(id);
 export const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 export const money=v=>'$'+Math.round(v).toLocaleString('en-US');
@@ -12,7 +13,7 @@ export class HUD{
  html(el,v,k){if(this.c[k]!==v){this.c[k]=v;el.innerHTML=v;}}
  banner(t,s,col,dur,cls=''){$('bt').textContent=t;$('bt').style.color=col||'#fff';$('bs').textContent=s||'';$('bs').style.display=s?'':'none';const b=$('banner');b.className='on '+cls;this.banT=dur;}
  toast(m,col){if(!m)return;const t=$('toast');t.textContent=m;t.style.color=col||'';t.classList.add('on');this.toastT=2.4;}
- feed(html,cls=''){const d=document.createElement('div');d.className=cls;d.innerHTML=html;$('feed').prepend(d);setTimeout(()=>d.remove(),6000);while($('feed').children.length>5)$('feed').lastChild.remove();}
+ feed(html,cls=''){stack($('feed'),html,6000,5).className=cls;}
  clear(){$('feed').innerHTML='';this.c={};}
  hitmark(kind,kill){const h=$('hit');h.className=kind+(kill?' kill':'');h.style.opacity=1;this.hitT=kill?.45:.22;}
  hurt(ang,dmg){const a=this.arcs.find(x=>x.t<=0)||this.arcs[0];a.t=1.4;a.ang=ang;a.el.style.opacity=Math.min(1,.4+dmg/30);this.hurtK=Math.min(.8,(this.hurtK||0)+dmg/40);}

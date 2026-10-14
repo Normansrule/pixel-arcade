@@ -2,6 +2,7 @@
 import {RAR,WPN,AMMO,gunName,modList,wstats} from './weapons.js';
 import {ROADS,RW,SW} from './map.js';
 import {LAND} from './world.js';
+import {toast} from '../js/kit3d/ui.js';
 const $=id=>document.getElementById(id);
 export const mmss=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 const EXT=360,MS=1024,K=MS/(EXT*2);// map canvas covers -360..360 m
@@ -29,8 +30,8 @@ export class HUD{
  constructor(MAP){this.MAP=MAP;this.plan=planImage(MAP);this.mini=$('mini').getContext('2d');this.comp=$('comp').getContext('2d');this.big=$('bmc').getContext('2d');this.cache={};this.feedL=[];this.notesL=[];this.hmT=0;this.banT=0;this.ddT=0;this.fr=0;}
  set(id,v,prop='textContent'){if(this.cache[id+prop]===v)return;this.cache[id+prop]=v;$(id)[prop]=v;}
  reset(){this.feedL=[];$('feed').innerHTML='';$('notes').innerHTML='';this.banT=0;$('banner').classList.remove('on');this.cache={};}
- feed(k,w,v,o={}){const el=document.createElement('div');el.className='fe'+(o.me?' me':'')+(o.cage?' cage':'');el.innerHTML=(k?`<b>${k}</b><i>${w}${o.head?' · HEAD':''}</i>`:`<i>${w}</i>`)+`<s>${v}</s>`;const F=$('feed');F.prepend(el);while(F.children.length>6)F.lastChild.remove();setTimeout(()=>el.classList.add('out'),6000);setTimeout(()=>el.remove(),6600);}
- note(t,cls=''){const el=document.createElement('div');el.className='nt '+cls;el.textContent=t;const N=$('notes');N.prepend(el);while(N.children.length>4)N.lastChild.remove();setTimeout(()=>el.remove(),2600);}
+ feed(k,w,v,o={}){const el=toast($('feed'),(k?`<b>${k}</b><i>${w}${o.head?' · HEAD':''}</i>`:`<i>${w}</i>`)+`<s>${v}</s>`,6600,6);el.className='fe'+(o.me?' me':'')+(o.cage?' cage':'');setTimeout(()=>el.classList.add('out'),6000);}
+ note(t,cls=''){const el=toast($('notes'),'',2600,4);el.className='nt '+cls;el.textContent=t;}
  banner(t,s='',dur=3,cls=''){$('bt').textContent=t;$('bs').textContent=s;$('banner').className='on '+cls;this.banT=dur;}
  hit(kind){const h=$('hm');h.className='';void h.offsetWidth;h.className='on '+kind;this.hmT=.22;}
  hurtDir(a){const d=$('ddir');d.style.transform=`translate(-50%,-50%) rotate(${a}rad)`;d.className='on';this.ddT=1.1;}

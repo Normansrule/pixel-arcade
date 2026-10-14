@@ -1,17 +1,17 @@
 // VOIDWING — synthesized audio: engine hum + boost roar, laser zaps, missiles, lock tones, alarms, shield crackle, explosions.
+import {boot,master,noiseBuf,bed} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.connect(ac.destination);
-  this.out=ac.createGain();this.out.gain.value=.7;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
+ init(){boot(this,ac=>{this.out=master(ac,.7,-14,12);// 12:1 is the compressor's default ratio
+  const n=ac.sampleRate*2,b=this.noise=noiseBuf(ac);
   const bb=ac.createBuffer(1,n,ac.sampleRate),db=bb.getChannelData(0);let l=0;for(let i=0;i<n;i++){l=(l+.02*(Math.random()*2-1))/1.02;db[i]=l*3.5;}this.brown=bb;
-  const loop=(buf,type,f,q)=>{const s=ac.createBufferSource();s.buffer=buf;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(this.out);s.start(0,Math.random()*1.5);return{s,f:fl,g};};
+  const loop=(buf,type,f,q)=>bed(ac,buf,type,f,q,this.out,0,Math.random()*1.5);
   // engine: two detuned saws through a lowpass + noise rumble
   const o1=ac.createOscillator(),o2=ac.createOscillator();o1.type='sawtooth';o2.type='sawtooth';o2.detune.value=14;const ef=ac.createBiquadFilter();ef.type='lowpass';ef.frequency.value=300;ef.Q.value=4;const eg=ac.createGain();eg.gain.value=0;o1.connect(ef);o2.connect(ef);ef.connect(eg);eg.connect(this.out);o1.start();o2.start();this.eng={o1,o2,f:ef,g:eg};
   this.hum=loop(this.brown,'lowpass',180,.8);this.boost=loop(b,'bandpass',700,.6);this.drift=loop(b,'highpass',3000,.5);
   const lt=ac.createOscillator();lt.type='square';lt.frequency.value=900;const lf=ac.createBiquadFilter();lf.type='lowpass';lf.frequency.value=2500;const lg=ac.createGain();lg.gain.value=0;lt.connect(lf);lf.connect(lg);lg.connect(this.out);lt.start();this.lock={o:lt,g:lg};
   const wt=ac.createOscillator();wt.type='sawtooth';wt.frequency.value=700;const wg=ac.createGain();wg.gain.value=0;const wl=ac.createBiquadFilter();wl.type='lowpass';wl.frequency.value=2200;wt.connect(wl);wl.connect(wg);wg.connect(this.out);wt.start();this.warn={o:wt,g:wg};
- }catch(e){this.ac=null;}}
+ });}
  suspend(on){if(this.ac){if(on)this.ac.suspend();else this.ac.resume();}}
  engine(st){if(!this.ac)return;const t=this.ac.currentTime,k=.08,on=st.on&&this.on?1:0;const sp=Math.min(1,st.speed/300);
   this.eng.o1.frequency.setTargetAtTime(42+sp*60+st.thr*20,t,k);this.eng.o2.frequency.setTargetAtTime(84+sp*120,t,k);this.eng.f.frequency.setTargetAtTime(200+st.thr*500+(st.boost?900:0),t,k);this.eng.g.gain.setTargetAtTime(on*(.03+st.thr*.035),t,k);

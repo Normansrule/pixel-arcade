@@ -1,25 +1,22 @@
 // IRON VANGUARD (adapted from FRONTLINE OPS) — synthesized audio (vehicle engines added) (no files): gunfire per weapon, suppressed shots, footsteps, reloads, explosions, UI, ambience.
+import {boot,master,noiseBuf,reverb,bed,panTo,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.lastStep=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=6;comp.connect(ac.destination);
-  this.out=ac.createGain();this.out.gain.value=this.vol;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
+ init(){boot(this,ac=>{this.out=master(ac,this.vol,-14,6);this.noise=noiseBuf(ac);
   // short reverb tail (synthetic impulse)
-  const il=ac.sampleRate*1.6,ib=ac.createBuffer(2,il,ac.sampleRate);for(let c=0;c<2;c++){const x=ib.getChannelData(c);for(let i=0;i<il;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/il,3.2);}this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.22;this.verbIn.connect(this.verb);this.verb.connect(this.out);
+  this.verbIn=reverb(ac,1.6,3.2,.22,this.out);
   // ambience bed: wind + (night) crickets
-  const ws=ac.createBufferSource();ws.buffer=b;ws.loop=true;const wf=ac.createBiquadFilter();wf.type='lowpass';wf.frequency.value=380;this.wind=ac.createGain();this.wind.gain.value=0;ws.connect(wf);wf.connect(this.wind);this.wind.connect(this.out);ws.start();
-  this.drone=null;this.heart=0;}catch(e){this.ac=null;}}
+  this.wind=bed(ac,this.noise,'lowpass',380,null,this.out).g;
+  this.drone=null;this.heart=0;});}
  setVol(v){this.vol=v;if(this.out)this.out.gain.value=v;}
  ambience(kind,on){if(!this.ac)return;this.wind.gain.setTargetAtTime(on?(kind==='snow'?.12:kind==='town'?.04:.07):0,this.ac.currentTime,.5);this.amb=on?kind:null;}
  tick(dt){if(!this.ac||!this.amb)return;if(this.amb==='town'&&Math.random()<dt*1.4)this._cricket();if(this.amb==='harbor'&&Math.random()<dt*.35)this._gull();if(this.amb==='harbor'&&Math.random()<dt*.6)this._n(1.6,500,200,.5,.03,'lowpass',0,Math.random()*2-1);if(Math.random()<dt*.06)this._distant();}
  _gull(){const p=Math.random()*2-1,f=1400+Math.random()*500;for(let k=0;k<2+Math.random()*3;k++)this._o('sine',f,f*.7,.22,.025,k*.26,p);}
  _cricket(){const ac=this.ac,t=ac.currentTime,f=4200+Math.random()*900,pan=Math.random()*2-1;for(let k=0;k<3+Math.random()*3;k++){this._o('sine',f,f,.035,.012,k*.07,pan);}}
  _distant(){const pan=Math.random()*2-1,d=Math.random()*.5;this._n(.8,600,80,.7,.06,'lowpass',d,pan,true);this._o('sine',60,30,.6,.05,d,pan);}
- _pan(p){if(!p)return this.out;const s=this.ac.createStereoPanner();s.pan.value=Math.max(-1,Math.min(1,p));s.connect(this.out);return s;}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,rev=false){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(this._pan(pan));if(rev)g.connect(this.verbIn);s.start(t,Math.random()*1.5);s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0,pan=0,rev=false){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.005);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
-  o.connect(g);g.connect(this._pan(pan));if(rev)g.connect(this.verbIn);o.start(t);o.stop(t+dur+.03);}
+ _pan(p){return panTo(this.ac,p,this.out);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,rev=false){const g=hiss(this.ac,this.noise,this._pan(pan),this.ac.currentTime+delay,dur,f0,f1,q,vol,type);if(rev)g.connect(this.verbIn);}
+ _o(type,f0,f1,dur,vol,delay=0,pan=0,rev=false){const g=tone(this.ac,this._pan(pan),this.ac.currentTime+delay,type,f0,f1,dur,vol,.005);if(rev)g.connect(this.verbIn);}
  // gunshot. s: weapon snd profile; dist meters; pan -1..1
  shot(s,supp,dist=0,pan=0,mine=true){if(!this.ac)return;const now=this.ac.currentTime;if(!mine){if(dist>110||now-(this._ls||0)<.035)return;this._ls=now;}try{const far=Math.min(1,dist/60),v=(mine?1:.75)*(1-far*.75);
    if(!mine&&dist>30){this._n(s.len*1.3,s.f*.5,90,.7,(supp?.08:.32)*v,'lowpass',dist/340,pan);return;}

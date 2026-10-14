@@ -2,7 +2,9 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import {Pass} from '../vendor/jsm/postprocessing/Pass.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest,userName} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 import {makeTextures,makeSprites,makeKit as kitTex} from './tex.js';
 import {Nav,LAND,NH} from './world.js';
 import {makeMats,buildMap,GULAG} from './map.js';
@@ -21,8 +23,7 @@ const PHASES=[{w:95,s:60,r:250,dps:2},{w:50,s:45,r:165,dps:4},{w:40,s:40,r:105,d
 const NAMES=['VANDAL','KESTREL','MAKO','ROOK','HOLLIS','GRIT','WRAITH','TALLY','BRASK','ODIN-7','SABLE','JUNO','HAWSER','KILN','MARLOW','DUSK','CRANE','VOSS','PIKE','RENEGADE','ASH','FENWICK','LOTUS','QUILL','STRAND','BOLT','HALCYON','ORRIN','TEMPEST','NADIR','SKIFF','CINDER','VALE','BRIGGS','MONK','RAZE','IBIS','HARROW','KODA'];
 const KITS=[['#585c48',['#3a3e2c','#7a7458','#2a2a22'],0x5a5e4a],['#9a8a6a',['#7a6a4a','#b8a888','#5a4a32'],0x9a8a6a],['#6a6e72',['#4a4e52','#8a8e92','#2e3236'],0x6a6e72],['#2e3034',['#1e2024','#44484e','#3a3a3e'],0x34363a],['#4a5a6a',['#34404e','#6a7a8a','#2a3440'],0x4a5a6a],['#6a5a4a',['#4a3e32','#8a7a64','#2e2620'],0x6a5a4a]];
 const CHUTEC=[0xd8402a,0x2a6ad8,0xe8c020,0x30a050,0xe8e8e8,0x8a3ad0,0xe07020,0x202428];
-let OPT={diff:1,sens:1};try{Object.assign(OPT,JSON.parse(localStorage.getItem('dropzone_opt')||'{}'));}catch(e){}
-const saveOpt=()=>{try{localStorage.setItem('dropzone_opt',JSON.stringify(OPT));}catch(e){}};
+const OPT={diff:1,sens:1},saveOpt=stored('dropzone_opt',OPT);
 
 /* ================= renderer + scenes ================= */
 const canvas=$('c');const Rr=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});Rr.setPixelRatio(Math.min(devicePixelRatio,1.5));
@@ -51,7 +52,7 @@ const plane=makePlane();scene.add(plane);plane.visible=false;
 
 /* ================= state ================= */
 const G={log:[],app:'menu',time:0,diff:DIFF[OPT.diff],actors:[],W,nav,cnav,stats:{rover:{enter:0,riders:[],dist:0,stuck:0,crash:0,claim:0,exit:{},rk:0}},pathBudget:3,gas:null,loot:[],crates:[],depots:MAP.depots,drops:[],cars:[],plane:null,planeT:0,remaining:NACT,uavT:0,gulagQ:[],duel:null,feed:[],matchLeft:MATCH,phase:0,zone:''};
-let P=null;const keys={},mouse={l:false,r:false,q:0,dx:0,dy:0};let locked=false,shake=0,mapOpen=false,buyOpen=false,interactT=null,menuT=0,lastAward=null,deathT=0,resultT=-1;
+let P=null;let shake=0,mapOpen=false,buyOpen=false,interactT=null,menuT=0,lastAward=null,deathT=0,resultT=-1;
 const tv=new V(),tv2=new V(),tv3=new V(),HIT={t:0,i:-1,nx:0,ny:0,nz:0,mat:0};
 
 /* ================= actors ================= */
@@ -367,17 +368,13 @@ function playerTick(dt){const I=P.in;const sens=.0022*[.6,1,1.5][OPT.sens??1];
 
 /* ================= input ================= */
 function lock(){if(G.app!=='match'&&G.app!=='paused')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{$('clickp').hidden=false;});}catch(e){$('clickp').hidden=false;}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(locked){$('clickp').hidden=true;if(G.app==='paused'){G.app='match';$('pause').hidden=true;}}if(was&&!locked&&G.app==='match'&&!mapOpen)pause(true);});
-canvas.addEventListener('mousedown',()=>{if(G.app==='match'&&!locked)lock();});
+// the click lock stays local: a refused lock request shows the click-to-play prompt
+const IN=controls(canvas,{clickLock:()=>false,menu:()=>G.app==='match',onLock:(on,was)=>{if(on){$('clickp').hidden=true;if(G.app==='paused'){G.app='match';$('pause').hidden=true;}}if(was&&!on&&G.app==='match'&&!mapOpen)pause(true);},
+ onDown:e=>{if(G.app==='match'&&!IN.locked){lock();return true;}if(G.app!=='match')return true;if(e.button===0)mouse.q=Math.min(3,mouse.q+1);},
+ onWheel:()=>{if(G.app==='match'&&IN.locked&&P.alive)swapGun(P);},onKey:keyDown});
+const {keys,mouse,unlock}=IN;mouse.q=0;
 $('clickp').onclick=()=>{snd.init();if(G.app==='paused')pause(false);lock();};
-addEventListener('mousedown',e=>{if(G.app!=='match'||!locked)return;if(e.button===0){mouse.l=true;mouse.q=Math.min(3,mouse.q+1);}if(e.button===2)mouse.r=true;});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='match')e.preventDefault();});
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',()=>{if(G.app==='match'&&locked&&P.alive)swapGun(P);},{passive:true});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
-addEventListener('keydown',e=>{const first=!keys[e.code];keys[e.code]=true;if(G.app==='match'&&['Space','Tab','KeyQ','KeyE','ControlLeft','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
+function keyDown(e,first){if(G.app==='match'&&['Space','Tab','KeyQ','KeyE','ControlLeft','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(buyOpen){closeBuy();return;}if(mapOpen){setMap(false);return;}if(G.app==='paused')pause(false);return;}
  if(G.app!=='match'||!first)return;
  if(e.code==='KeyM'||e.code==='Tab'){setMap(!mapOpen);return;}
@@ -386,11 +383,10 @@ addEventListener('keydown',e=>{const first=!keys[e.code];keys[e.code]=true;if(G.
  if(e.code==='Space')P.jumpQ=true;
  if(e.code==='KeyE'||e.code==='KeyF')interact();if(e.code==='KeyR')startReload(P);if(e.code==='KeyV'||e.code==='KeyX')startPlate(P);
  if(e.code==='Digit1'||e.code==='KeyQ'||e.code==='Digit2')swapGun(P,e.code==='Digit1'?0:e.code==='Digit2'?1:undefined);
- if(e.code==='KeyC'||e.code==='ControlLeft')P.crouch=P.crouch?0:1;});
-addEventListener('keyup',e=>{keys[e.code]=false;});
+ if(e.code==='KeyC'||e.code==='ControlLeft')P.crouch=P.crouch?0:1;}
 function setMap(on){mapOpen=on;$('bigmap').hidden=!on;if(on)hud.bigmap(G,P);}
-function pause(on){if(on){if(G.app!=='match')return;G.app='paused';$('pause').hidden=false;mouse.l=mouse.r=false;mouse.q=0;}else{if(G.app!=='paused')return;if(locked||G.testing){G.app='match';$('pause').hidden=true;}else lock();}}
-function readPad(){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(!gp){G.pad=null;return;}const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.17?v:0;const pr=G.padPrev||[];const btn=i=>!!bt[i]&&(bt[i].pressed||bt[i].value>.4);const ed=i=>btn(i)&&!pr[i];
+function pause(on){if(on){if(G.app!=='match')return;G.app='paused';$('pause').hidden=false;mouse.l=mouse.r=false;mouse.q=0;}else{if(G.app!=='paused')return;if(IN.locked||G.testing){G.app='match';$('pause').hidden=true;}else lock();}}
+function readPad(){const gp=gamepad();if(!gp){G.pad=null;return;}const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.17);const pr=G.padPrev||[];const btn=i=>!!bt[i]&&(bt[i].pressed||bt[i].value>.4);const ed=i=>btn(i)&&!pr[i];
  G.pad={f:-dz(ax[1]||0),s:dz(ax[0]||0),ads:btn(6),fire:btn(7),sprint:btn(10)};P.yaw-=dz(ax[2]||0)*.05;P.pitch=cl(P.pitch-dz(ax[3]||0)*.04,-1.5,1.5);
  if(ed(0))P.jumpQ=true;if(ed(1))P.crouch=P.crouch?0:1;if(ed(2)){if(interactT)interact();else startReload(P);}if(ed(3))swapGun(P);if(ed(4))startPlate(P);if(ed(5))interact();if(ed(8))setMap(!mapOpen);if(ed(9))pause(G.app==='match');
  G.padPrev=bt.map(b=>b.pressed);}
@@ -480,15 +476,14 @@ function render(){const w=innerWidth,h=innerHeight;if(Rr.domElement.width!==Math
  if(fxStack.composer)fxStack.render();else{Rr.autoClear=true;Rr.render(scene,cam);if(VM.root.visible&&G.app==='match'){Rr.autoClear=false;Rr.clearDepth();Rr.render(vmScene,vmCam);Rr.autoClear=true;}}}
 
 /* ================= menu wiring ================= */
-function seg(id,key){const el=$(id);const set=(v,init)=>{OPT[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));if(!init){saveOpt();snd.click();}};set(OPT[key]??1,true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));}
-seg('o-diff','diff');seg('o-sens','sens');
+const seg=pickers(OPT,saveOpt);seg('o-diff','diff',true,()=>snd.click());seg('o-sens','sens',true,()=>snd.click());
 function toMenu(){G.app='menu';$('menu').hidden=false;$('hud').hidden=true;$('over').hidden=true;$('pause').hidden=true;$('clickp').hidden=true;closeBuy();setMap(false);unlock();plane.visible=false;for(const a of G.actors){if(a.rig)a.rig.root.visible=false;a.chute.visible=false;}
  IMP.begin();IMP.end();gasV.update(0,0,470,0,false);$('mbest').textContent=bestScore(ID)?'BEST '+bestScore(ID).toLocaleString()+' PTS':'';snd.loops({});snd.engine(0,0);}
 $('go').onclick=()=>{snd.init();start();lock();};
 $('again').onclick=()=>{snd.click();toMenu();};$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{$('pause').hidden=true;G.app='match';if(!P.out){P.killer='';eliminate(P);}finish('quit');};
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: DROPZONE\nScore: ${a.pts||0}\nPlacement: #${a.place||'-'} of ${NACT}${a.won?' (VICTORY)':''}\nEliminations: ${a.kills||0} · Damage: ${a.dmg||0}\nThe Cage: ${a.cage||'-'}\nCPU difficulty: ${a.diff||''}\nTime survived: ${mmss(a.t||0)}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: DROPZONE\nScore: ${a.pts||0}\nPlacement: #${a.place||'-'} of ${NACT}${a.won?' (VICTORY)':''}\nEliminations: ${a.kills||0} · Damage: ${a.dmg||0}\nThe Cage: ${a.cage||'-'}\nCPU difficulty: ${a.diff||''}\nTime survived: ${mmss(a.t||0)}`];});
+
 addEventListener('pointerdown',()=>snd.init(),{once:true});
 
 /* ================= boot + loop ================= */

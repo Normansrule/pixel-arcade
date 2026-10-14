@@ -16,7 +16,9 @@ import {Sound} from './sound.js';
 import {BOTDIFF,newBrain,think} from './ai.js';
 import {HUD,TEAMS,svgIcon} from './hud.js';
 import {hexTex,ringTex} from './tex.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest,userName} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),C=(r,g,b)=>new THREE.Color(r,g,b);
 const MODES={attack:{n:'PAYLOAD · ATTACK',mode:'payload',side:'attack'},defend:{n:'PAYLOAD · DEFEND',mode:'payload',side:'defend'},control:{n:'CONTROL',mode:'control'}};
@@ -39,7 +41,7 @@ const parts=new Particles(scene,5000),smoke=new Particles(scene,1400,true),beams
 const G={app:'menu',phase:'countdown',opt:{mode:'attack',map:0,diff:1,hero:'volt',sens:1,fov:100,vol:.8,mus:.5,ann:1},fighters:[],me:null,time:0,clock:180,cdT:5,goT:0,endT:0,
  D:null,W:null,S:null,mapDef:MAPS[0],proj:[],barriers:[],domes:[],zones:[],strikes:[],noise:null,hurtFx:0,shake:0,attract:true,timeScale:1,annQ:[],portraits:{},
  mode:'payload',attTeam:0,stage:0,pl:null,cpt:null,ot:false,otFuse:0,otT:0,winner:-1,results:null,aimTarget:null,aimFoe:false,aimAlly:false,modeName:''};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_zenith_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_zenith_opt',G.opt);
 G.enemy=(a,b)=>a!==b&&a.team!==b.team;
 G.revealedTo=(o,team)=>o.revealT>0&&o.revealTeam===team;
 G.deadAllies=(team,sec)=>G.fighters.filter(f=>f.team===team&&!f.alive&&G.time-f.deathT<sec).length;
@@ -351,7 +353,7 @@ let lastAward=null;
 function award(me,won){const s=me.stats;const pts=Math.max(0,Math.round(s.elims*100+s.assists*40+s.dmg/10+s.heal/10+s.mit/20+s.obj*5-s.deaths*20+(won?500:0)));
  lastAward={pts,won,elims:s.elims,deaths:s.deaths,dmg:Math.round(s.dmg),heal:Math.round(s.heal),hero:me.H.name,mode:G.modeName,map:G.mapDef.name,diff:BOTDIFF[G.opt.diff].n.toLowerCase()};
  const tok=5+Math.min(60,pts/50|0);addRound(tok,won);saveBest('zenith',pts);return tok;}
-function showBest(){segSync.forEach(f=>f());const b=bestScore('zenith');$('best').textContent=b?`YOUR BEST · ${b} PTS`:'';$('mapdesc').textContent=MAPS[G.opt.map].sub+' — '+MAPS[G.opt.map].desc;}
+function showBest(){seg.sync();const b=bestScore('zenith');$('best').textContent=b?`YOUR BEST · ${b} PTS`:'';$('mapdesc').textContent=MAPS[G.opt.map].sub+' — '+MAPS[G.opt.map].desc;}
 
 /* ================= game loop ================= */
 function stepMatch(dt){
@@ -395,34 +397,24 @@ function visuals(dt){parts.update(dt);smoke.update(dt);beams.update(dt);shocks.u
  if(G.app==='play'&&me){cam.updateMatrixWorld();hud.update(dt,cam);hud.board(keys.Tab||padBoard);}}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false},mouseVis={dx:0,dy:0};let locked=false,padBoard=false,msgT=0;
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;$('lock').hidden=locked||G.app!=='play';if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',e=>{if(G.app==='play'&&!locked){lock();return;}if(e.button===0)mouse.l=true;if(e.button===2)mouse.r=true;});
-$('lock').onclick=()=>lock();
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>{if(G.app==='play')e.preventDefault();});
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
- if(['Space','Tab','ShiftLeft','KeyQ','KeyE'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused')pause(false);
- if(G.app==='select'){const i=+e.key-1;if(i>=0&&i<ORDER.length)pickHero(ORDER[i]);if(e.code==='Enter')start();}});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
+const I=controls(canvas,{canLock:()=>G.app==='play',overlay:$('lock'),menu:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},
+ onKey:e=>{if(['Space','Tab','ShiftLeft','KeyQ','KeyE'].includes(e.code)&&G.app==='play')e.preventDefault();if(e.code==='Escape'&&G.app==='paused')pause(false);
+  if(G.app==='select'){const i=+e.key-1;if(i>=0&&i<ORDER.length)pickHero(ORDER[i]);if(e.code==='Enter')start();}}});
+const {keys,edge,mouse,lock,unlock}=I,mouseVis={dx:0,dy:0};let padBoard=false,msgT=0;
 let padPrev={};
 function readInput(dt){const me=G.me;const ed=k=>edge[k];
  if(me&&G.app==='play'){const i=me.inp;const d=WPN[me.H.wpn];const sens=G.opt.sens*.0022/(1+me.zoom*((d.zoom||1)-1));
   i.fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);i.side=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
   i.jump=!!keys.Space;i.jumpEdge=!!ed('Space');i.fire=mouse.l;i.zoom=mouse.r;i.reload=!!ed('KeyR');i.melee=!!(ed('KeyV')||ed('KeyF'));i.a1=!!(ed('ShiftLeft')||ed('ShiftRight'));i.a2=!!ed('KeyE');i.ult=!!ed('KeyQ');
   if(!me.alive){for(let k=0;k<ORDER.length;k++)if(ed('Digit'+(k+1))){me.nextHero=ORDER[k];snd.play('swap');}}
-  if(locked&&me.alive&&me.stunT<=0){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.5,1.5);}mouseVis.dx+=mouse.dx;mouseVis.dy+=mouse.dy;mouse.dx=mouse.dy=0;
-  const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const a=gp.axes,b=gp.buttons,dz=v=>Math.abs(v)>.15?v:0,pr=padPrev;const P=n=>b[n]&&b[n].pressed;
+  if(I.locked&&me.alive&&me.stunT<=0){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.5,1.5);}mouseVis.dx+=mouse.dx;mouseVis.dy+=mouse.dy;mouse.dx=mouse.dy=0;
+  const gp=gamepad();if(gp){const a=gp.axes,b=gp.buttons,dz=deadzone,pr=padPrev;const P=n=>b[n]&&b[n].pressed;
    if(dz(a[1])||dz(a[0])){i.fwd=-dz(a[1]);i.side=dz(a[0]);}const lx=dz(a[2]||0),ly=dz(a[3]||0),zf=1+me.zoom*2;if(me.stunT<=0){me.yaw-=lx*Math.abs(lx)*3.4*G.opt.sens*dt/zf;me.pitch=cl(me.pitch-ly*Math.abs(ly)*2.6*G.opt.sens*dt/zf,-1.5,1.5);}
    if(P(0))i.jump=true;if(P(0)&&!pr[0])i.jumpEdge=true;if((b[7]?.value||0)>.3)i.fire=true;if((b[6]?.value||0)>.3)i.zoom=true;if(P(4)&&!pr[4])i.a1=true;if(P(5)&&!pr[5])i.a2=true;if(P(3)&&!pr[3])i.ult=true;if(P(2)&&!pr[2])i.reload=true;if(P(11)&&!pr[11])i.melee=true;
    if(P(9)&&!pr[9])pause(true);padBoard=!!P(8);for(let k=0;k<17;k++)pr[k]=P(k);}
   if(G.inOv)Object.assign(i,G.inOv);if(G.inOnce){Object.assign(i,G.inOnce);G.inOnce=null;}}
- else if(G.app==='paused'){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp&&gp.buttons[9]?.pressed&&!padPrev[9])pause(false);if(gp)padPrev[9]=gp.buttons[9]?.pressed;}
- for(const k in edge)delete edge[k];}
+ else if(G.app==='paused'){const gp=gamepad();if(gp&&gp.buttons[9]?.pressed&&!padPrev[9])pause(false);if(gp)padPrev[9]=gp.buttons[9]?.pressed;}
+ I.flush();}
 function pause(on){if(on&&G.app==='play'){G.app='paused';$('pause').hidden=false;$('lock').hidden=true;document.body.classList.remove('playing');unlock();snd.beam(false);}
  else if(!on&&G.app==='paused'){G.app='play';$('pause').hidden=true;document.body.classList.add('playing');lock();}}
 
@@ -451,8 +443,7 @@ function makePortraits(){const ps=new THREE.Scene();ps.environment=G.S?G.S.env:n
  R.toneMappingExposure=tm;R.setPixelRatio(prevPR);R.setSize(prevS.x,prevS.y,false);fxStack=null;}
 
 /* ================= menus ================= */
-function saveOpt(){try{localStorage.setItem('pxd_zenith_opt',JSON.stringify(G.opt));}catch(e){}}
-const segSync=[];const seg=(id,key,num=true,cb)=>{const el=$(id);segSync.push(()=>el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(G.opt[key]))));const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(v)));if(!init){saveOpt();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
+const seg=pickers(G.opt,saveOpt);
 seg('o-mode','mode',false,()=>{if(G.app==='menu')attractMode();});seg('o-map','map',true,()=>{if(G.app==='menu')attractMode();});seg('o-diff','diff');
 seg('o-sens','sens');seg('o-fov','fov');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-mus','mus',true,v=>{snd.setMusic(v);snd.music(v>0&&G.app==='play',0);});seg('o-ann','ann',true,v=>snd.annOn=!!v);
 function buildSelect(){const roles=['tank','damage','support'];$('hgrid').innerHTML=roles.map(r=>`<div class="rg"><p style="color:${ROLES[r].css}">${ROLES[r].ic} ${ROLES[r].n}</p><div>${ORDER.filter(id=>HEROES[id].role===r).map(id=>`<button class="hc" data-h="${id}" style="--c:${HEROES[id].css}"><img src="${G.portraits[id]||''}"><b>${HEROES[id].name}</b><kbd>${ORDER.indexOf(id)+1}</kbd></button>`).join('')}</div></div>`).join('');
@@ -469,9 +460,9 @@ function wdesc(id){return{rivet:'Full-auto rivet stream. Short to mid range, 60 
 function toSelect(){G.app='select';$('menu').hidden=$('keys').hidden=true;$('select').hidden=false;buildSelect();snd.init();}
 $('go').onclick=toSelect;$('lockin').onclick=()=>start();$('sback').onclick=()=>{$('select').hidden=true;if(showModel){showScene.remove(showModel.root);showModel=null;}attractMode();};
 $('again').onclick=()=>start();$('ohero').onclick=()=>{$('over').hidden=true;attractMode();toSelect();};$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Zenith Protocol\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'}\nHero: ${a.hero||''} · Elims ${a.elims||0} · Deaths ${a.deaths||0} · Damage ${a.dmg||0} · Healing ${a.heal||0}\nMode: ${a.mode||''} · ${a.map||''} · ${a.diff||''} bots\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('zenith',a.pts||0,body);};
+postButton($('post'),'zenith',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Zenith Protocol\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'}\nHero: ${a.hero||''} · Elims ${a.elims||0} · Deaths ${a.deaths||0} · Damage ${a.dmg||0} · Healing ${a.heal||0}\nMode: ${a.mode||''} · ${a.map||''} · ${a.diff||''} bots`];});
+
 
 /* ================= boot ================= */
 attractMode();try{makePortraits();}catch(e){console.warn(e);}

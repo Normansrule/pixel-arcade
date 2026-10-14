@@ -3,6 +3,7 @@
 // allies), ally tags, deploy screen (class cards + spawn map), scoreboard, menus and results.
 import * as THREE from '../vendor/three.module.min.js';
 import {EXT,WL,HQ,BRIDGE,PLAY} from './terrain.js';
+import {pickers,toast} from '../js/kit3d/ui.js';
 const _el={},$=id=>_el[id]||(_el[id]=document.getElementById(id)),cl=(v,a,b)=>v<a?a:v>b?b:v,ang=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const mmss=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 let R=null;const st={banT:0,annT:0,hitT:0,hurtT:0,promptT:0,dmg:[],tagCache:new Map(),tagT:0,c:{},base:null,flashT:0,dmT:0,dsig:''};
@@ -12,9 +13,8 @@ export const TEAM=['VANGUARD','KORVAN BLOC'],COL=['#4aa8ff','#ff3b30'],SQN=['ALP
 const ownCls=o=>o===0?'own':o===1?'foe':'';
 
 export function init(G,refs){R=refs;
- const seg=(id,get,set,cast=x=>x)=>{const el=$(id);const upd=()=>el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(get())===b.dataset.v));el.onclick=e=>{const b=e.target.closest('button');if(!b)return;set(cast(b.dataset.v));upd();G.saveOpt();G.snd.play('ui');};upd();return upd;};
- const o=G.opt;seg('o-diff',()=>o.diff,v=>o.diff=v,Number);seg('o-len',()=>o.len,v=>o.len=v,Number);seg('o-sens',()=>o.sens,v=>o.sens=v,Number);seg('o-vol',()=>o.vol,v=>{o.vol=v;G.snd.setVol(v);},Number);
- $('go').onclick=()=>G.start();$('resume').onclick=()=>G.pause(false);$('quit').onclick=()=>G.toMenu();$('again').onclick=()=>G.start();$('omenu').onclick=()=>G.toMenu();$('post').onclick=()=>G.postScore();
+ const seg=pickers(G.opt,G.saveOpt),ui=()=>G.snd.play('ui');seg('o-diff','diff',true,ui);seg('o-len','len',true,ui);seg('o-sens','sens',true,ui);seg('o-vol','vol',true,v=>{G.snd.setVol(v);ui();});
+ $('go').onclick=()=>G.start();$('resume').onclick=()=>G.pause(false);$('quit').onclick=()=>G.toMenu();$('again').onclick=()=>G.start();$('omenu').onclick=()=>G.toMenu();
  $('dgo').onclick=()=>G.deployNow();$('dquit').onclick=()=>G.toMenu();
  $('classes').onclick=e=>{const w=e.target.closest('[data-w]');if(w){G.setWeapon(w.dataset.w);G.snd.play('ui');buildClasses(G);return;}const b=e.target.closest('.ccard');if(!b)return;G.setClass(b.dataset.c);G.snd.play('ui');buildClasses(G);};
  $('dmapw').onclick=e=>{const b=e.target.closest('.sp');if(!b)return;G.spawnSel=b.dataset.s;G.snd.play('ui');st.dsig='';deployMap(G);};
@@ -68,15 +68,14 @@ export function deployMap(G){buildClasses(G);const cv=$('dmap'),x=cv.getContext(
  const r=G.respawnLeft();txt($('dcnt'),r>0?`REDEPLOY IN ${Math.ceil(r)}`:'READY · ENTER TO DEPLOY','dcnt');$('dgo').disabled=r>0;$('dgo').style.opacity=r>0?.45:1;}
 
 /* ================= events ================= */
-export function feed(G,att,v,w,head){if(G.app!=='play')return;const f=$('feed'),d=document.createElement('div');const cls=a=>a?(a.isPlayer?'me':a.team===0?'f':'e'):'';
- d.innerHTML=att&&att!==v?`<span class="${cls(att)}">${att.name}</span><span class="w">${head?'<span class="hs">◉ </span>':''}${w||''}</span><span class="${cls(v)}">${v.name}</span>`:`<span class="${cls(v)}">${v.name}</span><span class="w">${w||'DOWN'}</span>`;
- f.prepend(d);setTimeout(()=>d.remove(),5000);while(f.children.length>6)f.lastChild.remove();}
-export function radio(G,name,text,hq){if(G.app!=='play')return;const r=$('radio'),d=document.createElement('div');if(hq)d.className='hq';d.innerHTML=`<b>${name}</b>${text}`;r.appendChild(d);setTimeout(()=>d.remove(),5600);while(r.children.length>4)r.firstChild.remove();}
+export function feed(G,att,v,w,head){if(G.app!=='play')return;const cls=a=>a?(a.isPlayer?'me':a.team===0?'f':'e'):'';
+ toast($('feed'),att&&att!==v?`<span class="${cls(att)}">${att.name}</span><span class="w">${head?'<span class="hs">◉ </span>':''}${w||''}</span><span class="${cls(v)}">${v.name}</span>`:`<span class="${cls(v)}">${v.name}</span><span class="w">${w||'DOWN'}</span>`,5000,6);}
+export function radio(G,name,text,hq){if(G.app!=='play')return;const d=toast($('radio'),`<b>${name}</b>${text}`,5600,4,false);if(hq)d.className='hq';}
 export function banner(G,t,s,col,dur){$('bt').textContent=t;$('bt').style.color=col||'#fff';$('bs').textContent=s||'';$('bs').style.display=s?'':'none';$('banner').classList.add('on');st.banT=dur||2;}
 export function ann(G,t,dur){$('ann').textContent=t;$('ann').classList.add('on');st.annT=dur||2;}
-export function xp(G,n,label){if(G.app!=='play')return;const d=document.createElement('div');d.innerHTML=`+${n}<small>${label}</small>`;const x=$('xp');x.appendChild(d);setTimeout(()=>d.remove(),900);while(x.children.length>3)x.firstChild.remove();}
+export function xp(G,n,label){if(G.app!=='play')return;toast($('xp'),`+${n}<small>${label}</small>`,900,3,false);}
 export function hitmark(head,kill){const h=$('hit');h.className=kill?'kill':head?'head':'';st.hitT=kill?.5:.24;h.style.transform=`scale(${kill?1.25:1})`;}
-export function killConfirm(G,v,label){const k=$('kc'),d=document.createElement('div');if(label==='HEADSHOT')d.className='hs';d.innerHTML=`<b>${label}</b><span>${v.name||v}</span>`;k.prepend(d);setTimeout(()=>d.remove(),1500);while(k.children.length>2)k.lastChild.remove();}
+export function killConfirm(G,v,label){const d=toast($('kc'),`<b>${label}</b><span>${v.name||v}</span>`,1500,2);if(label==='HEADSHOT')d.className='hs';}
 export function hurt(G,src,dm){st.hurtT=Math.min(.7,.25+dm/80);const P=G.player;if(!P||!src)return;const a=Math.atan2(src.x-P.pos.x,src.z-P.pos.z);const el=document.createElement('div');$('dmg').appendChild(el);st.dmg.push({a,t:1.6,el});if(st.dmg.length>6){const o=st.dmg.shift();o.el.remove();}}
 export function dead(G,mode,att,w){$('dead').hidden=!mode;if(!mode)return;$('dead').firstChild.textContent=mode==='down'?'DOWNED':'K.I.A.';$('deadby').textContent=att&&att!==G.player&&att.name?`${mode==='down'?'DOWNED':'KILLED'} BY ${att.name}${w?' · '+w:''}`:mode==='down'?'YOU ARE DOWN':'YOU DIED';}
 export function prompt(G,t,p){if(!t){st.promptT=0;return;}txt($('ptxt'),t,'pt');$('prompt').querySelector('.pb i').style.width=Math.round((p||0)*100)+'%';$('prompt').querySelector('.pb').style.display=p>0?'':'none';st.promptT=.15;}
