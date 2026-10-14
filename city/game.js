@@ -11,7 +11,9 @@ import {Missions,KIND} from './missions.js';
 import {Particles,Skids,Beams} from './fx.js';
 import {Sound,STATIONS} from './sound.js';
 import {Hud} from './hud.js';
-import {addRound,bestKey,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestKey,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {pickers,postButton} from '../js/kit3d/ui.js';
 const V=THREE.Vector3,$=id=>document.getElementById(id);
 const DT=1/60;
 
@@ -91,25 +93,21 @@ G.respray=c=>{const v=G.player.veh;if(!v){G.hud.toast('BRING A VEHICLE');return;
  if(G.police.stars>0){if(!G.police.seen){G.police.clear();G.hud.toast('NEW PAINT · THE COPS LOST YOUR DESCRIPTION');}else G.hud.toast('THEY SAW YOU GO IN!');}else G.hud.toast('GOOD AS NEW');G.hud.renderShop();};
 
 /* ================= input ================= */
-const keys={},edge={};let mouseDX=0,mouseDY=0,locked=false,lookIdle=9;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
+const canLock=()=>G.app==='play'&&!G.hud.mapOpen&&!G.hud.shopOpen;
+const I=controls(canvas,{canLock,menu:()=>false,onLock:(on,was)=>{if(was&&!on&&G.app==='play'&&!G.hud.mapOpen&&!G.hud.shopOpen&&!G.hud.phoneOpen)pause(true);},onKey:e=>{
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','Backspace'].includes(e.code))e.preventDefault();
  if(G.app==='play'&&G.hud.phoneOpen&&G.hud.phoneKey(e.code)){delete edge[e.code];return;}
  if(e.code==='Escape'){if(G.hud.shopOpen){G.hud.closeShop();return;}if(G.hud.mapOpen){G.toggleMap(false);return;}if(G.hud.phoneOpen){G.hud.togglePhone(false);return;}if(G.app==='play')pause(true);else if(G.app==='paused')pause(false);}
- if(G.app==='play'&&e.code==='KeyM'){G.toggleMap(!G.hud.mapOpen);}});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
-addEventListener('mousemove',e=>{if(locked){mouseDX+=e.movementX;mouseDY+=e.movementY;}});
-canvas.addEventListener('mousedown',()=>{if(G.app==='play'&&!locked&&!G.hud.mapOpen&&!G.hud.shopOpen)lock();});
-function lock(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play'&&!G.hud.mapOpen&&!G.hud.shopOpen&&!G.hud.phoneOpen)pause(true);});
-const padPrev={};function pad(){const list=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];return list[0]||null;}
+ if(G.app==='play'&&e.code==='KeyM'){G.toggleMap(!G.hud.mapOpen);}}});
+const {keys,edge,mouse}=I,lock=()=>{try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}};let lookIdle=9;
+const padPrev={},pad=gamepad;
 function readInput(){const k=c=>!!keys[c];const g=pad();const inp={mx:(k('KeyD')?1:0)-(k('KeyA')?1:0),mz:(k('KeyW')?1:0)-(k('KeyS')?1:0),sprint:k('ShiftLeft')||k('ShiftRight'),jump:!!(edge.Space),walk:k('AltLeft'),
   thr:(k('KeyW')||(!G.hud.phoneOpen&&k('ArrowUp'))?1:0)-(k('KeyS')||(!G.hud.phoneOpen&&k('ArrowDown'))?1:0),steer:(k('KeyA')||(!G.hud.phoneOpen&&k('ArrowLeft'))?1:0)-(k('KeyD')||(!G.hud.phoneOpen&&k('ArrowRight'))?1:0),hb:k('Space'),horn:k('KeyH'),
   enter:!!edge.KeyF,act:!!(edge.KeyE||edge.Enter&&!G.hud.phoneOpen),photo:!!edge.KeyP,radio:!!edge.KeyR,camMode:!!edge.KeyC,phone:!!(edge.KeyT||edge.Tab),lx:0,ly:0};
- if(g){const ax=g.axes,bt=g.buttons,pr=padPrev,dz=v=>Math.abs(v)>.18?v:0;const sx=dz(ax[0]||0),sy=dz(ax[1]||0);if(sx||sy){inp.mx=sx;inp.mz=-sy;}if(sx)inp.steer=-sx;const rt=bt[7]?.value||0,lt=bt[6]?.value||0;if(rt>.05||lt>.05)inp.thr=rt-lt;
+ if(g){const ax=g.axes,bt=g.buttons,pr=padPrev,dz=v=>deadzone(v,.18);const sx=dz(ax[0]||0),sy=dz(ax[1]||0);if(sx||sy){inp.mx=sx;inp.mz=-sy;}if(sx)inp.steer=-sx;const rt=bt[7]?.value||0,lt=bt[6]?.value||0;if(rt>.05||lt>.05)inp.thr=rt-lt;
   inp.lx=dz(ax[2]||0);inp.ly=dz(ax[3]||0);if(bt[0]?.pressed){inp.hb=true;if(!pr.a)inp.jump=true;}if(bt[10]?.pressed)inp.sprint=true;if(bt[1]?.pressed&&!G.player.veh)inp.sprint=true;if(bt[3]?.pressed&&!pr.y)inp.enter=true;if(bt[2]?.pressed&&!pr.x)inp.act=true;if(bt[11]?.pressed)inp.horn=true;if(bt[5]?.pressed&&!pr.rb)inp.radio=true;if(bt[4]?.pressed&&!pr.lb)inp.photo=true;if(bt[12]?.pressed&&!pr.up)inp.phone=true;if(bt[13]?.pressed&&!pr.dn)inp.camMode=true;
   if(bt[9]?.pressed&&!pr.st)pause(G.app==='play');if(bt[8]?.pressed&&!pr.bk&&G.app==='play')G.toggleMap(!G.hud.mapOpen);pr.a=bt[0]?.pressed;pr.y=bt[3]?.pressed;pr.x=bt[2]?.pressed;pr.rb=bt[5]?.pressed;pr.lb=bt[4]?.pressed;pr.up=bt[12]?.pressed;pr.dn=bt[13]?.pressed;pr.st=bt[9]?.pressed;pr.bk=bt[8]?.pressed;}
- for(const c in edge)delete edge[c];return inp;}
+ I.flush();return inp;}
 function pause(on){if(on&&G.app==='play'){G.app='paused';$('pause').hidden=false;document.body.classList.remove('playing');if(document.pointerLockElement)document.exitPointerLock();G.snd.radioLevel(0);}
  else if(!on&&G.app==='paused'){G.app='play';$('pause').hidden=true;document.body.classList.add('playing');lock();}}
 
@@ -181,7 +179,7 @@ function step(dt){dt=Math.min(dt,.1);G.time+=dt;U.uTime.value=G.time;
  if(G.app==='over'){overT+=dt;simWorld(dt,true);overCam(dt);return;}
  if(G.app!=='play'){visuals(0);return;}
  const inp=readInput();const P=G.player;
- if(G.hud.mapOpen||G.hud.shopOpen){mouseDX=mouseDY=0;visuals(0);G.hud.update(0);return;}
+ if(G.hud.mapOpen||G.hud.shopOpen){mouse.dx=mouse.dy=0;visuals(0);G.hud.update(0);return;}
  // session clock + time of day
  G.clock-=dt;if(G.clock<=0){G.clock=0;endDay();return;}G.hour=(7+24*(1-G.clock/G.total))%24;
  if(bustT>0){bustT-=dt;if(bustT<=0)finishBust();}
@@ -267,7 +265,7 @@ function vehFx(v,dt){if(dt<=0)return;const d=Math.hypot(v.x-cam.position.x,v.z-c
 
 /* ================= cameras ================= */
 let camMode=0,camPitch=.28,camDist=4.4;const cpos=new V(),clook=new V();
-function camera(dt){const P=G.player,W=G.W;const mx=mouseDX,my=mouseDY;mouseDX=mouseDY=0;const g=readStick();
+function camera(dt){const P=G.player,W=G.W;const mx=mouse.dx,my=mouse.dy;mouse.dx=mouse.dy=0;const g=readStick();
  const lookX=mx*.0024+g.x*dt*2.6,lookY=my*.0022+g.y*dt*1.8;
  let want,look,fov=62;
  if(bustT>0){const p=new V(P.x,P.y,P.z);G.camYaw+=dt*.4;want=p.clone().add(new V(Math.sin(G.camYaw)*-9,4.5,Math.cos(G.camYaw)*-9));look=p.clone().add(new V(0,1,0));}
@@ -285,7 +283,7 @@ function camera(dt){const P=G.player,W=G.W;const mx=mouseDX,my=mouseDY;mouseDX=m
  if(cam.userData.snap){cpos.copy(want);clook.copy(look);cam.userData.snap=false;}else{const k=1-Math.exp(-dt*(P.veh?9:14)),kl=1-Math.exp(-dt*16);cpos.lerp(want,k);clook.lerp(look,kl);}
  cam.position.copy(cpos);shake=Math.max(0,shake-dt*1.5);const s=shake*shake*.6;cam.position.x+=(Math.random()-.5)*s;cam.position.y+=(Math.random()-.5)*s;cam.position.z+=(Math.random()-.5)*s;cam.lookAt(clook);cam.fov+=(fov-cam.fov)*Math.min(1,dt*3);cam.updateProjectionMatrix();
  const f=new V();cam.getWorldDirection(f);G.camYaw=P.veh&&lookIdle>1.2?G.camYaw:G.camYaw;G.viewYaw=Math.atan2(f.x,f.z);}
-function readStick(){const g=pad();if(!g)return{x:0,y:0};const dz=v=>Math.abs(v)>.18?v:0;return{x:dz(g.axes[2]||0),y:dz(g.axes[3]||0)};}
+function readStick(){const g=pad();if(!g)return{x:0,y:0};const dz=v=>deadzone(v,.18);return{x:dz(g.axes[2]||0),y:dz(g.axes[3]||0)};}
 const MENU_PATH=[[150,60,520,60,8,300],[-120,45,470,-60,10,280],[-260,70,-150,-60,20,-420],[400,90,-200,90,10,-100],[300,22,420,120,6,300]];
 function menuCam(dt){const n=MENU_PATH.length,t=menuT/18,i=Math.floor(t)%n,f=sstep(0,1,t%1);const a=MENU_PATH[i],b=MENU_PATH[(i+1)%n];const p=a.map((v,k)=>lerp(v,b[k],f));cam.position.set(p[0],p[1],p[2]);cam.lookAt(p[3],p[4],p[5]);cam.fov=55;cam.updateProjectionMatrix();G.viewYaw=0;}
 function overCam(dt){const P=G.player;const a=overT*.08;cam.position.set(P.x+Math.cos(a)*170,P.y+120,P.z+Math.sin(a)*170);cam.lookAt(P.x,P.y+10,P.z);cam.fov=50;cam.updateProjectionMatrix();}
@@ -307,12 +305,11 @@ let last=performance.now();function tick(dt){step(dt);if(G.app==='play'||G.app==
 function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;frame(dt);requestAnimationFrame(loop);}
 
 /* ================= menu wiring ================= */
-const seg=(id,key)=>{const el=$(id);const set=v=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));};set(G.opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
+const seg=pickers(G.opt);
 seg('o-len','len');seg('o-cops','cops');seg('o-traffic','traffic');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Neon Bay\nScore: ${a.score||0}\nEarned: ${fmtCash(a.earned||0)} · Cash: ${fmtCash(a.cash||0)}\nRep: ${a.rep||0} · Missions passed: ${a.missions||0}\nBest race: ${fmtRace(a.best)}\nDay length: ${a.len||''} min\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('neonbay',a.score||0,body);};
+postButton($('post'),'neonbay',()=>{const a=lastAward||{};
+ return[a.score||0,`Game: Neon Bay\nScore: ${a.score||0}\nEarned: ${fmtCash(a.earned||0)} · Cash: ${fmtCash(a.cash||0)}\nRep: ${a.rep||0} · Missions passed: ${a.missions||0}\nBest race: ${fmtRace(a.best)}\nDay length: ${a.len||''} min`];});
 addEventListener('pointerdown',()=>{if(G.snd&&G.app==='menu')G.snd.init();},{once:false});
 
 /* ================= test hooks ================= */

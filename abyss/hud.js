@@ -2,6 +2,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {$,mmss,cl} from './util.js';
 import {ITEMS} from './data.js';
+import {toast} from '../js/kit3d/ui.js';
 
 const tp=new THREE.Vector3();
 export class HUD{
@@ -10,7 +11,7 @@ export class HUD{
  bar(id,p){const k='b_'+id;const v=Math.round(cl(p,0,1)*1000)/10;if(this.last[k]!==v){this.last[k]=v;$(id).style.width=v+'%';}}
  banner(t,s='',dur=3.2,col){$('bt').textContent=t;$('bs').textContent=s;$('bt').style.color=col||'';$('banner').classList.add('on');this.bT=dur;}
  alert(t,s,dur=3){$('alt').textContent=t;$('als').textContent=s||'';$('alert').classList.add('on');this.aT=dur;}
- feed(txt,col='#56e8ff',tag=''){const f=$('feed');const d=document.createElement('div');d.style.borderLeftColor=col;d.innerHTML=(tag?`<b style="color:${col}">${tag}</b>`:'')+txt;f.appendChild(d);while(f.children.length>6)f.firstChild.remove();setTimeout(()=>d.remove(),4200);}
+ feed(txt,col='#56e8ff',tag=''){toast($('feed'),(tag?`<b style="color:${col}">${tag}</b>`:'')+txt,4200,6,false).style.borderLeftColor=col;}
  prompt(s){if(this.last.prompt===s)return;this.last.prompt=s;const p=$('prompt');if(s){p.innerHTML=s;p.classList.add('on');}else p.classList.remove('on');}
  marker(cam,pos,label,col,sub,op=1){tp.copy(pos).project(cam);if(tp.z>1)return '';const x=cl(tp.x,-.9,.9),y=cl(tp.y,-.55,.72);const edge=x!==tp.x||y!==tp.y;
   return `<div class="mk" style="left:${(x*.5+.5)*100}%;top:${(-y*.5+.5)*100}%;color:${col};opacity:${edge?op*.6:op}">${label}<em>${sub}</em><i></i></div>`;}

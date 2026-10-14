@@ -7,7 +7,9 @@ import {LEVELS,DISTRICTS,PACE} from './levels.js';
 import {buildLevel,setupDistrict,DPOST,HINT,Particles} from './world.js';
 import {Figure,Viewmodel} from './rig.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,TAU=Math.PI*2,rnd=(a=1)=>Math.random()*a;
 const DT=1/120,GHZ=20;
@@ -27,8 +29,7 @@ const rivalFig=new Figure(0xff3b2a,'RIVAL'),ghostFig=new Figure(0x2fe0ff,'YOUR B
 const rope=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,1,5,1,true),new THREE.MeshBasicMaterial({color:new THREE.Color(3,1.2,.3),toneMapped:false}));rope.visible=false;scene.add(rope);
 
 /* ================= options + progress ================= */
-const opt={sess:10,tier:1,ghost:1,sens:1,fov:100,vision:1,vol:.8,mus:.5};try{Object.assign(opt,JSON.parse(localStorage.getItem('runline_opt'))||{});}catch(e){}
-function saveOpt(){try{localStorage.setItem('runline_opt',JSON.stringify(opt));}catch(e){}}
+const opt={sess:10,tier:1,ghost:1,sens:1,fov:100,vision:1,vol:.8,mus:.5};const saveOpt=stored('runline_opt',opt);
 let prog={best:{}};try{prog=Object.assign(prog,JSON.parse(localStorage.getItem('runline_prog'))||{});}catch(e){}
 function saveProg(){try{localStorage.setItem('runline_prog',JSON.stringify(prog));}catch(e){}}
 let unlockAll=/[?&]all\b/.test(location.search);
@@ -109,36 +110,30 @@ function updateBest(){const n=Object.keys(prog.best).length,b=best();$('best').t
 function pause(on){if(on&&app==='play'){app='paused';unlock();showScr('pause');document.body.classList.remove('playing');}else if(!on&&app==='paused'){app='play';showScr(null);$('hud').hidden=false;document.body.classList.add('playing');lock();}}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false};let locked=false;
-function lock(){if(app!=='play'||AP.on)return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&app==='play')pause(true);});
-canvas.addEventListener('mousedown',()=>{if(app==='play'&&!locked)lock();});
-addEventListener('mousedown',e=>{if(app!=='play'||!locked)return;if(e.button===0)edge.dash=true;if(e.button===2)edge.grap=true;});
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ControlLeft','ControlRight'].includes(e.code))e.preventDefault();
+// edge holds both key codes and this world's actions (jump, slide, dash, grap); flushed together
+const IN=controls(canvas,{canLock:()=>app==='play'&&!AP.on,onLock:(on,was)=>{if(was&&!on&&app==='play')pause(true);},
+ onDown:e=>{if(app!=='play'||!IN.locked)return true;if(e.button===0)edge.dash=true;if(e.button===2)edge.grap=true;},onKey});
+const {keys,edge,mouse,lock,unlock}=IN;
+function onKey(e,first){if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ControlLeft','ControlRight'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(app==='paused')pause(false);else if(app==='play')pause(true);else if(app==='done')toSelect();return;}
  if(!first)return;
  if(app==='done'){if(e.code==='KeyR')startLevel(LI);else if((e.code==='Enter'||e.code==='Space')&&!$('dnext').hidden)startLevel(LI+1);else if(e.code==='Enter'||e.code==='Space')startLevel(LI);else if(e.code==='KeyL')toSelect();return;}
  if(app!=='play')return;
  if(e.code==='Space')edge.jump=true;if(e.code==='KeyC'||e.code==='ControlLeft'||e.code==='ControlRight')edge.slide=true;if(e.code==='KeyE')edge.dash=true;if(e.code==='KeyF')edge.grap=true;
- if(e.code==='KeyR')resetRun();if(e.code==='KeyQ'&&run.started)respawn('');if(e.code==='KeyV')setVision(!opt.vision);});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='KeyR')resetRun();if(e.code==='KeyQ'&&run.started)respawn('');if(e.code==='KeyV')setVision(!opt.vision);}
 const padPrev={};
 function readInput(){const I={f:0,s:0,jump:false,jumpE:false,slide:false,slideE:false,dashE:false,grapE:false,sprint:true};const k=c=>keys[c];
  I.f=(k('KeyW')||k('ArrowUp')?1:0)-(k('KeyS')||k('ArrowDown')?1:0);I.s=(k('KeyD')||k('ArrowRight')?1:0)-(k('KeyA')||k('ArrowLeft')?1:0);
  I.jump=!!k('Space');I.slide=!!(k('KeyC')||k('ControlLeft')||k('ControlRight'));I.sprint=!(k('ShiftLeft')||k('ShiftRight'));
  I.jumpE=!!edge.jump;I.slideE=!!edge.slide;I.dashE=!!edge.dash;I.grapE=!!edge.grap;
- const gps=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];const g=gps[0];
- if(g){const ax=g.axes,bt=g.buttons,dz=v=>Math.abs(v)>.18?v:0,pr=padPrev;const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);if(lx||ly){I.s=lx;I.f=-ly;}
+ const g=gamepad();
+ if(g){const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.18),pr=padPrev;const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);if(lx||ly){I.s=lx;I.f=-ly;}
   P.yaw-=rx*3.2*opt.sens*(1/60);P.pitch=cl(P.pitch-ry*2.4*opt.sens*(1/60),-1.5,1.5);
   const b=i=>!!(bt[i]&&bt[i].pressed);if(b(0)){I.jump=true;if(!pr.a)I.jumpE=true;}if(b(1)){I.slide=true;if(!pr.b)I.slideE=true;}if(b(2)&&!pr.x)I.dashE=true;if((bt[7]?.value||0)>.5&&!pr.rt)I.grapE=true;
   if(b(4)&&!pr.lb&&run&&run.started)respawn('');if(b(8)&&!pr.bk)resetRun();if(b(9)&&!pr.st)pause(true);if(b(3)&&!pr.y)setVision(!opt.vision);
   pr.a=b(0);pr.b=b(1);pr.x=b(2);pr.rt=(bt[7]?.value||0)>.5;pr.lb=b(4);pr.bk=b(8);pr.st=b(9);pr.y=b(3);}
- for(const e in edge)delete edge[e];return I;}
-function setVision(on){opt.vision=on?1:0;saveOpt();segSet('o-vision',opt.vision);if(app==='play')hudTip(on?'Runner vision ON — red marks useful surfaces':'Runner vision OFF',1.6);}
+ IN.flush();return I;}
+function setVision(on){opt.vision=on?1:0;saveOpt();seg.sync();if(app==='play')hudTip(on?'Runner vision ON — red marks useful surfaces':'Runner vision OFF',1.6);}
 
 /* ================= autopilot (tests + attract) ================= */
 function apInput(){const I={f:1,s:0,jump:false,jumpE:false,slide:false,slideE:false,dashE:false,grapE:false,sprint:true};const R=LV.route;
@@ -210,7 +205,7 @@ function step(dt){dt=Math.min(dt,.1);time+=dt;
  if(app==='play'){const sens=.0022*opt.sens;P.yaw-=mouse.dx*sens;P.pitch=cl(P.pitch-mouse.dy*sens,-1.52,1.52);mouse.dx=mouse.dy=0;
   let I=AP.on?apInput():readInput();acc+=dt;let n=0,first=true;while(acc>=DT&&n<12){if(!first){I={...I,jumpE:false,slideE:false,dashE:false,grapE:false};}first=false;if(AP.on&&n>0)I=apInput();
    grapTarget();fixed(DT,I);acc-=DT;n++;if(app!=='play')break;}if(n>=12)acc=0;}
- else{mouse.dx=mouse.dy=0;for(const e in edge)delete edge[e];}
+ else{mouse.dx=mouse.dy=0;IN.flush();}
  visuals(dt);}
 function grapTarget(){P.grapTarget=null;let best=null,bc=Math.cos(.24);const e=_v.set(P.pos.x,P.pos.y+P.eyeH,P.pos.z);const fx=-Math.sin(P.yaw)*Math.cos(P.pitch),fy=Math.sin(P.pitch),fz=-Math.cos(P.yaw)*Math.cos(P.pitch);
  for(const g of WLD.graps){g.hot=Math.max(0,g.hot-.02);if(g.cd>0||P.grap&&P.grap.pt===g)continue;const dx=g.p.x-e.x,dy=g.p.y-e.y,dz=g.p.z-e.z,d=Math.hypot(dx,dy,dz);if(d>MV.grapR||d<3)continue;const c=(dx*fx+dy*fy+dz*fz)/d;if(c<bc)continue;
@@ -305,16 +300,14 @@ function render(){if(!DS)return;const w=innerWidth,h=innerHeight;if(Rr.domElemen
  if(fxStack.composer)fxStack.render();else{Rr.autoClear=true;Rr.render(scene,cam);if(app==='play'||app==='paused'){Rr.autoClear=false;Rr.clearDepth();Rr.render(vmScene,vmCam);Rr.autoClear=true;}}}
 
 /* ================= menus ================= */
-function segSet(id,v){const el=$(id);if(!el)return;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(+b.dataset.v)===String(v)));}
-const seg=(id,key,cb)=>{const el=$(id);segSet(id,opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>{opt[key]=+b.dataset.v;segSet(id,opt[key]);saveOpt();snd.play('click');cb&&cb(opt[key]);});};
+const pick=pickers(opt,saveOpt),seg=(id,key,cb)=>pick(id,key,true,v=>{snd.play('click');cb&&cb(v);});seg.sync=pick.sync;
 seg('o-sess','sess');seg('o-tier','tier');seg('o-ghost','ghost');seg('o-sens','sens');seg('o-fov','fov');seg('o-vision','vision');seg('o-vol','vol',v=>snd.setVol(v));seg('o-mus','mus',v=>snd.setMusic(v));
 $('go').onclick=()=>{snd.init();newSession();toSelect();};$('endsess').onclick=()=>endSession();$('selmenu').onclick=toMenu;
 $('resume').onclick=()=>pause(false);$('prestart').onclick=()=>{pause(false);resetRun();};$('plevels').onclick=()=>toSelect();
 $('dnext').onclick=()=>startLevel(LI+1);$('dretry').onclick=()=>startLevel(LI);$('dlevels').onclick=()=>toSelect();
 $('again').onclick=()=>{newSession();toSelect();};$('omenu').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const m=a.medals||[0,0,0,0];const body=`Game: Runline\nScore: ${a.pts||0}\nCourses finished: ${a.courses||0} · Medals P${m[3]} G${m[2]} S${m[1]} B${m[0]} · Rival wins: ${a.rivals||0}\nSession: ${a.len||''} min · Rival ${a.tier||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('runline',a.pts||0,body);};
+postButton($('post'),'runline',()=>{const a=lastAward||{};
+ const m=a.medals||[0,0,0,0];return[a.pts||0,`Game: Runline\nScore: ${a.pts||0}\nCourses finished: ${a.courses||0} · Medals P${m[3]} G${m[2]} S${m[1]} B${m[0]} · Rival wins: ${a.rivals||0}\nSession: ${a.len||''} min · Rival ${a.tier||''}`];});
 
 /* ================= boot + loop ================= */
 let last=performance.now();

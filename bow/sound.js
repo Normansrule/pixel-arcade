@@ -1,15 +1,13 @@
 // LONGBOW KEEP — WebAudio synthesis (no audio files): bow creak + twang, arrow thunks, steel, bombs, horns, fanfares, wind.
+import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.lx=0;this.ly=0;this.lz=0;this.lyaw=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=this.vol;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
+ init(){boot(this,ac=>{this.out=master(ac,this.vol,-14,12);const b=this.noise=noiseBuf(ac);
   // wind bed
-  const ws=ac.createBufferSource();ws.buffer=b;ws.loop=true;const wf=ac.createBiquadFilter();wf.type='bandpass';wf.frequency.value=420;wf.Q.value=.5;this.wind=ac.createGain();this.wind.gain.value=.025;ws.connect(wf);wf.connect(this.wind);this.wind.connect(this.out);ws.start();this.windF=wf;
+  const w=bed(ac,b,'bandpass',420,.5,this.out,.025);this.wind=w.g;this.windF=w.f;
   // bow-draw creak voice
-  const ds=ac.createBufferSource();ds.buffer=b;ds.loop=true;const df=ac.createBiquadFilter();df.type='bandpass';df.Q.value=6;df.frequency.value=300;this.drawG=ac.createGain();this.drawG.gain.value=0;ds.connect(df);df.connect(this.drawG);this.drawG.connect(this.out);ds.start();this.drawF=df;
-  const dO=ac.createOscillator();dO.type='sawtooth';dO.frequency.value=38;const dOg=ac.createGain();dOg.gain.value=0;const dlp=ac.createBiquadFilter();dlp.type='lowpass';dlp.frequency.value=260;dO.connect(dlp);dlp.connect(dOg);dOg.connect(this.out);dO.start();this.creak=dOg;this.creakO=dO;
- }catch(e){this.ac=null;}}
+  const dr=bed(ac,b,'bandpass',300,6,this.out,0);this.drawG=dr.g;this.drawF=dr.f;
+  const dO=ac.createOscillator();dO.type='sawtooth';dO.frequency.value=38;const dlp=ac.createBiquadFilter();dlp.type='lowpass';dlp.frequency.value=260;dO.connect(dlp);dlp.connect(this.creak=gain(ac,0,this.out));dO.start();this.creakO=dO;});}
  setVol(v){this.vol=v;if(this.out)this.out.gain.value=v;}
  listener(x,y,z,yaw){this.lx=x;this.ly=y;this.lz=z;this.lyaw=yaw;}
  setDraw(d,on){if(!this.ac)return;const t=this.ac.currentTime;this.drawG.gain.setTargetAtTime(on?.05+d*.05:0,t,.04);this.drawF.frequency.setTargetAtTime(240+d*520,t,.05);this.creak.gain.setTargetAtTime(on&&d<.98?.035:0,t,.05);this.creakO.frequency.setTargetAtTime(30+d*26+Math.random()*6,t,.03);}
@@ -18,10 +16,8 @@ export class Sound{
  sp(p,range=60){if(!p)return[1,0];const dx=p.x-this.lx,dy=p.y-this.ly,dz=p.z-this.lz,d=Math.hypot(dx,dy,dz);if(d>range*3)return null;const g=1/(1+d*d/(range*range)*4);
   const rx=Math.cos(this.lyaw),rz=-Math.sin(this.lyaw);const pan=d>.5?Math.max(-1,Math.min(1,(dx*rx+dz*rz)/d)):0;return[g,pan*.8];}
  _bus(g,pan){const ac=this.ac;const G=ac.createGain();G.gain.value=g;if(ac.createStereoPanner){const P=ac.createStereoPanner();P.pan.value=pan;G.connect(P);P.connect(this.out);}else G.connect(this.out);return G;}
- _n(out,dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(out);s.start(t,Math.random()*1.5);s.stop(t+dur+.02);}
- _o(out,type,f0,f1,dur,vol,delay=0,att=.004){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+att);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(out);o.start(t);o.stop(t+dur+.03);}
+ _n(out,dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(out,type,f0,f1,dur,vol,delay=0,att=.004){tone(this.ac,out,this.ac.currentTime+delay,type,f0,f1,dur,vol,att);}
  play(k,pos,a=1){if(!this.ac)return;try{const s=this.sp(pos,k==='boom'?120:k==='horn'||k==='fanfare'||k==='return'||k==='lost'?1e9:45);if(!s)return;const o=this._bus(s[0],s[1]);
   switch(k){
    case'twang':this._o(o,'triangle',a>1?190:150,a>1?110:80,.22,.32);this._o(o,'sine',a>1?95:72,40,.16,.4);this._n(o,.12,2400,500,1.2,.22,'bandpass');this._n(o,.25,1200,3500,.7,.08,'bandpass',.02);break;

@@ -1,19 +1,18 @@
 // KART GRAND PRIX — synthesized audio: engines, drift squeal, item sounds, countdown, and a small per-course music sequencer.
+import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 const SC={maj:[0,2,4,5,7,9,11],min:[0,2,3,5,7,8,10],dor:[0,2,3,5,7,9,10],phr:[0,1,3,5,7,8,10],lyd:[0,2,4,6,7,9,11]};
 export class Sound{
  constructor(){this.ac=null;this.engines=[];this.music=true;this.vol=.7;this.seq=null;}
- init(){if(this.ac)return;try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=this.vol;this.out.connect(comp);
-  this.mus=ac.createGain();this.mus.gain.value=.22;this.mus.connect(this.out);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  for(let i=0;i<2;i++){const o=ac.createOscillator();o.type='sawtooth';const o2=ac.createOscillator();o2.type='triangle';const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=500;const g=ac.createGain();g.gain.value=0;o.connect(f);o2.connect(f);f.connect(g);g.connect(this.out);o.start();o2.start();
-   const ns=ac.createBufferSource();ns.buffer=b;ns.loop=true;const nf=ac.createBiquadFilter();nf.type='bandpass';nf.frequency.value=2600;nf.Q.value=4;const ng=ac.createGain();ng.gain.value=0;ns.connect(nf);nf.connect(ng);ng.connect(this.out);ns.start();
-   this.engines.push({o,o2,f,g,ng,nf});}}catch(e){this.ac=null;}}
+ init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,this.vol,-24,12);this.mus=gain(ac,.22,this.out);const b=this.noise=noiseBuf(ac);
+  for(let i=0;i<2;i++){const o=ac.createOscillator();o.type='sawtooth';const o2=ac.createOscillator();o2.type='triangle';const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=500;const g=gain(ac,0,this.out);o.connect(f);o2.connect(f);f.connect(g);o.start();o2.start();
+   const{f:nf,g:ng}=bed(ac,b,'bandpass',2600,4,this.out);
+   this.engines.push({o,o2,f,g,ng,nf});}});}
  engine(i,spd,max,on,drift,boost){const e=this.engines[i];if(!e)return;const t=this.ac.currentTime,s=Math.min(1.3,Math.abs(spd)/max);const gear=s<.35?s/.35:s<.7?(s-.35)/.35:(s-.7)/.6;const f=70+gear*90+s*120;
   e.o.frequency.setTargetAtTime(f,t,.04);e.o2.frequency.setTargetAtTime(f*.5,t,.04);e.f.frequency.setTargetAtTime(400+s*1600+(boost?900:0),t,.05);e.g.gain.setTargetAtTime(on?.03+s*.035+(boost?.02:0):0,t,.08);
   e.ng.gain.setTargetAtTime(on&&drift?.05:0,t,.05);e.nf.frequency.setTargetAtTime(drift?2200+drift*500:2600,t,.05);}
  silence(){if(!this.ac)return;this.engines.forEach((e,i)=>this.engine(i,0,1,false,0,false));}
- _n(dur,f0,f1,q,vol,type='lowpass',dl=0){const ac=this.ac,t=ac.currentTime+dl,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random());s.stop(t+dur);}
- _o(type,f0,f1,dur,vol,delay=0,dest=null){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(dest||this.out);o.start(t);o.stop(t+dur+.02);}
+ _n(dur,f0,f1,q,vol,type='lowpass',dl=0){hiss(this.ac,this.noise,this.out,this.ac.currentTime+dl,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0,dest=null){tone(this.ac,dest||this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.01);}
  play(k,a=1){if(!this.ac)return;try{switch(k){
   case'beep':this._o('square',a?1046:523,a?1046:523,a?.6:.22,.08);break;
   case'box':[0,.05,.1].forEach((d,i)=>this._o('triangle',660*(1+i*.26),700*(1+i*.26),.12,.06,d));break;

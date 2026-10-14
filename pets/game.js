@@ -8,7 +8,8 @@ import * as S from './sim.js';
 import {Diorama,makeFood,TEAM_X,TEAM_Z,SHOP_Y,SHOP_Z,shopX,BAT_X,BAT_Z} from './scene.js';
 import {makePet} from './models.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 const SHOP_TIME=60,FACE_TEAM=Math.PI/2-.42,FACE_SHOP=.25;
@@ -211,9 +212,8 @@ $('go').onclick=()=>newRun();$('again').onclick=()=>newRun();$('omenu').onclick=
 $('b-roll').onclick=()=>act('roll');$('b-freeze').onclick=()=>act('freeze');$('b-sell').onclick=()=>act('sell');$('b-end').onclick=()=>act('end');
 $('speed').querySelectorAll('button').forEach(b=>b.onclick=()=>{const v=+b.dataset.v;if(v===99){skipBattle();return;}setSpeed(v);});
 function setSpeed(v){speed=v;$('speed').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));}
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Pet Brawl\nScore: ${a.pts||0}\nResult: ${a.won?'champion':'knocked out'} · ${a.wins||0} trophies · record ${a.record||''}\nTurns: ${a.turns||0} · lives left ${a.lives??''}\nMVP: ${a.mvp||''} · ${a.diff||''} ghosts\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Pet Brawl\nScore: ${a.pts||0}\nResult: ${a.won?'champion':'knocked out'} · ${a.wins||0} trophies · record ${a.record||''}\nTurns: ${a.turns||0} · lives left ${a.lives??''}\nMVP: ${a.mvp||''} · ${a.diff||''} ghosts`];});
 addEventListener('keydown',e=>{if(e.repeat)return;snd.init();const c=e.code;
  if(indexOpen){if(c==='Escape'||c==='KeyI')closeIndex();return;}
  if(c==='KeyI'&&app!=='menu'){openIndex();return;}

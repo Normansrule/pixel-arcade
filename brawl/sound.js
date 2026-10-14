@@ -1,12 +1,11 @@
 // PLATFORM BRAWL — synthesized audio (no files): impacts scaled by knockback, whooshes, shields, KO blasts, crowd and an announcer voice.
+import {boot,master,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.voice=true;}
- init(){if(this.ac)return;try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=.65;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  const cs=ac.createBufferSource();cs.buffer=b;cs.loop=true;const cf=ac.createBiquadFilter();cf.type='bandpass';cf.frequency.value=900;cf.Q.value=.5;this.crowd=ac.createGain();this.crowd.gain.value=0;cs.connect(cf);cf.connect(this.crowd);this.crowd.connect(this.out);cs.start();}catch(e){this.ac=null;}}
+ init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,.65,-24,12);this.noise=noiseBuf(ac);this.crowd=bed(ac,this.noise,'bandpass',900,.5,this.out,0).g;});}
  hype(v){if(this.ac)this.crowd.gain.setTargetAtTime(Math.min(.3,.02+v*.26),this.ac.currentTime,.3);}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random());s.stop(t+dur);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.02);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  play(k,a=1,fx){if(!this.ac||!this.on)return;try{switch(k){
   case'hit':{const s=Math.min(1,a/160);this._o('sine',190-s*90,40,.18+s*.4,.18+s*.35);this._n(.08+s*.35,5000,300,.8,.12+s*.4);if(s>.5)this._o('square',90,30,.5,.12);
    if(fx==='elec')this._o('sawtooth',1400,300,.18,.06);if(fx==='fire')this._n(.35,2500,600,.6,.15,'bandpass');if(fx==='water')this._n(.3,1200,4000,2,.12,'bandpass');if(fx==='dark')this._o('triangle',600,120,.25,.08);break;}

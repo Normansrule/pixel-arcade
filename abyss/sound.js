@@ -1,24 +1,23 @@
 // ABYSS DIVER — synthesized audio: underwater ambience, breathing, UI, sonar, the leviathan.
+import {boot,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.depth=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const A=window.AudioContext||window.webkitAudioContext;this.ac=new A();}catch(e){return;}const ac=this.ac;
-  this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(ac.destination);
-  this.lp=ac.createBiquadFilter();this.lp.type='lowpass';this.lp.frequency.value=900;this.lp.connect(this.master);
+ init(){boot(this,ac=>{
+  this.master=gain(ac,this.vol,ac.destination);
+  this.lp=ac.createBiquadFilter();this.lp.type='lowpass';this.lp.frequency.value=900;this.lp.connect(this.master);this.nb=noiseBuf(ac,4);
   // echo send for the wet underwater feel
-  this.dl=ac.createDelay(1);this.dl.delayTime.value=.32;this.fb=ac.createGain();this.fb.gain.value=.38;this.dl.connect(this.fb);this.fb.connect(this.dl);this.wet=ac.createGain();this.wet.gain.value=.35;this.dl.connect(this.wet);this.wet.connect(this.lp);
+  this.dl=ac.createDelay(1);this.dl.delayTime.value=.32;this.fb=gain(ac,.38,this.dl);this.dl.connect(this.fb);this.wet=gain(ac,.35,this.lp);this.dl.connect(this.wet);
   // ambience: brown noise rumble + slow swell
   const b=ac.createBuffer(1,ac.sampleRate*4,ac.sampleRate),d=b.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=l*.996+(Math.random()*2-1)*.03;d[i]=l;}
-  const src=ac.createBufferSource();src.buffer=b;src.loop=true;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=320;this.amb=ac.createGain();this.amb.gain.value=.55;src.connect(f);f.connect(this.amb);this.amb.connect(this.master);src.start();
-  const lfo=ac.createOscillator();lfo.frequency.value=.07;const lg=ac.createGain();lg.gain.value=.25;lfo.connect(lg);lg.connect(this.amb.gain);lfo.start();
+  this.amb=bed(ac,b,'lowpass',320,null,this.master,.55).g;
+  const lfo=ac.createOscillator();lfo.frequency.value=.07;lfo.connect(gain(ac,.25,this.amb.gain));lfo.start();
   // drone pad that darkens with depth
-  this.pad=ac.createGain();this.pad.gain.value=0;this.padF=ac.createBiquadFilter();this.padF.type='lowpass';this.padF.frequency.value=500;this.padF.connect(this.pad);this.pad.connect(this.lp);this.pad.connect(this.dl);
-  for(const fr of[55,82.4,110.2,164.8]){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=fr;o.detune.value=(Math.random()-.5)*14;const g=ac.createGain();g.gain.value=.05;o.connect(g);g.connect(this.padF);o.start();}
-  this.noteT=0;}
+  this.pad=gain(ac,0,this.lp);this.pad.connect(this.dl);this.padF=ac.createBiquadFilter();this.padF.type='lowpass';this.padF.frequency.value=500;this.padF.connect(this.pad);
+  for(const fr of[55,82.4,110.2,164.8]){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=fr;o.detune.value=(Math.random()-.5)*14;o.connect(gain(ac,.05,this.padF));o.start();}
+  this.noteT=0;});}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
- tone(f,dur,{type='sine',vol=.1,slide=1,delay=0,wet=.3,attack=.005}={}){const ac=this.ac;if(!ac)return;const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide!==1)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t+dur);
-  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+attack);g.gain.exponentialRampToValueAtTime(.0005,t+dur);o.connect(g);g.connect(this.lp);if(wet){const w=this.ac.createGain();w.gain.value=wet;g.connect(w);w.connect(this.dl);}o.start(t);o.stop(t+dur+.05);}
- noise(dur,{freq=800,q=1,vol=.2,type='bandpass',delay=0,slide=1}={}){const ac=this.ac;if(!ac)return;const t=ac.currentTime+delay;const n=ac.createBufferSource();const b=ac.createBuffer(1,Math.max(1,ac.sampleRate*dur|0),ac.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;n.buffer=b;
-  const f=ac.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(freq,t);if(slide!==1)f.frequency.exponentialRampToValueAtTime(freq*slide,t+dur);f.Q.value=q;const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0005,t+dur);n.connect(f);f.connect(g);g.connect(this.lp);n.start(t);}
+ tone(f,dur,{type='sine',vol=.1,slide=1,delay=0,wet=.3,attack=.005}={}){const ac=this.ac;if(!ac)return;const g=tone(ac,this.lp,ac.currentTime+delay,type,f,f*slide,dur,vol,attack);if(wet)g.connect(gain(ac,wet,this.dl));}
+ noise(dur,{freq=800,q=1,vol=.2,type='bandpass',delay=0,slide=1}={}){const ac=this.ac;if(!ac)return;hiss(ac,this.nb,this.lp,ac.currentTime+delay,dur,freq,freq*slide,q,vol,type);}
  bubbles(n=5,vol=.06){for(let i=0;i<n;i++)this.tone(300+Math.random()*700,.07+Math.random()*.05,{vol,slide:1.9,delay:i*.06+Math.random()*.05,wet:.2});}
  breath(){this.noise(.9,{freq:500,q:.8,vol:.05,slide:1.6});this.bubbles(6,.035);}
  pick(){this.tone(660,.12,{vol:.09});this.tone(990,.18,{vol:.07,delay:.07});}

@@ -2,30 +2,28 @@
 // plus three procedural radio stations (synthwave, techno, lo-fi) on a look-ahead scheduler.
 const R=Math.random;
 export const STATIONS=[{id:'neon',name:'NEON 88.1',tag:'SYNTHWAVE · NIGHT CRUISING',bpm:100},{id:'pulse',name:'PULSE 104.7',tag:'TECHNO · 4/4 ALL NIGHT',bpm:124},{id:'tide',name:'LOW TIDE 92.3',tag:'LO-FI · RAIN ON GLASS',bpm:78},{id:'off',name:'RADIO OFF',tag:'JUST THE ENGINE'}];
+import {boot,master,gain,noiseBuf,reverb,bed,panTo,tone,hiss} from '../js/kit3d/audio.js';
 const mtof=m=>440*Math.pow(2,(m-69)/12);
 // chord progressions (MIDI roots) per station
 const PROG={neon:[[57,60,64],[53,57,60],[60,64,67],[55,59,62]],pulse:[[45,48,52],[45,48,52],[43,47,50],[41,45,48]],tide:[[62,65,69,72],[60,64,67,71],[57,60,64,67],[59,62,65,69]]};
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.radioVol=.5;this.station=0;this.nextT=0;this.step=0;this.bar=0;this.cam={x:0,z:0,a:0};}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ac.destination);
-  this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);this.sfx=ac.createGain();this.sfx.connect(this.master);this.radio=ac.createGain();this.radio.gain.value=this.radioVol;const rlp=ac.createBiquadFilter();rlp.type='lowpass';rlp.frequency.value=9000;this.radio.connect(rlp);rlp.connect(this.master);this.rlp=rlp;
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=R()*2-1;this.noise=b;
-  const il=ac.sampleRate*2.2,ib=ac.createBuffer(2,il,ac.sampleRate);for(let c=0;c<2;c++){const x=ib.getChannelData(c);for(let i=0;i<il;i++)x[i]=(R()*2-1)*Math.pow(1-i/il,2.4);}this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.35;this.verbIn.connect(this.verb);this.verb.connect(this.radio);
+ init(){boot(this,ac=>{this.master=master(ac,this.vol,-14,4);this.sfx=gain(ac,1,this.master);const rlp=ac.createBiquadFilter();rlp.type='lowpass';rlp.frequency.value=9000;rlp.connect(this.master);this.rlp=rlp;this.radio=gain(ac,this.radioVol,rlp);
+  const b=this.noise=noiseBuf(ac);
+  this.verbIn=reverb(ac,2.2,2.4,.35,this.radio);
   // engine: two oscillators through a lowpass, plus a noise rumble
-  this.eng=ac.createGain();this.eng.gain.value=0;const elp=ac.createBiquadFilter();elp.type='lowpass';elp.frequency.value=900;elp.Q.value=2;this.elp=elp;elp.connect(this.eng);this.eng.connect(this.sfx);
-  this.o1=ac.createOscillator();this.o1.type='sawtooth';this.o2=ac.createOscillator();this.o2.type='square';const g2=ac.createGain();g2.gain.value=.5;this.o1.connect(elp);this.o2.connect(g2);g2.connect(elp);this.o1.start();this.o2.start();
-  const loop=(f,type,q)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(this.sfx);s.start(0,R());return{g,fl};};
+  this.eng=gain(ac,0,this.sfx);const elp=ac.createBiquadFilter();elp.type='lowpass';elp.frequency.value=900;elp.Q.value=2;this.elp=elp;elp.connect(this.eng);
+  this.o1=ac.createOscillator();this.o1.type='sawtooth';this.o2=ac.createOscillator();this.o2.type='square';this.o1.connect(elp);this.o2.connect(gain(ac,.5,elp));this.o1.start();this.o2.start();
+  const loop=(f,type,q)=>bed(ac,b,type,f,q,this.sfx,0,R());
   this.skid=loop(2200,'bandpass',2.5);this.wind=loop(700,'lowpass',.5);this.rain=loop(3000,'highpass',.4);this.rumble=loop(120,'lowpass',.7);
-  this.siren=ac.createOscillator();this.siren.type='triangle';this.sirenG=ac.createGain();this.sirenG.gain.value=0;this.siren.connect(this.sirenG);this.sirenG.connect(this.sfx);this.siren.start();
-  this.timer=setInterval(()=>this.schedule(),30);}catch(e){this.ac=null;}}
+  this.siren=ac.createOscillator();this.siren.type='triangle';this.sirenG=gain(ac,0,this.sfx);this.siren.connect(this.sirenG);this.siren.start();
+  this.timer=setInterval(()=>this.schedule(),30);});}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
  setRadioVol(v){this.radioVol=v;if(this.radio)this.radio.gain.setTargetAtTime(v,this.ac.currentTime,.1);}
  tune(i){this.station=i;this.bar=0;this.step=0;if(this.ac)this.nextT=this.ac.currentTime+.08;this.blip(900);}
- _out(pan,bus){bus=bus||this.sfx;if(!pan)return bus;const s=this.ac.createStereoPanner();s.pan.value=Math.max(-1,Math.min(1,pan));s.connect(bus);return s;}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,bus,at,rev){if(vol<.002)return;const ac=this.ac,t=(at??ac.currentTime)+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(this._out(pan,bus));if(rev)g.connect(this.verbIn);s.start(t,R()*1.5);s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0,pan=0,bus,at,atk=.005,rev){if(vol<.002)return;const ac=this.ac,t=(at??ac.currentTime)+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+atk);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
-  o.connect(g);g.connect(this._out(pan,bus));if(rev)g.connect(this.verbIn);o.start(t);o.stop(t+dur+.03);}
+ _out(pan,bus){return panTo(this.ac,pan,bus||this.sfx);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0,pan=0,bus,at,rev){if(vol<.002)return;const g=hiss(this.ac,this.noise,this._out(pan,bus),(at??this.ac.currentTime)+delay,dur,f0,f1,q,vol,type);if(rev)g.connect(this.verbIn);}
+ _o(type,f0,f1,dur,vol,delay=0,pan=0,bus,at,atk=.005,rev){if(vol<.002)return;const g=tone(this.ac,this._out(pan,bus),(at??this.ac.currentTime)+delay,type,f0,f1,dur,vol,atk);if(rev)g.connect(this.verbIn);}
  /* ---------- continuous car sounds ---------- */
  car(o){if(!this.ac)return;const t=this.ac.currentTime;const sp=o.speed;const gears=[0,9,17,26,36,48,80];let g=1;while(g<6&&sp>gears[g])g++;const lo=gears[g-1],hi=gears[g];const rpm=o.on?(.18+.82*Math.min(1,(sp-lo)/(hi-lo)))*(o.thr>0?1:.85):0;
   const f=38+rpm*150+(o.thr>0?8:0);this.o1.frequency.setTargetAtTime(f,t,.04);this.o2.frequency.setTargetAtTime(f*.5,t,.04);this.elp.frequency.setTargetAtTime(500+rpm*1600+o.thr*500,t,.05);this.eng.gain.setTargetAtTime(o.on?.05+o.thr*.06+rpm*.03:0,t,.08);

@@ -4,6 +4,7 @@ import {XS,ZS,RW,CANAL,QUAY,BEACH,WL,FWY_HW,BOUND} from './world.js';
 import {SPECS,SHOP,PAINTS} from './vehicles.js';
 import {KIND} from './missions.js';
 import {STATIONS} from './sound.js';
+import {toast} from '../js/kit3d/ui.js';
 const $=id=>document.getElementById(id);
 const MB={x0:-700,x1:800,z0:-780,z1:660},MS=1.3;// map bounds, metres per pixel of the base map
 
@@ -27,7 +28,7 @@ export class Hud{constructor(G){this.G=G;this.el={};this.banT=0;this.toastT=0;th
  big(t){const e=$('big');e.textContent=t;e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop');this.bigT=1;}
  objective(t,s){const e=$('obj');if(!t){e.hidden=true;return;}e.hidden=false;$('ot').textContent=t;$('os').textContent=s||'';}
  prompt(t){const e=$('prompt');if(e._t!==t){e._t=t;e.innerHTML=t||'';e.style.opacity=t?1:0;}}
- cashPop(n,label){const d=document.createElement('div');d.className='pop '+(n<0?'neg':'');d.textContent=(n<0?'-':'+')+fmtCash(Math.abs(n)).replace('-','')+(label?' '+label:'');$('cashd').prepend(d);setTimeout(()=>d.remove(),2400);while($('cashd').children.length>4)$('cashd').lastChild.remove();}
+ cashPop(n,label){const d=toast($('cashd'),'',2400,4);d.className='pop '+(n<0?'neg':'');d.textContent=(n<0?'-':'+')+fmtCash(Math.abs(n)).replace('-','')+(label?' '+label:'');}
  flash(){const f=$('flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on');}
  /* ---------- per frame ---------- */
  update(dt){const G=this.G,P=G.player;if(this.banT>0){this.banT-=dt;if(this.banT<=0)$('banner').classList.remove('on');}if(this.toastT>0){this.toastT-=dt;if(this.toastT<=0)$('toast').classList.remove('on');}

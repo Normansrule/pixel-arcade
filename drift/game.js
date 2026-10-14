@@ -11,7 +11,9 @@ import {Lead,Bot} from './ai.js';
 import {Scorer} from './score.js';
 import {Sound} from './sound.js';
 import {ctex,merge,M4,cl,lerp} from './util.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),rnd=(a=1)=>Math.random()*a;
 const ID='sideways';
@@ -27,7 +29,7 @@ const snd=new Sound();
 
 /* ================= state ================= */
 let save=loadSave(),autoOn=false;
-let opt={mode:0,track:'pass',time:2,diff:1,assist:60,auto:1};try{Object.assign(opt,JSON.parse(localStorage.getItem('pxd_sideways_opt'))||{});}catch(e){}
+let opt={mode:0,track:'pass',time:2,diff:1,assist:60,auto:1};const persistOpt=stored('pxd_sideways_opt',opt);
 let app='menu',phase='cd',W=null,venue=null,car=null,carMesh=null,lead=null,leadMesh=null,attract=null,bot=null,botOn=false;
 let autoP=null,clock=120,cdT=3,lastBeep=4,time=0,acc=0,endT=0,camMode=0,shake=0,lastAward=null,overT=0,wrongT=0,stuckT=0,menuA=0,garA=.6,garDrag=null;
 const scorer=new Scorer();
@@ -57,7 +59,6 @@ function buildLead(){if(leadMesh)return;const sp=CARS[3];leadMesh=makeCar(sp,{pa
 buildLead();
 
 /* ================= flow ================= */
-function persistOpt(){try{localStorage.setItem('pxd_sideways_opt',JSON.stringify(opt));}catch(e){}}
 function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o);persistOpt();snd.init();
  const def=TRACKS.find(t=>t.id===opt.track)||TRACKS[0];if(!def.ribbon&&opt.mode===1)opt.mode=0;
  loadVenue(def.id);buildPlayer();scorer.reset();smoke.clear();skids.clear();sparks.clear();
@@ -93,28 +94,27 @@ function pause(on){if(on&&app==='run'){app='paused';showOnly('pause');document.b
 function resetCar(){if(!car)return;scorer.lose('RESET');if(W.B){const B=W.B,i=(nearest(B,car.x,car.z,car.i)-4+B.n)%B.n;car.reset(B.x[i],B.z[i],Math.atan2(B.tx[i],B.tz[i]));car.i=i;}else{const s=W.spawn;car.reset(s.x,s.z,s.yaw);}placeY(car);camSnap=true;popMsg('RESET','info');}
 
 /* ================= input ================= */
-const keys={},edge={};
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
+// keyboard only: no pointer lock, and the context menu stays available
+const I=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(app==='run')pause(true);else if(app==='paused')pause(false);else if(app==='garage')closeGarage();}
  if(app!=='run')return;
  if(e.code==='KeyC')cycleCam();if(e.code==='KeyR'&&phase==='drive')resetCar();
  if(e.code==='KeyM'){car.auto=!car.auto;opt.auto=car.auto?1:0;persistOpt();popMsg(car.auto?'AUTOMATIC':'MANUAL · Q/E SHIFT','info');}
- if(e.code==='KeyE'&&!car.auto)car.ctrl.up=1;if(e.code==='KeyQ'&&!car.auto)car.ctrl.dn=1;});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='KeyE'&&!car.auto)car.ctrl.up=1;if(e.code==='KeyQ'&&!car.auto)car.ctrl.dn=1;}});
+const {keys}=I;
 const any=(...a)=>a.some(k=>keys[k]);let steerIn=0,thrIn=0,brkIn=0;const pp={};
 function cycleCam(){camMode=(camMode+1)%3;camSnap=true;setTxt($('cam'),['CHASE','HOOD','BUMPER'][camMode],'cam');}
 function readInput(dt){const k=car.ctrl;const l=any('KeyA','ArrowLeft'),r=any('KeyD','ArrowRight');const ts=(l?1:0)-(r?1:0);
  const rate=ts===0?6:Math.sign(ts)!==Math.sign(steerIn)&&steerIn!==0?7:3.4;steerIn+=cl(ts-steerIn,-rate*dt,rate*dt);
  thrIn+=cl((any('KeyW','ArrowUp')?1:0)-thrIn,-dt*10,dt*7);brkIn+=cl((any('KeyS','ArrowDown')?1:0)-brkIn,-dt*10,dt*8);
  k.steer=steerIn;k.thr=thrIn;k.brk=brkIn;k.hb=any('Space')?1:0;k.clutch=any('ShiftLeft','ShiftRight')?1:0;
- const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;
- if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.12?(v-Math.sign(v)*.12)/.88:0;const sx=dz(ax[0]||0);if(sx)k.steer=-Math.sign(sx)*Math.pow(Math.abs(sx),1.3);
+ const gp=gamepad();
+ if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.12,true);const sx=dz(ax[0]||0);if(sx)k.steer=-Math.sign(sx)*Math.pow(Math.abs(sx),1.3);
   const rt=bt[7]?.value||0,lt=bt[6]?.value||0;if(rt>.03)k.thr=rt;if(lt>.03)k.brk=lt;if(bt[0]?.pressed)k.hb=1;if(bt[2]?.pressed)k.clutch=1;
   const ed=(i,n)=>{const p=!!bt[i]?.pressed,was=pp[n];pp[n]=p;return p&&!was;};
   if(ed(5,'rb')&&!car.auto)k.up=1;if(ed(4,'lb')&&!car.auto)k.dn=1;if(ed(3,'y'))cycleCam();if(ed(8,'bk')&&phase==='drive')resetCar();if(ed(9,'st'))pause(app==='run');}}
-function padMenu(){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(!gp)return;const bt=gp.buttons,ed=(i,n)=>{const p=!!bt[i]?.pressed,was=pp[n];pp[n]=p;return p&&!was;};
+function padMenu(){const gp=gamepad();if(!gp)return;const bt=gp.buttons,ed=(i,n)=>{const p=!!bt[i]?.pressed,was=pp[n];pp[n]=p;return p&&!was;};
  if(app==='menu'&&ed(0,'ma'))start();else if(app==='over'&&ed(0,'oa'))start();else if(app==='paused'&&ed(9,'st'))pause(false);}
 
 /* ================= simulation ================= */
@@ -228,7 +228,7 @@ function camOrbit(dt,p,yaw,r,h,side=0){menuA+=dt*.12;const a=yaw+Math.PI*.8+Math
 
 /* ================= HUD ================= */
 const hc={};function setTxt(el,v,key){if(hc[key]!==v){hc[key]=v;el.textContent=v;}}
-function popMsg(t,cls){const d=document.createElement('div');d.className=cls;d.textContent=t;$('pops').prepend(d);setTimeout(()=>d.remove(),1800);while($('pops').children.length>3)$('pops').lastChild.remove();}
+function popMsg(t,cls){const d=toast($('pops'),'',1800,3);d.className=cls;d.textContent=t;}
 function setMsg(t,warn){setTxt($('msg'),t,'msg');$('msg').classList.toggle('warn',!!warn&&!!t);}
 function tandemHud(t){const close=t.ok?cl(1-(t.dist-3)/(t.max-3),0,1):0;$('tandb').style.width=(close*100).toFixed(0)+'%';setTxt($('tandd'),t.gap<0?'YOU ARE AHEAD — FALL BACK':t.dist>t.max?'CLOSE THE GAP · '+Math.round(t.dist)+' M':t.ok?Math.round(t.dist)+' M · '+(t.angDiff<12?'ANGLE MATCHED':'MATCH ANGLE'):'DRIFT WITH THE LEAD','tand');}
 function hud(dt){const c=car;
@@ -308,7 +308,7 @@ canvas.addEventListener('pointerdown',e=>{if(app==='garage')garDrag=e.clientX;})
 addEventListener('pointermove',e=>{if(garDrag!=null){garA+=(e.clientX-garDrag)*.008;garDrag=e.clientX;}});
 
 /* ================= main step ================= */
-function step(dt){dt=Math.min(dt,.1);time+=dt;padMenu();for(const k in edge)delete edge[k];
+function step(dt){dt=Math.min(dt,.1);time+=dt;padMenu();I.flush();
  if(app==='run'){stepRun(dt);if(app!=='run'&&app!=='over'){}}
  if(app==='menu'||(app==='over'&&false)){if(attract){attract.update(dt,null,true);}}
  visuals(dt);}
@@ -357,9 +357,8 @@ seg('o-time','time',()=>refreshMenu());seg('o-diff','diff');seg('o-trans','auto'
 $('o-assist').value=opt.assist;$('o-assistv').textContent=opt.assist+'%';$('o-assist').oninput=e=>{opt.assist=+e.target.value;$('o-assistv').textContent=opt.assist+'%';persistOpt();if(car)car.assist=opt.assist/100;};
 $('go').onclick=()=>start();$('gar').onclick=()=>{snd.init();openGarage();};$('gback').onclick=()=>closeGarage();$('gdrive').onclick=()=>closeGarage('run');
 $('again').onclick=()=>start();$('omenu').onclick=toMenu;$('ogar').onclick=()=>openGarage();$('resume').onclick=()=>pause(false);$('restart').onclick=()=>start();$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Sideways\nPoints: ${a.pts||0}\nMedal: ${a.medal||'none'} · Best combo: ${a.combo||0}\nTrack: ${a.track||''} · ${a.time||''} min${a.tandem?' · tandem':''}\nCar: ${a.car||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Sideways\nPoints: ${a.pts||0}\nMedal: ${a.medal||'none'} · Best combo: ${a.combo||0}\nTrack: ${a.track||''} · ${a.time||''} min${a.tandem?' · tandem':''}\nCar: ${a.car||''}`];});
 
 /* ================= boot + loop ================= */
 loadVenue(opt.track);buildPlayer();toMenu();setTimeout(()=>$('load').classList.add('off'),60);

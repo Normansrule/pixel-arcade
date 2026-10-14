@@ -1,4 +1,5 @@
 // PENGUIN PLAZA — synthesized audio: sfx + a tiny step sequencer with original procedural tunes (no audio files).
+import {boot,master,gain,noiseBuf,reverb,bed,tone,hiss} from '../js/kit3d/audio.js';
 const mtof=m=>440*Math.pow(2,(m-69)/12);
 // chord progressions (root midi + chord tones) used by the procedural tracks
 const PROG={
@@ -32,17 +33,12 @@ export const TRACKS={
 
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.musicOn=true;this.cur=null;this.loops={};}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=3;comp.connect(ac.destination);
-  this.master=ac.createGain();this.master.gain.value=.8;this.master.connect(comp);this.sfx=ac.createGain();this.sfx.gain.value=.9;this.sfx.connect(this.master);
-  this.mus=ac.createGain();this.mus.gain.value=this.musicOn?.55:0;this.mus.connect(this.master);
-  // small room reverb
-  const len=ac.sampleRate*1.6,ir=ac.createBuffer(2,len,ac.sampleRate);for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);}
-  this.rev=ac.createConvolver();this.rev.buffer=ir;this.revG=ac.createGain();this.revG.gain.value=.22;this.rev.connect(this.revG);this.revG.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
+ init(){boot(this,ac=>{this.master=master(ac,.8,-14,3);this.sfx=gain(ac,.9,this.master);this.mus=gain(ac,this.musicOn?.55:0,this.master);
+  // small room reverb (this.rev is its input)
+  this.rev=reverb(ac,1.6,3,.22,this.master);
+  const b=this.noise=noiseBuf(ac);
   // wind bed (outdoor ambience)
-  const ws=ac.createBufferSource();ws.buffer=b;ws.loop=true;const wf=ac.createBiquadFilter();wf.type='lowpass';wf.frequency.value=380;this.wind=ac.createGain();this.wind.gain.value=0;ws.connect(wf);wf.connect(this.wind);this.wind.connect(this.sfx);ws.start();
- }catch(e){this.ac=null;}}
+  this.wind=bed(ac,b,'lowpass',380,null,this.sfx).g;});}
  setMusic(on){this.musicOn=on;if(this.mus)this.mus.gain.setTargetAtTime(on?.55:0,this.ac.currentTime,.2);}
  ambience(w){if(this.wind)this.wind.gain.setTargetAtTime(w*.05,this.ac.currentTime,.6);}
  // ---- instruments: schedule one note at absolute audio time t ----
@@ -69,8 +65,8 @@ export class Sound{
   while(c.next<ahead&&n++<32){const bar=(c.step/16|0)%d.bars;c.seed=(c.seed*16807)%2147483647;const s0=c.seed;const r=()=>(c.seed=(c.seed*16807)%2147483647)/2147483647;
    const t=c.next+(c.step%2?d.swing*sd*2:0);for(const[i,m,l,v]of d.gen(c.step,bar,r))this.note(i,m,t,l,v);c.step++;c.next+=sd;void s0;}}
  // ---- sound effects ----
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.sfx);s.start(t,Math.random());s.stop(t+dur);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.sfx);o.start(t);o.stop(t+dur+.02);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,this.sfx,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.sfx,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  play(k,a=1){if(!this.ac||!this.on)return;try{switch(k){
   case'step':this._n(.07,1800+Math.random()*900,500,1.2,.035*a,'bandpass');break;
   case'coin':this._o('square',988,988,.08,.05);this._o('square',1319,1319,.25,.05,.07);break;

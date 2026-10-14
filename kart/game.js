@@ -15,7 +15,9 @@ import {FX} from './fx.js';
 import {Sound} from './sound.js';
 import {HUD,icon,drawMini} from './hud.js';
 import {V,cl,lerp,wrapA,ORD,fmtT,fmtClock,textSprite,sstep} from './util.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,deadzone} from '../js/kit3d/input.js';
+import {postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 const DT=1/60,LIMIT=180,BOSS_LIMIT=165,INTRO=5;
@@ -41,16 +43,17 @@ let raceT=0,clock=LIMIT,limit=LIMIT,introT=0,cdT=0,endT=0,time=0,acc=0,finishOrd
 let curDiff=DIFF[1],curCC=CC[1],gp=null,ghost=null,rec=[],recT=0,podiumG=null,podT=0,shake=0;
 
 /* ================= input ================= */
-const keys={},edge={};addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
+// keyboard only: no pointer lock, and the context menu stays available
+const IN=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Slash','Enter'].includes(e.code)&&app!=='menu')e.preventDefault();
  if(e.code==='Escape'){if(app==='race')pause(true);else if(app==='paused')pause(false);else if(app==='hub')toMenu();}
  if(e.code==='KeyM'&&!e.repeat){snd.init();const on=snd.toggleMusic();flashTip('MUSIC · '+(on?'ON':'OFF'));if(on&&(app==='race'||app==='hub')&&!snd.mus)snd.startMusic(T?T.key:'hub');}
- snd.init();});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ snd.init();}});
+const {keys,edge}=IN;
 const MAP=[{f:['KeyW'],b:['KeyS'],l:['KeyA'],r:['KeyD'],d:['Space'],i:['KeyE','KeyF'],k:['KeyQ']},{f:['ArrowUp'],b:['ArrowDown'],l:['ArrowLeft'],r:['ArrowRight'],d:['Slash','ShiftRight'],i:['Enter','Period'],k:['Comma']}];
 const any=a=>a.some(k=>keys[k]);
 function pad(i){const g=navigator.getGamepads?navigator.getGamepads()[i]:null;if(!g)return null;const b=k=>g.buttons[k]&&(g.buttons[k].pressed||g.buttons[k].value>.3);
- return{gas:b(0)||b(7)?1:0,brake:b(1)||b(6)?1:0,x:Math.abs(g.axes[0])>.15?g.axes[0]:0,y:Math.abs(g.axes[1])>.2?-g.axes[1]:0,item:b(2),drift:b(5)||b(4),look:b(3),start:b(9)};}
+ return{gas:b(0)||b(7)?1:0,brake:b(1)||b(6)?1:0,x:deadzone(g.axes[0]),y:-deadzone(g.axes[1],.2),item:b(2),drift:b(5)||b(4),look:b(3),start:b(9)};}
 function readInput(r){const h=r.human,m=MAP[h],I=r.inp,solo=humansN()===1;const kb=k=>any(m[k])||(solo&&any(MAP[1][k]));
  const eg=k=>m[k].some(c=>edge[c])||(solo&&MAP[1][k].some(c=>edge[c]));const gp_=pad(h);let gas=kb('f')?1:0,br=kb('b')?1:0,st=(kb('l')?1:0)-(kb('r')?1:0),dr=kb('d')||eg('d'),it=(kb('i')||eg('i'))&&app!=='hub';
  if(gp_){if(gp_.gas)gas=1;if(gp_.brake)br=1;if(gp_.x)st=-gp_.x;if(gp_.drift)dr=true;if(gp_.item)it=true;}
@@ -301,7 +304,7 @@ function podiumCam(v,dt){podT+=dt;const cam=v.cam,a=podYaw+Math.sin(podT*.25)*.3
 /* ================= main step ================= */
 function step(dt){
  if(app==='race'||app==='results')raceStep(dt);else if(app==='hub'){time+=dt;env.t=time;hubStep(dt);}else if(app==='menu'||app==='podium'){time+=dt;}
- for(const k in edge)edge[k]=false;}
+ IN.flush();}
 function frame(dt){if(app!=='paused')fx.update(dt);
  if(app==='race'||app==='hub'||app==='results'||app==='paused'||app==='fading'||app==='podium'){if(app!=='paused'&&app!=='fading')for(const r of racers)poseRacer(r,dt);
   if(app==='podium'){for(const r of racers)if(r.podium){r.g.position.copy(r.p);r.g.rotation.set(0,r.yaw,0);}}
@@ -376,9 +379,8 @@ function retry(){if(raceMode==='gp'&&gp){const g=gp;g.idx=0;startGP(g.cup,{diff:
 $('cont').onclick=()=>{document.body.classList.remove('podium');if(app==='podium'){toMenu();return;}if(raceMode==='adventure')startHub(def.id);else if(raceMode==='gp'&&gp)nextGP();else toMenu();};
 $('again').onclick=()=>{document.body.classList.remove('podium');if(app==='podium'&&gp){startGP(gp.cup,{diff:gp.diff,cc:gp.cc,humans:gp.humans});return;}retry();};$('omenu').onclick=toMenu;
 $('d-go').onclick=()=>enterDoor(nearDoor);
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Critter Kart\nPoints: ${a.pts||0}\nTrack: ${a.track||''} (${a.veh||''})\nPlace: ${a.place?ORD(a.place):''}${a.time?' · '+fmtT(a.time):''}\nDriver: ${a.driver||''} · ${a.mode||''}${a.split?' split-screen':''} · ${a.cc||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Critter Kart\nPoints: ${a.pts||0}\nTrack: ${a.track||''} (${a.veh||''})\nPlace: ${a.place?ORD(a.place):''}${a.time?' · '+fmtT(a.time):''}\nDriver: ${a.driver||''} · ${a.mode||''}${a.split?' split-screen':''} · ${a.cc||''} · CPU ${a.diff||''}`];});
 addEventListener('keydown',e=>{if((app==='results'||app==='podium')&&!$('over').hidden&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();$('cont').click();}});
 
 /* ================= loop ================= */

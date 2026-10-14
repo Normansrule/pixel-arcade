@@ -10,7 +10,9 @@ import {DIFF,initBot,think,solveAim} from './ai.js';
 import {bannerTex} from './gfx.js';
 import {Sound} from './sound.js';
 import {HUD,mmss} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=Math.random,TAU=Math.PI*2;
 export const WPN={long:{n:'LONGBOW',draw:1.0,spd:[26,72],dmg:[20,70],head:2.2,g:13,ammo:16,zoom:.7,sway:1},
@@ -43,7 +45,7 @@ const snd=new Sound();
 const G={app:'menu',phase:'count',opt:{map:0,load:'long',diff:1,time:8,sens:1,vol:.8,fov:95},diff:DIFF[1],players:[],me:null,flags:[],caps:[0,0],clock:480,time:0,countT:3,liveT:0,endT:0,
  arrows:[],stuck:[],bombs:[],dyn:[],homes:[],spots:[{def:[],mid:[]},{def:[],mid:[]}],W:null,nav:null,attract:true,idleTeam:-1,timeScale:1,boardOn:false,buildType:'wall',buildRot:0,
  WPN,BOMB,BUILD,winner:-1,god:false,stuckI:0,bombArc:null,shake:0};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_longbowkeep_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_longbowkeep_opt',G.opt);
 const hud=new HUD(G);let MAP=null,mapIdx=-1,VM=null,flagU={value:0};
 G.dynNear=(p,r)=>{for(const b of G.dyn){if(b.dead)continue;const dx=Math.max(b.x0-p.x,0,p.x-b.x1),dz=Math.max(b.z0-p.z,0,p.z-b.z1);if(Math.hypot(dx,dz)<r)return b;}return null;};
 
@@ -276,34 +278,25 @@ function stepPlayer(p,dt){const W=G.W;
  if(p.hp<100&&G.time-p.lastHurt>5)p.hp=Math.min(100,p.hp+14*dt);}
 
 /* ================= input ================= */
-const keys={},mouse={l:false,r:false,dx:0,dy:0,lEdge:false};let locked=false,jumpEdge=false,slotReq=null,kick=0;
-function lock(){if(G.app!=='play')return;try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){if(document.pointerLockElement)document.exitPointerLock();}
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&G.app==='play')pause(true);});
-canvas.addEventListener('mousedown',()=>{if(G.app==='play'&&!locked)lock();});
-addEventListener('mousedown',e=>{if(G.app!=='play'||!locked)return;if(e.button===0){mouse.l=true;mouse.lEdge=true;}if(e.button===2)mouse.r=true;});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(!locked)return;mouse.dx+=e.movementX;mouse.dy+=e.movementY;});
-addEventListener('wheel',e=>{if(G.app!=='play'||!locked)return;cycle(e.deltaY>0?1:-1);},{passive:true});
+const I=controls(canvas,{canLock:()=>G.app==='play',onLock:(on,was)=>{if(was&&!on&&G.app==='play')pause(true);},onDown:()=>G.app!=='play'||!I.locked,
+ onWheel:e=>{if(G.app!=='play'||!I.locked)return;cycle(e.deltaY>0?1:-1);},onKey,onKeyUp:e=>{if(e.code==='Tab')G.boardOn=false;}});
+const {keys,mouse,lock,unlock}=I;let jumpEdge=false,slotReq=null,kick=0;addEventListener('blur',()=>{G.boardOn=false;});
 const SLOTS=['bow','sword','bomb','build'];
 function cycle(d){const me=G.me;if(!me||!me.alive)return;let k=SLOTS.indexOf(me.weapon);for(let n=0;n<4;n++){k=(k+d+4)%4;if(SLOTS[k]==='bomb'&&me.bombs<=0)continue;slotReq=SLOTS[k];return;}}
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+function onKey(e,first){if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='paused')pause(false);else if(G.app==='play')pause(true);return;}if(G.app!=='play'||!first)return;const me=G.me;
  if(e.code==='Tab')G.boardOn=true;
  if(!me.alive){const m={Digit1:'long',Digit2:'short',Digit3:'cross'}[e.code];if(m)me.nextLoadout=m;return;}
  if(e.code==='Space')jumpEdge=true;
  if(e.code.startsWith('Digit')){const n=+e.code.slice(5);if(n>=1&&n<=4)slotReq=SLOTS[n-1];}
  if(e.code==='KeyQ')slotReq=me.prevWeapon;if(e.code==='KeyB')slotReq=me.weapon==='build'?me.prevWeapon:'build';
- if(me.weapon==='build'){if(e.code==='KeyR')G.buildRot=(G.buildRot+1)&3;if(e.code==='KeyF'){G.buildType=G.buildType==='wall'?'ramp':'wall';snd.play('click');}}});
-addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab')G.boardOn=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;G.boardOn=false;});
+ if(me.weapon==='build'){if(e.code==='KeyR')G.buildRot=(G.buildRot+1)&3;if(e.code==='KeyF'){G.buildType=G.buildType==='wall'?'ramp':'wall';snd.play('click');}}}
 let padPrev={};
 function readHuman(){const me=G.me,i=me.inp;const sens=.0022*G.opt.sens*(me.drawing?(1-(1-WPN[me.loadout].zoom)*me.draw*.7):me.aimADS?.7:1);
- if(locked){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.45,1.45);}VMmd.x=mouse.dx;VMmd.y=mouse.dy;mouse.dx=mouse.dy=0;
+ if(I.locked){me.yaw-=mouse.dx*sens;me.pitch=cl(me.pitch-mouse.dy*sens,-1.45,1.45);}VMmd.x=mouse.dx;VMmd.y=mouse.dy;mouse.dx=mouse.dy=0;
  i.f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);i.s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);i.sprint=!!(keys.ShiftLeft||keys.ShiftRight);
- i.fire=(mouse.l||mouse.lEdge)&&locked||!!G.autoFire;i.alt=mouse.r&&locked;i.jump=jumpEdge;i.slot=slotReq;jumpEdge=false;slotReq=null;mouse.lEdge=false;
- const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.18?v:0,btn=k=>bt[k]&&(bt[k].pressed||bt[k].value>.4);const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
+ i.fire=I.fire()&&I.locked||!!G.autoFire;i.alt=mouse.r&&I.locked;i.jump=jumpEdge;i.slot=slotReq;jumpEdge=false;slotReq=null;
+ const gp=gamepad();if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>deadzone(v,.18),btn=k=>bt[k]&&(bt[k].pressed||bt[k].value>.4);const lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
   if(lx||ly){i.f=-ly;i.s=lx;}me.yaw-=rx*.05*G.opt.sens;me.pitch=cl(me.pitch-ry*.04*G.opt.sens,-1.45,1.45);if(btn(7))i.fire=true;if(btn(6))i.alt=true;if(btn(10))i.sprint=true;
   if(btn(0)&&!padPrev.a)i.jump=true;if(btn(5)&&!padPrev.rb)cycle(1),i.slot=slotReq,slotReq=null;if(btn(4)&&!padPrev.lb)i.slot='bomb';if(btn(3)&&!padPrev.y)i.slot=me.weapon==='build'?me.prevWeapon:'build';if(btn(2)&&!padPrev.x&&me.weapon==='build')G.buildType=G.buildType==='wall'?'ramp':'wall';
   if(btn(9)&&!padPrev.st)pause(true);G.boardOn=btn(8)||!!keys.Tab;padPrev={a:btn(0),rb:btn(5),lb:btn(4),y:btn(3),x:btn(2),st:btn(9)};}
@@ -393,14 +386,12 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
  if(fxStack.composer)fxStack.render();else{R.autoClear=true;R.render(scene,cam);if(VM&&VM.root.visible&&G.app==='play'){R.autoClear=false;R.clearDepth();R.render(vmScene,vmCam);R.autoClear=true;}}}
 
 /* ================= menus ================= */
-function saveOpt(){try{localStorage.setItem('pxd_longbowkeep_opt',JSON.stringify(G.opt));}catch(e){}}
-const seg=(id,key,num=true,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(v)));if(!init){saveOpt();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
+const seg=pickers(G.opt,saveOpt);
 seg('o-map','map',true,()=>{if(G.app==='menu')attract();});seg('o-load','load',false);seg('o-diff','diff');seg('o-time','time');seg('o-sens','sens');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-fov','fov');
 document.querySelectorAll('#dload button').forEach(b=>b.onclick=e=>{if(G.me){G.me.nextLoadout=b.dataset.v;G.opt.load=b.dataset.v;saveOpt();}e.stopPropagation();});
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Longbow Keep\nPoints: ${a.pts||0}\nResult: ${a.won?'win':a.draw?'draw':'loss'} ${a.score||''} (captures)\nKills: ${a.kills||0} · Deaths: ${a.deaths||0} · Headshots: ${a.heads||0} · Accuracy: ${a.acc||0}%\nCaptures: ${a.caps||0}\nField: ${a.map||''} · ${a.load||''} · CPU ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('longbowkeep',a.pts||0,body);};
+postButton($('post'),'longbowkeep',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Longbow Keep\nPoints: ${a.pts||0}\nResult: ${a.won?'win':a.draw?'draw':'loss'} ${a.score||''} (captures)\nKills: ${a.kills||0} · Deaths: ${a.deaths||0} · Headshots: ${a.heads||0} · Accuracy: ${a.acc||0}%\nCaptures: ${a.caps||0}\nField: ${a.map||''} · ${a.load||''} · CPU ${a.diff||''}`];});
 
 /* ================= boot + loop ================= */
 attract();

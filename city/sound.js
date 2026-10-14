@@ -1,25 +1,23 @@
 // NEON BAY — WebAudio synthesis only: engine, tyres, wind, rain, sirens, horn, sfx, and a 3-station radio sequencer.
 import {rng,cl} from './util.js';
+import {boot,master,gain,noiseBuf,reverb,bed,tone as osc,hiss} from '../js/kit3d/audio.js';
 const mtof=m=>440*Math.pow(2,(m-69)/12);
 export const STATIONS=[{name:'BAYWAVE 88.1',tag:'SYNTHWAVE',bpm:100},{name:'PALM FM 96.4',tag:'BOOGIE · DISCO',bpm:116},{name:'KICKBACK 104.7',tag:'LO-FI BEATS',bpm:84},{name:'RADIO OFF',tag:'',bpm:0}];
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.station=0;this.radioVol=0;this.R=rng(3);}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ac.destination);
-  this.master=ac.createGain();this.master.gain.value=.8;this.master.connect(comp);this.sfx=ac.createGain();this.sfx.gain.value=1;this.sfx.connect(this.master);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  // reverb
-  const ir=ac.createBuffer(2,ac.sampleRate*2.2,ac.sampleRate);for(let c=0;c<2;c++){const x=ir.getChannelData(c);for(let i=0;i<x.length;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/x.length,2.6);}this.verb=ac.createConvolver();this.verb.buffer=ir;this.verbIn=ac.createGain();this.verbIn.gain.value=.5;this.verbIn.connect(this.verb);
+ init(){boot(this,ac=>{this.master=master(ac,.8,-14,4);this.sfx=gain(ac,1,this.master);const b=this.noise=noiseBuf(ac);
   // radio bus: music -> tone -> gain (with reverb + delay sends)
-  this.radio=ac.createGain();this.radio.gain.value=0;const tone=ac.createBiquadFilter();tone.type='lowpass';tone.frequency.value=9000;this.music=ac.createGain();this.music.gain.value=.55;this.music.connect(tone);tone.connect(this.radio);this.radio.connect(this.master);this.verb.connect(this.music);
-  this.dly=ac.createDelay(1);this.dly.delayTime.value=.45;const fb=ac.createGain();fb.gain.value=.32;const df=ac.createBiquadFilter();df.type='lowpass';df.frequency.value=2500;this.dly.connect(df);df.connect(fb);fb.connect(this.dly);df.connect(this.music);this.dlyIn=ac.createGain();this.dlyIn.gain.value=.4;this.dlyIn.connect(this.dly);
+  this.radio=gain(ac,0,this.master);const tone=ac.createBiquadFilter();tone.type='lowpass';tone.frequency.value=9000;tone.connect(this.radio);this.music=gain(ac,.55,tone);
+  this.verbIn=reverb(ac,2.2,2.6,.5,this.music);
+  this.dly=ac.createDelay(1);this.dly.delayTime.value=.45;const df=ac.createBiquadFilter();df.type='lowpass';df.frequency.value=2500;this.dly.connect(df);df.connect(gain(ac,.32,this.dly));df.connect(this.music);this.dlyIn=gain(ac,.4,this.dly);
   // continuous layers
-  const loop=(f,type,q,g0)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=g0;s.connect(fl);fl.connect(g);g.connect(this.sfx);s.start(0,Math.random());return{f:fl,g};};
+  const loop=(f,type,q,g0)=>bed(ac,b,type,f,q,this.sfx,g0,Math.random());
   this.tire=loop(1700,'bandpass',4,0);this.wind=loop(500,'lowpass',.7,0);this.rainL=loop(3200,'highpass',.4,0);this.amb=loop(220,'lowpass',.5,.02);this.splashL=loop(900,'bandpass',.6,0);
-  const eo=ac.createOscillator();eo.type='sawtooth';const eo2=ac.createOscillator();eo2.type='square';const ef=ac.createBiquadFilter();ef.type='lowpass';ef.frequency.value=600;ef.Q.value=2;const eg=ac.createGain();eg.gain.value=0;eo.connect(ef);eo2.connect(ef);ef.connect(eg);eg.connect(this.sfx);eo.start();eo2.start();
+  const eo=ac.createOscillator();eo.type='sawtooth';const eo2=ac.createOscillator();eo2.type='square';const ef=ac.createBiquadFilter();ef.type='lowpass';ef.frequency.value=600;ef.Q.value=2;const eg=gain(ac,0,this.sfx);eo.connect(ef);eo2.connect(ef);ef.connect(eg);eo.start();eo2.start();
   const er=loop(900,'bandpass',1.5,0);this.eng={o:eo,o2:eo2,f:ef,g:eg,r:er};
-  const so=ac.createOscillator();so.type='square';const sf=ac.createBiquadFilter();sf.type='lowpass';sf.frequency.value=2200;const sg=ac.createGain();sg.gain.value=0;so.connect(sf);sf.connect(sg);sg.connect(this.sfx);so.start();this.sir={o:so,g:sg};
-  const ho=[ac.createOscillator(),ac.createOscillator()];const hg=ac.createGain();hg.gain.value=0;const hf=ac.createBiquadFilter();hf.type='lowpass';hf.frequency.value=1800;ho.forEach((o,i)=>{o.type='square';o.frequency.value=i?415:349;o.connect(hf);o.start();});hf.connect(hg);hg.connect(this.sfx);this.horn={g:hg,o:ho};
-  this.seq={next:0,step:0,bar:0,song:0};}catch(e){this.ac=null;}}
+  const so=ac.createOscillator();so.type='square';const sf=ac.createBiquadFilter();sf.type='lowpass';sf.frequency.value=2200;const sg=gain(ac,0,this.sfx);so.connect(sf);sf.connect(sg);so.start();this.sir={o:so,g:sg};
+  const ho=[ac.createOscillator(),ac.createOscillator()];const hg=gain(ac,0,this.sfx);const hf=ac.createBiquadFilter();hf.type='lowpass';hf.frequency.value=1800;ho.forEach((o,i)=>{o.type='square';o.frequency.value=i?415:349;o.connect(hf);o.start();});hf.connect(hg);this.horn={g:hg,o:ho};
+  this.seq={next:0,step:0,bar:0,song:0};});}
  // ---- continuous layers ----
  drive(v,on){if(!this.ac)return;const t=this.ac.currentTime;const E=this.eng;if(!on||!v){E.g.gain.setTargetAtTime(0,t,.1);E.r.g.gain.setTargetAtTime(0,t,.1);this.tire.g.gain.setTargetAtTime(0,t,.08);this.wind.g.gain.setTargetAtTime(0,t,.2);return;}
   const sp=Math.abs(v.vf),top=v.spec.max;const gears=[.16,.3,.46,.64,.84,1.1].map(k=>k*top);let lo=0,g=0;for(;g<gears.length-1&&sp>gears[g];g++)lo=gears[g];const rpm=cl((sp-lo)/(gears[g]-lo),0,1)*.75+.18+(v.onG?0:.15);const load=Math.abs(v.ctrl.thr);
@@ -30,8 +28,8 @@ export class Sound{
   this.sir.g.gain.setTargetAtTime(siren*.05,t,.1);this.sir.o.frequency.setTargetAtTime(siren>0?(sirenPh%2<1?650+Math.sin(sirenPh*Math.PI)*0:0)+(Math.sin(sirenPh*3)*.5+.5)*600+600:600,t,.05);}
  hornOn(on){if(!this.ac)return;this.horn.g.gain.setTargetAtTime(on?.09:0,this.ac.currentTime,.02);}
  // ---- one-shots ----
- _n(dur,f0,f1,q,vol,type='lowpass',dest,delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(dest||this.sfx);s.start(t,Math.random()*1.5);s.stop(t+dur+.05);return g;}
- _o(type,f0,f1,dur,vol,delay=0,dest){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(dest||this.sfx);o.start(t);o.stop(t+dur+.05);}
+ _n(dur,f0,f1,q,vol,type='lowpass',dest,delay=0){return hiss(this.ac,this.noise,dest||this.sfx,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0,dest){osc(this.ac,dest||this.sfx,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  play(k,a=1){if(!this.ac||!this.on)return;try{switch(k){
   case'crash':{const v=Math.min(.6,.1+a*.02);this._n(.5,3000,200,.8,v);this._o('sine',120,40,.35,v*.8);this._n(.25,6000,2500,1,v*.4,'highpass');if(a>14)this._n(.9,1400,90,.5,v*.6);break;}
   case'scrape':this._n(.25,2400,1800,3,.06,'bandpass');break;

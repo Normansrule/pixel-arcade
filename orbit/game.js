@@ -8,7 +8,9 @@ import {Coach,WARPS,PLANS} from './coach.js';
 import {MISSIONS,NOTEBOOK,DIAGRAMS,noteById} from './missions.js';
 import * as MD from './models.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {gamepad,deadzone} from '../js/kit3d/input.js';
+import {pickers,postButton,toast as note} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),V=THREE.Vector3,cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const {VERDA,LUNE,SUN}=P;const ID='orbitlab';
@@ -198,9 +200,9 @@ addEventListener('mousemove',e=>{const dx=e.clientX-mouse.x,dy=e.clientY-mouse.y
  if(app==='vab'){vYaw-=dx*.008;return;}const s=mapView?camS.map:camS;s.yaw-=dx*.006;s.pitch=cl(s.pitch+dy*.005,mapView?-1.5:-1.3,mapView?1.55:1.45);});
 addEventListener('mouseup',e=>{if(drag){drag=null;}else if(mouse.down&&mouse.moved<5&&app==='flight'&&mapView)mapClick(e.clientX,e.clientY);mouse.down=false;});
 canvas.addEventListener('wheel',e=>{e.preventDefault();const k=Math.exp(e.deltaY*.0012);if(app==='vab'){vDist=cl(vDist*k,6,90);return;}if(mapView)camS.map.dist=cl(camS.map.dist*k,2e4,6e7);else camS.dist=cl(camS.dist*k,6,4000);},{passive:false});
-function gp(){const l=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];return l[0]||null;}
+const gp=gamepad;
 let gpPrev={};
-function readInput(dt){const g=gp();const ax=(i)=>g&&Math.abs(g.axes[i])>.15?g.axes[i]:0;const btn=(i)=>g&&g.buttons[i]&&g.buttons[i].pressed;const gpe=i=>{const b=btn(i),p=gpPrev[i];gpPrev[i]=b;return b&&!p;};
+function readInput(dt){const g=gp();const ax=(i)=>g?deadzone(g.axes[i]):0;const btn=(i)=>g&&g.buttons[i]&&g.buttons[i].pressed;const gpe=i=>{const b=btn(i),p=gpPrev[i];gpPrev[i]=b;return b&&!p;};
  const inp={pitch:(keys.KeyW?-1:0)+(keys.KeyS?1:0)+ax(1),yaw:(keys.KeyD?-1:0)+(keys.KeyA?1:0)-ax(0),roll:(keys.KeyQ?1:0)+(keys.KeyE?-1:0)+(btn(4)?1:0)-(btn(5)?1:0)};
  let thr=F.throttle;const tu=(keys.ShiftLeft||keys.ShiftRight?1:0)+(g?g.buttons[7]?.value||0:0),td=(keys.ControlLeft||keys.ControlRight?1:0)+(g?g.buttons[6]?.value||0:0);
  let tch=false;if(tu||td){thr=cl(thr+(tu-td)*dt*.8,0,1);tch=true;}if(edge.KeyZ){thr=1;tch=true;}if(edge.KeyX){thr=0;tch=true;}
@@ -474,7 +476,7 @@ function openNote(focus){noteOpen=true;$('note').hidden=false;const have=n=>mode
 function closeNote(){noteOpen=false;$('note').hidden=true;}
 
 /* ===================== toasts + banner ===================== */
-function toast(t,k=''){const el=document.createElement('div');el.className=k;el.innerHTML=t;$('toast').appendChild(el);setTimeout(()=>el.remove(),3600);while($('toast').children.length>4)$('toast').firstChild.remove();}
+function toast(t,k=''){note($('toast'),t,3600,4,false).className=k;}
 let bnT=0;function banner(t,s,d=3){$('bn-t').textContent=t;$('bn-s').textContent=s;$('banner').classList.add('on');bnT=d;}
 
 /* ===================== rendering ===================== */
@@ -522,17 +524,16 @@ function step(dt){dt=Math.min(.05,dt);
  for(const k in edge)edge[k]=false;}
 
 /* ===================== wiring ===================== */
-const seg=(id,key)=>{const el=$(id);const set=v=>{opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));save();};set(opt[key]);el.querySelectorAll('button').forEach(b=>b.onclick=()=>{set(+b.dataset.v);snd.play('click');});};
-seg('o-len','len');seg('o-easy','easy');seg('o-hints','hints');
+const pick=pickers(opt,save),seg=(id,key)=>pick(id,key,true,()=>snd.play('click'));
+seg('o-len','len');seg('o-easy','easy');seg('o-hints','hints');save();
 {const el=$('v-start');el.querySelectorAll('button').forEach(b=>b.onclick=()=>{vStart=+b.dataset.v;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));refreshVab();});}
 $('go').onclick=()=>start();$('free').onclick=()=>start({free:true});$('mnote').onclick=()=>openNote();$('n-close').onclick=closeNote;
 $('h-note').onclick=()=>openNote();$('h-end').onclick=()=>endSession();$('v-back').onclick=()=>mode==='free'?toMenu():toHub();$('v-launch').onclick=vabLaunch;
 $('v-grant').onclick=()=>{career.funds+=15000;sess.pts=Math.max(0,sess.pts-100);sess.grant++;save();refreshVab();toast('Emergency grant received (−100 pts)');};
 $('p-resume').onclick=()=>pause(false);$('p-revert').onclick=()=>{pause(false);revert();};$('p-vab').onclick=()=>{pause(false);toVab();};$('p-hub').onclick=()=>{pause(false);mode==='free'?toVab():toHub();};$('p-quit').onclick=()=>{pause(false);endSession();};
 $('o-again').onclick=()=>start();$('o-menu').onclick=toMenu;
-$('o-post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Orbit Lab\nPoints: ${a.pts||0}\nMissions this session: ${a.done||0}\nFlights: ${a.flights||0}\nSession: ${a.len?a.len/60+' min':'endless'}${a.easy?' · easy physics':''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('o-post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Orbit Lab\nPoints: ${a.pts||0}\nMissions this session: ${a.done||0}\nFlights: ${a.flights||0}\nSession: ${a.len?a.len/60+' min':'endless'}${a.easy?' · easy physics':''}`];});
 addEventListener('resize',()=>{fxS&&(fxS.w=0);fxV&&(fxV.w=0);});
 
 toMenu();

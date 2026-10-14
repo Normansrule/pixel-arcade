@@ -1,4 +1,5 @@
 // RUNLINE — synthesized audio: footsteps, wind, slides, wall-runs, grapple, pickups and a procedural electronic score per district.
+import {boot,master,gain,noiseBuf,reverb,bed,tone,hiss} from '../js/kit3d/audio.js';
 const R=Math.random;
 const N=n=>440*Math.pow(2,(n-69)/12);
 // district songs: chords (midi roots + intervals), bass pattern, tempo
@@ -8,22 +9,18 @@ const SONGS=[
  {bpm:116,ch:[[53,[0,4,7,11]],[57,[0,3,7,10]],[50,[0,3,7,10]],[48,[0,4,7,14]]],arp:[0,2,3,1,2,3,1,0],bass:'x...x.x.x...x.x.',hat:'..x...x...x...x.',snare:'....x.......x...'}];
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.musVol=.5;this.song=0;this.playing=false;this.step=0;this.bar=0;this.nextT=0;this.timer=null;this.speed=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-12;comp.ratio.value=4;comp.connect(ac.destination);this.master=ac.createGain();this.master.gain.value=this.vol;this.master.connect(comp);
-  this.sfx=ac.createGain();this.sfx.connect(this.master);this.mus=ac.createGain();this.mus.gain.value=this.musVol;this.mus.connect(this.master);
+ init(){boot(this,ac=>{this.master=master(ac,this.vol,-12,4);this.sfx=gain(ac,1,this.master);this.mus=gain(ac,this.musVol,this.master);
   this.musF=ac.createBiquadFilter();this.musF.type='lowpass';this.musF.frequency.value=1800;this.musF.Q.value=.7;this.musF.connect(this.mus);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=R()*2-1;this.noise=b;
-  const il=ac.sampleRate*1.4,ib=ac.createBuffer(2,il,ac.sampleRate);for(let c=0;c<2;c++){const x=ib.getChannelData(c);for(let i=0;i<il;i++)x[i]=(R()*2-1)*Math.pow(1-i/il,3);}this.verb=ac.createConvolver();this.verb.buffer=ib;this.verbIn=ac.createGain();this.verbIn.gain.value=.25;this.verbIn.connect(this.verb);this.verb.connect(this.master);
+  const b=this.noise=noiseBuf(ac);
+  this.verbIn=reverb(ac,1.4,3,.25,this.master);
   // loops: wind, slide scrape, wall patter
-  const loop=(type,f,q,g0=0)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=g0;s.connect(fl);fl.connect(g);g.connect(this.sfx);s.start(0,R()*1.5);return{f:fl,g};};
+  const loop=(type,f,q,g0=0)=>bed(ac,b,type,f,q,this.sfx,g0,R()*1.5);
   this.wind=loop('bandpass',500,.5);this.scrape=loop('bandpass',1400,1.2);this.whine=loop('highpass',3000,.5);
-  this.timer=setInterval(()=>this.schedule(),25);}catch(e){this.ac=null;}}
+  this.timer=setInterval(()=>this.schedule(),25);});}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
  setMusic(v){this.musVol=v;if(this.mus)this.mus.gain.setTargetAtTime(v,this.ac.currentTime,.2);}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0,rev=false){if(!this.ac||vol<.002)return;const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(this.sfx);if(rev)g.connect(this.verbIn);s.start(t,R()*1.5);s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0,rev=false,bus,at,atk=.005){if(!this.ac||vol<.002)return;const ac=this.ac,t=(at??ac.currentTime)+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+atk);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
-  o.connect(g);g.connect(bus||this.sfx);if(rev)g.connect(this.verbIn);o.start(t);o.stop(t+dur+.03);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0,rev=false){if(!this.ac||vol<.002)return;const g=hiss(this.ac,this.noise,this.sfx,this.ac.currentTime+delay,dur,f0,f1,q,vol,type);if(rev)g.connect(this.verbIn);}
+ _o(type,f0,f1,dur,vol,delay=0,rev=false,bus,at,atk=.005){if(!this.ac||vol<.002)return;const g=tone(this.ac,bus||this.sfx,(at??this.ac.currentTime)+delay,type,f0,f1,dur,vol,atk);if(rev)g.connect(this.verbIn);}
  // continuous movement layers
  move(speed,slide,wall,air,on){if(!this.ac)return;const t=this.ac.currentTime,s=Math.min(1,speed/26);this.speed=speed;
   this.wind.g.gain.setTargetAtTime(on?.015+s*s*.32:0,t,.12);this.wind.f.frequency.setTargetAtTime(300+s*1600,t,.1);

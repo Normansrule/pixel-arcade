@@ -9,7 +9,9 @@ import {makeRig,animate} from './rig.js';
 import {Particles,Trail,Shocks,Sparks,Beams,FX} from './fx.js';
 import {think} from './ai.js';
 import {Sound} from './sound.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a,DT=1/60;
 const SLOT=['#ff4d4d','#3d8bff','#ffd23a','#4ade80'],SLOTC=SLOT.map(c=>new THREE.Color(c));
@@ -29,7 +31,7 @@ const cam=new THREE.PerspectiveCamera(30,1,.5,2600);
 const snd=new Sound();
 
 /* ================= state ================= */
-let opt={mode:0,time:3,stock:3,n:4,humans:1,lv:5,stage:0,items:1,p1:0,p2:1};try{Object.assign(opt,JSON.parse(localStorage.getItem('pxd_brawl_opt'))||{});}catch(e){}
+let opt={mode:0,time:3,stock:3,n:4,humans:1,lv:5,stage:0,items:1,p1:0,p2:1};const saveOpt=stored('pxd_brawl_opt',opt);
 let app='menu',phase='countdown',world=null,FV=[],stageVis=null,stageIdx=-1,time=0,acc=0,timeScale=1,clock=0,cdT=0,annT=0,endT=0,overT=0,attract=true,sudden=false,lastSec=-1;
 let shake=0,bloomKick=0,zoomKick=0,finalHit=null,koOrder=[],result=null,lastAward=null,camPos=new V(0,6,40),camLook=new V(0,3,0),camDist=40,ambAcc=0,manual=[],paused=false,hudCache={};
 let fxPost=null,gfx=quality(),postOpts={},camHold=0;let autoplay=false;
@@ -76,7 +78,7 @@ function hudFor(v){const f=v.f,c=SLOT[f.slot%4],lbl=f.human>=0?'P'+(f.human+1):'
 
 /* ================= match flow ================= */
 function newWorld(o){world=new World(cloneStage(o.stage),{mode:o.mode,items:o.items,ev});stageVis.plats.forEach((m,i)=>m.userData.p=world.stage.plats[i]);for(const o of projVis.values()){disposeVis(o.g);if(o.tr)disposeVis(o.tr.mesh);}projVis.clear();for(const g of itemVis.values())disposeVis(g);itemVis.clear();}
-function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o);try{localStorage.setItem('pxd_brawl_opt',JSON.stringify(opt));}catch(e){}snd.init();
+function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o);saveOpt();snd.init();
  attract=false;app='match';paused=false;loadStage(opt.stage);clearFighters();newWorld({stage:opt.stage,mode:opt.mode?'stock':'time',items:!!opt.items});
  const n=Math.max(opt.n,opt.humans);const picks=[opt.p1];if(opt.humans===2)picks.push(opt.p2);const pool=[...Array(8).keys()].filter(i=>!picks.includes(i)).sort(()=>Math.random()-.5);while(picks.length<n)picks.push(pool.pop());
  picks.forEach((p,i)=>{const pk=p<0?rnd(8)|0:p;const f=addFighter(pk,{human:i<opt.humans?i:-1,lvl:opt.lv,stocks:opt.mode?opt.stock:99,name:ROSTER[pk].name});f.name=i<opt.humans?(opt.humans===2?'P'+(i+1):'YOU'):ROSTER[pk].name;});
@@ -183,7 +185,7 @@ function koFx(f,killer,p){const S=world.stage;const vis=FV[f.slot];
  parts.burst(o,180,22,[c,new THREE.Color(1.6,1.5,1.3),c.clone().multiplyScalar(.5)],.5,1.1,{dir,spread:1.2,drag:1.6,grav:2,flat:.4});shocks.fire(o,c,6,.5,true);shocks.fire(o,new THREE.Color(1,1,1),9,.7);
  flash.position.set(o.x,o.y,3);flash.color.copy(vis.glowC);flash.intensity=260;bloomKick=Math.max(bloomKick,.5);shake=Math.max(shake,1);vis.trail.clear();vis.swoosh.clear();
  if(attract)return;snd.play('ko');snd.play('cheer');hype=1;flashScreen(.12);edgeBlast(o,vis.css);
- const fe=document.createElement('div');fe.innerHTML=killer?`<b style="color:${SLOT[killer.slot%4]}">${killer.def.name}</b> ✸ <b style="color:${SLOT[f.slot%4]}">${f.def.name}</b>`:`<b style="color:${SLOT[f.slot%4]}">${f.def.name}</b> SELF-DESTRUCT`;$('feed').prepend(fe);setTimeout(()=>fe.remove(),4500);while($('feed').children.length>5)$('feed').lastChild.remove();
+ toast($('feed'),killer?`<b style="color:${SLOT[killer.slot%4]}">${killer.def.name}</b> ✸ <b style="color:${SLOT[f.slot%4]}">${f.def.name}</b>`:`<b style="color:${SLOT[f.slot%4]}">${f.def.name}</b> SELF-DESTRUCT`,4500,5);
  if(f.st==='out'){f.elimF=world.frame;pop(o,f.def.name+' IS OUT','#ff5a5a',true);}
  if(finalHit&&finalHit.v===f){finalHit=null;timeScale=.35;}
  checkEnd();}
@@ -193,14 +195,14 @@ function pop(p,txt,color,big){if(attract)return;const s=project(p);if(!s)return;
 function announce(t,s,dur,color){$('annt').textContent=t;$('anns').textContent=s||'';$('ann').style.setProperty('--ac',color||'#ff4d00');if(t){$('ann').classList.remove('on');void $('ann').offsetWidth;$('ann').classList.add('on');}else $('ann').classList.remove('on');annT=dur||0;}
 
 /* ================= input ================= */
-const keys={},edge={};
 const GAMEK=new Set(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Slash','Quote','Enter','Comma','Period','KeyJ','KeyK','KeyL','KeyI','KeyU','Tab']);
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
+// keyboard only: no pointer lock, and the context menu stays available
+const IN=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{
  if(app==='match'&&GAMEK.has(e.code))e.preventDefault();if(e.code==='Space'&&app!=='menu')e.preventDefault();
  if(e.code==='Escape'){if(app==='match')pause(true);else if(app==='paused')pause(false);}
  if(e.code==='KeyM'){snd.on=!snd.on;snd.voice=snd.on;if(!snd.on&&window.speechSynthesis)speechSynthesis.cancel();}
- if(e.code==='Enter'&&app==='menu'&&!e.repeat)start();});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='Enter'&&app==='menu'&&!e.repeat)start();}});
+const {keys,edge}=IN;
 const KB=[{l:['KeyA'],r:['KeyD'],u:['KeyW'],d:['KeyS'],jump:['Space'],atk:['KeyJ'],spc:['KeyK'],smash:['KeyL'],shield:['KeyI','ShiftLeft'],grab:['KeyU']},
  {l:['ArrowLeft'],r:['ArrowRight'],u:['ArrowUp'],d:['ArrowDown'],jump:['Numpad0'],atk:['Comma','Numpad1'],spc:['Period','Numpad2'],smash:['Slash','Numpad3'],shield:['ShiftRight','NumpadDecimal'],grab:['Enter','NumpadEnter']}];
 const padPrev=[{},{}],PK=['jumpP','atkP','spcP','smashP','shieldP','grabP'];
@@ -208,7 +210,7 @@ function mergeIn(prev,I){if(!prev)return I;for(const k of PK)I[k]=I[k]||prev[k];
 function pads(){return navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];}
 function readHuman(i){const solo=opt.humans===1,maps=solo?KB:[KB[i]];const on=n=>maps.some(m=>m[n].some(k=>keys[k])),pr=n=>maps.some(m=>m[n].some(k=>edge[k]));
  const I=blankInput();I.x=(on('r')?1:0)-(on('l')?1:0);I.y=(on('u')?1:0)-(on('d')?1:0);I.jump=on('jump');I.jumpP=pr('jump');I.atk=on('atk');I.atkP=pr('atk');I.spc=on('spc');I.spcP=pr('spc');I.smash=on('smash');I.smashP=pr('smash');I.shield=on('shield');I.shieldP=pr('shield');I.grabP=pr('grab');
- const list=pads(),g=solo?list[0]:list.length===1?(i===1?list[0]:null):list[i];if(g){const a=g.axes,b=g.buttons,P=padPrev[i],dz=v=>Math.abs(v)>.24?v:0,btn=k=>!!(b[k]&&b[k].pressed),edg=(k,n)=>btn(k)&&!P[n];
+ const list=pads(),g=solo?list[0]:list.length===1?(i===1?list[0]:null):list[i];if(g){const a=g.axes,b=g.buttons,P=padPrev[i],dz=v=>deadzone(v,.24),btn=k=>!!(b[k]&&b[k].pressed),edg=(k,n)=>btn(k)&&!P[n];
   const lx=dz(a[0]||0)+(btn(15)?1:0)-(btn(14)?1:0),ly=-dz(a[1]||0)+(btn(12)?1:0)-(btn(13)?1:0);if(lx)I.x=cl(lx,-1,1);if(ly)I.y=cl(ly,-1,1);
   const rx=a[2]||0,ry=-(a[3]||0),rm=Math.hypot(rx,ry);if(rm>.6){I.smash=true;if(!P.rs){I.smashP=true;I.sx=rx;I.sy=ry;}}
   if(btn(0))I.atk=true;if(edg(0,'a'))I.atkP=true;if(btn(1))I.spc=true;if(edg(1,'b'))I.spcP=true;if(btn(2)||btn(3))I.jump=true;if(edg(2,'x')||edg(3,'y'))I.jumpP=true;
@@ -222,7 +224,7 @@ function menuPads(){for(let i=0;i<2;i++){const g=pads()[i];if(!g)continue;const 
 let lastClockAnn=-1;
 function step(dt){dt=Math.min(dt,.1);time+=dt;
  if(app==='match'){for(const f of world.f)if(f.human>=0)f.inpNext=mergeIn(f.inpNext,readHuman(f.human));}else menuPads();
- for(const k in edge)delete edge[k];
+ IN.flush();
  if(app==='paused'){visuals(0);return;}
  if(app==='over'){overT+=dt;const w=result&&(result.winner||result.order[0]);if(w)for(let i=0;i<3;i++)if(rnd()<dt*22){const c=new THREE.Color().setHSL(rnd(),.9,.6);parts.emit(w.x+rnd(10)-5,w.y+6+rnd(2),rnd(4)-2,rnd(1)-.5,-1-rnd(1.5),0,c.r*1.6,c.g*1.6,c.b*1.6,.16,3,1.2,1.5);}visuals(dt);return;}
  // flow
@@ -377,8 +379,7 @@ function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.
 addEventListener('resize',()=>{if(fxPost)fxPost.w=0;});
 
 /* ================= menu ================= */
-function seg(id,keyN,list,label){const el=$(id);if(list)el.innerHTML=list.map((t,i)=>`<button data-v="${i}">${t}</button>`).join('');const set=v=>{opt[keyN]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));onOpt(keyN);};
- el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===opt[keyN]));}
+const pick=pickers(opt),seg=(id,keyN)=>pick(id,keyN,true,()=>onOpt(keyN));
 function chips(id,keyN){const el=$(id);el.innerHTML=ROSTER.map((d,i)=>`<button data-v="${i}" style="--c:${css(d.look.glow)}" title="${d.name} · ${d.type}"><img src="${PORT[i]||''}" alt=""><span>${d.name}</span></button>`).join('')+`<button data-v="-1" class="rnd" style="--c:#8a8aa8" title="RANDOM">?<span>RANDOM</span></button>`;
  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>{opt[keyN]=+b.dataset.v;refreshMenu();onOpt(keyN);};b.onmouseenter=()=>showInfo(+b.dataset.v);b.onmouseleave=()=>showInfo(opt.p1);});}
 function showInfo(i){const el=$('info');if(i<0){el.style.setProperty('--c','#ccc');el.innerHTML='<div><h4>RANDOM<span>?</span></h4><p>Let fate pick your fighter.</p></div><div class="bars"></div>';return;}const d=ROSTER[i];el.style.setProperty('--c',css(d.look.glow));
@@ -386,15 +387,14 @@ function showInfo(i){const el=$('info');if(i<0){el.style.setProperty('--c','#ccc
  el.innerHTML=`<div><h4>${d.name}<span>${d.type}</span></h4><p>${d.desc}</p><p style="color:var(--mut);font-size:.62rem;margin-top:4px">SPECIALS · ${sp}</p></div><div class="bars">${STAT_NAMES.map((n,k)=>`<div class="bar">${n}<u style="--v:${d.stats[k]*20}%"></u></div>`).join('')}</div>`;}
 function refreshMenu(){for(const[id,k]of[['r1','p1'],['r2','p2']])$(id).querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===opt[k]));const two=opt.humans===2;$('r2').hidden=!two;$('r2l').hidden=!two;showInfo(opt.p1);
  const b=best();$('best').textContent=b?'BEST '+b+' PTS':'';}
-function onOpt(k){try{localStorage.setItem('pxd_brawl_opt',JSON.stringify(opt));}catch(e){}if(app!=='menu')return;if(k==='humans')refreshMenu();if(k==='stage'||k==='p1')toMenu();}
+function onOpt(k){saveOpt();if(app!=='menu')return;if(k==='humans')refreshMenu();if(k==='stage'||k==='p1')toMenu();}
 makePortraits();chips('r1','p1');chips('r2','p2');
 $('o-lv').innerHTML=Array.from({length:9},(_,i)=>`<button data-v="${i+1}">${i+1}</button>`).join('');
 $('o-st').innerHTML=STAGES.map((s,i)=>`<button data-v="${i}">${s.name}</button>`).join('');
 seg('o-mode','mode');seg('o-time','time');seg('o-stock','stock');seg('o-n','n');seg('o-pl','humans');seg('o-lv','lv');seg('o-st','stage');seg('o-it','items');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Platform Brawl\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} (#${a.rank||'?'} of ${a.n||'?'})\nFighter: ${a.fighter||''} · Stage: ${a.stage||''}\nKOs: ${a.kos||0} · Falls: ${a.falls||0} · Damage dealt: ${a.dealt||0}%\nMode: ${a.mode||''} · CPU level ${a.lv||''}${a.two?' · 2P local':''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore(ID,a.pts||0,body);};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Platform Brawl\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} (#${a.rank||'?'} of ${a.n||'?'})\nFighter: ${a.fighter||''} · Stage: ${a.stage||''}\nKOs: ${a.kos||0} · Falls: ${a.falls||0} · Damage dealt: ${a.dealt||0}%\nMode: ${a.mode||''} · CPU level ${a.lv||''}${a.two?' · 2P local':''}`];});
 
 /* ================= loop ================= */
 toMenu();$('loading').style.opacity=0;

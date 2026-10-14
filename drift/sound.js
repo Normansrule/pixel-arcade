@@ -1,20 +1,19 @@
 // SIDEWAYS — synthesized audio (no files): rev-matched engine (firing-frequency oscillators through a waveshaper),
 // turbo whine + blow-off flutter, backfire pops, tyre squeal, wall scrape, impacts, wind, rain, UI cues.
+import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=this.vol;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  const loop=(type,f,q,g0=0)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=g0;s.connect(fl);fl.connect(g);g.connect(this.out);s.start(0,Math.random());return{f:fl,g};};
+ init(){boot(this,ac=>{this.out=master(ac,this.vol,-14,4);const b=this.noise=noiseBuf(ac);
+  const loop=(type,f,q,g0=0)=>bed(ac,b,type,f,q,this.out,g0,Math.random());
   this.squeal=loop('bandpass',1150,7);this.squeal2=loop('bandpass',1750,9);this.scrape=loop('highpass',2400,.8);this.wind=loop('lowpass',600,.5);this.rain=loop('highpass',2600,.4);this.gravel=loop('lowpass',380,.8);
-  this.eng=[this.mkEngine(1),this.mkEngine(.35)];}catch(e){this.ac=null;}}
+  this.eng=[this.mkEngine(1),this.mkEngine(.35)];});}
  mkEngine(level){const ac=this.ac,shp=ac.createWaveShaper(),c=new Float32Array(1024);for(let i=0;i<1024;i++){const x=i/512-1;c[i]=Math.tanh(x*2.6);}shp.curve=c;
   const lp=ac.createBiquadFilter();lp.type='lowpass';lp.Q.value=2.2;const g=ac.createGain();g.gain.value=0;const pre=ac.createGain();pre.gain.value=.6;
   const o1=ac.createOscillator(),o2=ac.createOscillator(),o3=ac.createOscillator();o1.type='sawtooth';o2.type='square';o3.type='sawtooth';const g1=ac.createGain(),g2=ac.createGain(),g3=ac.createGain();g1.gain.value=.5;g2.gain.value=.35;g3.gain.value=.16;
   o1.connect(g1);o2.connect(g2);o3.connect(g3);g1.connect(pre);g2.connect(pre);g3.connect(pre);pre.connect(shp);shp.connect(lp);lp.connect(g);g.connect(this.out);o1.start();o2.start();o3.start();
   // rasp: noise amplitude-modulated near the firing frequency
-  const ns=ac.createBufferSource();ns.buffer=this.noise;ns.loop=true;const nf=ac.createBiquadFilter();nf.type='bandpass';nf.Q.value=1.4;const ng=ac.createGain();ng.gain.value=0;ns.connect(nf);nf.connect(ng);ng.connect(this.out);ns.start();
-  const tw=ac.createOscillator();tw.type='sine';const tg=ac.createGain();tg.gain.value=0;tw.connect(tg);tg.connect(this.out);tw.start();
+  const{f:nf,g:ng}=bed(ac,this.noise,'bandpass',350,1.4,this.out);
+  const tw=ac.createOscillator();tw.type='sine';const tg=gain(ac,0,this.out);tw.connect(tg);tw.start();
   return{o1,o2,o3,lp,g,ng,nf,tw,tg,pre,level};}
  // per frame: rpm, throttle, boost (0..1), cylinders, on
  engine(i,rpm,thr,boost,cyl,on,limiter){const e=this.eng&&this.eng[i];if(!e)return;const t=this.ac.currentTime,f=Math.max(20,rpm/60*cyl/2),L=e.level;
@@ -28,8 +27,8 @@ export class Sound{
   this.scrape.g.gain.setTargetAtTime(Math.min(.3,scrape*.05),t,.03);this.wind.g.gain.setTargetAtTime(Math.min(.12,speed*speed*.000025),t,.2);this.wind.f.frequency.setTargetAtTime(300+speed*12,t,.2);
   this.gravel.g.gain.setTargetAtTime(gravel?Math.min(.2,speed*.006):0,t,.08);this.rain.g.gain.setTargetAtTime(rain?.05:0,t,.5);}
  mute(){if(!this.ac)return;const t=this.ac.currentTime;this.eng.forEach(e=>{e.g.gain.setTargetAtTime(0,t,.05);e.ng.gain.setTargetAtTime(0,t,.05);e.tg.gain.setTargetAtTime(0,t,.05);});[this.squeal,this.squeal2,this.scrape,this.wind,this.gravel].forEach(x=>x.g.gain.setTargetAtTime(0,t,.05));}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random());s.stop(t+dur+.02);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.02);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  flutter(a){const ac=this.ac,t=ac.currentTime,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=2300;f.Q.value=1.2;const g=ac.createGain();g.gain.value=0;
   const lfo=ac.createOscillator();lfo.type='square';lfo.frequency.setValueAtTime(22,t);lfo.frequency.linearRampToValueAtTime(12,t+.6);const lg=ac.createGain();lg.gain.setValueAtTime(.09*a,t);lg.gain.exponentialRampToValueAtTime(.001,t+.7);
   lfo.connect(lg);lg.connect(g.gain);s.connect(f);f.connect(g);g.connect(this.out);s.start(t);lfo.start(t);s.stop(t+.75);lfo.stop(t+.75);this._n(.18,4000,1800,.8,.08*a,'bandpass');}

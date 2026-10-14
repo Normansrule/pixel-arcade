@@ -2,6 +2,7 @@
 // hit markers, damage arcs, world markers (flags, carriers, allies), bomb arc preview, respawn panel and the Tab scoreboard.
 import * as THREE from '../vendor/three.module.min.js';
 import {TEAMS} from './gfx.js';
+import {toast} from '../js/kit3d/ui.js';
 const $=id=>document.getElementById(id);
 export const mmss=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -13,7 +14,7 @@ export class HUD{
  html(id,v){if(this.cache[id]!==v){this.cache[id]=v;$(id).innerHTML=v;}}
  banner(t,s,col,dur=2.4){$('bt').textContent=t;$('bt').style.color=col||'#fff';$('bs').textContent=s||'';const b=$('banner');b.classList.remove('on');void b.offsetWidth;b.classList.add('on');this.banT=dur;}
  msg(t,dur=2){this.set('hint',t);$('hint').classList.add('on');this.msgT=dur;}
- feed(a,ta,mid,b,tb){const f=$('feed'),d=document.createElement('div');d.innerHTML=(a?`<b style="color:${TEAMS[ta].css}">${esc(a)}</b>`:'')+`<i>${mid}</i>`+(b?`<b style="color:${TEAMS[tb].css}">${esc(b)}</b>`:'');f.prepend(d);setTimeout(()=>d.remove(),5200);while(f.children.length>6)f.lastChild.remove();}
+ feed(a,ta,mid,b,tb){toast($('feed'),(a?`<b style="color:${TEAMS[ta].css}">${esc(a)}</b>`:'')+`<i>${mid}</i>`+(b?`<b style="color:${TEAMS[tb].css}">${esc(b)}</b>`:''),5200,6);}
  hit(kind){this.hits.push({t:kind==='kill'||kind==='head'?.45:.22,kind});}
  hurt(ang){this.dmg.push({a:ang,t:1});this.flash=Math.min(1,this.flash+.45);}
  clear(){$('feed').innerHTML='';this.hits.length=0;this.dmg.length=0;this.flash=0;$('banner').classList.remove('on');this.banT=0;}

@@ -12,7 +12,9 @@ import {buildPod,buildSub,buildCockpit,buildViewmodel,buildRocket} from './gear.
 import {ITEMS,RECIPES,SPECIES,DIFFS,DIVE,CARRY} from './data.js';
 import {Sound} from './sound.js';
 import {HUD,invHTML} from './hud.js';
-import {addRound,bestScore,postScore,saveBest,userName} from '../js/kit3d/score.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,TAU=Math.PI*2;
 try{await Promise.race([Promise.all([document.fonts.load('64px Anton'),document.fonts.load('20px "JetBrains Mono"')]),new Promise(r=>setTimeout(r,2500))]);}catch(e){}
@@ -30,7 +32,7 @@ const dome=makeDome();scene.add(dome);const surf=makeSurface();scene.add(surf);c
 const snow=makeSnow();scene.add(snow);const plankton=makePlankton();scene.add(plankton);const bub=makeBubbles();scene.add(bub.pts);
 const world=buildWorld(scene);
 const G={app:'menu',ui:null,diff:DIFFS[1],opt:{diff:1,vol:.8,sens:1},time:0,safe:true,hurtT:0,shake:0,loc:'SUNLIT SHOALS',compassMarks:[],obj:null,tip:'',scanP:0,scanning:false,scanLab:'',noLoop:false,god:false};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('abyss_opt'))||{});}catch(e){}G.diff=DIFFS[G.opt.diff]||DIFFS[1];
+const saveOpt=stored('abyss_opt',G.opt);G.diff=DIFFS[G.opt.diff]||DIFFS[1];
 const life=new Life(scene,G.diff);
 const pod=buildPod();scene.add(pod);const subMesh=buildSub();subMesh.visible=false;scene.add(subMesh);const cockpit=buildCockpit();cam.add(cockpit);const vm=buildViewmodel();vm.scale.setScalar(.72);vm.position.set(.05,-.035,0);cam.add(vm);const rocket=buildRocket();scene.add(rocket);
 const snd=new Sound();snd.setVol(G.opt.vol);const hud=new HUD();
@@ -60,22 +62,17 @@ function give(k,n=1){P.inv[k]=(P.inv[k]||0)+n;}
 function take(k,n){const a=Math.min(n,P.inv[k]||0);P.inv[k]=(P.inv[k]||0)-a;n-=a;if(n>0)P.locker[k]=(P.locker[k]||0)-n;}
 
 /* ================= input ================= */
-const keys={},mouse={l:false,r:false};let padPrev={};
-addEventListener('keydown',e=>{if(e.code==='Tab'||e.code==='Space')e.preventDefault();if(e.repeat)return;keys[e.code]=true;
+const I=controls(canvas,{canLock:()=>G.app==='play'&&!G.ui,look:()=>I.locked&&G.app==='play'&&!G.ui,onLock:on=>{if(!on&&G.app==='play'&&!G.ui&&!G.noPause)pause(true);},
+ onDown:e=>{if(e.button===0&&G.app==='play')swipe();},
+ onKey:e=>{if(e.code==='Tab'||e.code==='Space')e.preventDefault();if(e.repeat)return;
  if(G.ui==='pod'){if(e.code==='KeyE'||e.code==='Escape')closePod();else if(/^Digit[1-9]$/.test(e.code)){const r=RECIPES[+e.code.slice(5)-1];if(r)craft(r.id);}return;}
  if(G.ui==='tablet'&&(e.code==='Tab'||e.code==='Escape')){closeTablet();return;}
  if(G.app!=='play')return;
  switch(e.code){case 'KeyE':use();break;case 'KeyF':doFlare();break;case 'KeyR':sonar();break;case 'KeyL':P.light=!P.light;P.lightAuto=true;snd.tone(P.light?900:600,.08,{vol:.05,wet:0});break;case 'KeyB':dropBeacon();break;case 'Tab':openTablet();break;
-  case 'Digit1':eat();break;case 'Digit2':drink();break;case 'Digit3':medkit();break;}});
-addEventListener('keyup',e=>{keys[e.code]=false;});
-addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
-canvas.addEventListener('mousedown',e=>{if(G.app==='play'&&!G.ui&&document.pointerLockElement!==canvas){lock();return;}if(e.button===0){mouse.l=true;if(G.app==='play')swipe();}if(e.button===2)mouse.r=true;});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(document.pointerLockElement!==canvas||G.app!=='play'||G.ui)return;const k=.0021*G.opt.sens;if(P.inSub){S.yaw-=e.movementX*k*.8;S.pitch=cl(S.pitch-e.movementY*k*.8,-1.1,1.1);}else{P.yaw-=e.movementX*k;P.pitch=cl(P.pitch-e.movementY*k,-1.52,1.52);}});
-function lock(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}
-function unlock(){try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}}
-document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==canvas&&G.app==='play'&&!G.ui&&!G.noPause)pause(true);});
-function pollPad(dt){const gp=navigator.getGamepads?[...navigator.getGamepads()].find(g=>g&&g.connected):null;G.pad=null;if(!gp)return;const ax=i=>Math.abs(gp.axes[i]||0)>.15?gp.axes[i]:0,b=i=>!!(gp.buttons[i]&&gp.buttons[i].pressed);
+  case 'Digit1':eat();break;case 'Digit2':drink();break;case 'Digit3':medkit();break;}}});
+const {keys,mouse,lock,unlock}=I;let padPrev={};
+function mouseLook(){const k=.0021*G.opt.sens;if(!G.ui){if(P.inSub){S.yaw-=mouse.dx*k*.8;S.pitch=cl(S.pitch-mouse.dy*k*.8,-1.1,1.1);}else{P.yaw-=mouse.dx*k;P.pitch=cl(P.pitch-mouse.dy*k,-1.52,1.52);}}mouse.dx=mouse.dy=0;}
+function pollPad(dt){mouseLook();const gp=gamepad();G.pad=null;if(!gp)return;const ax=i=>deadzone(gp.axes[i]||0),b=i=>!!(gp.buttons[i]&&gp.buttons[i].pressed);
  const pad={mx:ax(0),my:-ax(1),lx:ax(2),ly:ax(3),up:b(0),dn:b(1),use:b(2),log:b(3),boost:b(4),scan:b(5),flare:b(6),knife:b(7),sonar:b(12),start:b(9),eat:b(14),drink:b(15)};G.pad=pad;
  const k=2.6*dt*G.opt.sens;if(P.inSub){S.yaw-=pad.lx*k*.8;S.pitch=cl(S.pitch-pad.ly*k*.8,-1.1,1.1);}else{P.yaw-=pad.lx*k;P.pitch=cl(P.pitch-pad.ly*k,-1.52,1.52);}
  const edge=n=>pad[n]&&!padPrev[n];if(edge('use'))use();if(edge('flare'))doFlare();if(edge('knife'))swipe();if(edge('sonar'))sonar();if(edge('log'))G.ui==='tablet'?closeTablet():openTablet();if(edge('eat'))eat();if(edge('drink'))drink();if(edge('start'))pause(true);padPrev=pad;}
@@ -335,12 +332,11 @@ function render(){const w=innerWidth,h=innerHeight;if(RR.domElement.width!==Math
  fxStack.render();}
 
 /* ================= menus ================= */
-const seg=(id,key,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===+v));if(!init){try{localStorage.setItem('abyss_opt',JSON.stringify(G.opt));}catch(e){}cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(+b.dataset.v));};
-seg('o-diff','diff',v=>{$('dhint').textContent=DIFFS[v].hint;});seg('o-vol','vol',v=>{snd.init();snd.setVol(v);});seg('o-sens','sens');$('dhint').textContent=DIFFS[G.opt.diff].hint;
+const seg=pickers(G.opt,saveOpt);
+seg('o-diff','diff',true,v=>{$('dhint').textContent=DIFFS[v].hint;});seg('o-vol','vol',true,v=>{snd.init();snd.setVol(v);});seg('o-sens','sens');$('dhint').textContent=DIFFS[G.opt.diff].hint;
 $('go').onclick=start;$('again').onclick=start;$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>{G.app='over';toMenu();};
-$('post').onclick=()=>{const a=lastAward||{};const u=userName();
- const body=`Game: Abyss Diver\nScore: ${a.pts||0}\nResult: ${a.won?'rescued':a.reason==='time'?'stranded (time up)':'lost at sea'}\nDeepest: ${a.depth||0}m\nSpecies: ${a.species||0}/${Object.keys(SPECIES).length}\nMode: ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- postScore('abyss3d',a.pts||0,body);};
+postButton($('post'),'abyss3d',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Abyss Diver\nScore: ${a.pts||0}\nResult: ${a.won?'rescued':a.reason==='time'?'stranded (time up)':'lost at sea'}\nDeepest: ${a.depth||0}m\nSpecies: ${a.species||0}/${Object.keys(SPECIES).length}\nMode: ${a.diff||''}`];});
 updateBest();
 
 /* ================= loop ================= */
