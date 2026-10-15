@@ -414,7 +414,7 @@ window.MOBA={
  render(){render();},
  get state(){return S?{app,t:S.t,len:S.len,over:S.over,kills:[...S.kills],towers:[...S.towersK],inhibs:[...S.inhibK],drakes:[...S.drakes],wardens:[...S.wardens],score:[S.score(0),S.score(1)]}:{app};},
  get score(){return lastAward?lastAward.pts:0;},get result(){return lastAward;},
- get player(){return me;},get bots(){return S?S.champs.filter(c=>c.bot):[];},get sim(){return S;},get champs(){return S?S.champs:[];},
+ get player(){return me;},get brains(){return B;},get bots(){return S?S.champs.filter(c=>c.bot):[];},get sim(){return S;},get champs(){return S?S.champs:[];},
  set reveal(v){revealAll=!!v;},get reveal(){return revealAll;},
  set autopilot(v){autopilot=v;if(S)S.o.autoLvl=S.o.autoLvl||v;},get autopilot(){return autopilot;},
  cam(x,z,zoom){cam.x=cam.tx=x;cam.z=cam.tz=z;if(zoom)cam.zoom=zoom;camLock=false;},lock(v){camLock=v;},
