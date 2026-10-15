@@ -7,18 +7,21 @@ import {makeMap} from './map.js';
 import {cl,dist} from './util.js';
 
 const D8=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.4142],[1,-1,1.4142],[-1,1,1.4142],[-1,-1,1.4142]];
+const FDI=[1,-1,0,0,1,1,-1,-1],FDJ=[0,0,1,-1,1,-1,1,-1],FDW=[1,1,1,1,1.4142,1.4142,1.4142,1.4142];
 const circCache={};function circle(r){const k=Math.round(r*2);if(circCache[k])return circCache[k];const o=[],R=k/2;for(let j=-Math.ceil(R);j<=Math.ceil(R);j++)for(let i=-Math.ceil(R);i<=Math.ceil(R);i++)if(i*i+j*j<=R*R+.5)o.push([i,j]);return circCache[k]=o;}
+// the same disc as row spans [j,i0,i1] for typed-array fills
+const spanCache={};function spans(r){const k=Math.round(r*2);if(spanCache[k])return spanCache[k];const o=[];for(const[i,j]of circle(r)){const l=o[o.length-1];if(l&&l[0]===j&&l[2]===i-1)l[2]=i;else o.push([j,i,i]);}return spanCache[k]=o;}
 
 export class Sim{
  constructor(o){
   this.o=o;this.M=makeMap(o.map);const M=this.M;this.N=M.N;this.half=M.half;this.t=0;this.len=o.minutes*60;this.over=null;
-  this.ents=[];this.nid=1;this.ev=[];this.projs=[];this.blasts=[];this.occ=new Uint8Array(M.blk);this.occV=1;this.fc=new Map();this.fBudget=3;
+  this.ents=[];this.blds=[];this.res=[];this.nid=1;this.ev=[];this.projs=[];this.blasts=[];this.occ=new Uint8Array(M.blk);this.occV=1;this.occW=1;this.fc=new Map();this.fm=new Map();this.fmW=1;this.fBudget=3;
   this.players=o.players.map((p,i)=>({i,name:p.name,team:p.team,f:p.faction,F:FACTIONS[p.faction],ai:!!p.ai,diff:p.diff??1,col:p.color,human:!p.ai,start:p.start,
    ore:p.ore??75,ae:p.ae??0,sup:0,cap:0,up:{},gm:p.ai?DIFF[p.diff??1].gather:1,alive:true,lastAtk:-99,
    st:{built:0,lost:0,killed:0,bBuilt:0,bLost:0,bKilled:0,ore:0,ae:0,spent:0,acts:0,vKilled:0,vBuilt:0,armyMax:0}}));
   this.teams=[...new Set(this.players.map(p=>p.team))].sort();
   const NN=this.N*this.N;this.vis={};this.exp={};for(const t of this.teams){this.vis[t]=new Uint8Array(NN);this.exp[t]=new Uint8Array(NN);}
-  this.visT=0;this.chkT=0;this.hashN=Math.ceil(M.size/6);this.hash=Array.from({length:this.hashN*this.hashN},()=>[]);
+  this.visT=0;this.chkT=0;this.hashN=Math.ceil(M.size/6);this.hash=Array.from({length:this.hashN*this.hashN},()=>[]);this.hashUsed=[];
   // resources
   for(const b of M.bases){for(const[x,z,a]of b.ore)this.addRes('ore',x,z,a);for(const[x,z,a]of b.vents)this.addRes('vent',x,z,a);}
   // starting bases: HQ + 6 workers mining
@@ -38,7 +41,7 @@ export class Sim{
  /* ---------------- entities ---------------- */
  addRes(rk,x,z,amt){const e={id:this.nid++,cls:'r',rk,x,z,amt,amt0:amt,r:rk==='vent'?1.8:1,alive:true,team:-1,owner:-1,miner:null,ext:null,cells:[]};
   const h=rk==='vent'?1:0;for(let j=-h;j<=h-(h?1:0);j++)for(let i=-h;i<=h-(h?1:0);i++){const c=this.cell(x+i*CS+(h?CS/2:0),z+j*CS+(h?CS/2:0));e.cells.push(c);}
-  if(rk==='ore')for(const c of e.cells)this.occ[c]=3;this.ents.push(e);return e;}
+  if(rk==='ore')for(const c of e.cells)this.occ[c]=3;this.ents.push(e);this.res.push(e);return e;}
  addUnit(p,type,x,z){const d=U[type];const u={id:this.nid++,cls:'u',type,d,owner:p.i,P:p,team:p.team,x,z,r:d.r,hp:d.hp,mhp:d.hp,alive:true,yaw:Math.atan2(-x,-z),q:[],tgt:null,cdT:0,acqT:Math.random()*.3,
    vx:0,vz:0,moving:false,air:!!d.air,carry:null,gT:0,atkAnim:0,hitT:0,losT:0,los:false,novaCd:0,born:this.t,lastHit:-99,stuckT:0,lastD:1e9,inside:false};
   if(p.up.hard&&(type==='carapace'||type==='lobber')){u.mhp+=60;u.hp+=60;}
@@ -46,14 +49,14 @@ export class Sim{
  addBld(p,type,x,z,done=false){const d=B[type];const b={id:this.nid++,cls:'b',type,d,owner:p.i,P:p,team:p.team,x,z,r:d.size*CS/2,hp:done?d.hp:d.hp*.1,mhp:d.hp,alive:true,done,prog:done?1:0,queue:[],rally:null,cdT:0,tgt:null,acqT:0,cells:[],seen:{},yaw:0,lastHit:-99,born:this.t,atkAnim:0};
   b.seen[p.team]=1;const h=d.size/2;for(let j=0;j<d.size;j++)for(let i=0;i<d.size;i++){const c=this.cell(x+(i-h+.5)*CS,z+(j-h+.5)*CS);b.cells.push(c);}
   if(d.ext){const v=this.ents.find(e=>e.cls==='r'&&e.rk==='vent'&&e.alive&&Math.abs(e.x-x)<.1&&Math.abs(e.z-z)<.1);b.vent=v;if(v)v.ext=b;}
-  for(const c of b.cells)this.occ[c]=2;this.occV++;this.ents.push(b);if(done)p.st.bBuilt++;
+  this.fflush();for(const c of b.cells)this.occ[c]=2;this.occV++;this.occW++;this.ents.push(b);this.blds.push(b);if(done)p.st.bBuilt++;
   // push units out of the footprint
   for(const u of this.ents)if(u.cls==='u'&&u.alive&&!u.air&&this.occ[this.cell(u.x,u.z)]!==0)this.unstick(u);
   return b;}
  unstick(u){const c0=this.cell(u.x,u.z),N=this.N,ci=c0%N,cj=c0/N|0;let best=null,bd=1e9;for(let r=1;r<10&&!best;r++)for(let j=-r;j<=r;j++)for(let i=-r;i<=r;i++){if(Math.max(Math.abs(i),Math.abs(j))!==r)continue;const ii=ci+i,jj=cj+j;if(ii<1||jj<1||ii>=N-1||jj>=N-1)continue;const c=jj*N+ii;if(this.occ[c])continue;const d=(this.cx(c)-u.x)**2+(this.cz(c)-u.z)**2;if(d<bd){bd=d;best=c;}}
   if(best!=null){u.x=this.cx(best);u.z=this.cz(best);}}
- nearestRes(x,z,rk,r,ex){let b=null,bd=r*r;for(const e of this.ents){if(e.cls!=='r'||!e.alive||e.rk!==rk||e===ex)continue;const d=(e.x-x)**2+(e.z-z)**2;if(d<bd){bd=d;b=e;}}return b;}
- dropOf(u){let b=null,bd=1e18;for(const e of this.ents){if(e.cls!=='b'||!e.alive||!e.done||e.owner!==u.owner||!e.d.drop)continue;const d=(e.x-u.x)**2+(e.z-u.z)**2;if(d<bd){bd=d;b=e;}}return b;}
+ nearestRes(x,z,rk,r,ex){let b=null,bd=r*r;for(const e of this.res){if(e.cls!=='r'||!e.alive||e.rk!==rk||e===ex)continue;const d=(e.x-x)**2+(e.z-z)**2;if(d<bd){bd=d;b=e;}}return b;}
+ dropOf(u){let b=null,bd=1e18;for(const e of this.blds){if(e.cls!=='b'||!e.alive||!e.done||e.owner!==u.owner||!e.d.drop)continue;const d=(e.x-u.x)**2+(e.z-u.z)**2;if(d<bd){bd=d;b=e;}}return b;}
  count(p,type,done=true){let n=0;for(const e of this.ents)if(e.alive&&e.owner===p.i&&e.type===type&&(!done||e.cls!=='b'||e.done))n++;return n;}
  has(p,type){for(const e of this.ents)if(e.alive&&e.owner===p.i&&e.type===type&&e.done)return true;return false;}
  // requirement check: '' when ok, else the missing building name
@@ -82,7 +85,7 @@ export class Sim{
   const sx=d.size%2?(Math.floor(x/CS)+.5)*CS:Math.round(x/CS)*CS,sz=d.size%2?(Math.floor(z/CS)+.5)*CS:Math.round(z/CS)*CS;
   for(let j=0;j<d.size;j++)for(let i=0;i<d.size;i++){const wx=sx+(i-h+.5)*CS,wz=sz+(j-h+.5)*CS;if(Math.abs(wx)>this.half-4||Math.abs(wz)>this.half-4)return{ok:false,x:sx,z:sz,why:'Out of bounds'};const c=this.cell(wx,wz);if(this.occ[c])return{ok:false,x:sx,z:sz,why:'Blocked'};if(!p.ai&&!this.exp[p.team][c])return{ok:false,x:sx,z:sz,why:'Unexplored'};}
   // keep resource lines and drop-offs apart: no HQ within 6 m of resources
-  if(d.hq){for(const e of this.ents)if(e.cls==='r'&&e.alive&&Math.abs(e.x-sx)<h*CS+2.6&&Math.abs(e.z-sz)<h*CS+2.6)return{ok:false,x:sx,z:sz,why:'Too close to resources'};}
+  if(d.hq){for(const e of this.res)if(e.cls==='r'&&e.alive&&Math.abs(e.x-sx)<h*CS+2.6&&Math.abs(e.z-sz)<h*CS+2.6)return{ok:false,x:sx,z:sz,why:'Too close to resources'};}
   for(const e of this.ents)if(e.cls==='u'&&e.alive&&!e.air&&e.team!==p.team&&Math.abs(e.x-sx)<h*CS+e.r&&Math.abs(e.z-sz)<h*CS+e.r)return{ok:false,x:sx,z:sz,why:'Enemy units in the way'};
   return{ok:true,x:sx,z:sz};}
  // order the closest given worker to build type at x,z
@@ -111,16 +114,30 @@ export class Sim{
  canHit(u,t){const d=u.cls==='b'?u.d.atk:u.d;if(!d||!d.tg||!t||!t.alive||t.cls==='r'||t.team===u.team)return false;if(t.cls==='u'&&t.inside)return false;return t.air?d.tg.includes('a'):d.tg.includes('g');}
  visible(team,e){if(e.team===team)return true;if(e.cls==='u'&&e.inside)return false;const v=this.vis[team];if(e.cls==='b'){for(const c of e.cells)if(v[c])return true;return false;}return v[this.cell(e.x,e.z)]>0;}
  /* ---------------- flow fields ---------------- */
+ // fc is the 48-field LRU the movement rules see (same budget, staleness and eviction as ever). Two speed-ups give the same
+ // numbers with far less work: fm memoises fields of goal-only keys (e/p/q) for the current exact grid (occW also counts
+ // depleted ore), so an evicted field asked for again is handed back instead of re-running Dijkstra; and every field is
+ // expanded lazily (fsettle) only as far as the cells a unit reads, then paused. Before the grid changes, fflush hands
+ // paused fields a snapshot of the grid they started on, so a stale field reads exactly as a fully computed one would have.
  flow(key,seeds){let f=this.fc.get(key);if(f&&f.v===this.occV){f.u=this.t;return f.d;}if(this.fBudget<=0)return f?f.d:null;this.fBudget--;
-  const N=this.N,NN=N*N,d=f?f.d:new Float32Array(NN),occ=this.occ;d.fill(1e9);
-  if(!this.hc){this.hc=new Int32Array(NN*8);this.hk=new Float32Array(NN*8);}const hc=this.hc,hk=this.hk;let hn=0;
-  const push=(c,k)=>{let i=hn++;while(i>0){const p=(i-1)>>1;if(hk[p]<=k)break;hc[i]=hc[p];hk[i]=hk[p];i=p;}hc[i]=c;hk[i]=k;};
-  const pop=()=>{const c=hc[0];const lc=hc[--hn],lk=hk[hn];let i=0;for(;;){let m=i*2+1;if(m>=hn)break;if(m+1<hn&&hk[m+1]<hk[m])m++;if(hk[m]>=lk)break;hc[i]=hc[m];hk[i]=hk[m];i=m;}hc[i]=lc;hk[i]=lk;return c;};
-  if(typeof seeds==="function")seeds=seeds();for(const[c,k]of seeds){if(k<d[c]){d[c]=k;push(c,k);}}
-  const DI=[1,-1,0,0,1,1,-1,-1],DJ=[0,0,1,-1,1,-1,1,-1],DW=[1,1,1,1,1.4142,1.4142,1.4142,1.4142];
-  while(hn>0){const k=hk[0],c=pop();if(k>d[c])continue;const i=c%N,j=(c-i)/N;
-   for(let q=0;q<8;q++){const ii=i+DI[q],jj=j+DJ[q];if(ii<0||jj<0||ii>=N||jj>=N)continue;const n=jj*N+ii;if(occ[n]!==0)continue;if(q>3&&(occ[j*N+ii]!==0||occ[jj*N+i]!==0))continue;const nk=k+DW[q];if(nk<d[n]){d[n]=nk;push(n,nk);}}}
-  this.fc.set(key,{d,v:this.occV,u:this.t});if(this.fc.size>48){let ok=null,ou=1e18;for(const[kk,ff]of this.fc)if(ff.u<ou){ou=ff.u;ok=kk;}this.fc.delete(ok);}return d;}
+  if(this.fmW!==this.occW){this.fm.clear();this.fmW=this.occW;}const mk=key[0]==='e'||key[0]==='p'||key[0]==='q',hit=mk&&this.fm.get(key);
+  if(hit){this.fc.set(key,{d:hit,v:this.occV,u:this.t});this.fcEvict();return hit;}
+  const N=this.N,NN=N*N,d=f?f.d:new Float32Array(NN);d.fill(1e9);const z=d.z={hc:new Int32Array(512),hk:new Float32Array(512),hn:0,occ:this.occ};
+  if(typeof seeds==="function")seeds=seeds();for(const[c,k]of seeds){if(k<d[c]){d[c]=k;this.fpush(z,c,k);}}
+  this.fc.set(key,{d,v:this.occV,u:this.t});this.fcEvict();if(mk){this.fm.delete(key);this.fm.set(key,d);if(this.fm.size>160)this.fm.delete(this.fm.keys().next().value);}return d;}
+ fcEvict(){if(this.fc.size>48){let ok=null,ou=1e18;for(const[kk,ff]of this.fc)if(ff.u<ou){ou=ff.u;ok=kk;}this.fc.delete(ok);}}
+ fpush(z,c,k){if(z.hn>=z.hc.length){const a=new Int32Array(z.hn*2),b=new Float32Array(z.hn*2);a.set(z.hc);b.set(z.hk);z.hc=a;z.hk=b;}const hc=z.hc,hk=z.hk;let i=z.hn++;while(i>0){const p=(i-1)>>1;if(hk[p]<=k)break;hc[i]=hc[p];hk[i]=hk[p];i=p;}hc[i]=c;hk[i]=k;}
+ // Dijkstra from where it paused until the smallest open key reaches the largest value around cell w (every cell at or
+ // below the smallest open key is final); w<0 runs to the end
+ fneed(d,w){if(w<0)return Infinity;const N=this.N,occ=d.z.occ,i=w%N,j=w/N|0;let m=-1;for(let jj=j-1;jj<=j+1;jj++)for(let ii=i-1;ii<=i+1;ii++){if(ii<0||jj<0||ii>=N||jj>=N)continue;const n=jj*N+ii;if(!occ[n]&&d[n]>m)m=d[n];}return m;}
+ frun(d,z,w){const N=this.N,occ=z.occ,DI=FDI,DJ=FDJ,DW=FDW,wi=w%N,wj=w/N|0;let hc=z.hc,hk=z.hk,hn=z.hn,lim=this.fneed(d,w);
+  while(hn>0&&hk[0]<lim){const k=hk[0],c=hc[0];const lc=hc[--hn],lk=hk[hn];let i=0;for(;;){let m=i*2+1;if(m>=hn)break;if(m+1<hn&&hk[m+1]<hk[m])m++;if(hk[m]>=lk)break;hc[i]=hc[m];hk[i]=hk[m];i=m;}hc[i]=lc;hk[i]=lk;
+   if(k>d[c])continue;const ci=c%N,cj=(c-ci)/N;
+   for(let q=0;q<8;q++){const ii=ci+DI[q],jj=cj+DJ[q];if(ii<0||jj<0||ii>=N||jj>=N)continue;const n=jj*N+ii;if(occ[n]!==0)continue;if(q>3&&(occ[cj*N+ii]!==0||occ[jj*N+ci]!==0))continue;const nk=k+DW[q];if(nk<d[n]){d[n]=nk;z.hn=hn;this.fpush(z,n,nk);hn=z.hn;hc=z.hc;hk=z.hk;if(w>=0&&ii-wi<=1&&wi-ii<=1&&jj-wj<=1&&wj-jj<=1)lim=this.fneed(d,w);}}}
+  z.hn=hn;if(!hn)d.z=null;}
+ // make the cell c and its open neighbours final in field d
+ fsettle(d,c){if(d.z)this.frun(d,d.z,c);}
+ fflush(){let snap=null;for(const f of this.fc.values()){const z=f.d.z;if(z&&z.occ===this.occ)z.occ=snap||=this.occ.slice();}}
  seedsPoint(x,z){const c=this.cell(x,z);if(!this.occ[c])return[[c,0]];const N=this.N,i0=c%N,j0=c/N|0,out=[];for(let r=1;r<8&&!out.length;r++)for(let j=-r;j<=r;j++)for(let i=-r;i<=r;i++){const ii=i0+i,jj=j0+j;if(ii<0||jj<0||ii>=N||jj>=N)continue;const n=jj*N+ii;if(!this.occ[n])out.push([n,Math.hypot(i,j)]);}return out;}
  seedsEnt(e){const N=this.N,set=new Set(),out=[];for(const c of e.cells.length?e.cells:[this.cell(e.x,e.z)]){const i=c%N,j=c/N|0;for(const[di,dj]of D8){const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=N||jj>=N)continue;const n=jj*N+ii;if(!this.occ[n]&&!set.has(n)){set.add(n);out.push([n,0]);}}}return out.length?out:this.seedsPoint(e.x,e.z);}
  /* ---------------- movement ---------------- */
@@ -128,7 +145,7 @@ export class Sim{
  steer(u,gx,gz,dt,key,seedFn){const dx=gx-u.x,dz=gz-u.z,d=Math.hypot(dx,dz);if(d<.05){u.moving=false;return d;}
   let vx=dx/d,vz=dz/d;
   if(!u.air){u.losT-=dt;if(u.losT<=0||u.losK!==key){u.los=this.lineFree(u.x,u.z,gx,gz);u.losT=.35+Math.random()*.2;u.losK=key;}
-   if(!u.los){const F=this.flow(key||('p'+this.cell(gx,gz)),seedFn||(()=>this.seedsPoint(gx,gz)));if(F){const N=this.N,c=this.cell(u.x,u.z),i=c%N,j=c/N|0;let best=-1,bk=F[c];
+   if(!u.los){const F=this.flow(key||('p'+this.cell(gx,gz)),seedFn||(()=>this.seedsPoint(gx,gz)));if(F){const N=this.N,c=this.cell(u.x,u.z),i=c%N,j=c/N|0;this.fsettle(F,c);let best=-1,bk=F[c];
      for(const[di,dj]of D8){const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=N||jj>=N)continue;const n=jj*N+ii;if(this.occ[n])continue;if(di&&dj&&(this.occ[j*N+ii]||this.occ[jj*N+i]))continue;if(F[n]<bk){bk=F[n];best=n;}}
      if(best>=0){const tx=this.cx(best)-u.x,tz=this.cz(best)-u.z,l=Math.hypot(tx,tz)||1;vx=tx/l;vz=tz/l;}}}}
   const sp=this.speed(u);u.vx=vx*sp;u.vz=vz*sp;u.moving=true;u.yaw=Math.atan2(vx,vz);return d;}
@@ -145,7 +162,7 @@ export class Sim{
   for(let j=Math.max(0,bj-rr);j<=Math.min(hn-1,bj+rr);j++)for(let i=Math.max(0,bi-rr);i<=Math.min(hn-1,bi+rr);i++)for(const e of this.hash[j*hn+i]){if(e.team===u.team||!this.canHit(u,e)||!this.visible(u.team,e))continue;const g=this.gap(u,e);if(g>r)continue;
    const threat=e.cls==='u'&&e.d.tg?(e.d.worker?2:6):e.cls==='b'&&e.d.atk?5:1;const s=threat*10-g-(e.hp/e.mhp)*2;if(s>bs){bs=s;best=e;}}
   if(!best){// buildings are not in the hash
-   for(const e of this.ents){if(e.cls!=='b'||!e.alive||e.team===u.team||!this.canHit(u,e)||!this.visible(u.team,e))continue;const g=this.gap(u,e);if(g>r)continue;const s=(e.d.atk?5:1)*10-g;if(s>bs){bs=s;best=e;}}}
+   for(const e of this.blds){if(e.cls!=='b'||!e.alive||e.team===u.team||!this.canHit(u,e)||!this.visible(u.team,e))continue;const g=this.gap(u,e);if(g>r)continue;const s=(e.d.atk?5:1)*10-g;if(s>bs){bs=s;best=e;}}}
   return best;}
  // approach and attack t; returns false when t is no longer valid
  fight(u,t,dt,hold){if(!t||!t.alive||!this.canHit(u,t)||!this.visible(u.team,t)&&this.gap(u,t)>1)return false;const g=this.gap(u,t),rg=this.range(u);
@@ -168,7 +185,7 @@ export class Sim{
  splash(x,z,r,u,d,primary){for(const e of this.ents){if(!e.alive||e===primary||e.cls==='r'||e.team===u.team||e.air||(e.cls==='u'&&e.inside))continue;const g=e.cls==='b'?Math.max(0,this.gap({x,z,r:0},e)):Math.hypot(e.x-x,e.z-z)-e.r;if(g>r)continue;this.hurt(e,this.dmgOf(u,d,e)*(1-.5*cl(g/r,0,1)),u);}}
  kill(e,src,silent){if(!e.alive)return;e.alive=false;e.hp=0;e.deadT=this.t;const p=e.P;
   if(e.cls==='u'){p.st.lost++;if(e.inside)this.exitExt(e);const o=e.q[0];if(o&&o.t&&o.t.miner===e)o.t.miner=null;}
-  else{p.st.bLost++;for(const c of e.cells)this.occ[c]=0;this.occV++;if(e.vent)e.vent.ext=null;for(const u of this.ents)if(u.cls==='u'&&u.inside===e)this.exitExt(u);}
+  else{p.st.bLost++;this.fflush();for(const c of e.cells)this.occ[c]=0;this.occV++;this.occW++;if(e.vent)e.vent.ext=null;for(const u of this.ents)if(u.cls==='u'&&u.inside===e)this.exitExt(u);}
   if(src&&src.P&&src.team!==e.team){if(e.cls==='u')src.P.st.killed++;else src.P.st.bKilled++;src.P.st.vKilled+=value(e.type)*(e.cls==='b'?1.5:1);}
   if(!silent)this.ev.push({k:'die',e,src});this.calcSupply();}
  exitExt(u){const b=u.inside;u.inside=false;if(b&&b.vent&&b.vent.miner===u)b.vent.miner=null;if(b){const a=Math.random()*6.28;u.x=b.x+Math.sin(a)*(b.r+u.r+.3);u.z=b.z+Math.cos(a)*(b.r+u.r+.3);if(!this.free(u.x,u.z))this.unstick(u);}}
@@ -209,10 +226,10 @@ export class Sim{
    if(this.gap(u,n)<.8){if(!v.miner||!v.miner.alive||v.miner.inside!==n){v.miner=u;u.inside=n;u.gT=AE_T;}return;}this.moveToEnt(u,n,dt);return;}
   if(this.gap(u,n)<.75){u.yaw=Math.atan2(n.x-u.x,n.z-u.z);
    if(n.miner&&n.miner!==u&&n.miner.alive&&n.miner.q[0]&&n.miner.q[0].t===n&&n.miner.mining){// occupied: try a free neighbour node
-    if(!o.wait||this.t-o.wait>.6){o.wait=this.t;let alt=null,bd=64;for(const e of this.ents){if(e.cls!=='r'||!e.alive||e.rk!=='ore'||e===n||e.miner&&e.miner.alive&&e.miner.mining&&e.miner.q[0]&&e.miner.q[0].t===e)continue;const d=(e.x-n.x)**2+(e.z-n.z)**2;if(d<bd){bd=d;alt=e;}}if(alt)o.t=alt;}
+    if(!o.wait||this.t-o.wait>.6){o.wait=this.t;let alt=null,bd=64;for(const e of this.res){if(e.cls!=='r'||!e.alive||e.rk!=='ore'||e===n||e.miner&&e.miner.alive&&e.miner.mining&&e.miner.q[0]&&e.miner.q[0].t===e)continue;const d=(e.x-n.x)**2+(e.z-n.z)**2;if(d<bd){bd=d;alt=e;}}if(alt)o.t=alt;}
     u.mining=false;return;}
    if(n.miner!==u){n.miner=u;u.gT=ORE_T;}u.mining=true;u.gT-=dt;u.atkAnim=u.atkAnim>0?u.atkAnim:(Math.sin(this.t*7)>.9?.3:0);
-   if(u.gT<=0){const k=Math.min(ORE_TRIP,n.amt);n.amt-=k;u.carry={k:'o',n:k};u.lastNode=n;n.miner=null;u.mining=false;o.ph='ret';if(n.amt<=0){n.alive=false;for(const c of n.cells)this.occ[c]=0;this.ev.push({k:'depleted',e:n});}}return;}
+   if(u.gT<=0){const k=Math.min(ORE_TRIP,n.amt);n.amt-=k;u.carry={k:'o',n:k};u.lastNode=n;n.miner=null;u.mining=false;o.ph='ret';if(n.amt<=0){n.alive=false;this.fflush();for(const c of n.cells)this.occ[c]=0;this.occW++;this.ev.push({k:'depleted',e:n});}}return;}
   u.mining=false;this.moveToEnt(u,n,dt);}
  buildTick(u,o,dt){const p=u.P,d=B[o.type];
   if(o.b){const b=o.b;if(!b.alive||b.done){this.next(u);this.afterBuild(u,o);return;}if(this.gap(u,b)<1.2){u.building=b;u.yaw=Math.atan2(b.x-u.x,b.z-u.z);u.atkAnim=u.atkAnim>0?u.atkAnim:(Math.random()<dt*3?.35:0);}else this.moveToEnt(u,b,dt);return;}
@@ -250,12 +267,12 @@ export class Sim{
  /* ---------------- vision ---------------- */
  vision(){const N=this.N;for(const t of this.teams)this.vis[t].fill(0);
   for(const e of this.ents){if(!e.alive||e.cls==='r'||(e.cls==='u'&&e.inside))continue;const v=this.vis[e.team],x=this.exp[e.team];const s=(e.cls==='b'&&!e.done?Math.min(5,e.d.sight):e.d.sight)/CS;const c=this.cell(e.x,e.z),i0=c%N,j0=c/N|0;
-   for(const[i,j]of circle(s)){const ii=i0+i,jj=j0+j;if(ii<0||jj<0||ii>=N||jj>=N)continue;const k=jj*N+ii;v[k]=1;x[k]=1;}}
+   for(const[j,a,b]of spans(s)){const jj=j0+j;if(jj<0||jj>=N)continue;const lo=Math.max(0,i0+a),hi=Math.min(N-1,i0+b);if(lo>hi)continue;v.fill(1,jj*N+lo,jj*N+hi+1);x.fill(1,jj*N+lo,jj*N+hi+1);}}
   for(const e of this.ents)if(e.cls==='b'&&e.alive)for(const t of this.teams)if(!e.seen[t]&&e.cells.some(c=>this.vis[t][c]))e.seen[t]=1;}
  /* ---------------- step ---------------- */
  step(dt){if(this.over)return;this.t+=dt;this.fBudget=3;
   // spatial hash of live units
-  for(const h of this.hash)h.length=0;const hn=this.hashN;for(const e of this.ents)if(e.cls==='u'&&e.alive&&!e.inside){const i=cl(Math.floor((e.x+this.half)/6),0,hn-1),j=cl(Math.floor((e.z+this.half)/6),0,hn-1);this.hash[j*hn+i].push(e);}
+  const hu=this.hashUsed;for(const k of hu)this.hash[k].length=0;hu.length=0;const hn=this.hashN;for(const e of this.ents)if(e.cls==='u'&&e.alive&&!e.inside){const i=cl(Math.floor((e.x+this.half)/6),0,hn-1),j=cl(Math.floor((e.z+this.half)/6),0,hn-1),h=this.hash[j*hn+i];if(!h.length)hu.push(j*hn+i);h.push(e);}
   for(const e of this.ents){if(!e.alive)continue;if(e.cls==='u'){e.building=e.q[0]&&e.q[0].k==='build'?e.building:null;this.unitTick(e,dt);}else if(e.cls==='b')this.bldTick(e,dt);}
   this.integrate(dt);
   // projectiles
@@ -269,7 +286,7 @@ export class Sim{
    for(const e of this.ents){if(!e.alive||e.cls==='r'||e.team===b.u.team||(e.cls==='u'&&e.inside))continue;const g=e.cls==='b'?Math.max(0,this.gap({x:b.x,z:b.z,r:0},e)):Math.hypot(e.x-b.x,e.z-b.z)-e.r*.5;if(g<=b.r)this.hurt(e,b.dmg*(e.cls==='b'?.5:1),b.u.alive?b.u:null);}}
   this.visT-=dt;if(this.visT<=0){this.visT=.2;this.vision();}
   // tidy corpses
-  if((this.t*10|0)%10===0)this.ents=this.ents.filter(e=>e.alive||this.t-(e.deadT??this.t)<4);
+  if((this.t*10|0)%10===0){const keep=e=>e.alive||this.t-(e.deadT??this.t)<4;this.ents=this.ents.filter(keep);this.blds=this.blds.filter(keep);}
   this.chkT-=dt;if(this.chkT<=0){this.chkT=.5;this.calcSupply();this.checkEnd();for(const p of this.players){let a=0;for(const e of this.ents)if(e.alive&&e.owner===p.i&&e.cls==='u'&&!e.d.worker)a+=e.d.sup;p.st.armyMax=Math.max(p.st.armyMax,a);}}}
  integrate(dt){const hn=this.hashN;
   for(const u of this.ents){if(u.cls!=='u'||!u.alive||u.inside)continue;const ghost=u.d.worker&&u.q[0]&&(u.q[0].k==='gather'||u.q[0].k==='return');let px=0,pz=0;

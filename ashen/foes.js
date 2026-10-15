@@ -56,10 +56,10 @@ export const FOES={
  knight:{name:'Hollow Knight',hp:130,r:.5,h:2,walk:2.2,run:4.4,turn:5,poise:45,cd:1.5,sight:15,moves:['k_slash','k_thrust','k_bash'],shield:true,score:120,guard:'knight',bodyY:1.2,headY:2.05},
  hound:{name:'Ash Hound',hp:60,r:.45,h:1.1,walk:3,run:8.2,turn:9,poise:18,cd:1.0,sight:16,moves:['h_bite','h_pounce'],quad:true,score:70,bodyY:.75,headY:1.3},
  archer:{name:'Gaunt Archer',hp:70,r:.42,h:1.9,walk:2.4,run:3.8,turn:6,poise:20,cd:1.8,sight:24,moves:['a_shot','a_stab'],ranged:true,score:90,guard:'bow',bodyY:1.15,headY:1.95},
- bell:{name:'VARGUL, THE BELLWARDEN',hp:1050,r:1.05,h:4,walk:2.4,run:5.2,turn:3.2,poise:260,cd:1.1,moves:['b_oh','b_sweep','b_charge','b_toll'],boss:true,score:3000,guard:'hammer',phases:[.5],bodyY:2.2,headY:3.9},
- mother:{name:'GRISKA, MOTHER OF HOUNDS',hp:950,r:1.2,h:2.6,walk:3.4,run:8.5,turn:4.5,poise:220,cd:1.0,moves:['m_bite','m_pounce','m_sweep','m_breath','m_howl'],boss:true,quad:true,score:3000,phases:[.55],bodyY:1.6,headY:3.2},
- cantor:{name:'SERAPHEL, THE CINDER CANTOR',hp:820,r:.8,h:3.4,walk:2.4,run:3.6,turn:4,poise:180,cd:1.15,moves:['c_volley','c_rain','c_staff','c_blink','c_beam'],boss:true,score:3000,guard:'staff',phases:[.5],float:true,bodyY:2.4,headY:4.0},
- king:{name:'ORDHAL, THE ASHEN KING',hp:1700,r:1.25,h:5,walk:2.6,run:5.6,turn:3,poise:340,cd:1.0,moves:['k2_oh','k2_sweep','k2_thrust','k2_stomp','k2_leap','k2_embers','k2_nova'],boss:true,score:5000,guard:'king',phases:[.6,.25],bodyY:2.9,headY:5.2}};
+ bell:{name:'VARGUL, THE BELLWARDEN',hp:1050,r:1.05,h:4,walk:2.4,run:5.2,turn:3.2,poise:260,cd:1.1,moves:['b_oh','b_sweep','b_charge','b_toll'],boss:true,bd:2.75,bt:.61,score:3000,guard:'hammer',phases:[.5],bodyY:2.2,headY:3.9},
+ mother:{name:'GRISKA, MOTHER OF HOUNDS',hp:950,r:1.2,h:2.6,walk:3.4,run:8.5,turn:4.5,poise:220,cd:1.0,moves:['m_bite','m_pounce','m_sweep','m_breath','m_howl'],boss:true,bd:2.6,bt:.74,quad:true,score:3000,phases:[.55],bodyY:1.6,headY:3.2},
+ cantor:{name:'SERAPHEL, THE CINDER CANTOR',hp:820,r:.8,h:3.4,walk:2.4,run:3.6,turn:4,poise:180,cd:1.15,moves:['c_volley','c_rain','c_staff','c_blink','c_beam'],boss:true,bd:3.6,bt:.62,score:3000,guard:'staff',phases:[.5],float:true,bodyY:2.4,headY:4.0},
+ king:{name:'ORDHAL, THE ASHEN KING',hp:1700,r:1.25,h:5,walk:2.6,run:5.6,turn:3,poise:340,cd:1.0,moves:['k2_oh','k2_sweep','k2_thrust','k2_stomp','k2_leap','k2_embers','k2_nova'],boss:true,bd:1.5,bt:.88,score:5000,guard:'king',phases:[.6,.25],bodyY:2.9,headY:5.2}};
 
 export class Foe{
  constructor(G,kind,sp,boss){this.G=G;this.kind=kind;this.D=FOES[kind];const D=this.D;this.boss=boss||null;
@@ -126,7 +126,7 @@ export class Foe{
   if(st.mode==='strafe'){const f=Math.sin(this.yaw),c=Math.cos(this.yaw);st.fwd=(this.v.x*f+this.v.z*c)/Math.max(sp,1);st.side=(this.v.x*c-this.v.z*f)/Math.max(sp,1);}
   if(this.kind==='hound'&&R.d<6)st.prowl=true;
   if(D.shield&&this.cd>.15&&R.d<6){st.block=true;}
-  if(this.cd<=0&&!P.dead){const mv=this.pick(R);if(mv)this.begin(mv);else this.cd=.3;}}
+  if(this.cd<=0&&!P.dead){const mv=this.pick(R);this.combo=0;if(mv)this.begin(mv);else this.cd=.3;}}
  pick(R){const D=this.D;const ok=D.moves.map(k=>M[k]).filter(m=>(m.phase||1)<=this.phase&&R.d<=(m.max??99)&&R.d>=(m.min??0));
   if(this.kind==='mother'&&this.phase>=2){const pups=this.G.foes.filter(e=>e.summoned&&!e.dead).length;if(pups>0||this.howlT>this.G.time)ok.splice(ok.findIndex(m=>m.id==='m_howl')>>>0,ok.findIndex(m=>m.id==='m_howl')>=0?1:0);}
   if(this.kind==='king'&&this.phase>=3&&this.novaT>this.G.time){const i=ok.findIndex(m=>m.id==='k2_nova');if(i>=0)ok.splice(i,1);}
@@ -135,7 +135,7 @@ export class Foe{
   let c=ok.filter(m=>!(this.last.length>=2&&this.last[0]===m.id&&this.last[1]===m.id));if(!c.length)c=ok;
   // weighting: phase-gated specials are favoured right after a phase change
   const w=c.map(m=>(m.phase||1)>1?1.6:1);let s=w.reduce((a,b)=>a+b,0)*Math.random();for(let i=0;i<c.length;i++){s-=w[i];if(s<=0)return c[i];}return c[0];}
- begin(mv){const G=this.G;this.mv=mv;this.state='atk';this.t=0;this.hitDone=false;this.fxDone=false;this.wk=G.dm.tele*(this.D.boss?[1,1,.92,.82][this.phase]:1)*(G.dm.feint&&this.D.boss&&Math.random()<.25?1.3:1);
+ begin(mv){const G=this.G;this.mv=mv;this.state='atk';this.t=0;this.hitDone=false;this.fxDone=false;this.wk=G.dm.tele*(this.D.boss?this.D.bt*G.dm.btele*[1,1,.92,.82][this.phase]:1)*(G.dm.feint&&this.D.boss&&Math.random()<.25?1.3:1);
   this.last.unshift(mv.id);this.last.length=Math.min(this.last.length,3);this.hits=0;this.spin=0;
   if(mv.ub)G.perilous(this);G.snd.play(this.D.boss?'bossWind':'wind',this.p,mv.ub?1.2:.8);
   if(mv.fx==='toll')G.decal({x:this.p.x,y:this.p.y,z:this.p.z,r:9.5,dur:mv.w*this.wk+.25,col:0xff5a14});
@@ -143,7 +143,7 @@ export class Foe{
   if(mv.fx==='stomp')G.decal({x:this.p.x,y:this.p.y,z:this.p.z,r:mv.reach,dur:mv.w*this.wk+.1,col:0xff6a20});
   if(mv.fx==='rain'||mv.fx==='embers'){const P=G.P;const n=mv.fx==='rain'?(this.phase>=2?6:3):(this.phase>=3?12:8);this.marks=[];for(let i=0;i<n;i++){const a=i/n*6.283+rnd(.5),d=i===0?0:(mv.fx==='rain'?2.6+rnd(2.2):2.4+rnd(5));const x=P.p.x+Math.cos(a)*d+P.v.x*.4,z=P.p.z+Math.sin(a)*d+P.v.z*.4;
     const delay=mv.w*this.wk+mv.a+(mv.fx==='embers'?.9+i*.06:.15+i*.05);this.marks.push(G.hazard({type:'circle',x,y:P.p.y,z,r:mv.fx==='rain'?2.1:2.4,delay,dmg:this.dmg(mv),src:this,fx:mv.fx}));}}}
- dmg(mv){return Math.round(mv.dmg*this.G.dm.dmg*(this.D.boss?[1,1,1.08,1.15][this.phase]:1));}
+ dmg(mv){return Math.round(mv.dmg*this.G.dm.dmg*(this.D.boss?this.D.bd*this.G.dm.bdmg*[1,1,1.08,1.15][this.phase]:1));}
  attack(dt,R){const G=this.G,P=G.P,D=this.D,st=this.st,mv=this.mv;const W=mv.w*this.wk,A=mv.a,Rc=mv.r*(D.boss?[1,1,.9,.75][this.phase]:1)/(G.dm.aggr>1.1?1.12:1);const t=this.t;
   const f=Math.sin(this.yaw),c=Math.cos(this.yaw);st.guard=D.guard;st.mode=D.float?'float':'idle';st.speed=0;
   if(t<W){// windup: track the player, hold the raised pose
@@ -170,10 +170,10 @@ export class Foe{
    return;}
   if(mv.fx==='shock'&&!this.shockDone){this.shockDone=true;}
   if(t<W+A+Rc){st.atk={name:mv.anim,p:.45+.55*ease((t-W-A)/Rc)};st.slow=true;if(mv.fx==='spin')this.spin=0;this.move(dt,0,0,8);if(this.beamDecal){this.beamDecal=null;}
-   // combo chain
-   const nx=mv.next&&t>W+A+Rc*.35&&!this.chained;if(nx){this.chained=true;for(const[n,ch]of mv.next){if(Math.random()<ch*(G.dm.aggr)*(D.boss&&this.phase>1?1.2:1)&&R.d<(M[n].max??9)+1){this.chained=false;this.begin(M[n]);return;}}}
+   // combo chain (great foes chain at most two follow-ups, so a hit cannot become an inescapable bite-lock)
+   const nx=mv.next&&t>W+A+Rc*.35&&!this.chained&&!(D.boss&&this.combo>=2);if(nx){this.chained=true;for(const[n,ch]of mv.next){if(Math.random()<ch*(G.dm.aggr)*(D.boss&&this.phase>1?1.2:1)&&R.d<(M[n].max??9)+1){this.chained=false;this.combo++;this.begin(M[n]);return;}}}
    return;}
-  this.chained=false;this.shockDone=false;this.spin=0;this.state='engage';this.t=0;this.cd=(D.cd*(.7+rnd(.7)))/(D.boss?[1,1,1.15,1.35][this.phase]:1);if(D.quad&&!D.boss)this.strafeT=0;}
+  this.chained=false;this.combo=0;this.shockDone=false;this.spin=0;this.state='engage';this.t=0;this.cd=(D.cd*(.7+rnd(.7)))/(D.boss?[1,1,1.15,1.35][this.phase]:1);if(D.quad&&!D.boss)this.strafeT=0;}
  special(mv){const G=this.G,P=G.P,D=this.D;const f=Math.sin(this.yaw),c=Math.cos(this.yaw);
   switch(mv.fx){
    case'shock':{const x=this.p.x+f*mv.reach*.82,z=this.p.z+c*mv.reach*.82;G.after(.06,()=>{if(this.dead)return;this.impact(mv,x,z,mv.shockR,true);if(this.kind==='king'&&this.phase>=2)G.hazard({type:'wave',x,y:this.p.y,z,yaw:this.yaw,len:20,w:2.2,speed:15,dmg:Math.round(this.dmg(mv)*.6),src:this});});break;}

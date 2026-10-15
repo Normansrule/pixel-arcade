@@ -30,7 +30,7 @@ const phys=new Phys();
 const L=buildLevel(scene,phys);
 const parts=new Particles(scene,5000,true),sparks=new Particles(scene,1600,true),smoke=new Particles(scene,1600,false);
 const decals=new Decals(scene);const snd=new Sound();
-const DIFF=[{n:'EASY',hp:.75,dmg:.6,aggr:.75,tele:1.35,heal:.6,flasks:5,mult:.75,feint:false},{n:'NORMAL',hp:1.1,dmg:1.2,aggr:1.1,tele:1,heal:.5,flasks:4,mult:1,feint:false},{n:'HARD',hp:1.35,dmg:1.65,aggr:1.35,tele:.8,heal:.42,flasks:3,mult:1.4,feint:true}];
+const DIFF=[{n:'EASY',hp:.75,dmg:.6,aggr:.75,tele:1.35,heal:.6,flasks:5,mult:.75,feint:false,bdmg:1.1,btele:.95},{n:'NORMAL',hp:1.1,dmg:1.2,aggr:1.1,tele:1,heal:.5,flasks:4,mult:1,feint:false,bdmg:1,btele:1},{n:'HARD',hp:1.35,dmg:1.65,aggr:1.35,tele:.8,heal:.42,flasks:3,mult:1.4,feint:true,bdmg:.5,btele:1.3}];
 
 /* ================= shared context ================= */
 const timers=[];
@@ -186,10 +186,34 @@ function autopilot(inp,dt){let tgt=null,bd=1e9;for(const e of G.foes){if(e.dead|
  if(G.boss&&!G.boss.dead&&G.boss.state!=='dormant'){tgt=G.boss;bd=G.boss.p.distanceTo(P.p);}
  const goal=G.autoGoal;if(!tgt&&goal){const dx=goal.x-P.p.x,dz=goal.z-P.p.z,d=Math.hypot(dx,dz);if(d>1){const a=Math.atan2(dx,dz);G.cam.yaw=a;inp.my=1;inp.mx=0;}return;}
  if(!tgt)return;if(!P.lock||P.lock!==tgt)P.lock=tgt;const d=bd-tgt.D.r;G.cam.yaw=Math.atan2(tgt.p.x-P.p.x,tgt.p.z-P.p.z);
+ if(G.autoHuman)return humanPilot(inp,dt,tgt,d);
  apT-=dt;apRoll-=dt;const winding=tgt.state==='atk'&&tgt.mv&&tgt.t<tgt.mv.w*tgt.wk;const tl=winding?tgt.mv.w*tgt.wk-tgt.t:9;
  if(P.hp<P.maxHp*.4&&P.flasks>0&&d>3.5&&!P.act){inp.flask=true;return;}
  if(winding&&tl<.22&&apRoll<=0&&d<(tgt.mv.reach||3)+2){inp.roll=true;apRoll=.7;inp.mx=Math.random()<.5?1:-1;inp.my=-.3;return;}
  if(d>2.2){inp.my=1;inp.mx=0;}else{inp.my=0;inp.mx=Math.sin(G.time*.8)*.6;if(!winding||tl>.6){inp.light=true;if(Math.random()<.04)inp.heavy=true;}}}
+
+/* human-like autopilot (balance tests): it sees each windup ~250 ms late, times its roll from a remembered tell with
+   about ±0.1 s of error (mashing roll until the dodge comes out), sometimes greeds one more swing or a sip instead of
+   dodging, and drinks at a loosely chosen threshold. Bosses are tuned so this player wins NORMAL sometimes, EASY often. */
+const gauss=()=>(Math.random()+Math.random()+Math.random()-1.5)*2;const HP0={mv:null,lt:0,react:0,rollAt:-1,rollEnd:-1,skip:false,sip:false,drinkAt:.4,waitT:0,wasAct:''};let hum=null;
+function humanPilot(inp,dt,tgt,d){const now=G.time;if(!hum||hum.run!==run){hum={...HP0,run,drinkAt:.3+Math.random()*.2};}
+ // perceive a new attack (state change, or the move clock restarting for a chained move)
+ const atk=tgt.state==='atk'&&tgt.mv;if(atk&&(tgt.mv!==hum.mv||tgt.t<hum.lt)){const mv=tgt.mv,W=mv.w*tgt.wk,A=mv.a,fx=mv.fx;hum.mv=mv;
+  const hitIn=W-tgt.t+(fx==='leap'?A*.95:fx==='rain'?A+.2:fx==='embers'?A+1:fx==='toll'||fx==='nova'?Math.max(0,d)/10:fx==='beam'||fx==='breath'?.12:A*.3);
+  hum.react=now+cl(.25+gauss()*.05,.16,.42);const far=d>(mv.reach||3)+2.5&&mv.reach<20&&fx!=='leap'&&fx!=='toll'&&fx!=='nova';
+  hum.skip=far||!mv.dmg||Math.random()<(tgt.hp<tgt.maxHp*.2?.22:.12);hum.sip=Math.random()<.1;// greed: trade or sip instead of dodging
+  hum.rollAt=Math.max(hum.react,now+hitIn-.24+gauss()*.1);hum.rollEnd=now+hitIn+.15;}
+ hum.lt=atk?tgt.t:0;if(!atk)hum.mv=null;
+ const threat=atk&&!hum.skip&&now>=hum.react&&now<hum.rollEnd;
+ if(P.hp<P.maxHp*hum.drinkAt&&P.flasks>0&&!P.act&&(hum.sip||!threat&&(d>3.5||!atk))){inp.flask=true;hum.drinkAt=.3+Math.random()*.2;return;}
+ if(threat&&now>=hum.rollAt){if(!(P.act&&P.act.k==='roll')){inp.roll=true;inp.mx=hum.side||(hum.side=Math.random()<.5?1:-1);inp.my=-.3;}else hum.rollEnd=0;return;}
+ hum.side=0;
+ // after a roll or a hit it takes a beat to re-engage; now and then it hangs back to watch instead of pressing in
+ const ak=P.act?P.act.k:'';if(ak!==hum.wasAct&&(hum.wasAct==='roll'||hum.wasAct==='hurt'))hum.waitT=cl(.35+gauss()*.12,.1,.7)+(Math.random()<.2?.6+Math.random()*.8:0);hum.wasAct=ak;hum.waitT-=dt;
+ if(hum.waitT>0){inp.my=d<3.2?-.6:0;inp.mx=hum.strafe||(hum.strafe=Math.random()<.5?.8:-.8);return;}hum.strafe=0;
+ if(d>2.2){inp.my=1;inp.mx=0;return;}inp.my=0;inp.mx=Math.sin(G.time*.8)*.6;
+ // swing while the boss is not (visibly) winding up, plus the odd greedy extra swing into a windup
+ if(!threat&&(!atk||now<hum.react||hum.skip||hum.rollAt-now>.75)){inp.light=true;if(Math.random()<.03)inp.heavy=true;}}
 
 /* ================= simulation ================= */
 function step(dt){dt=Math.min(dt,.1);if(banT>0){banT-=dt;if(banT<=0)$('banner').classList.remove('on');}if(areaT>0){areaT-=dt;if(areaT<=0)$('area').classList.remove('on');}
@@ -317,7 +341,7 @@ let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(
 /* ================= test hooks ================= */
 window.ASHEN={R,G,P,L,scene,camera,step,render,start,toMenu,pause,endRun,
  get state(){return app;},get app(){return app;},get run(){return run;},get score(){return run?(run.end?run.score:liveScore()):0;},get player(){return P;},get foes(){return G.foes;},get bosses(){return G.bosses;},get boss(){return G.boss;},
- setClock(s){if(run)run.clock=s;},noPause(v=true){G.noPause=v;},input(o){G.scripted=o;},auto(on=true,goal){G.auto=on;G.autoGoal=goal||null;},
+ setClock(s){if(run)run.clock=s;},noPause(v=true){G.noPause=v;},input(o){G.scripted=o;},auto(on=true,goal,human){G.auto=on;G.autoGoal=goal||null;G.autoHuman=!!human;},
  teleport(x,z,y){P.p.set(x,y??phys.ground(x,30,z,.3,60).h,z);P.v.set(0,0,0);G.cam.snap=true;},
  face(yaw,pitch){G.cam.yaw=yaw;P.yaw=yaw;if(pitch!==undefined)G.cam.pitch=pitch;},
  enterBoss(i){const b=G.bosses[i];const f=b.boss.fog;P.p.set(f.x,f.y,f.z-1.2);P.v.set(0,0,0);enterFog(f);},

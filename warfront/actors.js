@@ -83,6 +83,11 @@ function assemble(parts){const P=[],N=[],U=[],C=[],SI=[],SW=[];const nm=new THRE
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));
  g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(SI,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(SW,4));return g;}
 
+// static crew bust (no skeleton): rest-pose spine, chest, shoulders and head in the rig-root frame, for crews seen only from
+// the waist up (tank hatch, under a canopy). Instanced by the game, so a hatch or cockpit costs no skinned rig at all.
+export function makeBust(type,seed=.37,cls='assault'){let s=seed*2147483646+1|0;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;const keep=new Set(['spine','chest','neck','head','armL','armR'].map(b=>BI[b]));
+ const g=assemble(buildBody(type,rnd,cls).filter(p=>keep.has(p.b)));g.deleteAttribute('skinIndex');g.deleteAttribute('skinWeight');g.computeBoundingSphere();return g;}
+
 // ---------- 2-bone IK (shoulder-space): rest limbs point down -Y ----------
 const _a=new V(),_e=new V(),_d=new V(),_p=new V(),_q=new THREE.Quaternion(),_q2=new THREE.Quaternion(),DOWN=new V(0,-1,0);
 function ik(up,lo,S,T,pole,l1=UA,l2=LA){_d.subVectors(T,S);let d=_d.length();d=cl(d,.08,l1+l2-.004);_d.normalize();const x=(l1*l1-l2*l2+d*d)/(2*d),h=Math.sqrt(Math.max(0,l1*l1-x*x));

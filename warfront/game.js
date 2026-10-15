@@ -11,7 +11,7 @@ import {V,PI,cl,rr,ang} from './util.js';
 import {makeTextures} from './tex.js';
 import {World,POINTS,HQ,PLAY,WL,DECK,STEPUP} from './terrain.js';
 import {buildWorld,makeSky,LOOK,makeFlag,waveFlag} from './scene.js';
-import {makeKit,Rig,hitActor} from './actors.js';
+import {makeKit,Rig,hitActor,makeBust} from './actors.js';
 import {WEAPONS,pattern,dmgAt,buildViewmodel,applyAttachments,rankOf,rankXP,RANKS} from './weapons.js';
 import {FX} from './fx.js';
 import {DIFF,SKIRM,newBrain,drive,crew,eyeOf,chestOf,centerOf} from './ai.js';
@@ -40,7 +40,7 @@ scene.fog=new THREE.FogExp2(look.fog.c,look.fog.d);scene.background=new THREE.Co
 const vmHemi=new THREE.HemisphereLight(look.hemi.s,look.hemi.g,look.hemi.i*.9+.2),vmKey=new THREE.DirectionalLight(look.sun.c,look.sun.i*.55),vmFlash=new THREE.PointLight(0xffaa55,0,3,1.5),vmRim=new THREE.DirectionalLight(look.hemi.s,1);
 vmKey.position.copy(sunDir).setY(Math.max(.4,sunDir.y));vmFlash.position.set(.1,-.05,-.7);vmRim.position.set(2,.5,-1.5);vmScene.add(vmHemi,vmKey,vmFlash,vmRim);
 {const s=new THREE.Scene();s.add(makeSky(look));s.add(new THREE.HemisphereLight(look.hemi.s,look.hemi.g,1));const pm=new THREE.PMREMGenerator(R);const env=pm.fromScene(s,.04).texture;pm.dispose();scene.environment=env;scene.environmentIntensity=look.env;vmScene.environment=env;vmScene.environmentIntensity=.8;}
-const TX=makeTextures();makeKit(TX);
+const TX=makeTextures();const KIT=makeKit(TX);
 const fx=new FX(scene,TX);const snd=new Sound();const VM=buildViewmodel(TX);vmCam.add(VM.root);vmScene.add(vmCam);
 const W=new World(7);
 fx.sparks.gfn=fx.smoke.gfn=fx.debris.gfn=(x,z)=>W.height(x,z);fx.nfn=(x,z)=>W.normal(x,z,new V());
@@ -54,6 +54,8 @@ const kitCross=new THREE.Mesh(new THREE.BoxGeometry(.3,.02,.1),new THREE.MeshBas
 const impGeo=(()=>{const a=new THREE.BoxGeometry(.5,.75,.3);a.translate(0,1.12,0);const b=new THREE.BoxGeometry(.42,.78,.26);b.translate(0,.39,0);const h=new THREE.SphereGeometry(.15,6,4);h.translate(0,1.66,0);const g=new THREE.BufferGeometry();
  const parts=[a,b,h].map(x=>x.index?x.toNonIndexed():x);const pos=[],nor=[];for(const p of parts){pos.push(...p.attributes.position.array);nor.push(...p.attributes.normal.array);}g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));return g;})();
 const imp=new THREE.InstancedMesh(impGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.9}),40);imp.count=0;imp.frustumCulled=false;scene.add(imp);const impC=[new THREE.Color(0x4a5a46),new THREE.Color(0x5a5246)];
+// crew busts: tank commanders and pilots are drawn from the waist up as one instanced mesh per team (their rigs stay hidden and idle)
+const busts=[0,1].map(t=>{const m=new THREE.InstancedMesh(makeBust(t?'enemy':'ally'),t?KIT.mats.B:KIT.mats.A,24);m.count=0;m.frustumCulled=false;m.visible=false;m.name='crewBust';scene.add(m);return m;}),bustM=new THREE.Matrix4(),bustS=new V(1,1,1),bustP=new V(),bustQ=new THREE.Quaternion();
 
 /* ================= shared context ================= */
 const G={THREE,scene,cam,fx,snd,TX,W,actors:[],vehicles:[],points:[],player:null,time:0,diff:DIFF[1],diffI:1,noises:[],pathBudget:4,app:'menu',over:null,nades:[],proj:[],kits:[],tmpC:[],objLoad:[[0,0,0,0,0],[0,0,0,0,0]],
@@ -454,7 +456,7 @@ G.deployNow=(o={})=>{if(!G.deploy||G.app!=='play'||G.over)return false;if(G.resp
 
 /* ================= bots ================= */
 let frame=0;
-function updateBots(dt){G.pathBudget=3;frame++;const live=G.app==='menu'||(G.app==='play'&&!G.over);const cx=cam.position.x,cz=cam.position.z,fwx=-Math.sin(cam.rotation.y),fwz=-Math.cos(cam.rotation.y);let ni=0;const m4=new THREE.Matrix4();
+function updateBots(dt){G.pathBudget=3;frame++;const live=G.app==='menu'||(G.app==='play'&&!G.over);const cx=cam.position.x,cz=cam.position.z,fwx=-Math.sin(cam.rotation.y),fwz=-Math.cos(cam.rotation.y);let ni=0;const m4=new THREE.Matrix4();for(const b of busts)b.count=0;
  if(frame%30===0){for(const t of[0,1])G.objLoad[t].fill(0);for(const a of G.actors)if(a.ai&&a.alive&&a.ai.obj)G.objLoad[a.team][a.ai.obj.i]++;}
  for(const a of G.actors){if(a.isPlayer)continue;const r=a.rig;
   if(!a.alive){a.deadT+=dt;if(r.root.visible){r.update(dt,{dead:true});r.root.position.copy(a.pos);if(a.deadT>8)r.root.visible=false;}a.respawnT-=dt;if(a.respawnT<=0&&live)respawnBot(a);continue;}
@@ -475,19 +477,22 @@ function updateBots(dt){G.pathBudget=3;frame++;const live=G.app==='menu'||(G.app
   a.lodAcc+=dt;if(behind||(lod===1&&frame%2)||(lod===2&&frame%4))continue;const udt=a.lodAcc;a.lodAcc=0;
   const sy=Math.sin(a.yaw),cy=Math.cos(a.yaw);r.update(udt,{speed:a.speed,vf:a.vel.x*sy+a.vel.z*cy,vs:a.vel.x*cy-a.vel.z*sy,crouch:a.crouchV,pitch:a.pitch,aim:!!(a.ai.seen&&a.ai.target)||a.firingT>0,sprint:a.speed>5,reload:a.reloadT>0?1-a.reloadT/(a.reloadDur||1):-1});
   r.flash.visible=a.flashT>0;if(a.flashT>0){r.flash.rotation.z=Math.random()*6;r.flash.scale.setScalar(.8+Math.random()*.5);}}
- imp.count=ni;imp.instanceMatrix.needsUpdate=true;if(imp.instanceColor)imp.instanceColor.needsUpdate=true;
+ imp.count=ni;imp.instanceMatrix.needsUpdate=true;if(imp.instanceColor)imp.instanceColor.needsUpdate=true;for(const b of busts){b.visible=b.count>0;b.instanceMatrix.needsUpdate=true;}
  G.noises=G.noises.filter(n=>G.time-n.t<.7);}
 
-// crews stay visible: jeep driver seated + gunner standing at the pintle mount, tank commander up in the hatch, pilots seated under the canopy
+// crews: the open jeep shows full rigs (driver seated, gunner standing at the pintle mount, LOD-throttled like infantry); the tank
+// commander up in the hatch and the pilots under their canopies are instanced busts; everyone else rides hidden inside
 // seat: [part, x, y, z (rig root in that part's frame), seated]; jeep seats use the hull yaw (gunner turns with the MG)
 const CREW={jeep:[[null,.5,.55,-.15,1],[null,0,1.35,-1.75,0]],tank:[['tur',-.5,.02,-.5,0]],heli:[['body',0,.4,1.75,1]],jet:[['body',0,-.72,3.15,1]]};
 function riderAt(a,v,o){const s=CREW.jeep[a.seat],cy=Math.cos(v.yaw),sy=Math.sin(v.yaw);return o.set(v.p.x+s[1]*cy+s[3]*sy,v.p.y+s[2],v.p.z-s[1]*sy+s[3]*cy);}
 // exposed jeep rider: soldier volume at the seat, hits below the hull rail belong to the jeep
 const RP={pos:new V(),crouchV:0};function hitRider(a,o,d,maxT){const v=a.veh;riderAt(a,v,RP.pos);const h=hitActor(RP,o.x,o.y,o.z,d.x,d.y,d.z,maxT);if(!h||o.y+d.y*h.t<v.p.y+1.4)return null;return h;}
 G.riderAt=riderAt;G.hitRider=hitRider;
-function rideVeh(a,v,dt){const r=a.rig,s=CREW[v.kind][a.seat];if(!s||!v.alive||cam.position.distanceTo(v.p)>(v.kind==='jet'||v.kind==='heli'?170:130)){r.root.visible=false;return;}r.root.visible=true;
- if(s[0]){const pt=v.model[s[0]];pt.updateWorldMatrix(true,false);r.root.position.set(s[1],s[2],s[3]);pt.localToWorld(r.root.position);pt.getWorldQuaternion(r.root.quaternion);r.mesh.castShadow=v.kind==='tank';r.update(dt,{speed:0,seat:s[4],stow:1,reload:-1});r.flash.visible=false;return;}
- const g=a.seat===1;riderAt(a,v,r.root.position);r.root.rotation.set(0,g?v.yaw+v.tYaw:v.yaw,0);r.mesh.castShadow=true;r.update(dt,{speed:0,seat:!g,pitch:g?v.gEl:0,aim:g,reload:-1});r.flash.visible=g&&v.fireT>.04;}
+function rideVeh(a,v,dt){const r=a.rig,s=CREW[v.kind][a.seat],dist=cam.position.distanceTo(v.p);r.root.visible=false;if(!s||!v.alive||dist>(v.kind==='jet'||v.kind==='heli'?170:130))return;
+ if(s[0]){const b=busts[a.team];if(b.count>=24)return;const pt=v.model[s[0]];pt.updateWorldMatrix(true,false);bustP.set(s[1],s[2],s[3]);pt.localToWorld(bustP);pt.getWorldQuaternion(bustQ);bustM.compose(bustP,bustQ,bustS);b.setMatrixAt(b.count++,bustM);return;}
+ r.root.visible=true;const g=a.seat===1;riderAt(a,v,r.root.position);r.root.rotation.set(0,g?v.yaw+v.tYaw:v.yaw,0);r.mesh.castShadow=dist<70;r.flash.visible=g&&v.fireT>.04;
+ const dx=v.p.x-cam.position.x,dz=v.p.z-cam.position.z;a.lodAcc+=dt;if((dx*-Math.sin(cam.rotation.y)+dz*-Math.cos(cam.rotation.y))<-.2*dist&&dist>14||dist>60&&frame%2)return;
+ r.update(a.lodAcc,{speed:0,seat:!g,pitch:g?v.gEl:0,aim:g,reload:-1});a.lodAcc=0;}
 /* ================= viewmodel ================= */
 let shownGun=null;
 function showGun(){if(!P||!P.slots)return;const s=P.slots[P.cur];for(const k in VM.guns)VM.guns[k].visible=false;const g=VM.guns[s.id];g.visible=true;applyAttachments(g,s.id,s.att);shownGun=g;}

@@ -236,15 +236,17 @@ function ghostUpdate(){if(!mode||mode.k!=='build'||!S){ghostPad.visible=false;re
 /* ================= portraits (rendered from the models on demand) ================= */
 const portraits={};let prt=null;
 function portrait(type,c='#3f8cff'){const key=type+c;if(portraits[key])return portraits[key];
- if(!prt){const ps=new THREE.Scene();ps.add(new THREE.HemisphereLight(0xffffff,0x667788,2.1));const dl=new THREE.DirectionalLight(0xffffff,3.4);dl.position.set(3,5,4);ps.add(dl);const rl=new THREE.DirectionalLight(0x9ab8ff,1.6);rl.position.set(-4,2,-3);ps.add(rl);
-  prt={ps,rt:new THREE.WebGLRenderTarget(112,112,{samples:4}),pc:new THREE.PerspectiveCamera(30,1,.1,200),buf:new Uint8Array(112*112*4),cv:document.createElement('canvas')};prt.cv.width=prt.cv.height=112;}
+ if(!prt){const ps=new THREE.Scene();const hl=new THREE.HemisphereLight(0xffffff,0x667788,2.1);ps.add(hl);const dl=new THREE.DirectionalLight(0xffffff,3.4);dl.position.set(3,5,4);ps.add(dl);const rl=new THREE.DirectionalLight(0x9ab8ff,1.6);rl.position.set(-4,2,-3);ps.add(rl);const fl=new THREE.DirectionalLight(0xffe6ff,0);fl.position.set(0,1.5,6);ps.add(fl);
+  prt={ps,L:[hl,dl,rl,fl],rt:new THREE.WebGLRenderTarget(112,112,{samples:4}),pc:new THREE.PerspectiveCamera(30,1,.1,200),buf:new Uint8Array(112*112*4),cv:document.createElement('canvas')};prt.cv.width=prt.cv.height=112;}
  const{ps,rt,pc,buf,cv}=prt;const grp=new THREE.Group();let hy,dist;
  if(U[type]){const g=unitGeo(type),tm=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.4,metalness:.25,color:c});const a={t:.6,mv:0,ph:0,atk:0,dead:0,id:1,aim:0};
   for(const p of g.parts){const m4=partMatrix(type,p,a,new THREE.Matrix4());for(const[geo,mat]of[[p.s,MAT.body],[p.t,tm],[p.g,MAT.glow]])if(geo){const m=new THREE.Mesh(geo,mat);m.applyMatrix4(m4);grp.add(m);}}
   grp.scale.setScalar(g.scale);const hh=g.air?0:1;hy=(g.air?.2:1.2)*g.scale*hh+(g.air?0:0);dist=(U[type].r*3.4+2.4)*(g.air?1.3:1);if(type==='carapace'||type==='lobber'||type==='bombard')dist*=1.15;}
  else{const P=bldModel(type,c);grp.add(P.root);const s=B[type].size*CS;hy=s*.35;dist=s*2.1+2;}
  grp.rotation.y=.55;ps.add(grp);pc.position.set(dist*.45,hy+dist*.42,dist*.85);pc.lookAt(0,hy,0);
- const f=(U[type]||B[type]).f;ps.background=new THREE.Color(f==='lattice'?'#3a2850':'#1c2c40');const pr=R.getPixelRatio(),fo=fogU.uFogOn.value;fogU.uFogOn.value=0;R.setPixelRatio(1);R.setRenderTarget(rt);R.render(ps,pc);fogU.uFogOn.value=fo;R.readRenderTargetPixels(rt,0,0,112,112,buf);R.setRenderTarget(null);R.setPixelRatio(pr);ps.remove(grp);
+ const f=(U[type]||B[type]).f;ps.background=new THREE.Color(f==='lattice'?'#3a2850':'#1c2c40');
+ // Lattice chitin is near-black violet: give it a brighter key, a lilac rim and a soft front fill so it reads like the Compact
+ const lat=f==='lattice',[hl,dl,rl,fl]=prt.L;hl.intensity=lat?4.2:2.1;hl.groundColor.set(lat?0x8a78a8:0x667788);dl.intensity=lat?6.5:3.4;rl.intensity=lat?4:1.6;rl.color.set(lat?0xd0a8ff:0x9ab8ff);fl.intensity=lat?2.6:0;const pr=R.getPixelRatio(),fo=fogU.uFogOn.value;fogU.uFogOn.value=0;R.setPixelRatio(1);R.setRenderTarget(rt);R.render(ps,pc);fogU.uFogOn.value=fo;R.readRenderTargetPixels(rt,0,0,112,112,buf);R.setRenderTarget(null);R.setPixelRatio(pr);ps.remove(grp);
  const x=cv.getContext('2d'),img=x.createImageData(112,112);for(let j=0;j<112;j++)for(let i=0;i<112;i++){const s=((111-j)*112+i)*4,t=(j*112+i)*4;for(let k=0;k<4;k++)img.data[t+k]=buf[s+k];}x.putImageData(img,0,0);
  const gr=x.createLinearGradient(0,60,0,112);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.5)');x.fillStyle=gr;x.fillRect(0,0,112,112);return portraits[key]=cv.toDataURL('image/jpeg',.88);}
 // command and upgrade glyphs drawn on a canvas
@@ -437,5 +439,5 @@ window.RTS={
  select(list){setSel(list);},get selection(){return sel;},order(o,shift){S.cmd(me,mineU(),o,shift);},build(type,x,z){return S.build(me,mineU(),type,x,z);},train(type){const b=mineB().find(b=>b.d.trains&&b.d.trains.includes(type))||S.ents.find(b=>b.alive&&b.owner===me.i&&b.cls==='b'&&b.d.trains&&b.d.trains.includes(type));return b?S.train(me,b,type):false;},
  key(code,mods={}){keyDown({code,...mods});},mouse(x,y){mx=x;my=y;mIn=true;},smart(shift){smart(shift);},boxSelect(x0,y0,x1,y1){mx=x1;my=y1;boxSelect({x:x0,y:y0},false);},clickSelect(x,y){mx=x;my=y;clickSelect(false,false);},
  set reveal(v){revealAll=!!v;},get reveal(){return revealAll;},cam(x,z,zoom){cam.x=cam.tx=x;cam.z=cam.tz=z;if(zoom)cam.zoom=zoom;},
- setQuality:applyQuality,get quality(){return gfx;},toMenu,hud(v){noHud=!v;$('hud').hidden=!v;if(!v){bannerT=0;$('banner').classList.remove('on');}},get card(){return card;},get mode(){return mode;},scr,groundAt,
+ setQuality:applyQuality,get quality(){return gfx;},toMenu,hud(v){noHud=!v;$('hud').hidden=!v;if(!v){bannerT=0;$('banner').classList.remove('on');}},get card(){return card;},get mode(){return mode;},scr,groundAt,portrait,
  finish(){if(S&&!S.over){S.t=S.len;S.chkT=0;S.step(1/30);finish();}}};
