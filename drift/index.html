@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sideways · Pixel Arcade</title>
+<meta name="description" content="Sideways: a full 3D drift game in the browser. Rear-wheel-drive tyre physics, clutch kicks and handbrake entries, angle x speed scoring with combo chains, tandem runs behind a CPU lead car, five tunable cars and three night-to-sunset tracks plus a free-roam lot.">
+<link rel="stylesheet" href="drift.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="load"><b>SIDEWAYS<em>.</em></b><span id="loadt">WARMING TYRES…</span></div>
+
+<div id="hud" hidden>
+  <div id="tl"><div class="clk"><b id="clock">2:00</b><span id="trk">SERPENT PASS</span></div></div>
+  <div id="tr"><p>TOTAL</p><b id="total">0</b><span id="bestc">BEST COMBO 0</span><span id="cashp"></span></div>
+  <div id="combo"><div id="chainw"><b id="chain"></b><i id="mult"></i></div><div class="gb"><i id="grace"></i></div><div id="tags"></div></div>
+  <div id="pops"></div>
+  <div id="anglew"><svg viewBox="0 0 200 110"><path class="bg" d="M14 100 A86 86 0 0 1 186 100"/><path id="angarc" class="fg" d="M14 100 A86 86 0 0 1 186 100"/></svg><b id="angle">0°</b><span>DRIFT ANGLE</span></div>
+  <div id="tandem" hidden><span>TANDEM</span><div class="tb"><i id="tandb"></i></div><em id="tandd">—</em></div>
+  <div id="gauge"><svg viewBox="0 0 200 200"><circle class="bg" cx="100" cy="100" r="84"/><circle id="red" class="red" cx="100" cy="100" r="84"/><circle id="rpm" class="fg" cx="100" cy="100" r="84"/></svg>
+    <b id="kmh">0</b><span>KM/H</span><i id="gear">1</i><em id="trans">AUTO</em><div class="boost"><i id="boost"></i></div><u id="cam">CHASE</u></div>
+  <canvas id="mini" width="300" height="300"></canvas>
+  <div id="msg"></div>
+  <div id="cd"></div>
+</div>
+
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · DRIFT</p>
+  <h1>SIDE<br>WAYS<em>.</em></h1>
+  <p class="how">Throw it in, hold the angle, link the corners. Points flow at <b>angle × speed</b>, the chain multiplier grows the longer you stay sideways and banks when you straighten. Touch a wall and it's gone.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0" class="on">SOLO</button><button data-v="1">TANDEM</button></div>
+    <label>TRACK</label><div class="seg" id="o-track"></div>
+    <label>RUN</label><div class="seg" id="o-time"><button data-v="2" class="on">2 MIN</button><button data-v="4">4 MIN</button><button data-v="6">6 MIN</button></div>
+    <label>LEAD CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>ASSIST</label><div class="sl"><input type="range" id="o-assist" min="0" max="100" step="5" value="60"><b id="o-assistv">60%</b><span>counter-steer</span></div>
+    <label>GEARBOX</label><div class="seg" id="o-trans"><button data-v="1" class="on">AUTO</button><button data-v="0">MANUAL</button></div>
+  </div>
+  <p class="tinfo" id="tinfo"></p>
+  <div class="row"><button id="go" class="go">DRIFT →</button><button id="gar" class="ghost">GARAGE</button><span class="money" id="mmoney">$0</span></div>
+</div>
+
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Throttle · brake / reverse</td><td><kbd>W</kbd> <kbd>S</kbd> <span class="pad">RT LT</span></td></tr>
+    <tr><td>Steer</td><td><kbd>A</kbd> <kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Handbrake</td><td><kbd>Space</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Clutch (hold, then kick)</td><td><kbd>Shift</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Gear down / up (manual)</td><td><kbd>Q</kbd> <kbd>E</kbd> <span class="pad">LB RB</span></td></tr>
+    <tr><td>Camera chase · hood · bumper</td><td><kbd>C</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Auto / manual gearbox</td><td><kbd>M</kbd></td></tr>
+    <tr><td>Reset to road · pause</td><td><kbd>R</kbd> <kbd>Esc</kbd> <span class="pad">Back Start</span></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p>Arrow keys work too. Entry: lift, flick, pull the handbrake or clutch-kick in 2nd. Hold it: throttle steers the rear, the assist counter-steers for you. Drive through the orange <b>clipping zones</b> sideways for multiplier.</p>
+</div>
+
+<div id="garage" class="scr" hidden>
+  <div class="gtop"><p class="eye">GARAGE</p><h2 id="gname">SPARROW</h2><p id="gtag" class="gtag"></p><span class="money" id="gmoney">$0</span></div>
+  <div class="gtabs" id="gtabs"><button data-t="cars" class="on">CARS</button><button data-t="ups">UPGRADES</button><button data-t="tune">TUNE</button><button data-t="paint">PAINT</button></div>
+  <div class="gpanel" id="gpanel"></div>
+  <div class="gstats" id="gstats"></div>
+  <div class="row gbot"><button id="gback" class="go">← DONE</button><button id="gdrive" class="ghost">DRIFT →</button></div>
+</div>
+
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>ON<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="restart" class="ghost">RESTART</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">RUN COMPLETE</p>
+  <div id="medal"></div>
+  <p class="res" id="ores">0</p>
+  <p class="sub">POINTS</p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">RUN IT BACK</button><button id="ogar" class="ghost">GARAGE</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

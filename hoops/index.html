@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COURT KINGS · Pixel Arcade</title>
+<meta name="description" content="COURT KINGS: full 3D basketball in the browser. 5v5 in a packed arena or 3v3 street ball, shot meter with green releases, dunks, blocks, pick and roll, local 2P versus.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="hoops.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bars"></div>
+<div id="hud" hidden>
+  <div id="sb">
+    <div class="tm" id="t0"><canvas id="lg0" width="64" height="64"></canvas><b id="n0">HOM</b><i id="s0">0</i><u id="f0"></u></div>
+    <div class="mid"><span id="per">1ST</span><b id="clk">2:00</b></div>
+    <div class="scl" id="scl">24</div>
+    <div class="tm r" id="t1"><u id="f1"></u><i id="s1">0</i><b id="n1">AWY</b><canvas id="lg1" width="64" height="64"></canvas></div>
+  </div>
+  <div id="tb" hidden>TAKE IT BACK</div>
+  <div id="bug">COURT<em>KINGS</em></div>
+  <div id="feed"></div>
+  <div id="labels"></div>
+  <div id="cap"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="prompt"></div>
+  <div id="help"></div>
+  <div id="replay" hidden><i></i>REPLAY<span>SPACE · ENTER · A TO SKIP</span></div>
+  <div id="qcard" hidden></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · BASKETBALL</p>
+  <h1>COURT<br>KINGS<em>.</em></h1>
+  <p class="how">Five on five in a sold-out arena or three on three in the cage at sundown. Cross them up, time your release for the green, throw it down on somebody.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0">5V5 ARENA</button><button data-v="1">3V3 STREET</button></div>
+    <label>PLAYERS</label><div class="seg" id="o-pl"><button data-v="1">1P VS CPU</button><button data-v="2">2P VERSUS</button><button data-v="0">WATCH</button></div>
+    <label>YOUR TEAM</label><div class="pick" id="p-team"><button class="l" aria-label="previous team">◀</button><canvas width="96" height="96"></canvas><div><b></b><span></span></div><button class="r" aria-label="next team">▶</button></div>
+    <label id="l-opp">OPPONENT</label><div class="pick" id="p-opp"><button class="l" aria-label="previous team">◀</button><canvas width="96" height="96"></canvas><div><b></b><span></span></div><button class="r" aria-label="next team">▶</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label id="l-len">QUARTERS</label><div class="seg" id="o-len"><button data-v="0">SHORT</button><button data-v="1">STANDARD</button><button data-v="2">LONG</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">TIP OFF</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · sprint</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Shift</kbd> <span class="pad">L-stick RT</span></td></tr>
+    <tr><td>Shoot (hold, release at the top) · <i>block / rebound</i></td><td><kbd>Space</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Pass · <i>steal</i></td><td><kbd>F</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Dribble move · <i>hands up</i></td><td><kbd>E</kbd> <span class="pad">B / R-stick</span></td></tr>
+    <tr><td>Lob · alley-oop</td><td><kbd>R</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Call pick · <i>switch player</i></td><td><kbd>Q</kbd> <span class="pad">LB / RB</span></td></tr>
+    <tr><td>Camera · sound · pause</td><td><kbd>C</kbd> <kbd>M</kbd> <kbd>Esc</kbd> <span class="pad">Start</span></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p><i>Italics</i> apply on defence. Sprint at the rim and shoot to dunk. Dribble move: crossover, hold sprint to spin, pull back from the hoop to step back.<br>2P: P2 uses <kbd>Arrows</kbd> <kbd>R-Shift</kbd> <kbd>/</kbd> shoot <kbd>.</kbd> pass <kbd>,</kbd> move <kbd>;</kbd> lob <kbd>Enter</kbd> pick/switch, or gamepad 2.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>TIME<br>OUT<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">FINAL</p>
+  <p class="res" id="ores">VICTORY</p>
+  <div class="fs" id="ofs"></div>
+  <div id="lines"></div>
+  <div class="ostats"><div id="box"></div><div class="mvp" id="mvp"></div></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

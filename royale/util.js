@@ -30,3 +30,16 @@ export function rayCyl(ox,oy,oz,dx,dy,dz,c,maxT){let best=-1;const fx=ox-c.x,fz=
  if(a>1e-9){const b=fx*dx+fz*dz,cc=fx*fx+fz*fz-c.r*c.r,disc=b*b-a*cc;if(disc>=0){const t=(-b-Math.sqrt(disc))/a;if(t>=0&&t<=maxT){const y=oy+dy*t;if(y>=c.y0&&y<=c.y1)best=t;}}}
  if(dy<0&&oy>c.y1){const t=(c.y1-oy)/dy;if(t<=maxT&&(best<0||t<best)){const x=fx+dx*t,z=fz+dz*t;if(x*x+z*z<=c.r*c.r)best=t;}}return best;}
 export const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
+// height canvas (luminance) -> tangent-space normal map texture
+export function normalFrom(src,strength=2,o={}){const w=src.width,h=src.height,d0=src.getContext('2d').getImageData(0,0,w,h).data,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),img=x.createImageData(w,h),d=img.data;
+ const L=(i,j)=>{const k=(((j+h)%h)*w+((i+w)%w))*4;return(d0[k]*.3+d0[k+1]*.59+d0[k+2]*.11)/255;};
+ for(let j=0;j<h;j++)for(let i=0;i<w;i++){const dx=(L(i+1,j)-L(i-1,j))*strength,dy=(L(i,j+1)-L(i,j-1))*strength,l=Math.hypot(dx,dy,1),k=(j*w+i)*4;d[k]=(-dx/l*.5+.5)*255;d[k+1]=(dy/l*.5+.5)*255;d[k+2]=(1/l*.5+.5)*255;d[k+3]=255;}
+ x.putImageData(img,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=o.clamp?THREE.ClampToEdgeWrapping:THREE.RepeatWrapping;t.anisotropy=8;return t;}
+// tileable value-noise fbm field (n x n, values 0..1)
+export function tnoise(n,cells,seed,oct=4){const out=new Float32Array(n*n);let amp=1,tot=0;for(let o=0;o<oct;o++){const C=cells<<o,r=rng(seed+o*31),g=new Float32Array(C*C).map(()=>r());
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){const u=i/n*C,v=j/n*C,i0=u|0,j0=v|0,fu=smooth(0,1,u-i0),fv=smooth(0,1,v-j0),i1=(i0+1)%C,j1=(j0+1)%C,a=g[j0*C+i0],b=g[j0*C+i1],c=g[j1*C+i0],d=g[j1*C+i1];out[j*n+i]+=(a+(b-a)*fu+(c-a)*fv+(a-b-c+d)*fu*fv)*amp;}tot+=amp;amp*=.5;}
+ for(let i=0;i<n*n;i++)out[i]/=tot;return out;}
+// rounded box (radius r) and a capsule hanging down from its top (pivot at y=0)
+export function rbox(w,h,d,r=.03,seg=3){r=Math.min(r,w/2-.001,h/2-.001,d/2-.001);const g=new THREE.BoxGeometry(w,h,d,seg,seg,seg),p=g.attributes.position,n=g.attributes.normal,v=new V(),c=new V(),hw=w/2-r,hh=h/2-r,hd=d/2-r;
+ for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);c.set(cl(v.x,-hw,hw),cl(v.y,-hh,hh),cl(v.z,-hd,hd));v.sub(c);if(v.lengthSq()<1e-10)v.fromBufferAttribute(n,i);v.normalize();n.setXYZ(i,v.x,v.y,v.z);p.setXYZ(i,c.x+v.x*r,c.y+v.y*r,c.z+v.z*r);}return g;}
+export const cap=(r,len,rs=10)=>{const g=new THREE.CapsuleGeometry(r,Math.max(.001,len),3,rs);g.translate(0,-len/2-r,0);return g;};

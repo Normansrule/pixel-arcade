@@ -2,6 +2,8 @@
 import * as THREE from '../vendor/three.module.min.js';
 const V=THREE.Vector3;
 export const DIFF=[{n:'RECRUIT',err:4.2,react:.95,turn:3.5,dmg:.3,burst:[2,4],pause:[.7,1.3],nade:.2,flank:.2},{n:'REGULAR',err:2.9,react:.62,turn:5.5,dmg:.48,burst:[3,5],pause:[.5,.9],nade:.4,flank:.35},{n:'VETERAN',err:1.9,react:.38,turn:8,dmg:.72,burst:[3,6],pause:[.35,.65],nade:.6,flank:.5}];
+// bot-vs-bot gunfights in versus modes (mode.skirm) run on one fixed profile so match pace does not depend on the chosen difficulty; difficulty only sets how bots treat the player
+export const SKIRM={n:'SKIRM',err:2.35,react:.48,turn:7,burst:[3,6],pause:[.4,.72]};
 const rr=(a,b)=>a+Math.random()*(b-a),ang=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const tv=new V(),tv2=new V(),eye=new V(),tgt=new V();
 export const EYE=1.58,CEYE=1.08;
@@ -9,11 +11,11 @@ export function eyeOf(a,out){return out.set(a.pos.x,a.pos.y+(a.crouchV>.5?CEYE:E
 export function chestOf(a,out){return out.set(a.pos.x,a.pos.y+1.2-(a.crouchV||0)*.42,a.pos.z);}
 
 export function newBrain(role,o={}){return{role,state:'idle',target:null,seen:0,last:null,lastT:-99,path:null,pathT:0,goal:null,cover:null,coverT:0,peek:0,peekT:0,react:0,think:Math.random()*.3,strafe:0,strafeT:0,burst:0,pauseT:0,
- nadeT:rr(6,14),callT:0,onT:0,stuckT:0,lastPos:new V(),flank:0,post:o.post||null,route:o.route||null,ri:0,hold:o.hold||null,static:!!o.static,alerted:false,lookT:0,lookYaw:0,fol:o.fol||null,hunt:o.hunt||null,coverPick:-99,hurtT:-99,lastAttacker:null,slot:o.slot||0};}
+ nadeT:rr(6,14),callT:0,onT:0,stuckT:0,lastPos:new V(),flank:0,post:o.post||null,route:o.route||null,ri:0,hold:o.hold||null,static:!!o.static,alerted:false,lookT:0,lookYaw:0,fol:o.fol||null,hunt:o.hunt||null,coverPick:-99,hurtT:-99,lastAttacker:null,slot:o.slot||0,squad:o.squad??null};}
 
 function canSee(a,b,W){const d2=(a.pos.x-b.pos.x)**2+(a.pos.z-b.pos.z)**2;if(d2>78*78)return false;
  const fwdx=Math.sin(a.yaw),fwdz=Math.cos(a.yaw),dx=b.pos.x-a.pos.x,dz=b.pos.z-a.pos.z,d=Math.sqrt(d2)||1;const dot=(fwdx*dx+fwdz*dz)/d;
- const night=W.night&&!b.firingT;const range=night?(a.ai.alerted?55:32):78;if(d>range)return false;
+ const range=78;if(d>range)return false;
  if(dot<.42&&d>5&&!(a.ai.alerted&&dot>-.2))return false;
  eyeOf(a,eye);chestOf(b,tgt);if(W.fx.smokeBlocks(eye,tgt))return false;if(W.level.los(eye,tgt))return true;
  tgt.y=b.pos.y+(b.crouchV>.5?1.15:1.62);return W.level.los(eye,tgt)&&!W.fx.smokeBlocks(eye,tgt);}
@@ -23,6 +25,7 @@ function pickCover(a,threat,W){const L=W.level,cs=L.cover,px=a.pos.x,pz=a.pos.z;
  cand.sort((p,q)=>p[0]-q[0]);for(const[s,c]of cand){if(checks++>10)break;tv.set(c.x,(c.tall?1.5:1.0),c.z);tv2.set(threat.x,threat.y+1.5,threat.z);if(L.los(tv2,tv))continue;if(s<bs){bs=s;best=c;break;}}
  return best;}
 
+function squadLead(a,W){for(const b of W.actors)if(b.alive&&b.ai&&b.team===a.team&&b.ai.squad===a.ai.squad)return b;return null;}
 export function setPath(a,x,z,W){if(W.pathBudget<=0)return false;W.pathBudget--;const p=W.level.path(a.pos.x,a.pos.z,x,z);a.ai.path=p&&p.length?p:null;a.ai.goal=a.ai.path?new V(x,0,z):null;a.ai.pathT=W.time;return!!p;}
 
 // one brain tick (called every ~.25s); sets intent for the per-frame driver
@@ -30,8 +33,8 @@ export function think(a,W){const ai=a.ai,L=W.level,D=W.diff,me=a.pos;ai.think=rr
  if(ai.static&&ai.state==='idle')ai.state='guard';
  // --- perception
  let best=null,bd=1e9;for(const b of W.actors){if(!b.alive||b.team===a.team||b.ghost)continue;const d=me.distanceTo(b.pos);if(d>80)continue;
-  const known=ai.target===b&&ai.seen>0;if(!canSee(a,b,W)){continue;}let s=d;if(b===ai.lastAttacker&&W.time-ai.hurtT<4)s*=.5;if(known)s*=.7;if(b.vip)s*=1.3;if(s<bd){bd=s;best=b;}}
- if(best){if(ai.target!==best||ai.seen<=0){ai.react=D.react*rr(.8,1.3)*(W.night&&!best.firingT?1.4:1);ai.onT=0;if(!ai.alerted&&a.team===0)W.callout(a,'contact',best);ai.alerted=true;}
+  const known=ai.target===b&&ai.seen>0;if(!canSee(a,b,W)){continue;}let s=d;if(b===ai.lastAttacker&&W.time-ai.hurtT<4)s*=.5;if(known)s*=.7;if(b.vip)s*=1.8;if(s<bd){bd=s;best=b;}}
+ if(best){if(ai.target!==best||ai.seen<=0){ai.react=(!best.isPlayer&&W.mode&&W.mode.skirm?SKIRM:D).react*rr(.8,1.3)*(W.night&&!best.firingT?1.4:1);ai.onT=0;if(!ai.alerted&&a.team===0)W.callout(a,'contact',best);ai.alerted=true;}
   ai.target=best;ai.seen=1;ai.last=best.pos.clone();ai.lastT=W.time;}
  else{if(ai.seen>0&&ai.target&&!ai.target.alive)ai.target=null;ai.seen=0;}
  // hearing
@@ -45,11 +48,12 @@ export function think(a,W){const ai=a.ai,L=W.level,D=W.diff,me=a.pos;ai.think=rr
  if(tgtA){const d=me.distanceTo(tgtA.pos);
   if(ai.static){ai.state='guard';return;}
   if(ai.cover&&ai.state==='cover'){ai.coverT-=.25;if(ai.coverT<=0&&!lowHp&&!reloading){ai.state='engage';ai.cover.owner=null;ai.cover=null;}return;}
-  if((lowHp||reloading||(d>10&&Math.random()<.18))&&W.time-ai.coverPick>2){ai.coverPick=W.time;const c=pickCover(a,tgtA.pos,W);if(c){if(ai.cover)ai.cover.owner=null;ai.cover=c;c.owner=a;ai.state='tocover';ai.coverT=rr(3,6);setPath(a,c.x,c.z,W);if(reloading&&a.team===0)W.callout(a,'reload');return;}}
+  if((lowHp||reloading||(d>10&&Math.random()<(ai.role==='dom'?.05:.18)))&&W.time-ai.coverPick>2){ai.coverPick=W.time;const c=pickCover(a,tgtA.pos,W);if(c){if(ai.cover)ai.cover.owner=null;ai.cover=c;c.owner=a;ai.state='tocover';ai.coverT=rr(3,6);setPath(a,c.x,c.z,W);if(reloading&&a.team===0)W.callout(a,'reload');return;}}
   if(ai.state==='tocover'&&ai.path)return;
-  ai.state='engage';if(d>28&&ai.role!=='guard'&&Math.random()<.4)setPath(a,tgtA.pos.x,tgtA.pos.z,W);else if(!ai.path||d<14)ai.path=null;return;}
+  if(ai.role==='dom'&&ai.flag&&Math.hypot(me.x-ai.flag.x,me.z-ai.flag.z)>4.5&&d>10&&!lowHp){ai.state='engage';if(!ai.path||W.time-ai.pathT>3)setPath(a,ai.flag.x+rr(-3,3),ai.flag.z+rr(-3,3),W);return;}
+  ai.state='engage';if(d>26&&ai.role!=='guard'&&!ai.static&&Math.random()<.55)setPath(a,tgtA.pos.x+rr(-4,4),tgtA.pos.z+rr(-4,4),W);else if(!ai.path||d<14)ai.path=null;return;}
  if(ai.cover){ai.cover.owner=null;ai.cover=null;}
- if(ai.last&&W.time-ai.lastT<9&&ai.role!=='follow'&&ai.role!=='vip'&&!ai.static){// hunt / flank toward last known position
+ if(ai.last&&W.time-ai.lastT<9&&ai.role!=='follow'&&ai.role!=='vip'&&!ai.static&&(ai.role!=='dom'||me.distanceTo(ai.last)<22)){// hunt / flank toward last known position
   if(ai.state!=='hunt'||!ai.path||W.time-ai.pathT>4){ai.state='hunt';let gx=ai.last.x,gz=ai.last.z;
    if(Math.random()<D.flank&&me.distanceTo(ai.last)>12){const dx=gx-me.x,dz=gz-me.z,l=Math.hypot(dx,dz)||1,s=Math.random()<.5?1:-1;gx+=-dz/l*11*s;gz+=dx/l*11*s;ai.flank=s;if(a.team===0)W.callout(a,s>0?'flankR':'flankL');}
    setPath(a,gx,gz,W);}return;}
@@ -62,12 +66,17 @@ export function think(a,W){const ai=a.ai,L=W.level,D=W.diff,me=a.pos;ai.think=rr
  if(ai.role==='patrol'&&ai.route){if(!ai.path||!ai.path.length){const p=ai.route[ai.ri=(ai.ri+1)%ai.route.length];setPath(a,p[0],p[1],W);}return;}
  if(ai.role==='assault'&&ai.hold){if(me.distanceTo(ai.hold)>4&&(!ai.path||W.time-ai.pathT>5))setPath(a,ai.hold.x+rr(-4,4),ai.hold.z+rr(-4,4),W);return;}
  if(ai.role==='hunt'&&ai.hunt){const h=ai.hunt();if(h&&(!ai.path||W.time-ai.pathT>5))setPath(a,h.x+rr(-6,6),h.z+rr(-6,6),W);return;}
+ if(ai.role==='dom'){// domination: squads pick a flag to take or hold, then post up around it
+  if(!ai.flag||W.time-(ai.flagT||0)>(ai.flagHold||9)){ai.flagT=W.time;ai.flagHold=rr(7,14);ai.flag=W.pickFlag?W.pickFlag(a):null;ai.path=null;}
+  const f=ai.flag;if(f){const d=Math.hypot(me.x-f.x,me.z-f.z);if(d>5.5){if(!ai.path||W.time-ai.pathT>5){const lead=squadLead(a,W);let gx=f.x,gz=f.z;if(lead&&lead!==a&&lead.ai.flag===f){gx=lead.pos.x+rr(-3,3);gz=lead.pos.z+rr(-3,3);}setPath(a,gx+rr(-3,3),gz+rr(-3,3),W);}}
+   else if(!ai.path&&Math.random()<.15){const an=Math.random()*6.28,r=rr(1.5,4.5);setPath(a,f.x+Math.cos(an)*r,f.z+Math.sin(an)*r,W);}}return;}
+ if(ai.role==='tdm'&&ai.squad!=null){const lead=squadLead(a,W);if(lead&&lead!==a){const d=me.distanceTo(lead.pos);if(d>9&&(!ai.path||W.time-ai.pathT>3)){setPath(a,lead.pos.x+rr(-3,3),lead.pos.z+rr(-3,3),W);return;}if(d<=9&&ai.path&&lead.ai.path)return;}}
  if(ai.role==='tdm'){if(!ai.path||!ai.path.length||W.time-ai.pathT>14){let p;if(Math.random()<.45){const foes=W.actors.filter(b=>b.alive&&b.team!==a.team);const f=foes[Math.random()*foes.length|0];if(f)p=[f.pos.x+rr(-10,10),f.pos.z+rr(-10,10)];}
   if(!p){const h=L.hot[Math.random()*L.hot.length|0];p=[h[0]+rr(-5,5),h[1]+rr(-5,5)];}setPath(a,p[0],p[1],W);}}}
 
 // per-frame: aim, move, shoot. returns desired move vector in a.move (x,z) and speed
-export function drive(a,W,dt){const ai=a.ai,D=W.diff;ai.think-=dt;if(ai.think<=0)think(a,W);
- const tgtA=ai.seen&&ai.target&&ai.target.alive?ai.target:null;let mx=0,mz=0,speed=0;a.crouch=false;
+export function drive(a,W,dt){const ai=a.ai;ai.think-=dt;if(ai.think<=0)think(a,W);
+ const tgtA=ai.seen&&ai.target&&ai.target.alive?ai.target:null,D=tgtA&&!tgtA.isPlayer&&W.mode&&W.mode.skirm?SKIRM:W.diff;let mx=0,mz=0,speed=0;a.crouch=false;
  // follow path
  if(ai.path&&ai.path.length){const wp=ai.path[0];const dx=wp[0]-a.pos.x,dz=wp[1]-a.pos.z,d=Math.hypot(dx,dz);if(d<.55){ai.path.shift();if(!ai.path.length)ai.path=null;}else{mx=dx/d;mz=dz/d;}
   speed=tgtA?(ai.state==='tocover'?5.2:3.0):(ai.state==='hunt'?4.6:ai.role==='follow'||ai.role==='vip'?(a.pos.distanceTo(ai.fol?.pos||a.pos)>12?6:4.2):ai.role==='patrol'?1.8:4.4);

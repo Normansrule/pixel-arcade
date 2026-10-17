@@ -4,9 +4,15 @@ labels: [bug]
 body:
   - type: input
     id: game
-    attributes: { label: Game, placeholder: "e.g. Strike Zone 3D" }
+    attributes: { label: Game, placeholder: "e.g. Strike Zone" }
     validations: { required: true }
   - type: textarea
     id: what
     attributes: { label: What happened, placeholder: "One or two lines" }
     validations: { required: true }
+  - type: dropdown
+    id: where
+    attributes: { label: Where, options: [Website, Installed web app, Desktop app (Windows), Desktop app (macOS), Desktop app (Linux), Single-file build] }
+  - type: input
+    id: device
+    attributes: { label: Browser and device, placeholder: "e.g. Chrome 130 on a Windows laptop, with a gamepad" }

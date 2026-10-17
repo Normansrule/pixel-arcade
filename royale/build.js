@@ -2,7 +2,7 @@
 // prefab house materials. Instanced rendering, per-piece HP, collision boxes + walkable surfaces, ray hits,
 // quick placement planning (ramp runs, level snapping), ghost previews and structural collapse.
 import * as THREE from '../vendor/three.module.min.js';
-import {V,cl,ctex,merge,wuv,rayBox,boxNormal,M} from './util.js';
+import {V,cl,ctex,merge,wuv,rayBox,boxNormal,M,normalFrom} from './util.js';
 export const CELL=4,H=4,TH=.24,ROOFH=1.7,COST=10;
 export const D=[[0,1],[1,0],[0,-1],[-1,0]];
 export const TYPES=['wall','floor','ramp','roof'];
@@ -25,8 +25,10 @@ function texMetal(x,w,h){const g=x.createLinearGradient(0,0,w,0);for(let i=0;i<=
  for(let i=0;i<14;i++){x.fillStyle=`rgba(150,80,30,${rnd()*.25})`;x.beginPath();x.arc(rnd()*w,rnd()*h,4+rnd()*18,0,7);x.fill();}
  x.fillStyle='#5f666e';x.fillRect(0,0,w,14);x.fillRect(0,h-14,w,14);x.fillRect(0,h/2-6,w,12);x.fillStyle='#cfd5da';for(let i=10;i<w;i+=26)for(const y of[7,h/2,h-7]){x.beginPath();x.arc(i,y,2.6,0,7);x.fill();}
  x.strokeStyle='#4a5058';x.lineWidth=8;x.strokeRect(4,4,w-8,h-8);}
-function texPlaster(x,w,h){x.fillStyle='#f4efe6';x.fillRect(0,0,w,h);grain(x,w,h,6000,.07);x.fillStyle='#8a5a34';x.fillRect(0,h-22,w,22);x.fillRect(0,0,w,10);x.fillStyle='rgba(0,0,0,.15)';x.fillRect(0,h-24,w,2);
- x.fillStyle='#9a6a40';x.fillRect(0,0,9,h);x.fillRect(w-9,0,9,h);}
+function texPlaster(x,w,h){x.fillStyle='#f4efe6';x.fillRect(0,0,w,h);for(let i=0;i<160;i++){const v=rnd()<.5?'0,0,0':'255,255,255',px=rnd()*w,py=rnd()*h,r=6+rnd()*22,g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,`rgba(${v},${rnd()*.06})`);g.addColorStop(1,`rgba(${v},0)`);x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);}grain(x,w,h,6000,.07);
+ x.fillStyle='rgba(120,100,80,.12)';x.fillRect(0,h-40,w,18);x.fillStyle='#8a5a34';x.fillRect(0,h-22,w,22);x.fillRect(0,0,w,10);x.fillStyle='rgba(0,0,0,.15)';x.fillRect(0,h-24,w,2);
+ x.fillStyle='#9a6a40';x.fillRect(0,0,9,h);x.fillRect(w-9,0,9,h);x.strokeStyle='rgba(60,35,15,.35)';for(let i=0;i<14;i++){x.beginPath();const yy=rnd()*h;x.moveTo(0,yy);x.lineTo(9,yy+rnd()*6);x.moveTo(w-9,yy);x.lineTo(w,yy+rnd()*6);x.stroke();}
+ x.fillStyle='rgba(0,0,0,.18)';x.fillRect(9,0,2,h);x.fillRect(w-11,0,2,h);x.fillRect(0,10,w,2);}
 function texShingle(x,w,h){x.fillStyle='#e9e4dc';x.fillRect(0,0,w,h);const rows=8,rh=h/rows;for(let r=0;r<rows;r++)for(let c=-1;c<9;c++){const cx=c*32+(r%2)*16,l=.75+rnd()*.25;x.fillStyle=`rgb(${235*l|0},${230*l|0},${222*l|0})`;x.beginPath();x.moveTo(cx,r*rh);x.lineTo(cx+31,r*rh);x.lineTo(cx+31,r*rh+rh*.7);x.quadraticCurveTo(cx+16,r*rh+rh+4,cx,r*rh+rh*.7);x.closePath();x.fill();x.strokeStyle='rgba(60,50,45,.35)';x.stroke();}}
 function texPlank(x,w,h){x.fillStyle='#8a5a36';x.fillRect(0,0,w,h);for(let i=0;i<6;i++){const l=.8+rnd()*.35;x.fillStyle=`rgb(${138*l|0},${92*l|0},${56*l|0})`;x.fillRect(i*w/6+1,0,w/6-2,h);x.fillStyle='rgba(0,0,0,.45)';x.fillRect(i*w/6,0,2,h);x.fillRect(i*w/6,rnd()*h,w/6,2);}grain(x,w,h,3000,.1);}
 
@@ -51,8 +53,8 @@ class Batch{constructor(geo,mat,cap){this.cap=cap;this.mesh=new THREE.InstancedM
 const _c=new THREE.Color(),_q=new THREE.Quaternion(),_s=new V(),_p=new V(),_e=new THREE.Euler();
 export class Build{
  constructor(scene,world){this.scene=scene;this.world=world;this.keys=new Map();this.grid=new Map();this.all=new Set();this.batches=new Map();this.growing=new Set();this.falling=[];this.onBreak=null;this.built=0;
-  const tx=[texWood,texStone,texMetal,texPlaster,texShingle,texPlank].map(f=>ctex(256,256,f));
-  this.mats=tx.map((t,i)=>new THREE.MeshStandardMaterial({map:t,roughness:i===2?.42:.85,metalness:i===2?.55:0,envMapIntensity:i===2?1.2:.7}));
+  const tx=[texWood,texStone,texMetal,texPlaster,texShingle,texPlank].map(f=>ctex(256,256,f)),NS=[3,4,3.5,2.2,4,3],RG=[.78,.88,.38,.92,.8,.8];
+  this.mats=tx.map((t,i)=>new THREE.MeshStandardMaterial({map:t,normalMap:normalFrom(t.image,NS[i]),normalScale:new THREE.Vector2(1,1).multiplyScalar(i===3?.6:1),roughness:RG[i],metalness:i===2?.6:0,envMapIntensity:i===2?1.3:.75}));
   this.geos={};for(const k of['wall','door','window','floor','ramp','roof'])this.geos[k]=geoFor(k);
   // ghost
   this.ghostMat=new THREE.MeshBasicMaterial({color:0x58b8ff,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide});

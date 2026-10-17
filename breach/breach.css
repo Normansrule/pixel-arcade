@@ -120,3 +120,4 @@ a.back{position:fixed;right:18px;bottom:16px;font:.75rem var(--mono);color:var(-
 body.playing a.back{display:none}
 @media (max-width:1100px){.card{display:none}#buylist{grid-template-columns:repeat(3,1fr)}}
 @media (max-height:700px){h1{font-size:4.4rem}.how{display:none}#mini{width:170px;height:170px}#mmw{width:170px}#over{justify-content:center;padding-top:2vh;padding-bottom:2vh}#over .res{font-size:3.6rem}#over .fs{font-size:1.8rem;margin:2px 0 8px}#stats td{padding:3px 8px}#stats{font-size:.64rem;margin-bottom:10px}#over .eye{margin-bottom:4px}button.go,button.ghost{padding:12px 22px}}
+@media (max-width:520px){#mmw{top:76px;width:130px}#mini{width:130px;height:130px}#loc{font-size:.58rem}}

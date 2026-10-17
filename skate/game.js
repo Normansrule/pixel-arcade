@@ -6,12 +6,15 @@ import {LEVELS,goalList} from './levels.js';
 import {World} from './world.js';
 import {Skater} from './skater.js';
 import {Combo} from './tricks.js';
-import {Rig,nameTag,COLORS,DECKS} from './rig.js';
+import {Rig,nameTag,COLORS,DECKS,RIGOPT} from './rig.js';
 import {AI,AIDIFF} from './ai.js';
 import {makeTextures} from './tex.js';
 import {makeMaterials,buildLevel} from './build.js';
 import {Particles,SpeedLines} from './fx.js';
 import {Sound} from './sound.js';
+import {addRound,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,fmtN=n=>Math.round(n).toLocaleString('en-US');
 const RUN=120,DT=1/120,ID='skatecity',SAVE='pxd_skatecity';
@@ -38,9 +41,9 @@ const T=makeTextures(),M=makeMaterials(T);
 const sparks=new Particles(scene,3000,true),dust=new Particles(scene,1500,false),snd=new Sound(),lines=new SpeedLines($('lines'));
 const sparkLight=new THREE.PointLight(0xffa040,0,7,1.6);scene.add(sparkLight);
 const ENV={
- indoor:{fog:new THREE.FogExp2(0x24262c,.006),bg:0x1a1c22,hemi:[0xc9d4e8,0x4a3a2c,1.25],sun:[0xfff0d8,5.5],dir:[.42,1,.3],exp:1.05,bloomT:.92},
+ indoor:{fog:new THREE.FogExp2(0x24262c,.0048),bg:0x1a1c22,hemi:[0xc9d4e8,0x4a3a2c,1.05],sun:[0xfff0d8,5.5],dir:[.42,1,.3],exp:1.05,bloomT:.92},
  day:{fog:new THREE.Fog(0xa9bccb,140,620),hemi:[0xd6e6ff,0x5a4a3a,.7],sun:[0xfff2dc,3.0],dir:[.55,.85,.4],exp:.78,sky:{turb:3.2,ray:1.2,mie:.004,gain:.42},bloomT:.97},
- dusk:{fog:new THREE.Fog(0x5a4258,120,560),hemi:[0xffb08a,0x2a2040,.75],sun:[0xff9a50,3.4],dir:[-.66,.2,-.55],exp:.85,sky:{turb:6,ray:2.8,mie:.008,gain:.32},bloomT:.96}};
+ dusk:{fog:new THREE.Fog(0x5a4258,120,560),hemi:[0xffb08a,0x3a3048,.95],sun:[0xff9a50,3.4],dir:[-.66,.2,-.55],exp:.85,sky:{turb:6,ray:2.8,mie:.008,gain:.32},bloomT:.96}};
 let envTex=null,skyMesh=null;
 function setEnv(L){const E=ENV[L.env];scene.fog=E.fog;hemi.color.set(E.hemi[0]);hemi.groundColor.set(E.hemi[1]);hemi.intensity=E.hemi[2];sun.color.set(E.sun[0]);sun.intensity=E.sun[1];sunDir.set(...E.dir).normalize();
  if(skyMesh){scene.remove(skyMesh);skyMesh.material.dispose();skyMesh=null;}if(envTex){envTex.dispose();envTex=null;}
@@ -105,7 +108,7 @@ function ev(type,sk,a,b){const o=sk.owner,me=o===player&&app==='run',c=o&&o.comb
 const near=sk=>!cam||sk.p.distanceToSquared(cam.position)<900;
 let lastTrickT=0;function trickName(n,sp){const el=$('tname');el.textContent=n;el.className='';void el.offsetWidth;el.className='on'+(sp?' sp':'');}
 let comboShow=0,comboKind='',comboPts=0;function comboFlash(k,pts){comboKind=k;comboPts=pts;comboShow=k==='bail'?1.4:1.6;}
-function pop(text,cls,sub){const d=document.createElement('div');d.className='pop '+(cls||'');d.innerHTML=text+(sub?`<small>${sub}</small>`:'');$('pops').appendChild(d);setTimeout(()=>d.remove(),1750);while($('pops').children.length>4)$('pops').firstChild.remove();}
+function pop(text,cls,sub){toast($('pops'),text+(sub?`<small>${sub}</small>`:''),1750,4,false).className='pop '+(cls||'');}
 
 /* ================= goals ================= */
 function checkGoals(){if(!run)return;const g=L.goals,S=save.goals[L.id]||(save.goals[L.id]={});const test={hs:run.score>=g.score[0],pro:run.score>=g.score[1],sick:run.score>=g.score[2],skate:run.letters.every(x=>x),tape:run.tape,gaps:g.gaps.every(n=>run.gaps.has(n)),combo:run.best>=g.combo};
@@ -115,8 +118,8 @@ function pickups(){if(!run||run.phase==='intro')return;const sk=player.sk;if(sk.
  const t=lvl.tape;if(!t.got&&c.distanceTo(t.pos)<1.35){t.got=true;run.tape=true;pop('SECRET TAPE!','tape');snd.play('tape');sparks.burst(t.pos,90,7,[new THREE.Color(2.4,.6,2.6),new THREE.Color(.6,2,3)],.3,1.1,{grav:3,drag:1});checkGoals();}}
 
 /* ================= input ================= */
-const keys={},edge={};let seqU=-9,seqD=-9;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;const rep=e.repeat;keys[e.code]=true;
+let seqU=-9,seqD=-9;
+const I=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{const rep=e.repeat;
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(app==='run')pause(true);else if(app==='paused')pause(false);else if(!$('skater').hidden)closeEditor();}
  if(rep)return;const t=performance.now()/1000;
@@ -125,23 +128,23 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.c
  if(e.code==='KeyI')queueManual(keys.KeyS||keys.ArrowDown?'nose':'man');
  if(e.code==='KeyC')camMode=(camMode+1)%2;
  if(e.code==='KeyN'){save.music=!save.music;snd.music=save.music;persist();}
- if(e.code==='KeyR'&&app==='run'&&player&&player.sk.mode!=='bail'&&run.phase==='play'){player.combo.fail();player.sk.respawn(player.sk.p.x,player.sk.p.z);}});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='KeyR'&&app==='run'&&player&&player.sk.mode!=='bail'&&run.phase==='play'){player.combo.fail();player.sk.respawn(player.sk.p.x,player.sk.p.z);}}});
+const {keys,edge}=I;
 let manQ=null;function queueManual(k){manQ=k;}
 const any=a=>a.some(k=>keys[k]);let padPrev={};
 function readPlayer(){const c=player.sk.ctl;c.x=(any(['KeyD','ArrowRight'])?1:0)-(any(['KeyA','ArrowLeft'])?1:0);c.y=(any(['KeyW','ArrowUp'])?1:0)-(any(['KeyS','ArrowDown'])?1:0);
  c.ollie=!!keys.Space;c.flip=!!keys.KeyJ;c.grab=!!keys.KeyK;c.grind=!!keys.KeyL;c.revert=any(['KeyQ','KeyE']);c.special=any(['ShiftLeft','ShiftRight']);
- const g=gp();if(g){const ax=g.axes,bt=g.buttons,dz=v=>Math.abs(v)>.25?v:0;const sx=dz(ax[0]||0),sy=dz(ax[1]||0);if(sx)c.x=sx;if(sy)c.y=-sy;
+ const g=gp();if(g){const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.25);const sx=dz(ax[0]||0),sy=dz(ax[1]||0);if(sx)c.x=sx;if(sy)c.y=-sy;
   if(bt[12]?.pressed)c.y=1;if(bt[13]?.pressed)c.y=-1;if(bt[14]?.pressed)c.x=-1;if(bt[15]?.pressed)c.x=1;
   if(bt[0]?.pressed)c.ollie=true;if(bt[2]?.pressed)c.flip=true;if(bt[1]?.pressed)c.grab=true;if(bt[3]?.pressed)c.grind=true;if(bt[4]?.pressed||bt[5]?.pressed)c.revert=true;if((bt[6]?.value||0)>.4)c.special=true;
   const rt=(bt[7]?.value||0)>.4;if(rt&&!padPrev.rt)manQ=c.y<-.4?'nose':'man';padPrev.rt=rt;
   if(bt[9]?.pressed&&!padPrev.st)pause(app==='run');padPrev.st=bt[9]?.pressed;if(bt[0]?.pressed&&!padPrev.a)edge.PadA=true;padPrev.a=bt[0]?.pressed;}
  if(manQ){if(manQ==='nose')c.nose=true;else c.manual=true;manQ=null;}}
-function gp(){const l=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];return l[0]||null;}
+const gp=gamepad;
 
 /* ================= simulation ================= */
 function fixed(dt){for(const o of skaters)o.sk.step(dt);}
-function step(dt){dt=Math.min(dt,.1);time+=dt;const skip=edge.Space||edge.Enter||edge.PadA;for(const k in edge)delete edge[k];
+function step(dt){dt=Math.min(dt,.1);time+=dt;const skip=edge.Space||edge.Enter||edge.PadA;I.flush();
  const g=gp();if(g&&app!=='run'){const a=g.buttons[0]?.pressed,s=g.buttons[9]?.pressed;if(app==='paused'&&s&&!padPrev.st)pause(false);else if((app==='menu'||app==='over')&&a&&!padPrev.a&&$('skater').hidden)start();padPrev.a=a;padPrev.st=s;}
  if(app==='paused'){visuals(0);return;}
  if(app==='run'){const r=run;
@@ -220,15 +223,14 @@ function showOver(){app='over';$('hud').hidden=true;document.body.classList.remo
  $('otok').textContent=`+${tok} TOKENS · BEST ${fmtN(save.best[L.id]||0)}`+(r.newGoals.length?` · +${r.newGoals.length} STAT POINT${r.newGoals.length>1?'S':''}`:'')+(unlockedNow?` · ${nx.name} UNLOCKED!`:'');
  $('over').hidden=false;}
 function award(won){const pts=run.score;lastAward={pts,won,level:L.name,best:run.best,goals:goalsDone(L.id),vs:run.vs?`${rival.look.name} ${fmtN(run.rivalScore)}`:''};
- const tok=5+Math.min(60,pts/1500|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
+ const tok=5+Math.min(60,pts/1500|0);addRound(tok,won);saveBest(ID,pts);return tok;}
 
 /* ================= rendering ================= */
 const POST={exposure:1,bloom:.38,bloomThreshold:.92,bloomRadius:.45,vignette:.3,saturation:1.08,grain:.02};
-let fx=null,gfx=quality();
-function applyQuality(q){gfx=q;R.shadowMap.enabled=q>0;sun.castShadow=q>0;const ms=q>=2?2048:1024;if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
+let fx=null,gfx=quality();RIGOPT.blob=gfx===0;
+function applyQuality(q){gfx=q;RIGOPT.blob=q===0;R.shadowMap.enabled=q>0;sun.castShadow=q>0;const ms=q>=2?2048:1024;if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
  scene.traverse(o=>{if(o.material&&o.material.needsUpdate!==undefined&&o.isMesh)o.material.needsUpdate=true;});fx=null;}
-bindQualityKey(()=>gfx,q=>applyQuality(q));
+bindQualityKey(()=>gfx,q=>applyQuality(q));applyQuality(gfx);
 function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);fx=null;}
  cam.aspect=w/h;cam.updateProjectionMatrix();sparks.U.uScale.value=dust.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));
  if(!fx){fx=cinematic(R,scene,cam,{...POST,quality:gfx,ao:gfx>=2});fx.setSize(w,h);if(fx.ao){const ov=fx.ao.overrideVisibility.bind(fx.ao);fx.ao.overrideVisibility=()=>{ov();scene.traverse(o=>{if(o.userData.noAO)o.visible=false;});};}}fx.render();}
@@ -242,9 +244,8 @@ function menuUI(){const o=save.opt;
 function seg(id,key){const el=$(id);el.querySelectorAll('button').forEach(b=>{b.classList.toggle('on',+b.dataset.v===save.opt[key]);b.onclick=()=>{save.opt[key]=+b.dataset.v;persist();menuUI();};});}
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;$('restart').onclick=()=>{app='run';start();};
 $('next').onclick=()=>{if(unlocked(li+1)){save.opt.level=li+1;start();}};
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
- const body=`Game: Skate City\nPoints: ${a.pts||0}\nPark: ${a.level||''}\nBest combo: ${a.best||0}\nGoals: ${a.goals||0}/7${a.vs?'\nRival: '+a.vs+(a.won?' (won)':' (lost)'):''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Skate City\nPoints: ${a.pts||0}\nPark: ${a.level||''}\nBest combo: ${a.best||0}\nGoals: ${a.goals||0}/7${a.vs?'\nRival: '+a.vs+(a.won?' (won)':' (lost)'):''}`];});
 // skater editor
 const STATN={air:'AIR',speed:'SPEED',spin:'SPIN',balance:'BALANCE',flip:'FLIP'};
 function openEditor(){$('skater').hidden=false;$('sName').value=save.look.name;editorUI();}
@@ -259,7 +260,7 @@ $('edit').onclick=openEditor;$('sDone').onclick=closeEditor;
 
 /* ================= loop ================= */
 loadLevel(unlocked(save.opt.level)?save.opt.level:0);toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.SKATE={get state(){return app==='run'?run.phase:app;},get app(){return app;},step,render,start,toMenu,pause,

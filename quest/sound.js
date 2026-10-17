@@ -1,15 +1,15 @@
 // WILD QUEST — synthesized audio: sparse pentatonic ambience, combat pulse, wind/rain beds and effects.
+import {boot,master,noiseBuf,reverb,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.nextNote=0;this.combat=0;this.beat=0;}
- init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return;}try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=.75;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
+ init(){boot(this,ac=>{this.out=master(ac,.75,-24,12);const b=this.noise=noiseBuf(ac);
   // reverb for the piano
-  const ir=ac.createBuffer(2,ac.sampleRate*2.5,ac.sampleRate);for(let c=0;c<2;c++){const x=ir.getChannelData(c);for(let i=0;i<x.length;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/x.length,3);}this.verb=ac.createConvolver();this.verb.buffer=ir;const vg=ac.createGain();vg.gain.value=.5;this.verb.connect(vg);vg.connect(this.out);
-  const bed=(f,q,type='bandpass')=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(this.out);s.start();return{g,fl};};
-  this.wind=bed(500,.6);this.rain=bed(3000,.3,'highpass');this.fire=bed(900,.8);this.water=bed(350,.8,'lowpass');}catch(e){this.ac=null;}}
- beds(o){if(!this.ac)return;const t=this.ac.currentTime;this.wind.g.gain.setTargetAtTime(o.wind,t,.3);this.wind.fl.frequency.setTargetAtTime(300+o.wind*1400,t,.3);this.rain.g.gain.setTargetAtTime(o.rain*.16,t,.5);this.fire.g.gain.setTargetAtTime(o.fire*.05,t,.3);this.water.g.gain.setTargetAtTime(o.water*.08,t,.4);}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random());s.stop(t+dur);}
- _o(type,f0,f1,dur,vol,delay=0,dest){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(dest||this.out);if(dest)g.connect(this.out);o.start(t);o.stop(t+dur+.02);}
+  this.verb=reverb(ac,2.5,3,.5,this.out);
+  const bd=(f,q,type='bandpass')=>bed(ac,b,type,f,q,this.out);
+  this.wind=bd(500,.6);this.rain=bd(3000,.3,'highpass');this.fire=bd(900,.8);this.water=bd(350,.8,'lowpass');});}
+ beds(o){if(!this.ac)return;const t=this.ac.currentTime;this.wind.g.gain.setTargetAtTime(o.wind,t,.3);this.wind.f.frequency.setTargetAtTime(300+o.wind*1400,t,.3);this.rain.g.gain.setTargetAtTime(o.rain*.16,t,.5);this.fire.g.gain.setTargetAtTime(o.fire*.05,t,.3);this.water.g.gain.setTargetAtTime(o.water*.08,t,.4);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0,dest){const g=tone(this.ac,dest||this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);if(dest)g.connect(this.out);}
  note(f,vol=.05,delay=0,dur=2.4){this._o('sine',f,f,dur,vol,delay,this.verb);this._o('triangle',f*2,f*2,dur*.4,vol*.25,delay,this.verb);}
  // ambient score: sparse pentatonic piano by day, low pads in combat
  music(dt,o){if(!this.ac||!this.on)return;this.nextNote-=dt;const P=[0,2,4,7,9];const base=o.night?196:261.6;

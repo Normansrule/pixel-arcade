@@ -1,11 +1,17 @@
 name: Game idea
-description: Suggest a new cabinet
+description: Suggest a new cabinet or 3D world
 labels: [idea]
 body:
   - type: input
     id: name
-    attributes: { label: Game idea }
+    attributes: { label: Game idea, placeholder: "What you do in one line" }
     validations: { required: true }
+  - type: input
+    id: inspired
+    attributes: { label: Inspired by (optional), description: "We make original games; this only helps players find it in search." }
+  - type: dropdown
+    id: kind
+    attributes: { label: Kind, options: [Canvas cabinet, Full-3D world] }
   - type: dropdown
     id: mode
     attributes: { label: Mode, options: [Solo, vs CPU / 2 players, Both] }

@@ -11,6 +11,9 @@ import {Items} from './items.js';
 import {thinkRace,thinkBattle} from './ai.js';
 import {Sound} from './sound.js';
 import {V,cl,lerp,wrapA,Particles,Skids,icon,rng} from './util.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,deadzone,playerPad} from '../js/kit3d/input.js';
+import {postButton,toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),rnd=(a=1)=>Math.random()*a;
 const LAPS=3,BATTLE_TIME=180,ID='kartgp';
@@ -85,21 +88,21 @@ function makeG(){const D=DIFF[opt.diff];return{C:A?null:C,A,W,cc:CC[opt.cc],diff
 let lastBeep=4;
 
 /* ================= input ================= */
-const keys={},edge={};
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
+// keyboard only: no pointer lock, and the context menu stays available
+const I=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)&&app!=='menu')e.preventDefault();
  if(e.code==='Space'&&app==='menu'&&document.activeElement===document.body)e.preventDefault();
  if(e.code==='Escape'){if(app==='race'||app==='intro')pause(true);else if(app==='paused')pause(false);else if(app==='menu')menuBack();}
- if(e.code==='KeyM'){snd.music=!snd.music;if(!snd.music)snd.stopMusic();else if(app==='race')snd.startMusic(T.music);}});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='KeyM'){snd.music=!snd.music;if(!snd.music)snd.stopMusic();else if(app==='race')snd.startMusic(T.music);}}});
+const {keys,edge}=I;
 const KB=[{f:['KeyW'],b:['KeyS'],l:['KeyA'],r:['KeyD'],d:['Space','ShiftLeft'],i:['KeyE','KeyF','ControlLeft'],lk:['KeyQ','KeyC']},
  {f:['ArrowUp'],b:['ArrowDown'],l:['ArrowLeft'],r:['ArrowRight'],d:['ShiftRight','Slash','Numpad0'],i:['Enter','Period','NumpadEnter'],lk:['Comma','Numpad1']}];
 const anyK=a=>a.some(k=>keys[k]);const padPrev=[{},{}],latch=[{},{}];
 addEventListener('keydown',e=>{if(e.repeat)return;KB.forEach((m,i)=>{if(m.i.includes(e.code))latch[i].i=1;if(m.d.includes(e.code))latch[i].d=1;});});
-function gpad(i){const l=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];return opt.players===2?l[i]:i===0?l[0]:null;}
+function gpad(i){return playerPad(i,opt.players);}
 function readHuman(k){const c=k.ctrl,i=k.human,solo=opt.players===1;const maps=solo?[KB[0],KB[1]]:[KB[i]];const on=n=>maps.some(m=>anyK(m[n]));
  c.thr=on('f')?1:0;c.brake=on('b')?1:0;c.steer=(on('l')?1:0)-(on('r')?1:0);c.drift=on('d');c.itemBtn=on('i');c.back=on('b');c.look=on('lk');
- const g=gpad(i);if(g){const ax=g.axes,bt=g.buttons,dz=v=>Math.abs(v)>.18?v:0,sx=dz(ax[0]||0),rt=bt[7]?.value||0,lt=bt[6]?.value||0;
+ const g=gpad(i);if(g){const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.18),sx=dz(ax[0]||0),rt=bt[7]?.value||0,lt=bt[6]?.value||0;
   if(sx)c.steer=-sx;if(bt[0]?.pressed||rt>.1)c.thr=Math.max(c.thr,bt[0]?.pressed?1:rt);if(bt[1]?.pressed||lt>.3){c.brake=1;c.back=true;}if(dz(ax[1]||0)>.6)c.back=true;
   if(bt[5]?.pressed||bt[2]?.pressed)c.drift=true;if(bt[4]?.pressed)c.itemBtn=true;if(bt[3]?.pressed)c.look=true;
   const pr=padPrev[i];if(bt[9]?.pressed&&!pr.st)pause(app!=='paused');if(bt[0]?.pressed&&!pr.a)edge.PadA=true;pr.st=bt[9]?.pressed;pr.a=bt[0]?.pressed;}
@@ -203,7 +206,7 @@ function hud(dt){if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('card').classList.rem
 const hudC={};
 function showCard(){const c=$('card');let t,s;if(A){t=ARENA.n;s='BALLOON BATTLE · 3 MINUTES';}else{const d=COURSES[courseIdx];t=d.n;s=opt.mode==='gp'?`${CUPS[gp.cup].n} · RACE ${gp.race+1} OF 4`:opt.mode==='tt'?'TIME TRIAL':'VS RACE';s+=` · ${CC[opt.cc].n}`;}
  $('ct').textContent=t;$('cs').textContent=s;c.classList.add('on');bannerT=5.5;$('skip').hidden=false;}
-function feed(t){const d=document.createElement('div');d.textContent=t;$('feed').prepend(d);setTimeout(()=>d.remove(),3800);while($('feed').children.length>4)$('feed').lastChild.remove();}
+function feed(t){toast($('feed'),'',3800,4).textContent=t;}
 function showLoading(on){$('loading').hidden=!on;}
 
 /* ================= simulation ================= */
@@ -236,7 +239,7 @@ function fixed(dt){
   if(opt.mode==='tt'&&!karts[0].finished){const k=karts[0];ghostRec.push(+k.p.x.toFixed(2),+k.p.y.toFixed(2),+k.p.z.toFixed(2),+(k.yaw+(k.drift?k.drift*.3:0)).toFixed(3));}}}
 
 function step(dt){dt=Math.min(dt,.1);time+=dt;
- const skip=edge.Enter||edge.Space||edge.PadA||edge.click;for(const k in edge)delete edge[k];
+ const skip=edge.Enter||edge.Space||edge.PadA||edge.click;I.flush();
  if(app==='menu'||app==='boot'){menuVis(dt);visuals(dt);return;}
  if(app==='paused'){visuals(0);return;}
  if(app==='results'||app==='podium'){if(app==='podium')podiumStep(dt);else replayStep(dt);visuals(dt);return;}
@@ -287,9 +290,8 @@ function scoreFor(me){const ccM=[1,1.5,2][opt.cc];if(A)return Math.round((me.pop
  if(opt.mode==='gp'){const pts=gp.pts[me.id],rank=karts.slice().sort((a,b)=>gp.pts[b.id]-gp.pts[a.id]).indexOf(me)+1;return Math.round((pts*10+[300,200,100][rank-1]||0)*ccM);}
  return me.dnf?0:Math.round(((POINTS[me.place-1]||0)*10+(me.place===1?100:0))*ccM);}
 function award(pts,won){lastAward={pts,won,mode:opt.mode,cc:CC[opt.cc].n,track:A?ARENA.n:COURSES[courseIdx].n,place:karts.find(k=>k.human===0).place};const tok=5+Math.min(60,pts/20|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 function nextFromResults(){if(gp){if(gp.race<4){$('results').hidden=true;$('standings').hidden=true;startRace();}else startPodium();}else{startEvent();}}
 
 /* ================= podium ================= */
@@ -455,15 +457,14 @@ $('go1').onclick=()=>{snd.init();snd.play('uigo');setStep('driver');};$('go2').o
 $('go3').onclick=()=>{snd.play('uigo');startEvent();};
 $('rnext').onclick=()=>{snd.play('uigo');nextFromResults();};$('rmenu').onclick=toMenu;$('rstand').onclick=()=>{snd.play('ui');showStandings();};$('sclose').onclick=()=>{$('standings').hidden=true;};
 $('pmenu').onclick=toMenu;$('pagain').onclick=()=>{startEvent();};$('resume').onclick=()=>pause(false);$('restart').onclick=()=>{$('pause').hidden=true;if(gp)gp.race=Math.max(0,gp.race);startRace();};$('quit').onclick=toMenu;
-const post=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
- const body=`Game: Kart Grand Prix\nPoints: ${a.pts||0}\nMode: ${({gp:'Grand Prix',vs:'VS race',tt:'Time trial',battle:'Balloon battle'})[a.mode]||''} · ${a.cc||''}\nCourse: ${a.track||''}\nPlace: ${a.place||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
-$('rpost').onclick=post;$('ppost').onclick=post;
+const post=()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Kart Grand Prix\nPoints: ${a.pts||0}\nMode: ${({gp:'Grand Prix',vs:'VS race',tt:'Time trial',battle:'Balloon battle'})[a.mode]||''} · ${a.cc||''}\nCourse: ${a.track||''}\nPlace: ${a.place||''}`];};
+postButton($('rpost'),ID,post);postButton($('ppost'),ID,post);
 canvas.addEventListener('pointerdown',()=>{edge.click=true;});
 
 /* ================= loop ================= */
 console.time&&0;const _t0=performance.now();toMenu();window.__kgpBoot=performance.now()-_t0;
-let last=performance.now(),manual=!!window.__KGP_MANUAL;function loop(now){if(manual)return;const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now(),manual=!!window.__KGP_MANUAL;function loop(now){if(manual)return;const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.KARTGP={get state(){return app==='race'?phase:app;},get app(){return app;},get phase(){return phase;},step,render,start:startEvent,startRace,toMenu,

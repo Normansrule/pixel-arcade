@@ -8,6 +8,9 @@ import {Actor,moveActor,makeNPCs,thinkNPC,arrive,LINES,EMOTES,SAFE,PSCALE} from 
 import {ALL,WEAR,BODY_COLORS,FURN,PETS,PARTIES,furnModel,wearModel,makePomlet} from './items.js';
 import {Penguin} from './penguin.js';
 import GAMES from './games/index.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {postButton,toast as note} from '../js/kit3d/ui.js';
 
 const DAY_LEN=900,ID='penguinplaza',SAVE_KEY='pxd_plaza';
 const DIFFN=['EASY','NORMAL','HARD'];
@@ -50,7 +53,7 @@ function fmtHour(h){const H=Math.floor(h),m=Math.floor((h-H)*60/10)*10,ap=H>=12?
 const later=[];const after=(t,f)=>later.push({t,f});
 function say(a,text,dur=3.2){if(!a.bubble){a.bubble={el:document.createElement('div')};a.bubble.el.className='bub';$('bubbles').appendChild(a.bubble.el);}const b=a.bubble;b.el.textContent=text;b.el.className='bub'+(a===player?' me':'')+(text.length<=2?' emo':'');b.t=dur;b.el.style.opacity=1;if(a.space===player.space&&a.pos.distanceTo(player.pos)<16)snd.play('bubble');}
 const emote=(a,s)=>{say(a,s,2.4);a.pg.play('hop');};
-function toast(t,gold){const d=document.createElement('div');d.textContent=t;if(gold)d.className='g';$('toasts').prepend(d);setTimeout(()=>d.remove(),3600);while($('toasts').children.length>5)$('toasts').lastChild.remove();}
+function toast(t,gold){const d=note($('toasts'),'',3600,5);d.textContent=t;if(gold)d.className='g';}
 function addCoins(n,why){if(n<=0)return;save.coins+=n;day.earned+=n;save.life.earned+=n;persist();coinFlash=1;$('coinw').classList.remove('pulse');void $('coinw').offsetWidth;$('coinw').classList.add('pulse');if(why)toast(`+${n} coins · ${why}`,true);snd.play(n>=20?'coins':'coin',Math.min(6,n/5|0));}
 const tags=new Map();
 function tagFor(a){let t=tags.get(a);if(!t){t=document.createElement('div');t.className='tag';t.textContent=a.name;$('bubbles').appendChild(t);tags.set(a,t);}return t;}
@@ -71,9 +74,9 @@ function hitActor(a,from){a.pg.play('hit');if(from===player)day.hits++;
  else if(a===player){say(player,pick(['Brr!','Hey!','Ha!']),1.5);}}
 
 /* ================= input ================= */
-const keys={},edge={};const mouse={x:0,y:0,nx:0,ny:0,down:false,rdown:false,click:false,rclick:false,wheel:0};
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','Enter'].includes(e.code))e.preventDefault();onKey(e.code);});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+// keyboard from the kit (no pointer lock); the pointer is this world's own: click-to-walk, drag, wheel zoom
+const IN=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','Enter'].includes(e.code))e.preventDefault();onKey(e.code);}});
+const {keys,edge}=IN,mouse={x:0,y:0,nx:0,ny:0,down:false,rdown:false,click:false,rclick:false,wheel:0};
 let downAt=null;
 canvas.addEventListener('pointerdown',e=>{snd.init();if(e.button===2){mouse.rclick=true;mouse.rdown=true;return;}if(e.button===0){mouse.down=true;downAt=[e.clientX,e.clientY];}});
 addEventListener('pointerup',e=>{if(e.button===2)mouse.rdown=false;if(e.button===0){mouse.down=false;if(downAt&&Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])<8&&e.target===canvas)mouse.click=true;downAt=null;}});
@@ -81,7 +84,7 @@ addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.nx=
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 canvas.addEventListener('wheel',e=>{mouse.wheel+=Math.sign(e.deltaY);e.preventDefault();},{passive:false});
 const padPrev={};
-function pollPad(){const g=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(!g)return;const ax=g.axes,bt=g.buttons,dz=v=>Math.abs(v)>.3?v:0;
+function pollPad(){const g=gamepad();if(!g)return;const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.3);
  const set=(code,on)=>{if(on&&!keys[code])edge[code]=true;keys[code]=on;};set('GpLeft',dz(ax[0])<0||bt[14]?.pressed);set('GpRight',dz(ax[0])>0||bt[15]?.pressed);set('GpUp',dz(ax[1])<0||bt[12]?.pressed);set('GpDown',dz(ax[1])>0||bt[13]?.pressed);
  keys.GpX=ax[0]||0;keys.GpY=ax[1]||0;for(const[i,c]of[[0,'PadA'],[1,'PadB'],[2,'PadX'],[3,'PadY'],[9,'PadStart'],[4,'PadLB'],[5,'PadRB']]){const p=!!bt[i]?.pressed;if(p&&!padPrev[c]){edge[c]=true;onKey(c);}keys[c]=p;padPrev[c]=p;}}
 const ray=new THREE.Raycaster();
@@ -258,9 +261,8 @@ function endDay(){pendingEnd=false;app='summary';closeUI();if(editing)endEdit();
  $('stats').innerHTML=[['Coins earned',day.earned],['Coins spent',day.spent],['Items bought',day.bought.length?day.bought.slice(0,4).join(', ')+(day.bought.length>4?` +${day.bought.length-4}`:''):'none'],['Minigames played',day.games.length],['Medals','🥇 '+medals[3]+' · 🥈 '+medals[2]+' · 🥉 '+medals[1]],['Golden snowflakes',`${flakes} / ${W.coins.length}`],['Snowballs thrown · hits',`${day.thrown} · ${day.hits}`],['Penguins chatted with',day.chats.size],['Coins in the bank',save.coins]].map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join('');
  const tok=award();$('otok').textContent=`+${tok} TOKENS · BEST DAY ${best()} COINS`;$('over').hidden=false;snd.play('chime');snd.music('night');save.day++;save.life.days++;persist();}
 function award(){const pts=day.earned,won=pts>=100;lastAward={pts,won,day:save.day,games:day.games.length,party:W.party.n};const tok=5+Math.min(60,pts/20|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function best(){try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ addRound(tok,won);saveBest(ID,pts);return tok;}
+function best(){return bestScore(ID);}
 
 /* ================= app flow ================= */
 function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();snd.init();
@@ -292,7 +294,7 @@ function step(dt){dt=Math.min(dt,.1);time+=dt;pollPad();
  for(const a of npcs){thinkNPC(a,dt,npcCtx);arrive(a);if(a.greet&&a.state==='walk'&&!a.target){a.greet=false;if(player.space===a.space&&a.pos.distanceTo(player.pos)<6){a.face(player.pos.x,player.pos.z);a.pg.play('wave');say(a,pick(LINES.greet),2.6);}}}
  for(const a of actors){if(a===player&&app==='menu'){player.pg.update(dt,0);player.pg.group.position.copy(player.pos);player.pg.group.rotation.y=player.ry;continue;}moveActor(a,dt,W);if(a.bubble&&a.bubble.t>0)a.bubble.t-=dt;}
  updateBalls(dt);clearEdges();visuals(dt);snd.tick();if(snd.ac)snd.ambience(app==='play'&&player.space==='out'?1:0);}
-function clearEdges(){for(const k in edge)delete edge[k];mouse.click=false;mouse.rclick=false;mouse.wheel=0;}
+function clearEdges(){IN.flush();mouse.click=false;mouse.rclick=false;mouse.wheel=0;}
 function controlPlayer(dt){const p=player;
  if(mouse.wheel&&!uiOpen){camDistT=cl(camDistT+mouse.wheel*2.5,12,44);}
  if(mouse.rclick&&!uiOpen)throwForward();
@@ -341,7 +343,7 @@ function hud(){if(app!=='play'&&app!=='intro')return;const h=hour();setT('clock'
  setT('tip',player.space==='igloo'&&!editing?'Press I or the IGLOO button to decorate your igloo.':day.len-day.t<60?'The island day is ending soon...':'');}
 
 /* ================= rendering ================= */
-const POST={exposure:.8,bloom:.42,bloomThreshold:2,bloomRadius:.5,vignette:.28,saturation:1.16,grain:.012,ao:false};
+const POST={exposure:.8,bloom:.42,bloomThreshold:2,bloomRadius:.5,vignette:.28,saturation:1.16,grain:.012,aoStrength:.75};
 let fxMain=null,gfx=quality();
 function applyQuality(q){gfx=q;W.setShadowQuality(q);R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));fxMain=null;for(const k in mgFx){if(mgFx[k].composer)mgFx[k].composer.dispose();delete mgFx[k];}}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
@@ -365,13 +367,12 @@ $('mgigo').onclick=()=>beginGame(mg.id);$('mgiback').onclick=closeIntro;$('mgrag
 $('shopx').onclick=closeUI;$('mapw').onclick=e=>{if(e.target.id==='mapw')closeUI();};$('shopw').onclick=e=>{if(e.target.id==='shopw')closeUI();};$('editdone').onclick=endEdit;
 document.querySelectorAll('#stabs button').forEach(b=>b.onclick=()=>openShop(b.dataset.t));
 document.querySelectorAll('#dock button').forEach(b=>b.onclick=()=>{snd.init();const a=b.dataset.a;if(uiOpen===a){closeUI();return;}if(a==='map'||a==='chat'||a==='emote'||a==='shop')openUI(a);else if(a==='home')goHome();else if(a==='throw')throwForward();else doEmote(a);});
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
- const body=`Game: Penguin Plaza\nPoints: ${a.pts||0} coins earned in one island day\nDay: ${a.day||1} · ${a.party||''}\nMinigames played: ${a.games||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Penguin Plaza\nPoints: ${a.pts||0} coins earned in one island day\nDay: ${a.day||1} · ${a.party||''}\nMinigames played: ${a.games||0}`];});
 
 /* ================= loop ================= */
 buildIgloo();toMenu();camSnap=true;
-let last=performance.now(),manual=!!window.__PLAZA_MANUAL;function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!manual){step(dt);render();}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now(),manual=!!window.__PLAZA_MANUAL;function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;if(!manual){step(dt);render();}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.PLAZA={get state(){return app;},get app(){return app;},start,toMenu,step,render,set manual(v){manual=v;},get manual(){return manual;},

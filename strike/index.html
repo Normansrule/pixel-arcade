@@ -2,71 +2,74 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Strike Zone · Pixel Arcade</title>
-<meta name="description" content="Strike Zone: a full 3D arena boomer shooter in the browser. Strafe-jump, dash and double jump through molten arenas, six weapons, finishers on staggered monsters, secrets and a colossal boss.">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="description" content="Strike Zone: a fast full-3D arena FPS in the browser. Free-for-all, team deathmatch and gun ladder against smart CPU fighters on three original maps with interiors, catwalks and rooftops. Slide, bhop, aim down sights, headshots, killcams.">
 <link rel="stylesheet" href="strike.css">
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hurtov"></div><div id="quadov"></div><div id="lavaov"></div><div id="gloryov"></div>
+<div id="hurtov"></div><div id="lowov"></div><div id="flashov"></div>
+<div id="scope" hidden><div class="ring"></div><i class="h"></i><i class="v"></i><em></em></div>
 <div id="hud" hidden>
-  <div id="tl"><b id="score">0</b><span id="combo"></span></div>
-  <div id="tc"><p id="arena">FOUNDRY OF ASH</p><div class="clk"><b id="clock">15:00</b><span id="wave">WAVE 1 / 3</span></div><p id="atime"></p></div>
-  <div id="tr"><canvas id="radar" width="300" height="300"></canvas><p id="kills"></p></div>
-  <div id="feed"></div>
-  <div id="vit">
-    <div class="v hp"><i>✚</i><b id="hp">100</b><div class="bar"><em id="hpb"></em></div></div>
-    <div class="v ar"><i>⬢</i><b id="ar">0</b><div class="bar"><em id="arb"></em></div></div>
-    <div id="dash"><i></i><i></i></div><div id="quad" hidden><b>QUAD</b><span id="quadt">20</span></div>
+  <div id="mmw"><canvas id="mini" width="340" height="340"></canvas><p id="loc"></p></div>
+  <div id="top">
+    <div class="pill l"><i id="tlL">YOU</i><b id="scL">0</b></div>
+    <div class="clk"><b id="clock">6:00</b><span id="mlabel">FREE FOR ALL · FIRST TO 25</span></div>
+    <div class="pill r"><b id="scR">0</b><i id="tlR">LEADER</i></div>
   </div>
-  <div id="wpn"><div id="slots"></div><p class="am"><b id="ammo">24</b><span id="aname">SHELLS</span></p></div>
-  <div id="spd"><b id="ups">0</b><span>M/S</span></div>
+  <div id="feed"></div>
+  <div id="tags"></div>
   <div id="cross"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><em></em></div>
   <div id="hit"><i></i><i></i><i></i><i></i></div>
   <div id="dmgind"></div>
-  <div id="prompt"></div>
+  <div id="medals"></div>
   <div id="banner"><b id="bt"></b><span id="bs"></span></div>
-  <div id="wheel" hidden></div>
-  <div id="boss" hidden><p>PYRE COLOSSUS</p><div class="bar"><em id="bossb"></em></div></div>
+  <div id="vit"><div class="hp"><i>✚</i><b id="hp">100</b><div class="bar"><em id="hpb"></em></div></div><div id="streak"></div></div>
+  <div id="wpn"><div id="slots"></div><p class="nm" id="wname">VX-7 RIFLE</p><p class="am"><b id="amag">30</b><span id="ares">/ 120</span></p><p class="eq"><span id="frags">◆◆</span><span id="rel"></span></p></div>
+  <div id="prompt"></div>
+  <div id="dead" hidden><p class="k">KILLCAM</p><b id="deadby"></b><span id="deadw"></span><em id="deadt"></em><p class="cls" id="deadcls"></p></div>
+  <div id="board" hidden></div>
 </div>
 <div id="menu" class="scr">
-  <p class="eye">[ PIXEL ARCADE ] FULL 3D · ARENA SHOOTER</p>
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · ARENA FPS</p>
   <h1>STRIKE<br>ZONE<em>.</em></h1>
-  <p class="how">Never stop moving. Strafe-jump, dash and double jump through three molten arenas, tear through imps, ramhorns, gazers and ironclads with six weapons, and finish staggered monsters up close for health. Find the secrets. End the Pyre Colossus.</p>
+  <p class="how">Fast arena firefights against CPU fighters. Slide, bunny-hop and rocket-jump across three original maps, aim down sights, land headshots and climb the board before the clock runs out.</p>
   <div class="opts">
-    <label>MODE</label><div class="seg" id="o-mode"><button data-v="camp">CAMPAIGN · 3 ARENAS + BOSS</button><button data-v="endless">ENDLESS · 6 MIN SURVIVAL</button></div>
-    <label>ARENA</label><div class="seg" id="o-arena"><button data-v="0">FOUNDRY OF ASH</button><button data-v="1">OBSIDIAN NAVE</button><button data-v="2">MAW REACTOR</button></div>
-    <label>HEAT</label><div class="seg" id="o-diff"><button data-v="0">WARM</button><button data-v="1">HOT</button><button data-v="2">MOLTEN</button></div>
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="ffa">FREE FOR ALL</button><button data-v="tdm">TEAM 5V5</button><button data-v="ladder">GUN LADDER</button></div>
+    <label>MAP</label><div class="seg" id="o-map"><button data-v="0">FOUNDRY · DUSK</button><button data-v="1">SKYLINE · NIGHT</button><button data-v="2">MERIDIAN · NOON</button></div>
+    <label>CLASS</label><div class="seg" id="o-cls"><button data-v="0">RIFLEMAN</button><button data-v="1">RUSHER</button><button data-v="2">BRAWLER</button><button data-v="3">MARKSMAN</button><button data-v="4">GUNNER</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">ROOKIE</button><button data-v="1">VETERAN</button><button data-v="2">ELITE</button></div>
+    <label>CLOCK</label><div class="seg" id="o-len"><button data-v="240">4 MIN</button><button data-v="360">6 MIN</button><button data-v="600">10 MIN</button></div>
   </div>
-  <div class="row"><button id="go" class="go">ENTER THE ARENA</button></div>
-  <p class="best" id="best"></p>
+  <p class="clsd" id="clsd"></p>
+  <div class="row"><button id="go" class="go">DEPLOY</button><span class="best" id="best"></span></div>
 </div>
 <div class="card" id="keys">
   <h3>CONTROLS<em>.</em></h3>
   <table>
-    <tr><td>Move · aim</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
-    <tr><td>Jump · double jump (hold to hop)</td><td><kbd>Space</kbd></td></tr>
-    <tr><td>Dash (2 charges)</td><td><kbd>Shift</kbd></td></tr>
-    <tr><td>Fire</td><td><kbd>LMB</kbd></td></tr>
-    <tr><td>Weapons · last weapon</td><td><kbd>1</kbd>–<kbd>6</kbd> <kbd>Wheel</kbd> <kbd>Q</kbd></td></tr>
-    <tr><td>Weapon wheel (hold)</td><td><kbd>Tab</kbd> / <kbd>MMB</kbd></td></tr>
-    <tr><td>Melee · finisher on staggered</td><td><kbd>F</kbd> / <kbd>E</kbd> / <kbd>RMB</kbd></td></tr>
-    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+    <tr><td>Move · jump (hold to hop)</td><td><kbd>WASD</kbd> <kbd>Space</kbd></td></tr>
+    <tr><td>Crouch · slide when running</td><td><kbd>C</kbd> / <kbd>Ctrl</kbd> / <kbd>Shift</kbd></td></tr>
+    <tr><td>Fire · aim down sights</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Reload · melee · frag</td><td><kbd>R</kbd> <kbd>V</kbd> <kbd>F</kbd></td></tr>
+    <tr><td>Weapons · last weapon</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>Wheel</kbd> <kbd>Q</kbd></td></tr>
+    <tr><td>Scores · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
   </table>
-  <p>Strafe in the air while turning to build speed; keep Space held to bunny-hop without losing it. Rockets launch you — rocket-jump to ledges. Glowing monsters are staggered: finish them for health. Shoot the glowing sigils.</p>
+  <p>Headshots hit harder; snipers kill in one. Health regenerates after a few seconds out of fire. Glowing pads launch you, the COMET RL spawns in contested spots, rockets can launch you too. Pick a new class on the death screen with <kbd>1</kbd>–<kbd>5</kbd>.</p>
 </div>
-<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>CATCH<br>BREATH<em>.</em></h1><p class="how">The arena waits. Click resume to lock the mouse again.</p>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>TAKE<br>FIVE<em>.</em></h1><p class="how">The match is frozen. Click resume to lock the mouse again.</p>
   <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.8">MED-</button><button data-v="1">MED</button><button data-v="1.5">HIGH</button><button data-v="2.2">MAX</button></div>
+  <label>ADS SENS</label><div class="seg" id="o-asens"><button data-v="0.6">0.6×</button><button data-v="0.8">0.8×</button><button data-v="1">1×</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="90">90</button><button data-v="100">100</button><button data-v="110">110</button></div>
   <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
-  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.35">LOW</button><button data-v="0.55">MED</button><button data-v="0.8">LOUD</button></div>
-  <label>FOV</label><div class="seg" id="o-fov"><button data-v="90">90</button><button data-v="100">100</button><button data-v="110">110</button></div></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.2">LOW</button><button data-v="0.35">MED</button><button data-v="0.6">LOUD</button></div></div>
   <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
 <div id="over" class="scr" hidden>
-  <p class="eye" id="oeye">RUN OVER</p>
-  <div class="rk"><b id="orank">S</b><div><p class="res" id="ores">ARENA SWEPT</p><p class="fs" id="ofs">0</p></div></div>
+  <p class="eye" id="oeye">MATCH OVER</p>
+  <div class="rk"><b id="orank">1ST</b><div><p class="res" id="ores">VICTORY</p><p class="fs" id="ofs">0 PTS</p></div></div>
   <table id="stats"></table>
+  <div id="mystats"></div>
   <p class="tok" id="otok"></p>
   <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
 </div>

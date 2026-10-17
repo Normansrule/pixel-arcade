@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Critter Kart · Pixel Arcade</title>
-<meta name="description" content="Critter Kart: an island adventure racer. Drive karts, skim hovercraft and fly planes across four worlds, win balloons, beat the bosses. 1P adventure or 2P split-screen.">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="description" content="Critter Kart: a full 3D kart racer. Eight animal racers, Grand Prix cups with a points table, 50/100/150cc, drift mini-turbos, tricks, shortcuts and live hazards, time trial ghosts, an island adventure, and 2-player split screen.">
 <link rel="stylesheet" href="kart.css">
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="flash"></div>
 <div id="hud" hidden>
   <div id="views"></div>
   <div id="clock"><i>TIME LEFT</i><b>3:00</b></div>
@@ -17,6 +18,7 @@
   <ol id="stand"></ol>
   <div id="cd"></div>
   <div id="banner"><b></b><span></span></div>
+  <div id="skip">ENTER · SKIP</div>
   <div id="split"></div>
 </div>
 <div id="hubhud" hidden>
@@ -28,15 +30,18 @@
 </div>
 <div id="menu">
   <div class="left">
-    <p class="eye">[ PIXEL ARCADE ] FULL 3D · ADVENTURE RACING</p>
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · KART RACING</p>
     <h1>CRITTER<br>KART<em>.</em></h1>
-    <p class="how">Kart, hovercraft and plane racing across a sunny island hub. Win balloons to open new doors, take on four worlds and their bosses, chase the silver coins.</p>
+    <p class="how">Eight critters, four cups, twenty tracks. Hop into drifts until the sparks turn purple, flip off ramps for boosts, dodge crabs, snowballs and lava geysers, and find the secret shortcuts.</p>
     <div class="opts">
-      <label>MODE</label><div class="seg" id="o-mode"><button data-v="0" class="on">ADVENTURE</button><button data-v="1">QUICK RACE</button></div>
-      <label>PLAYERS</label><div class="seg" id="o-pl"><button data-v="1" class="on">1P</button><button data-v="2">2P SPLIT</button></div>
-      <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+      <label>MODE</label><div class="seg" id="o-mode"><button data-v="gp">GRAND PRIX</button><button data-v="vs">VS RACE</button><button data-v="tt">TIME TRIAL</button><button data-v="adv">ADVENTURE</button></div>
+      <label></label><p class="info" id="modeinfo"></p>
+      <label id="r-pl">PLAYERS</label><div class="seg" id="o-pl"><button data-v="1">1P</button><button data-v="2">2P SPLIT</button></div>
+      <label id="r-cc">ENGINE</label><div class="seg" id="o-cc"><button data-v="0">50CC</button><button data-v="1">100CC</button><button data-v="2">150CC</button></div>
+      <label id="r-diff">CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
     </div>
-    <div id="trackpick" hidden><div class="seg" id="o-world"></div><div id="tracks"></div></div>
+    <div id="cuppick"><div id="cups"></div></div>
+    <div id="trackpick" hidden><div class="seg" id="o-group"></div><div id="tracks"></div></div>
     <p class="prog" id="advprog"></p>
     <div class="row"><button id="go" class="go">PLAY ▸</button><button id="reset" class="ghost small">RESET SAVE</button></div>
   </div>
@@ -47,14 +52,14 @@
   <table>
     <tr><td>Gas / brake · plane climb / dive</td><td><kbd>W</kbd> <kbd>S</kbd> <span class="pad">RT LT · stick</span></td></tr>
     <tr><td>Steer</td><td><kbd>A</kbd> <kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
-    <tr><td>Hop + drift · hover hop · plane roll</td><td><kbd>Space</kbd> <span class="pad">RB</span></td></tr>
+    <tr><td>Hop + drift · trick in the air</td><td><kbd>Space</kbd> <span class="pad">RB</span></td></tr>
     <tr><td>Use item</td><td><kbd>E</kbd> <kbd>F</kbd> <span class="pad">X</span></td></tr>
-    <tr><td>Pause / menu</td><td><kbd>Esc</kbd> <span class="pad">Start</span></td></tr>
-    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+    <tr><td>Look back</td><td><kbd>Q</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Pause · music · graphics</td><td><kbd>Esc</kbd> <kbd>M</kbd> <kbd>G</kbd></td></tr>
   </table>
-  <p>Hold a drift until sparks turn blue, then orange, and release for a turbo. Red berries add top speed (max 10) — getting hit spills two. Planes fly through rings for boosts.<br>2P: <kbd>Arrows</kbd> drive, <kbd>/</kbd> hop, <kbd>Enter</kbd> <kbd>.</kbd> item, or gamepad 2.</p>
+  <p>Hold a drift: sparks go blue → orange → purple; release for a turbo. Tap hop off a ramp lip for a trick boost. Tuck in behind a rival to slipstream. Red berries add top speed (max 10).<br>2P: <kbd>Arrows</kbd> drive, <kbd>/</kbd> hop, <kbd>Enter</kbd> item, <kbd>,</kbd> look back, or gamepad 2.</p>
 </div>
-<div id="pause" hidden><p class="eye">PAUSED</p><h1>PIT<br>STOP<em>.</em></h1><div class="row"><button id="resume" class="go">RESUME</button><button id="retry2" class="ghost">RESTART RACE</button><button id="quit" class="ghost">QUIT</button></div></div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>PIT<br>STOP<em>.</em></h1><div class="row"><button id="resume" class="go">RESUME</button><button id="retry2" class="ghost">RESTART</button><button id="quit" class="ghost">QUIT</button></div></div>
 <div id="over" hidden>
   <p class="eye" id="oeye">RACE RESULTS</p>
   <p class="res" id="ores">1ST!</p>

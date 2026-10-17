@@ -74,3 +74,5 @@ a.back{position:fixed;right:18px;bottom:16px;font:.75rem var(--mono);color:var(-
 body.playing a.back{display:none}
 @media (max-width:1180px){.card{display:none}}
 @media (max-height:760px){h1{font-size:4.2rem}.how{display:none}#garage button{width:150px;padding:8px 10px}#garage span{display:none}#mini{width:170px;height:170px}#mapw{width:170px}#over{justify-content:center}#stats td{padding:3px 10px}}
+@media (max-width:520px){#mapw{top:96px;right:12px;width:120px}#mini{width:120px;height:120px}#cashw{min-width:0}#board{top:112px;left:12px;width:200px;font-size:.54rem}#cash{font-size:2.3rem}#clockw b{font-size:1.7rem}}
+.scr{justify-content:safe flex-end}@media (max-height:760px){#over{justify-content:safe center}}

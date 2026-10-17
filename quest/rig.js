@@ -7,15 +7,43 @@ const cap=(r,l,s=8)=>new THREE.CapsuleGeometry(r,l,3,s);
 // limb hanging down from its joint: mesh centred at -len/2
 function limb(parent,r0,len,mat,r1){const g=r1?new THREE.CylinderGeometry(r1,r0,len,9):cap(r0,Math.max(.01,len-r0*2));const m=mesh(g,mat,parent,0,-len/2,0);return m;}
 
+/* procedural cloth / leather / wood textures (canvas) */
+function ctx(w,h,f,rep=1){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep,rep);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
+const rn=(()=>{let a=4242;return()=>{a=(a*16807)%2147483647;return a/2147483647;};})();
+let TX=null;function tex(){if(TX)return TX;
+ const weave=ctx(64,64,(x,w,h)=>{x.fillStyle='#d8d8d8';x.fillRect(0,0,w,h);for(let i=0;i<w;i+=2){x.fillStyle=`rgba(255,255,255,${.12+rn()*.1})`;x.fillRect(i,0,1,h);x.fillStyle=`rgba(0,0,0,${.08+rn()*.08})`;x.fillRect(0,i,w,1);}
+  for(let k=0;k<160;k++){x.fillStyle=`rgba(${rn()<.5?0:255},${rn()<.5?0:255},${rn()<.5?0:255},.05)`;x.fillRect(rn()*w,rn()*h,1+rn()*3,1);}},4);
+ const leather=ctx(128,128,(x,w,h)=>{x.fillStyle='#c8c8c8';x.fillRect(0,0,w,h);for(let k=0;k<1400;k++){const v=rn()*255|0;x.fillStyle=`rgba(${v},${v},${v},.10)`;x.beginPath();x.arc(rn()*w,rn()*h,.6+rn()*1.6,0,6.283);x.fill();}
+  x.strokeStyle='rgba(60,40,30,.35)';for(let k=0;k<14;k++){x.lineWidth=.6+rn();x.beginPath();let px=rn()*w,py=rn()*h;x.moveTo(px,py);for(let i=0;i<4;i++){px+=(rn()-.5)*30;py+=(rn()-.5)*30;x.lineTo(px,py);}x.stroke();}
+  x.strokeStyle='rgba(30,20,10,.5)';x.setLineDash([3,3]);x.lineWidth=1;x.strokeRect(5,5,w-10,h-10);},2);
+ const wood=ctx(256,256,(x,w,h)=>{for(let i=0;i<5;i++){const v=120+rn()*40|0;x.fillStyle=`rgb(${v+20},${v-15|0},${v-55|0})`;x.fillRect(i*w/5,0,w/5,h);for(let k=0;k<60;k++){x.strokeStyle=`rgba(40,20,5,${.1+rn()*.15})`;x.lineWidth=1;x.beginPath();const gx=i*w/5+rn()*w/5;x.moveTo(gx,0);x.bezierCurveTo(gx+(rn()-.5)*8,h*.3,gx+(rn()-.5)*8,h*.7,gx+(rn()-.5)*6,h);x.stroke();}
+   x.fillStyle='rgba(20,10,0,.6)';x.fillRect(i*w/5,0,2,h);}
+  x.save();x.translate(w/2,h/2);x.fillStyle='#c4471c';x.beginPath();x.arc(0,0,64,0,6.283);x.fill();x.fillStyle='#e8c070';for(let i=0;i<8;i++){x.rotate(Math.PI/4);x.beginPath();x.moveTo(-9,52);x.lineTo(0,92);x.lineTo(9,52);x.fill();}
+  x.fillStyle='#1e6e68';x.beginPath();x.arc(0,0,40,0,6.283);x.fill();x.fillStyle='#e8c070';x.beginPath();x.moveTo(0,-26);x.lineTo(15,12);x.lineTo(-15,12);x.closePath();x.fill();x.restore();
+  for(let k=0;k<500;k++){x.fillStyle=`rgba(255,240,220,${rn()*.12})`;x.fillRect(rn()*w,rn()*h,rn()*5,1);}});
+ return TX={weave,leather,wood};}
+/* merge static dressing per (joint, material): far fewer draw calls than one mesh per piece */
+function dresser(){const B=new Map();const add=(parent,mat,geo,x=0,y=0,z=0,rx=0,ry=0,rz=0,sx=1,sy=sx,sz=sx)=>{const m=new THREE.Matrix4().compose(new V(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx,ry,rz)),new V(sx,sy,sz));
+  const k=parent.uuid+mat.uuid;if(!B.has(k))B.set(k,{parent,mat,list:[]});B.get(k).list.push(geo.applyMatrix4(m));};
+ add.flush=()=>{for(const{parent,mat,list}of B.values()){const gs=list.map(g=>g.index?g.toNonIndexed():g);let n=0;gs.forEach(g=>n+=g.attributes.position.count);const P=new Float32Array(n*3),N=new Float32Array(n*3),UV=new Float32Array(n*2);let o=0;
+  for(const g of gs){P.set(g.attributes.position.array,o*3);N.set(g.attributes.normal.array,o*3);if(g.attributes.uv)UV.set(g.attributes.uv.array,o*2);o+=g.attributes.position.count;}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('normal',new THREE.BufferAttribute(N,3));g.setAttribute('uv',new THREE.BufferAttribute(UV,2));const m=new THREE.Mesh(g,mat);m.castShadow=true;parent.add(m);}B.clear();};return add;}
+const lathe=(pts,seg=14,open)=>new THREE.LatheGeometry(pts.map(([r,y])=>new THREE.Vector2(r,y)),seg);
+
 /* ---------------- weapons & gear ---------------- */
-export function makeSword(kind='traveler'){const g=G();const blade=kind==='rune'?std(0xcfe9ff,{m:.9,r:.25,e:0x2aa8b8,ei:.6}):std(0xd8dde2,{m:.95,r:.28});const gold=std(0xb08a3a,{m:.9,r:.35}),grip=std(0x3a2414,{r:.9});
- mesh(new THREE.BoxGeometry(.05,.012,.86),blade,g,0,0,.56);mesh(new THREE.ConeGeometry(.026,.1,4).rotateX(Math.PI/2),blade,g,0,0,1.03,0,0,Math.PI/4).scale.set(1,.45,1);
- mesh(new THREE.BoxGeometry(.2,.04,.04),gold,g,0,0,.12);mesh(new THREE.CylinderGeometry(.022,.022,.2,6).rotateX(Math.PI/2),grip,g,0,0,.01);mesh(new THREE.SphereGeometry(.032,8,6),gold,g,0,0,-.1);
- if(kind==='rune'){mesh(new THREE.BoxGeometry(.012,.016,.7),std(0x000000,{e:0x40f0ff,ei:3}),g,0,0,.56);}
- g.userData.tip=new V(0,0,1.05);g.userData.base=new V(0,0,.18);g.userData.kind=kind;return g;}
-export function makeShield(){const g=G();const wood=std(0x6a4524,{r:.85}),rim=std(0x8b8f96,{m:.85,r:.35}),paint=std(0xb8431c,{r:.7});
- mesh(new THREE.CylinderGeometry(.3,.3,.05,20).rotateX(Math.PI/2),wood,g);mesh(new THREE.TorusGeometry(.3,.025,6,24),rim,g);
- mesh(new THREE.CylinderGeometry(.13,.13,.055,6).rotateX(Math.PI/2),paint,g,0,0,.005);mesh(new THREE.SphereGeometry(.05,8,6),rim,g,0,0,.03);return g;}
+export function makeSword(kind='traveler'){const g=G(),add=dresser();const rune=kind==='rune';const blade=rune?std(0xcfe9ff,{m:.9,r:.22,e:0x2aa8b8,ei:.6}):std(0xdfe3e8,{m:.95,r:.24});const gold=std(rune?0x9ab8d0:0xb08a3a,{m:.9,r:.32}),grip=new THREE.MeshStandardMaterial({color:0x4a2c18,roughness:.85,map:tex().leather,bumpMap:tex().leather,bumpScale:2});
+ const sh=new THREE.Shape();sh.moveTo(-.03,0);sh.lineTo(-.028,.78);sh.quadraticCurveTo(-.026,.86,0,.92);sh.quadraticCurveTo(.026,.86,.028,.78);sh.lineTo(.03,0);sh.closePath();
+ const bg=new THREE.ExtrudeGeometry(sh,{depth:.004,bevelEnabled:true,bevelThickness:.006,bevelSize:.012,bevelSegments:1,curveSegments:6});bg.translate(0,0,-.002);bg.rotateX(Math.PI/2);bg.translate(0,0,.13);add(g,blade,bg);
+ add(g,rune?std(0x000000,{e:0x40f0ff,ei:3}):std(0x9aa0a8,{m:.95,r:.4}),new THREE.BoxGeometry(.012,.016,.62),0,0,.46);
+ const gd=new THREE.TorusGeometry(.13,.016,6,14,1.3);gd.rotateZ(Math.PI/2-.65);gd.translate(0,-.1,0);gd.rotateX(-Math.PI/2);add(g,gold,gd,0,0,.02);
+ for(const sx of[-1,1])add(g,gold,new THREE.SphereGeometry(.022,8,6),sx*.105,0,.14);add(g,gold,new THREE.BoxGeometry(.07,.03,.05),0,0,.125);
+ add(g,grip,new THREE.CylinderGeometry(.021,.024,.2,8).rotateX(Math.PI/2),0,0,.01);for(let i=0;i<4;i++)add(g,gold,new THREE.TorusGeometry(.024,.006,4,10),0,0,-.07+i*.05);
+ add(g,gold,new THREE.SphereGeometry(.034,10,8),0,0,-.11,0,0,0,1,1,1.2);if(rune)add(g,std(0x000000,{e:0x40f0ff,ei:3}),new THREE.OctahedronGeometry(.03),0,0,-.15);
+ add.flush();g.userData.tip=new V(0,0,1.05);g.userData.base=new V(0,0,.18);g.userData.kind=kind;return g;}
+export function makeShield(){const g=G(),add=dresser();const wood=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.75,map:tex().wood,bumpMap:tex().wood,bumpScale:1.5}),rim=std(0x8b8f96,{m:.85,r:.35}),gold=std(0xb08a3a,{m:.9,r:.35});
+ add(g,wood,new THREE.CylinderGeometry(.3,.3,.05,28).rotateX(Math.PI/2).rotateZ(Math.PI/2));add(g,rim,new THREE.TorusGeometry(.3,.024,8,32));
+ add(g,rim,new THREE.SphereGeometry(.06,12,8,0,Math.PI*2,0,Math.PI/2).rotateX(Math.PI/2),0,0,.026);for(let i=0;i<10;i++){const a=i/10*6.283;add(g,gold,new THREE.SphereGeometry(.013,6,4),Math.cos(a)*.26,Math.sin(a)*.26,.026);}
+ for(const y of[-.12,.12])add(g,rim,new THREE.BoxGeometry(.56,.03,.012),0,y,-.03);add.flush();return g;}
 export function makeBow(col=0x5a3a1c){const g=G();const wood=std(col,{r:.7});const pts=[];for(let i=0;i<=12;i++){const t=i/12-.5;pts.push(new V(0,t*1.1,-Math.cos(t*Math.PI)*.16+.16));}
  const curve=new THREE.CatmullRomCurve3(pts);mesh(new THREE.TubeGeometry(curve,16,.02,5),wood,g);const s=new THREE.BufferGeometry().setFromPoints([new V(0,.55,.0),new V(0,-.55,0)]);
  const str=new THREE.Line(s,new THREE.LineBasicMaterial({color:0xe8e0c8}));g.add(str);g.userData.str=str;mesh(new THREE.CylinderGeometry(.03,.03,.16,6),std(0x2a1a10),g,0,0,.02);return g;}
@@ -48,19 +76,40 @@ export function makeRig(kind='hero'){
  ({hero:dressHero,grunt:dressGrunt,archer:dressArcher,golem:dressGolem,boss:dressBoss})[kind](r);
  r.root.traverse(o=>{if(o.isMesh){o.castShadow=true;}});return r;}
 
-function dressHero(r){const{j,S}=r;const skin=std(0xd9a27a,{r:.6}),tunic=std(0x1d6460,{r:.8}),tunic2=std(0x154844,{r:.85}),pants=std(0xb59a72,{r:.9}),boot=std(0x4a3020,{r:.8}),belt=std(0x5a3a22,{r:.7}),hair=std(0x2a1a12,{r:.7}),scarf=std(0xff5a12,{r:.8}),dark=std(0x111111,{r:.4});
- mesh(new THREE.CylinderGeometry(.15,.17,S.sp+.04,10),tunic,j.spine,0,S.sp/2,0).scale.set(1,1,.78);
- mesh(new THREE.CylinderGeometry(.2,.16,S.ch,10),tunic,j.chest,0,S.ch/2,0).scale.set(1,1,.72);
- mesh(new THREE.CylinderGeometry(.17,.24,.3,12,1,true),tunic2,j.hips,0,-.08,0).scale.set(1,1,.82);
- mesh(new THREE.CylinderGeometry(.175,.175,.06,12),belt,j.spine,0,.02,0).scale.set(1,1,.8);mesh(new THREE.BoxGeometry(.06,.06,.03),std(0xb08a3a,{m:.8,r:.3}),j.spine,0,.02,.14);
- mesh(new THREE.TorusGeometry(.1,.045,6,14).rotateX(Math.PI/2),scarf,j.neck,0,.0,0);r.scarf=G();j.neck.add(r.scarf);r.scarf.position.set(.04,0,-.1);const sc=mesh(new THREE.BoxGeometry(.09,.36,.02),scarf,r.scarf,0,-.18,0);sc.castShadow=true;
- mesh(cap(.055,.04),skin,j.neck,0,.03,0);
- const hd=j.head;mesh(new THREE.SphereGeometry(S.head,16,12),skin,hd,0,.1,0).scale.set(.92,1.05,1);
- mesh(new THREE.SphereGeometry(S.head*1.08,16,12,0,Math.PI*2,0,Math.PI*.55),hair,hd,0,.115,-.012).rotation.x=-.25;
- mesh(new THREE.ConeGeometry(.05,.16,6),hair,hd,0,.09,-.13,-2.4);for(const sx of[-1,1])mesh(new THREE.SphereGeometry(.016,6,5),dark,hd,sx*.045,.115,.11);
- mesh(new THREE.BoxGeometry(.12,.018,.02),hair,hd,0,.16,.11).rotation.z=.05;
- for(const[s,sx]of[['L',1],['R',-1]]){mesh(new THREE.SphereGeometry(.075,8,6),tunic,j['sh'+s]);limb(j['arm'+s],.058,S.ua,tunic);limb(j['fore'+s],.048,S.fa,skin);mesh(new THREE.CylinderGeometry(.056,.05,.12,8),belt,j['fore'+s],0,-S.fa*.62,0);mesh(new THREE.SphereGeometry(.048,8,6),skin,j['hand'+s],0,-.03,0);
-  limb(j['leg'+s],.075,S.th,pants);limb(j['knee'+s],.062,S.sh,boot);mesh(new THREE.BoxGeometry(.1,.07,.22),boot,j['foot'+s],0,-.02,.05);}
+function dressHero(r){const{j,S}=r;const T=tex(),add=dresser();const cloth=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:o.r??.85,map:o.map??T.weave,bumpMap:o.map??T.weave,bumpScale:o.b??.5,side:o.side??THREE.FrontSide});
+ const skin=std(0xd9a27a,{r:.55}),tunic=cloth(0x1f6a64),tunic2=cloth(0x17504b,{side:THREE.DoubleSide}),pants=cloth(0xb59a72,{r:.9}),boot=cloth(0x5a3a24,{map:T.leather,r:.7,b:2}),belt=cloth(0x4a2e1a,{map:T.leather,r:.6,b:2}),
+  hair=std(0x2a1a12,{r:.6}),scarf=cloth(0xff5a12,{r:.85}),dark=std(0x111111,{r:.3}),white=std(0xf0ece4,{r:.4}),gold=std(0xb8903c,{m:.9,r:.32}),trim=cloth(0xd8b060,{r:.7});
+ // torso: lathed waist + chest, flared skirt with a woven hem
+ add(j.spine,tunic,lathe([[.0,-.02],[.15,-.02],[.148,.1],[.16,.2],[.168,S.sp+.03],[0,S.sp+.03]],16),0,0,0,0,0,0,1,1,.78);
+ add(j.chest,tunic,lathe([[0,-.01],[.17,-.01],[.19,.08],[.205,.17],[.19,.24],[.13,.29],[.07,.31],[0,.31]],16),0,0,0,0,0,0,1,1,.72);
+ add(j.hips,tunic2,lathe([[.17,.04],[.19,-.06],[.215,-.16],[.25,-.25]],18),0,0,0,0,0,0,1,1,.82);add(j.hips,trim,new THREE.TorusGeometry(.25,.012,5,24).rotateX(Math.PI/2),0,-.25,0,0,0,0,1,1,.82);
+ // belt with buckle and pouches, chest strap, collar
+ add(j.spine,belt,new THREE.CylinderGeometry(.172,.172,.06,16),0,.02,0,0,0,0,1,1,.8);add(j.spine,gold,new THREE.TorusGeometry(.028,.008,4,12),0,.02,.142,0,0,0,1.3,1,1);
+ for(const sx of[-1,1]){add(j.spine,belt,new THREE.BoxGeometry(.07,.08,.05),sx*.15,-.02,.04,0,sx*.9,0);add(j.spine,belt,new THREE.SphereGeometry(.04,8,4,0,Math.PI*2,0,Math.PI/2),sx*.15,.02,.04,0,sx*.9,0,1,.5,.75);}
+ add(j.chest,belt,new THREE.TorusGeometry(.215,.018,5,28),0,.14,0,0,0,.75,1,1,.78);add(j.chest,gold,new THREE.TorusGeometry(.022,.006,4,10),.08,.2,.155);
+ add(j.chest,tunic2,new THREE.TorusGeometry(.105,.035,6,16).rotateX(Math.PI/2),0,.29,-.01,0,0,0,1,1,.85);
+ mesh(new THREE.TorusGeometry(.1,.045,8,16).rotateX(Math.PI/2),scarf,j.neck,0,.0,0);r.scarf=G();j.neck.add(r.scarf);r.scarf.position.set(.04,0,-.1);const sc=mesh(new THREE.BoxGeometry(.09,.36,.02,1,4,1),scarf,r.scarf,0,-.18,0);sc.castShadow=true;
+ add(j.neck,skin,cap(.055,.04),0,.03,0);
+ // head: face, ears, nose, brows, eyes; hair cap, fringe, side locks, ponytail with an orange tie
+ const hd=j.head,H=S.head;add(hd,skin,new THREE.SphereGeometry(H,20,16),0,.1,0,0,0,0,.92,1.05,1);add(hd,skin,new THREE.SphereGeometry(.06,12,8),0,.04,.045,0,0,0,1.1,.8,1);
+ add(hd,skin,new THREE.SphereGeometry(.016,8,6),0,.095,.122,0,0,0,.8,1,1.1);for(const sx of[-1,1]){add(hd,skin,new THREE.SphereGeometry(.025,8,6),sx*.112,.1,0,0,0,0,.5,1,.8);
+  add(hd,white,new THREE.SphereGeometry(.019,8,6),sx*.043,.117,.1,0,0,0,1,.8,.6);add(hd,dark,new THREE.SphereGeometry(.012,8,6),sx*.043,.117,.11);add(hd,hair,new THREE.BoxGeometry(.045,.012,.015),sx*.045,.148,.112,0,0,-sx*.15);}
+ add(hd,cloth(0xa8604a,{r:.6}),new THREE.BoxGeometry(.035,.007,.01),0,.058,.112);
+ add(hd,hair,new THREE.SphereGeometry(H*1.1,18,12,0,Math.PI*2,0,Math.PI*.56),0,.118,-.012,-.25);
+ for(let i=0;i<6;i++){const x=-.07+i*.028;add(hd,hair,new THREE.ConeGeometry(.026,.09,5),x,.17,.085+Math.cos(x*9)*.015,2.6,0,x*3);}
+ for(const sx of[-1,1])add(hd,hair,new THREE.ConeGeometry(.03,.16,6),sx*.1,.07,.03,Math.PI+.15,0,sx*.12);
+ [[.17,-.135,.052],[.1,-.16,.045],[.03,-.17,.038],[-.04,-.165,.03]].forEach(([y,z,r0])=>add(hd,hair,new THREE.SphereGeometry(r0,10,8),0,y,z,0,0,0,1,1.35,1));add(hd,scarf,new THREE.TorusGeometry(.04,.012,5,12).rotateX(Math.PI/2),0,.2,-.13,-.5);
+ // limbs: leather pauldron + bracers + gloves, sleeve cuffs, knee guards, cuffed boots with soles
+ for(const[s,sx]of[['L',1],['R',-1]]){add(j['sh'+s],tunic,new THREE.SphereGeometry(.075,12,8));
+  if(s==='L'){add(j.shL,belt,new THREE.SphereGeometry(.105,14,8,0,Math.PI*2,0,Math.PI*.45),.01,.01,0,0,0,-.3,1,.9,1);add(j.shL,gold,new THREE.TorusGeometry(.085,.008,4,18).rotateX(Math.PI/2),.04,-.03,0,0,0,-.3);}
+  add(j['arm'+s],tunic,cap(.058,Math.max(.01,S.ua-.116),10),0,-S.ua/2,0);add(j['arm'+s],tunic2,new THREE.TorusGeometry(.058,.016,5,14).rotateX(Math.PI/2),0,-S.ua+.03,0);
+  add(j['fore'+s],skin,cap(.048,Math.max(.01,S.fa-.096),10),0,-S.fa/2,0);add(j['fore'+s],belt,new THREE.CylinderGeometry(.058,.05,.14,12),0,-S.fa*.62,0);
+  for(const y of[-.11,-.2])add(j['fore'+s],gold,new THREE.TorusGeometry(.057,.006,4,14).rotateX(Math.PI/2),0,y,0);
+  add(j['hand'+s],belt,new THREE.SphereGeometry(.048,10,8),0,-.03,0,0,0,0,.9,1.1,1);add(j['hand'+s],belt,cap(.016,.03,6),sx*.04,-.02,.025,-.4,0,sx*.5);
+  add(j['leg'+s],pants,cap(.075,Math.max(.01,S.th-.15),10),0,-S.th/2,0);add(j['knee'+s],belt,new THREE.SphereGeometry(.06,10,6,0,Math.PI*2,0,Math.PI*.5),0,.0,.035,1.25,0,0,1,1,.6);
+  add(j['knee'+s],boot,new THREE.CylinderGeometry(.068,.06,S.sh,12),0,-S.sh/2-.01,0);add(j['knee'+s],boot,new THREE.TorusGeometry(.072,.02,6,16).rotateX(Math.PI/2),0,-.07,0);
+  add(j['foot'+s],boot,new THREE.BoxGeometry(.1,.07,.18),0,-.015,.03);add(j['foot'+s],boot,new THREE.SphereGeometry(.052,10,8),0,-.02,.12,0,0,0,1,.7,1.2);add(j['foot'+s],dark,new THREE.BoxGeometry(.108,.022,.27),0,-.055,.06);}
+ add.flush();
  // gear
  r.sword=makeSword();r.shield=makeShield();r.bow=makeBow();r.glider=makeGlider();r.glider.visible=false;r.root.add(r.glider);r.glider.position.y=2.02;
  r.slots={handR:j.handR,handL:j.foreL,back:j.chest,bowHand:j.handL};r.gear={sword:'back',shield:'back',bow:'back'};placeGear(r);}

@@ -168,7 +168,7 @@ export const ROUNDS={
  /* ---- final: hexagon floors fall away ---- */
  hex:{name:'HEX HAVOC',kind:'final',time:120,tag:'FINAL',desc:'Three floors of hexagon tiles that drop the moment you touch them. Last bean standing takes the crown!',
   build(c){const S=1.25;const layers=[{y:24,n:6,cx:0,cz:CZ},{y:16,n:6,cx:0,cz:CZ},{y:8,n:6,cx:0,cz:CZ},{y:0,n:6,cx:0,cz:CZ}];const hx=makeHex(layers,S);c.W.hex=hx;
-   const pal=[[0x3fd4ff,0x8fe9ff],[0xff5fa2,0xffa8d6],[0xffc93a,0xffe48a],[0x8a5cff,0xb99bff]];const geo=new THREE.CylinderGeometry(S*.965,S*.88,.6,6);
+   const pal=[[0x3fd4ff,0x8fe9ff],[0xff5fa2,0xffa8d6],[0xffc93a,0xffe48a],[0x8a5cff,0xb99bff]];const hs=new THREE.Shape();for(let i=0;i<6;i++){const a=i/6*TAU,r=S*.86;hs[i?'lineTo':'moveTo'](r*Math.sin(a),-r*Math.cos(a));}const geo=new THREE.ExtrudeGeometry(hs,{depth:.36,bevelEnabled:true,bevelThickness:.12,bevelSize:.1,bevelSegments:3,curveSegments:1});geo.rotateX(-Math.PI/2);geo.translate(0,-.18,0);
    const mat=toyMat(0xffffff,{rough:.25,col2:0xffffff});const vis=hx.layers.map((L,li)=>{const im=new THREE.InstancedMesh(geo,mat,L.tiles.length);im.castShadow=true;im.receiveShadow=true;im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     L.tiles.forEach((t,i)=>{t.base=new THREE.Color(pal[li][(t.q*3+t.r*5+99)%3?0:1]);im.setColorAt(i,t.base);});c.grp.add(im);c.deco(new THREE.TorusGeometry(S*1.732*(L.n+.62),.3,8,72),M(0,L.y-.3,CZ,Math.PI/2),'white');return im;});
    const m4=new THREE.Matrix4(),q=new Q(),col=new THREE.Color(),hot=new THREE.Color(1,.25,.3),one=new V(1,1,1);

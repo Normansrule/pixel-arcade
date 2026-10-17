@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nova Arena · Pixel Arcade</title>
+<meta name="description" content="Nova Arena: a fast sci-fi arena shooter in full 3D. Energy shields, jetpacks, slides, power weapons and three orbital-to-sky arenas against CPU fighters. Free-for-all, Team Slayer and King of the Hill.">
+<link rel="stylesheet" href="arena.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div><div id="flash"></div>
+<div id="hud" hidden>
+  <div id="topbar"><div id="sc"></div><div class="clk"><b id="clock">8:00</b><span id="modeTag">FREE-FOR-ALL</span></div></div>
+  <div id="tags"></div>
+  <div id="feed"></div>
+  <div id="dmg"></div>
+  <div id="scope" hidden><i></i></div>
+  <div id="cross"><div class="ring"></div><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><em></em><svg class="chg" viewBox="0 0 60 60"><circle cx="30" cy="30" r="24"/></svg></div>
+  <div id="hitm"><i></i><i></i><i></i><i></i></div>
+  <div id="streak"><b></b><span></span></div>
+  <div id="medals"></div>
+  <div id="prompt"></div>
+  <div id="cd"></div>
+  <div id="vit">
+    <div class="bar sh"><em id="shb"></em><s id="ovb"></s></div>
+    <div class="bar hp"><em id="hpb"></em></div>
+    <div class="fuel"><span>JET</span><div><em id="fub"></em></div></div>
+    <div id="pows"></div>
+  </div>
+  <canvas id="radar" width="200" height="200"></canvas>
+  <div id="wpn">
+    <div class="nades"><span id="nf">◆ 2</span><span id="np">● 1</span></div>
+    <div class="cur"><p id="wname">PULSE RIFLE</p><b id="mag">36</b><span id="res">/ 216</span></div>
+    <div class="alt" id="walt">BURST CARBINE</div>
+    <div class="rl" id="rl"><em></em></div>
+  </div>
+  <div id="dead" hidden><p>ELIMINATED BY <b id="killer"></b></p><span id="kwpn"></span><em id="rsp">RESPAWN 3</em></div>
+  <div id="board" hidden></div>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SCI-FI ARENA SHOOTER</p>
+  <h1>NOVA<br>ARENA<em>.</em></h1>
+  <p class="how">Shields up, jets hot. Fight CPU fighters across an orbital ring, a neon canyon and a citadel above the clouds. Grab power weapons, stack medals, own the hill.</p>
+  <div class="opts">
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="ffa">FREE-FOR-ALL</button><button data-v="team">TEAM SLAYER 4V4</button><button data-v="koth">KING OF THE HILL</button></div>
+    <label>ARENA</label><div class="seg" id="o-map"><button data-v="0">MERIDIAN STATION</button><button data-v="1">SCARLET RIFT</button><button data-v="2">AETHER CITADEL</button></div>
+    <label>BOTS</label><div class="seg" id="o-diff"><button data-v="0">RECRUIT</button><button data-v="1">VETERAN</button><button data-v="2">LEGEND</button></div>
+    <label>CLOCK</label><div class="seg" id="o-time"><button data-v="5">5 MIN</button><button data-v="8">8 MIN</button><button data-v="10">10 MIN</button></div>
+    <label>SCORE CAP</label><div class="seg" id="o-cap"><button data-v="0">SHORT</button><button data-v="1">STANDARD</button><button data-v="2">LONG</button></div>
+  </div>
+  <p class="mapdesc" id="mapdesc"></p>
+  <div class="row"><button id="go" class="go">DEPLOY</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
+    <tr><td>Fire (hold or spam) · zoom</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Jump · double jump · hold = jetpack</td><td><kbd>Space</kbd></td></tr>
+    <tr><td>Sprint · slide</td><td><kbd>Shift</kbd> <kbd>C</kbd>/<kbd>Ctrl</kbd></td></tr>
+    <tr><td>Reload · swap weapon</td><td><kbd>R</kbd> <kbd>1</kbd><kbd>2</kbd>/<kbd>Wheel</kbd></td></tr>
+    <tr><td>Melee lunge</td><td><kbd>F</kbd> / <kbd>V</kbd></td></tr>
+    <tr><td>Grenade · switch type</td><td><kbd>Q</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Pick up / swap weapon (hold)</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Scores · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Shields recharge after a few seconds out of fire; health does not — find health packs. Precision weapons headshot only once shields are down. Plasma launcher splash can rocket-jump you. Gamepad supported.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>FIRE<em>.</em></h1><p class="how">Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.75">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="90">90</button><button data-v="100">100</button><button data-v="110">110</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.35">LOW</button><button data-v="0.6">MED</button><button data-v="0.9">LOUD</button></div>
+  <label>ANNOUNCER</label><div class="seg" id="o-ann"><button data-v="0">OFF</button><button data-v="1">ON</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">MATCH COMPLETE</p>
+  <div class="rk"><b id="oplace">1ST</b><div><p class="res" id="ores">VICTORY</p><p class="fs" id="ofs"></p></div></div>
+  <div id="omedals"></div>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">REMATCH</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="lock" hidden><b>CLICK TO FIGHT</b><span>mouse is captured · Esc to pause</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

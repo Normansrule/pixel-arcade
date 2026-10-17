@@ -4,11 +4,14 @@ import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import {City,N,SP,HALF,WORLD,HY} from './city.js';
 import {makeTextures} from './tex.js';
 import {buildWorld,todAt} from './world.js';
-import {CARS,Car,carModel} from './car.js';
+import {CARS,Car,carModel,setCarFx} from './car.js';
 import {Traffic,Peds,Police} from './traffic.js';
 import {Jobs} from './missions.js';
 import {Sound,STATIONS} from './sound.js';
 import {HUD,mmss} from './hud.js';
+import {addRound,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,pickers,postButton} from '../js/kit3d/ui.js';
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,R=Math.random,lerp=(a,b,t)=>a+(b-a)*t;
 const DT=1/60;
 
@@ -31,7 +34,7 @@ const smoke=new Points(900,false),sparks=new Points(700,true);
 
 /* ================= game state ================= */
 const G={app:'menu',opt:{len:8,traffic:1,diff:1,car:'cab',vol:.8,rvol:.5,cam:0},city,cash:0,target:2500,shiftLen:480,shiftLeft:480,hour:17.25,rain:0,wet:0,time:0,wanted:0,heat:0,escapeT:0,bustT:0,stats:null,route:null,tunnel:false,station:0,attract:true};
-try{Object.assign(G.opt,JSON.parse(localStorage.getItem('pxd_drive_opt'))||{});}catch(e){}
+const saveOpt=stored('pxd_drive_opt',G.opt);
 function career(){try{return Object.assign({total:0,best:0,shifts:0},JSON.parse(localStorage.getItem('pxd_drive_career'))||{});}catch(e){return{total:0,best:0,shifts:0};}}
 function saveCareer(c){try{localStorage.setItem('pxd_drive_career',JSON.stringify(c));}catch(e){}}
 const unlocked=s=>career().total>=s.unlock;
@@ -43,7 +46,7 @@ const jobs=new Jobs(scene,city,G);G.jobs=jobs;
 let car=null,headL=null,tailL=null;const flameM=new THREE.MeshBasicMaterial({color:new THREE.Color(.6,1.6,4),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});let flames=[];
 function buildCar(id){const spec=CARS.find(c=>c.id===id)||CARS[0];if(car)scene.remove(car.model);const m=carModel(spec);scene.add(m);car=new Car(spec,m);G.car=car;
  headL=new THREE.SpotLight(0xfff0d8,0,90,.5,.55,1.4);headL.position.set(0,.9,2.0);m.add(headL);m.add(headL.target);headL.target.position.set(0,-.4,24);
- tailL=new THREE.PointLight(0xff2020,0,7,2);tailL.position.set(0,.7,-2.8);m.add(tailL);
+ tailL=new THREE.PointLight(0xff2020,0,6,2);tailL.position.set(0,.75,-m.userData.L/2-.5);m.add(tailL);
  flames=[];for(const s of[-.45,.45]){const f=new THREE.Mesh(new THREE.ConeGeometry(.16,1.2,10).rotateX(-Math.PI/2),flameM);f.position.set(s,.42,-m.userData.L/2-.6);f.visible=false;m.add(f);flames.push(f);}
  return car;}
 buildCar(G.opt.car);
@@ -73,21 +76,19 @@ function endShift(why){if(G.app!=='play'&&G.app!=='paused')return;G.app='over';h
  const tok=award(won);$('otok').innerHTML=`+${tok} TOKENS · CAREER $${Math.round(c.total).toLocaleString()} · BEST SHIFT $${Math.round(c.best).toLocaleString()}`+(newly.length?` · <b>UNLOCKED ${newly.map(k=>k.name).join(', ')}</b>`:'');$('over').hidden=false;}
 let lastAward=null;
 function award(won){const pts=Math.max(0,Math.round(G.cash));lastAward={pts,won,car:car.spec.name,len:G.opt.len,fares:G.stats.fares,races:G.stats.raceWins};const tok=5+Math.min(50,pts/100|0);
- try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'drive3d';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
+ addRound(tok,won);saveBest('drive3d',pts);return tok;}
 
 /* ================= time of day + weather ================= */
 function setTimeOfDay(){const f=1-G.shiftLeft/G.shiftLen;G.hour=17.25+f*8.25;const h=G.hour;let rain=cl((h-19.9)/1.1,0,1);if(h>22.6&&h<23.6)rain*=.35;G.rain=rain;G.wet+=(Math.max(rain,G.wet*.995)-G.wet)*.02;if(G.wet<rain)G.wet=Math.min(rain,G.wet+.004);world.setTime(h,G.rain,G.wet);}
 
 /* ================= input ================= */
-const keys={};let camMode=0,lookBack=false;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const first=!keys[e.code];keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace','Tab'].includes(e.code))e.preventDefault();
+// keyboard only: no pointer lock, and the context menu stays available
+const {keys}=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:(e,first)=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace','Tab'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(G.app==='play')pause(true);else if(G.app==='paused')pause(false);return;}if(G.app!=='play'||!first)return;
  if(e.code==='KeyC'){G.opt.cam=(G.opt.cam+1)%3;saveOpt();camSnap=true;}if(e.code==='KeyH')snd.horn();if(e.code==='KeyR'){G.station=(G.station+1)%STATIONS.length;snd.tune(G.station);hud.radio(STATIONS[G.station]);}
- if(e.code==='KeyX'&&jobs.active){jobs.fail('JOB CANCELLED');}if(e.code==='Backspace')resetCar('RESET');});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+ if(e.code==='KeyX'&&jobs.active){jobs.fail('JOB CANCELLED');}if(e.code==='Backspace')resetCar('RESET');}});let camMode=0,lookBack=false;
 function readInput(){const k=keys;let thr=(k.KeyW||k.ArrowUp)?1:0,brk=(k.KeyS||k.ArrowDown)?1:0,steer=((k.KeyA||k.ArrowLeft)?1:0)-((k.KeyD||k.ArrowRight)?1:0),hb=!!k.Space,nitro=!!(k.ShiftLeft||k.ShiftRight);lookBack=!!k.KeyB;
- const gp=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;if(gp){const ax=gp.axes,bt=gp.buttons,dz=v=>Math.abs(v)>.15?v:0;const sx=dz(ax[0]||0);if(sx)steer=-sx;const rt=bt[7]?bt[7].value:0,lt=bt[6]?bt[6].value:0;if(rt>.05)thr=rt;if(lt>.05)brk=lt;if(bt[0]&&bt[0].pressed)hb=true;if(bt[2]&&bt[2].pressed)nitro=true;if(bt[3]&&bt[3].pressed)lookBack=true;
+ const gp=gamepad();if(gp){const ax=gp.axes,bt=gp.buttons,dz=deadzone;const sx=dz(ax[0]||0);if(sx)steer=-sx;const rt=bt[7]?bt[7].value:0,lt=bt[6]?bt[6].value:0;if(rt>.05)thr=rt;if(lt>.05)brk=lt;if(bt[0]&&bt[0].pressed)hb=true;if(bt[2]&&bt[2].pressed)nitro=true;if(bt[3]&&bt[3].pressed)lookBack=true;
   const pr=G.pad||{};if(bt[1]&&bt[1].pressed&&!pr.b)snd.horn();if(bt[5]&&bt[5].pressed&&!pr.rb){G.station=(G.station+1)%STATIONS.length;snd.tune(G.station);hud.radio(STATIONS[G.station]);}if(bt[4]&&bt[4].pressed&&!pr.lb){G.opt.cam=(G.opt.cam+1)%3;camSnap=true;}if(bt[9]&&bt[9].pressed&&!pr.st)pause(true);
   G.pad={b:bt[1]&&bt[1].pressed,rb:bt[5]&&bt[5].pressed,lb:bt[4]&&bt[4].pressed,st:bt[9]&&bt[9].pressed};}
  if(G.ai)return G.ai;return{thr,brk,steer,hb,nitro};}
@@ -152,7 +153,7 @@ function play(dt){const inp=readInput();G.shiftLeft-=dt;if(G.shiftLeft<=0){G.shi
  // GPS route to the active target (or nearest offer)
  G.routeT=(G.routeT||0)-dt;if(G.routeT<=0){G.routeT=.8;let tg=jobs.target();if(!tg&&!jobs.active){const dist=o=>Math.hypot(o.x-car.x,o.z-car.z);const o=jobs.offers.slice().sort((p,q)=>dist(p)-dist(q))[0];let cur=G.gpsOffer&&jobs.offers.includes(G.gpsOffer)?G.gpsOffer:null;if(!cur||(o&&dist(o)<dist(cur)*.6))cur=o;G.gpsOffer=cur;if(cur)tg={x:cur.x,z:cur.z};}G.route=tg?city.route(car.x,car.z,tg.x,tg.z).pts:null;buildRibbon(G.route);}
  // lights
- const night=world.state.night;headL.intensity=night>.25?lerp(0,140,cl((night-.25)*2,0,1)):0;tailL.intensity=night>.3?(inp.brk?6:2):0;
+ const night=world.state.night;headL.intensity=night>.25?lerp(0,140,cl((night-.25)*2,0,1)):0;tailL.intensity=night>.3?(inp.brk?2.2:.6):0;
  // audio
  const cop=police.cops.reduce((b,c)=>Math.min(b,Math.hypot(c.x-car.x,c.z-car.z)),999);snd.car({on:true,speed:sp,thr:ci.thr,slip:car.slip,ground:car.onGround,rain:G.rain,tunnel:G.tunnel,siren:G.wanted,sirenD:cop});
  $('hitov').style.opacity=G.hitFx;$('nitroov').style.opacity=car.nitroOn?.8:0;
@@ -186,32 +187,30 @@ function cameraUpdate(dt){if(G.app==='menu'||G.app==='over'&&false){const a=menu
 
 /* ================= rendering ================= */
 let gfx=quality(),fxStack=null,fxSize='',frameN=0;
-function applyQuality(q){gfx=q;Rr.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.4:q===1?1.1:.85));fxStack=null;fxSize='';const ms=q>=2?2048:1024;world.sun.shadow.mapSize.set(ms,ms);if(world.sun.shadow.map){world.sun.shadow.map.dispose();world.sun.shadow.map=null;}Rr.shadowMap.enabled=q>=1;world.sun.castShadow=q>=1;}
+function applyQuality(q){gfx=q;Rr.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.4:q===1?1.1:.85));fxStack=null;fxSize='';const ms=q>=2?2048:1024;world.sun.shadow.mapSize.set(ms,ms);if(world.sun.shadow.map){world.sun.shadow.map.dispose();world.sun.shadow.map=null;}Rr.shadowMap.enabled=q>=1;world.sun.castShadow=q>=1;world.setQuality(q);}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(Rr.domElement.width!==Math.floor(w*Rr.getPixelRatio())||Rr.domElement.height!==Math.floor(h*Rr.getPixelRatio()))Rr.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();
- const sc=h*Rr.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));smoke.U.uScale.value=sparks.U.uScale.value=sc;
+ const sc=h*Rr.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));smoke.U.uScale.value=sparks.U.uScale.value=world.splU.uScale.value=sc;setCarFx(world.state.night,world.state.wet);
  frameN++;if(gfx>=2||(gfx===1&&frameN%2===0)||frameN<3)Rr.shadowMap.needsUpdate=true;
- const key=w+'x'+h;if(!fxStack){fxStack=cinematic(Rr,scene,cam,{exposure:1,bloom:.85,bloomThreshold:.82,bloomRadius:.6,saturation:1.12,vignette:.38,grain:.03,ao:false,quality:gfx});fxSize='';}if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);}
+ const key=w+'x'+h;if(!fxStack){fxStack=cinematic(Rr,scene,cam,{exposure:1,bloom:.85,bloomThreshold:.82,bloomRadius:.6,saturation:1.12,vignette:.38,grain:.03,aoStrength:.75,quality:gfx});fxSize='';}if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);}
  Rr.toneMappingExposure=(world.state.exp||1);if(scene.environment!==world.state.env)scene.environment=world.state.env;if(fxStack.bloom){const n=world.state.night;fxStack.bloom.strength=lerp(.4,.75,n);fxStack.bloom.threshold=lerp(.92,.86,n);}
  fxStack.render();}
 
 /* ================= menus ================= */
 const hud=new HUD(G,city);G.hud=hud;
-function saveOpt(){try{localStorage.setItem('pxd_drive_opt',JSON.stringify(G.opt));}catch(e){}}
-const seg=(id,key,num=true,cb)=>{const el=$(id);const set=(v,init)=>{G.opt[key]=v;el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(num?+b.dataset.v:b.dataset.v)===String(v)));if(!init){saveOpt();cb&&cb(v);}};set(G.opt[key],true);el.querySelectorAll('button').forEach(b=>b.onclick=()=>set(num?+b.dataset.v:b.dataset.v));};
+const seg=pickers(G.opt,saveOpt);
 seg('o-len','len');seg('o-traffic','traffic');seg('o-diff','diff');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-rvol','rvol',true,v=>snd.setRadioVol(v));seg('o-cam','cam',true,()=>{camSnap=true;});
 function renderGarage(){const c=career();$('garage').innerHTML=CARS.map(s=>{const ok=c.total>=s.unlock;const st=[['SPEED',s.max/70],['ACCEL',s.acc/24],['GRIP',s.grip/8.5],['TOUGH',.55/s.dur]];return`<button data-id="${s.id}" class="${s.id===G.opt.car?'on':''} ${ok?'':'lock'}"><b>${s.name}</b><i style="background:#${s.paint.toString(16).padStart(6,'0')}"></i><span>${s.blurb}</span>${ok?'':`<em>UNLOCK AT $${s.unlock.toLocaleString()} CAREER</em>`}<div class="st">${st.map(r=>`${r[0]}<u style="--v:${Math.round(Math.min(1,r[1])*100)}%"></u>`).join('')}</div></button>`;}).join('');
  $('garage').querySelectorAll('button').forEach(b=>b.onclick=()=>{const s=CARS.find(k=>k.id===b.dataset.id);if(c.total<s.unlock)return;G.opt.car=s.id;saveOpt();buildCar(s.id);car.place(WORLD/2,WORLD/2,0,city);renderGarage();});
  $('career').textContent=`CAREER $${Math.round(c.total).toLocaleString()} · BEST SHIFT $${Math.round(c.best).toLocaleString()} · ${c.shifts} SHIFTS`;}
 renderGarage();
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=()=>endShift('quit');
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
- const body=`Game: Night Drive\nEarnings: $${a.pts||0}\nResult: ${a.won?'target met':'target missed'} · ${a.len||8} min shift\nCar: ${a.car||''} · Fares: ${a.fares||0} · Race wins: ${a.races||0}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] drive3d '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+postButton($('post'),'drive3d',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Night Drive\nEarnings: $${a.pts||0}\nResult: ${a.won?'target met':'target missed'} · ${a.len||8} min shift\nCar: ${a.car||''} · Fares: ${a.fares||0} · Race wins: ${a.races||0}`];});
 
 /* ================= boot ================= */
 traffic.spawnAll(null);jobs.reset();car.place(WORLD/2,WORLD/2,0,city);world.setTime(17.6,0,0);
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{step(dt);render();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.DRIVE={get state(){return G.app;},G,R:Rr,scene,cam,get P(){return car;},get car(){return car;},step,render,start,toMenu,pause,endShift,updateCam:cameraUpdate,keys,city,world,hud,snd,

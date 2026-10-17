@@ -1,0 +1,20 @@
+name: Score submission
+description: Post a score by hand (games post these for you with U or POST SCORE)
+title: "[score] <game id> <score>"
+labels: [score]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep the title exactly as `[score] <game id> <score>`, for example `[score] pong 7`. The leaderboard reads the title.
+        The game id is the part after `#` in the game's address, or the 3D world's id (for example `novaarena`).
+  - type: input
+    id: game
+    attributes: { label: Game, placeholder: "e.g. Paddle Duel" }
+    validations: { required: true }
+  - type: input
+    id: mode
+    attributes: { label: Mode, placeholder: "e.g. vs CPU hard, solo, 5v5" }
+  - type: textarea
+    id: proof
+    attributes: { label: Screenshot of the results screen (optional) }

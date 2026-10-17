@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starwarden · Pixel Arcade</title>
+<meta name="description" content="Starwarden: a co-op space-fantasy looter shooter in full 3D. Run strikes with two CPU guardians — patrol zone, wave corridor, multi-phase boss — and chase legendary and exotic weapon drops with random perks and a rising power level.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="looter.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div><div id="flash"></div><div id="supfx"></div>
+<div id="hud" hidden>
+  <div id="obj"><p id="strikeName">STRIKE</p><b id="objT"></b><div class="pb"><em id="objP"></em></div><span id="objS"></span></div>
+  <div id="clk"><b id="clock">15:00</b><span id="pl">✦ 100</span></div>
+  <div id="boss" hidden><p><b id="bossN"></b><span id="bossP"></span></p><div class="bar"><em id="bossH"></em><s id="bossD"></s></div></div>
+  <div id="team"></div>
+  <div id="tags"></div>
+  <div id="nums"></div>
+  <div id="dmg"></div>
+  <div id="scope" hidden><i></i></div>
+  <div id="cross"><div class="ring"></div><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><em></em><svg class="chg" viewBox="0 0 60 60"><circle cx="30" cy="30" r="24"/></svg></div>
+  <div id="hitm"><i></i><i></i><i></i><i></i></div>
+  <div id="banner"><b></b><span></span></div>
+  <div id="prompt"></div>
+  <div id="toasts"></div>
+  <div id="feed"></div>
+  <div id="abil">
+    <div class="sup" id="sup"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="44"/><circle class="fg" id="supC" cx="50" cy="50" r="44"/></svg><b id="supI">◆</b><span id="supN">SUPER</span></div>
+    <div class="ab" id="abG"><i></i><b>Q</b><span id="abGn">GRENADE</span></div>
+    <div class="ab" id="abM"><i></i><b>F</b><span id="abMn">MELEE</span></div>
+  </div>
+  <div id="vit"><div class="bar sh"><em id="shb"></em></div><div class="bar hp"><em id="hpb"></em></div></div>
+  <div id="wpns"></div>
+  <canvas id="radar" width="200" height="200"></canvas>
+  <div id="down" hidden><p>GUARDIAN DOWN</p><b id="downT"></b><span id="downS"></span></div>
+</div>
+<div id="menu" class="scr">
+  <div class="mhead"><p class="eye">[ PIXEL ARCADE ] FULL 3D · CO-OP LOOTER SHOOTER</p><h1>STAR<br>WARDEN<em>.</em></h1>
+    <div class="pw"><span>POWER</span><b id="mPow">100</b><i id="mShard">0 SHARDS</i></div>
+    <div class="tabs" id="tabs"><button data-t="dest" class="on">DESTINATION</button><button data-t="load">LOADOUT</button><button data-t="cls">SUBCLASS</button></div></div>
+  <div class="mbody">
+    <section id="t-dest">
+      <div id="dests"></div>
+      <div class="opts"><label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">ADEPT</button><button data-v="1">VETERAN</button><button data-v="2">LEGEND</button></div>
+      <label>STRIKE CLOCK</label><div class="seg" id="o-time"><button data-v="10">10 MIN</button><button data-v="15">15 MIN</button><button data-v="20">20 MIN</button></div></div>
+      <p class="mapdesc" id="mapdesc"></p>
+      <div class="row"><button id="go" class="go">LAUNCH STRIKE</button></div>
+      <p class="best" id="best"></p>
+    </section>
+    <section id="t-load" hidden>
+      <div id="slots"></div>
+      <div class="vhead"><span id="vcount"></span><div class="seg" id="vfilter"><button data-v="kin">KINETIC</button><button data-v="en">ENERGY</button><button data-v="pow">POWER</button></div></div>
+      <div id="vault"></div>
+      <div id="detail"></div>
+    </section>
+    <section id="t-cls" hidden><div id="clss"></div></section>
+  </div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
+    <tr><td>Fire (hold or spam) · aim down sights</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Jump · double jump · hold = glide</td><td><kbd>Space</kbd></td></tr>
+    <tr><td>Sprint · slide</td><td><kbd>Shift</kbd> <kbd>C</kbd>/<kbd>Ctrl</kbd></td></tr>
+    <tr><td>Weapons · reload</td><td><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>/<kbd>Wheel</kbd> <kbd>R</kbd></td></tr>
+    <tr><td>Grenade · melee · super</td><td><kbd>Q</kbd> <kbd>F</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Revive ally · open chest (hold)</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Match your weapon's element to an enemy's shield to shatter it. Engrams drop from fallen foes — better loot raises your power. Gamepad supported.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>FAST<em>.</em></h1><p class="how">Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.75">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="90">90</button><button data-v="100">100</button><button data-v="110">110</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>MUSIC</label><div class="seg" id="o-mus"><button data-v="0">OFF</button><button data-v="0.35">LOW</button><button data-v="0.6">MED</button><button data-v="0.9">LOUD</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">ABANDON STRIKE</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">STRIKE</p>
+  <p class="res" id="ores">STRIKE COMPLETE</p><p class="fs" id="ofs"></p>
+  <div id="opow"></div>
+  <table id="stats"></table>
+  <p class="lh">REWARDS</p><div id="oloot"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="orbit" class="go">RETURN TO ORBIT</button><button id="again" class="ghost">RELAUNCH</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="lock" hidden><b>CLICK TO FIGHT</b><span>mouse is captured · Esc to pause</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

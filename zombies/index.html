@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightfall · Pixel Arcade</title>
+<meta name="description" content="Nightfall: round-based zombie survival in full 3D. Hold the boarded windows of a walled farm station through the night, earn points, open doors, buy guns, perks and gamble on the mystery crate until dawn.">
+<link rel="stylesheet" href="nightfall.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hurtov"></div><div id="lowov"></div><div id="flashov"></div>
+<div id="hud" hidden>
+  <div id="tl"><p id="areaName"></p>
+    <div id="allyCard" hidden><b>ROOK</b><div class="bar"><em id="allyHp"></em></div><span id="allyState"></span></div></div>
+  <div id="tc"><div class="dawn"><span>☾</span><div class="track"><em id="dawnBar"></em></div><span>☀</span></div><b id="clock">12:00</b><small>UNTIL DAWN</small></div>
+  <div id="feed"></div>
+  <div id="pups"></div>
+  <div id="bl"><div id="perks"></div><div id="round"><b id="roundN">1</b><span>ROUND</span></div><div id="pts"><b id="points">500</b><div id="ptsPop"></div></div></div>
+  <div id="br"><p id="wname"></p><div class="am"><b id="mag"></b><span id="res"></span></div><div id="nades"></div></div>
+  <div id="cross"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><em></em></div>
+  <div id="hit"><i></i><i></i><i></i><i></i></div>
+  <div id="dmgind"></div>
+  <div id="marks"></div>
+  <div id="prompt"></div>
+  <div id="revbar" hidden><em></em></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="boss" hidden><p>THE GRAVEKEEPER</p><div class="bar"><em id="bossb"></em></div></div>
+  <div id="downov" hidden><b>YOU'RE DOWN</b><span id="downT"></span></div>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · ROUND-BASED SURVIVAL</p>
+  <h1>NIGHT<br>FALL<em>.</em></h1>
+  <p class="how">The dead come up out of the pines every night and claw at the boards of Bramblewood Field Station. Hold the windows, rack up points, open the farmhouse, barn and lab, throw the power, and drink, gamble and forge your way to sunrise.</p>
+  <div class="opts">
+    <label>NIGHT</label><div class="seg" id="o-len"><button data-v="8">8 MIN</button><button data-v="12">12 MIN</button><button data-v="20">20 MIN</button></div>
+    <label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">CASUAL</button><button data-v="1">SURVIVOR</button><button data-v="2">NIGHTMARE</button></div>
+    <label>TEAMMATE</label><div class="seg" id="o-ally"><button data-v="1">ROOK (CPU)</button><button data-v="0">SOLO</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">SURVIVE THE NIGHT</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · look</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
+    <tr><td>Fire (hold or click) · aim</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr>
+    <tr><td>Reload · swap weapon</td><td><kbd>R</kbd> <kbd>1</kbd><kbd>2</kbd> <kbd>Wheel</kbd></td></tr>
+    <tr><td>Buy · open · rebuild (hold) · revive</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Knife · grenade</td><td><kbd>V</kbd> <kbd>Q</kbd></td></tr>
+    <tr><td>Sprint · jump</td><td><kbd>Shift</kbd> <kbd>Space</kbd></td></tr>
+    <tr><td>Flashlight · pause · graphics</td><td><kbd>F</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+    <tr><td>Gamepad</td><td><span class="pad">RT fire · LT aim · X use/reload · B knife · RB nade · Y swap</span></td></tr>
+  </table>
+  <p>Points for every hit, more for kills and headshots. Rebuild boards for points. Throw the power in the lab to wake the perk machines and the forge. Survive until the clock hits dawn.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>ON<em>.</em></h1><p class="how">The night waits. Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.8">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="80">80</button><button data-v="90">90</button><button data-v="100">100</button><button data-v="110">110</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">THE NIGHT IS OVER</p>
+  <p class="res" id="ores">DAWN BREAKS</p>
+  <p class="fs" id="ofs">0</p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="loading"><b>NIGHTFALL</b><span>RAISING THE DEAD…</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

@@ -17,7 +17,7 @@ export function makeMaterials(T){const S=(o)=>new THREE.MeshStandardMaterial(o);
  M.paintrail={m:S({color:0xe8b020,roughness:.4,metalness:.5}),s:1};
  M.brick={m:S({map:T.brick,roughness:.9,bumpMap:T.brick,bumpScale:1.5}),s:3};
  M.block={m:S({map:T.block,roughness:.85,color:0xb8c4d0}),s:3};
- M.asphalt={m:S({map:T.asphalt,roughness:.92,bumpMap:T.asphalt,bumpScale:1}),s:6};
+ M.asphalt={m:S({map:T.asphalt,roughness:.8,bumpMap:T.asphalt,bumpScale:1}),s:6};
  M.pavers={m:S({map:T.pavers,roughness:.8,bumpMap:T.pavers,bumpScale:.8}),s:4};
  M.slab={m:S({map:T.slab,roughness:.82}),s:2};
  M.wood={m:S({map:T.wood,roughness:.75}),s:1.5};
@@ -33,23 +33,35 @@ export function makeMaterials(T){const S=(o)=>new THREE.MeshStandardMaterial(o);
  M.dark={m:S({color:0x2a2c30,roughness:.7,metalness:.4}),s:2};
  const fac=(k,seed,col)=>{const f=facade(k,seed);return{m:S({map:f.map,emissiveMap:f.em,emissive:new THREE.Color(col||0xffffff),emissiveIntensity:1,roughness:.75,envMapIntensity:.6}),s:8};};
  M.school=fac('school',11,0xffe0b0);M.gym=fac('stone',23,0xffd8a0);M.facB=fac('brick',5);M.facG=fac('glass',9);M.facS=fac('stone',17);
+ M.prop={m:S({vertexColors:true,roughness:.55,metalness:.15}),s:2,vc:true};
+ M.cont={m:S({map:T.corr,bumpMap:T.corr,bumpScale:2,vertexColors:true,roughness:.6,metalness:.35}),s:3,vc:true};
+ M.decal={m:S({map:T.decal,transparent:true,depthWrite:false,roughness:.75,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}),noShadow:true};
+ M.puddle={m:S({color:0x1c2026,roughness:.04,metalness:.1,alphaMap:T.puddle,transparent:true,depthWrite:false,envMapIntensity:1.6,polygonOffset:true,polygonOffsetFactor:-6,polygonOffsetUnits:-6}),noShadow:true};
+ M.play={m:S({map:T.play,transparent:true,depthWrite:false,roughness:.7,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}),noShadow:true};
+ M.banner={m:S({map:T.banner,side:THREE.DoubleSide,roughness:.9,alphaTest:.5}),s:1};
+ M.neon={m:new THREE.MeshBasicMaterial({map:T.neon,color:new THREE.Color(4,4,4),blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}),noShadow:true};
  for(const k in M){const t=M[k].m.map;if(t){t.wrapS=t.wrapT=THREE.RepeatWrapping;}}
+ // macro tone + roughness variation sampled at a fraction of the UVs, so big surfaces stop looking tiled
+ const macro=(m,k)=>{m.onBeforeCompile=sh=>{sh.uniforms.tMacro={value:T.macro};sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D tMacro;')
+  .replace('#include <map_fragment>',`#include <map_fragment>\nfloat mac=texture2D(tMacro,vMapUv*${k.toFixed(3)}).r*.7+texture2D(tMacro,vMapUv*${(k*3.7).toFixed(3)}+.37).r*.3;diffuseColor.rgb*=.74+.52*mac;`)
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=clamp(roughnessFactor*(.7+.6*mac),.04,1.);');};m.customProgramCacheKey=()=>'skmac'+k;};
+ for(const[k,f]of[['floor',.09],['conc',.13],['ramp',.11],['asphalt',.06],['pavers',.07],['slab',.12],['roof',.1],['pool',.12],['brick',.1],['block',.12],['plate',.2],['ply',.15],['wood',.15]])macro(M[k].m,f);
  return M;}
 
 /* ---------------- geometry bag: collects world-space triangles per material, merges at the end ---------------- */
 class Bag{constructor(){this.m=new Map();}
- add(k,g,mode='world'){if(!this.m.has(k))this.m.set(k,[]);this.m.get(k).push({g:g.index?g.toNonIndexed():g,mode});}
+ add(k,g,mode='world',col){if(!this.m.has(k))this.m.set(k,[]);this.m.get(k).push({g:g.index?g.toNonIndexed():g,mode,col});}
  tris(k,arr,uv){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));if(uv)g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.computeVertexNormals();this.add(k,g,uv?'keep':'world');}
  build(scene,M,list){for(const[k,arr]of this.m){const mat=M[k];if(!mat)continue;const s=mat.s||2;let n=0;arr.forEach(e=>n+=e.g.attributes.position.count);
-   const pos=new Float32Array(n*3),nor=new Float32Array(n*3),uv=new Float32Array(n*2);let o=0;
-   for(const{g,mode}of arr){const P=g.attributes.position.array,N=g.attributes.normal?g.attributes.normal.array:null,U=g.attributes.uv?g.attributes.uv.array:null,c=g.attributes.position.count;pos.set(P,o*3);if(N)nor.set(N,o*3);
+   const pos=new Float32Array(n*3),nor=new Float32Array(n*3),uv=new Float32Array(n*2),vc=mat.vc?new Float32Array(n*3).fill(1):null;let o=0;
+   for(const{g,mode,col}of arr){if(vc&&col){const c=g.attributes.position.count;for(let i=0;i<c;i++){const v=1+(((i/6|0)*7%5)-2)*.025;vc[(o+i)*3]=col.r*v;vc[(o+i)*3+1]=col.g*v;vc[(o+i)*3+2]=col.b*v;}}const P=g.attributes.position.array,N=g.attributes.normal?g.attributes.normal.array:null,U=g.attributes.uv?g.attributes.uv.array:null,c=g.attributes.position.count;pos.set(P,o*3);if(N)nor.set(N,o*3);
     for(let i=0;i<c;i++){const j=(o+i)*2;if(mode==='keep'&&U){uv[j]=U[i*2];uv[j+1]=U[i*2+1];continue;}
      const t=Math.floor(i/3)*3;// face normal of this triangle picks the projection
      const ax=P[t*3],ay=P[t*3+1],az=P[t*3+2],bx=P[t*3+3]-ax,by=P[t*3+4]-ay,bz=P[t*3+5]-az,cx=P[t*3+6]-ax,cy=P[t*3+7]-ay,cz=P[t*3+8]-az;
      const nx=Math.abs(by*cz-bz*cy),ny=Math.abs(bz*cx-bx*cz),nz=Math.abs(bx*cy-by*cx);const x=P[i*3],y=P[i*3+1],z=P[i*3+2];
      if(ny>=nx&&ny>=nz){uv[j]=x/s;uv[j+1]=z/s;}else if(nx>=nz){uv[j]=z/s;uv[j+1]=y/s;}else{uv[j]=x/s;uv[j+1]=y/s;}}
     o+=c;g.dispose();}
-   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));if(vc)geo.setAttribute('color',new THREE.BufferAttribute(vc,3));
    const mesh=new THREE.Mesh(geo,mat.m);mesh.userData.noAO=!!mat.noShadow;mesh.castShadow=!mat.noShadow&&k!=='floor';mesh.receiveShadow=true;scene.add(mesh);list.push(mesh);}}}
 
 const W3=(p,lx,y,lz)=>{const[x,z]=toWorld(p,lx,lz);return[x,y,z];};
@@ -79,7 +91,7 @@ function qpGeo(bag,p,M){const N=16,R=p.R,H=R*(1-Math.cos(TM)),ul=R*(1-Math.sin(T
  if(dk>0){const T=[];quad(T,W3(p,-hl,y0+H,-dk),W3(p,-hl,y0+H,ul),W3(p,hl,y0+H,ul),W3(p,hl,y0+H,-dk));bag.tris(p.deckMat||'ply',T);}
  const Bk=[];quad(Bk,W3(p,-hl,y0,-dk),W3(p,-hl,y0+H,-dk),W3(p,hl,y0+H,-dk),W3(p,hl,y0,-dk));bag.tris(p.side||'ply',Bk);
  // coping pipe
- const cg=new THREE.CylinderGeometry(.045,.045,p.len,10,1);cg.rotateZ(Math.PI/2);cg.rotateY(p.r);const[cx,cz]=toWorld(p,0,ul);cg.translate(cx,y0+H,cz);bag.add('rail',cg,'keep');}
+ const cg=new THREE.CylinderGeometry(.045,.045,p.len,16,1);cg.rotateZ(Math.PI/2);cg.rotateY(p.r);const[cx,cz]=toWorld(p,0,ul);cg.translate(cx,y0+H,cz);bag.add('rail',cg,'keep');}
 
 function bowlGeo(bag,p){const N=14,M=8,R=p.R,D=p.D,rc=p.rc,cx=p.hw-rc,cz=p.hd-rc,y0=p.y0||0;
  const ring=[];const corner=(sx,sz,a0)=>{for(let i=0;i<=M;i++){const a=a0+i/M*Math.PI/2;ring.push([sx*cx+Math.cos(a)*rc,sz*cz+Math.sin(a)*rc,Math.cos(a),Math.sin(a)]);}};
@@ -114,9 +126,11 @@ function railMeshes(bag,world){for(const R of world.rails){if(R.kind==='coping')
   for(const s of R.segs){const a=new V(s.a.x,s.a.y,s.a.z),b=new V(s.b.x,s.b.y,s.b.z);
    if(R.kind==='ledge'){// steel angle on the edge
     const g=new THREE.BoxGeometry(.075,.05,s.len+.02);const m=new THREE.Matrix4().lookAt(a,b,new V(0,1,0));g.applyMatrix4(m);const mid=a.clone().add(b).multiplyScalar(.5);g.translate(mid.x,mid.y-.022,mid.z);bag.add('metal',g,'keep');continue;}
-   const g=new THREE.CylinderGeometry(.034,.034,s.len,10,1);g.rotateX(Math.PI/2);const m=new THREE.Matrix4().lookAt(a,b,new V(0,1,0));g.applyMatrix4(m);const mid=a.clone().add(b).multiplyScalar(.5);g.translate(mid.x,mid.y,mid.z);bag.add(R.paint?'paintrail':'rail',g,'keep');
+   if(s===R.segs[0]||s===R.segs[R.segs.length-1])for(const e of(R.segs.length===1?[a,b]:[s===R.segs[0]?a:b])){const c=new THREE.SphereGeometry(.036,12,8);c.translate(e.x,e.y,e.z);bag.add(R.paint?'paintrail':'rail',c,'keep');}
+   const g=new THREE.CylinderGeometry(.034,.034,s.len,16,1);g.rotateX(Math.PI/2);const m=new THREE.Matrix4().lookAt(a,b,new V(0,1,0));g.applyMatrix4(m);const mid=a.clone().add(b).multiplyScalar(.5);g.translate(mid.x,mid.y,mid.z);bag.add(R.paint?'paintrail':'rail',g,'keep');
    const np=Math.max(1,Math.round(s.len/2.6));for(let i=0;i<=np;i++){if(i===0&&s!==R.segs[0])continue;const t=i/np,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t,z=a.z+(b.z-a.z)*t;const gh=world.H(x,z);if(y-gh<.12)continue;
-    const pg=new THREE.CylinderGeometry(.028,.032,y-gh,8,1);pg.translate(x,(y+gh)/2,z);bag.add('rail',pg,'keep');}}}}
+    const pg=new THREE.CylinderGeometry(.028,.032,y-gh,12,1);pg.translate(x,(y+gh)/2,z);bag.add('rail',pg,'keep');const fl=new THREE.CylinderGeometry(.075,.08,.018,14);fl.translate(x,gh+.009,z);bag.add('rail',fl,'keep');
+    for(let k=0;k<4;k++){const bt=new THREE.CylinderGeometry(.009,.009,.016,6);bt.translate(x+Math.cos(k*1.571+.785)*.055,gh+.02,z+Math.sin(k*1.571+.785)*.055);bag.add('dark',bt);}}}}}
 
 /* ---------------- pickups: voxel letters + secret tape ---------------- */
 const FONT={S:['.####','#....','.###.','....#','####.'],K:['#...#','#..#.','###..','#..#.','#...#'],A:['.###.','#...#','#####','#...#','#...#'],T:['#####','..#..','..#..','..#..','..#..'],E:['#####','#....','####.','#....','#####']};
@@ -149,7 +163,7 @@ export function buildLevel(L,world,M,T){const root=new THREE.Group(),bag=new Bag
  // fountain water + sculpture
  for(const hz of world.hazards){const w=new THREE.Mesh(new THREE.CircleGeometry(hz.r,48),new THREE.MeshStandardMaterial({map:T.water,color:0x6ab8d0,roughness:.08,metalness:.1,transparent:true,opacity:.88,envMapIntensity:1.4}));w.rotation.x=-Math.PI/2;w.position.set(hz.x,.42,hz.z);T.water.repeat.set(2,2);root.add(w);anim.push(t=>{T.water.offset.set(t*.03,t*.02);});
   const col=new THREE.CylinderGeometry(.35,.5,1.6,16);col.translate(hz.x,.8,hz.z);bag.add('slab',col);const bw=new THREE.CylinderGeometry(1.1,.4,.35,24);bw.translate(hz.x,1.7,hz.z);bag.add('slab',bw);}
- decor[L.env](L,world,bag,root,M,T,anim);
+ decor[L.env](L,world,bag,root,M,T,anim);dress(L,world,bag,root);
  bag.build(root,M,meshes);
  // pickups
  const letters=L.letters.map((pos,i)=>{const g=new THREE.Group();const m=letterMesh('SKATE'[i]);g.add(m);const beam=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,12,10,1,true),beamMat());beam.userData.noAO=true;beam.position.y=6.4;g.add(beam);g.position.set(...pos);root.add(g);return{g,m,pos:new V(...pos),ch:'SKATE'[i],got:false};});
@@ -192,7 +206,13 @@ const decor={
  },
  day(L,W,bag,root,M,T,anim){const[x0,x1,z0,z1]=L.bounds;srand(42);const r=(a)=>Math.random()*a;
   // towers on three sides
-  const tower=(ax,az,w,d,h,m)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(ax,h/2,az);bag.add(m,g);const c=new THREE.BoxGeometry(w+.6,.6,d+.6);c.translate(ax,h,az);bag.add('dark',c);};
+  const tower=(ax,az,w,d,h,m)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(ax,h/2,az);bag.add(m,g);const c=new THREE.BoxGeometry(w+.6,.6,d+.6);c.translate(ax,h,az);bag.add('dark',c);
+   // mullion ribs, floor bands every two storeys, a dark plinth and rooftop plant so the blocks read as buildings
+   for(const[sx,sz,len,nx,nz]of[[0,d/2,w,0,1],[0,-d/2,w,0,-1],[w/2,0,d,1,0],[-w/2,0,d,-1,0]]){const n=Math.floor(len/4);for(let i=1;i<n;i++){const o=-len/2+i*len/n,r=new THREE.BoxGeometry(nz?.35:.3,h-1,nz?.3:.35);r.translate(ax+sx+(nz?o:nx*.15),h/2,az+sz+(nx?o:nz*.15));bag.add('dark',r);}
+    for(let y=4;y<h-1;y+=4){const b=new THREE.BoxGeometry(nz?len:.22,.16,nz?.22:len);b.translate(ax+sx+nx*.11,y,az+sz+nz*.11);bag.add('slab',b);}}
+   const pl=new THREE.BoxGeometry(w+.3,1.2,d+.3);pl.translate(ax,.6,az);bag.add('dark',pl);
+   for(let i=0;i<2+(Math.random()*3|0);i++){const u=new THREE.BoxGeometry(1.4+r(2),1+r(1.4),1.4+r(2));u.translate(ax+(r(1)-.5)*(w-3),h+.8,az+(r(1)-.5)*(d-3));bag.add('metal',u);}
+   if(Math.random()<.5){const tx=ax+(r(1)-.5)*(w-4),tz=az+(r(1)-.5)*(d-4),t=new THREE.CylinderGeometry(1.1,1.1,2.2,12);t.translate(tx,h+2.6,tz);bag.add('wood',t);const cp=new THREE.ConeGeometry(1.2,.6,12);cp.translate(tx,h+4,tz);bag.add('dark',cp);for(const[a2,b2]of[[-.7,-.7],[.7,-.7],[-.7,.7],[.7,.7]]){const l=new THREE.CylinderGeometry(.06,.06,1.5,4);l.translate(tx+a2,h+.75,tz+b2);bag.add('dark',l);}}};
   const facs=['facB','facG','facS'];let k=0;
   for(let x=x0-6;x<x1+10;){const w=10+r(10),h=16+r(28);tower(x+w/2,z0-6-r(4),w,10,h,facs[k++%3]);x+=w+.5;}
   for(let z=z0;z<z1-8;){const w=10+r(8),h=14+r(20);tower(x0-8,z+w/2,10,w,h,facs[k++%3]);tower(x1+8,z+w/2,10,w,h,facs[k++%3]);z+=w+.5;}
@@ -204,7 +224,7 @@ const decor={
    const crane=(cx,cz,s)=>{const legs=[[-6,-5],[6,-5],[-6,5],[6,5]];for(const[a,b]of legs){const g=new THREE.BoxGeometry(1*s,40*s,1*s);g.translate(cx+a*s,20*s,cz+b*s);bag.add('paintrail',g,'keep');}
     const t=new THREE.BoxGeometry(14*s,2.5*s,12*s);t.translate(cx,41*s,cz);bag.add('paintrail',t,'keep');const boom=new THREE.BoxGeometry(2*s,2*s,70*s);boom.translate(cx,44*s,cz-10*s);bag.add('paintrail',boom,'keep');};
    crane(-70,150,1.1);crane(-20,175,1.2);crane(40,160,1.1);crane(100,190,1.25);
-   const cols=[0xb03a2e,0x2e6fb0,0x2f8f5a,0xd09030,0x6a6a72];for(let i=0;i<40;i++){const g=new THREE.BoxGeometry(6,2.6,2.4);g.translate(-120+r(260),1.3+(r(1)<.4?2.6:0),110+r(30));const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:cols[i%5],roughness:.7,metalness:.3}));root.add(m);}}
+   const cols=[0xb03a2e,0x2e6fb0,0x2f8f5a,0xd09030,0x6a6a72];for(let i=0;i<40;i++){const g=new THREE.BoxGeometry(6,2.6,2.4);g.translate(-120+r(260),1.3+(r(1)<.4?2.6:0),110+r(30));bag.add('cont',g,'world',new THREE.Color(cols[i%5]));}}
   // street lamps
   const lp=[];for(let x=-38;x<=38;x+=12.5){lp.push([x,-30],[x,32]);}for(let z=-16;z<=28;z+=11){lp.push([-32,z],[36,z]);}
   const pole=new THREE.InstancedMesh(new THREE.CylinderGeometry(.07,.1,5,8),new THREE.MeshStandardMaterial({color:0x2c3036,roughness:.5,metalness:.7}),lp.length),head=new THREE.InstancedMesh(new THREE.SphereGeometry(.28,12,8),new THREE.MeshBasicMaterial({color:new THREE.Color(2.4,2.1,1.6)}),lp.length);const mt=new THREE.Matrix4();
@@ -213,7 +233,7 @@ const decor={
   // terrace front face graffiti + plaza banner
   const gp=new THREE.Mesh(new THREE.PlaneGeometry(10,3.75),new THREE.MeshStandardMaterial({map:T.gfx[1],transparent:true,depthWrite:false,roughness:.8}));gp.position.set(-18,1.5/2+.1,-23.98);gp.scale.set(.4,.4,1);root.add(gp);
   // street-level shop fronts on the side towers (lit awnings)
-  const awn=new THREE.MeshStandardMaterial({color:0xd1361f,roughness:.6});for(let z=-20;z<28;z+=12){for(const x of[x0-2.6,x1+2.6]){const a=new THREE.Mesh(new THREE.BoxGeometry(1.4,.25,6),awn);a.position.set(x,3.4,z);root.add(a);}}
+  for(let z=-20;z<28;z+=12){for(const x of[x0-2.6,x1+2.6]){const a=new THREE.BoxGeometry(1.4,.25,6);a.rotateZ(x<0?-.25:.25);a.translate(x,3.4,z);bag.add('prop',a,'world',new THREE.Color((z/12|0)%2?0x2e6fb0:0xd1361f));}}
  },
  dusk(L,W,bag,root,M,T,anim){const[x0,x1,z0,z1]=L.bounds;srand(77);const r=a=>Math.random()*a;
   // chain-link fence on the open sides
@@ -249,6 +269,44 @@ const decor={
   const sg=new THREE.Mesh(new THREE.PlaneGeometry(16,2),new THREE.MeshStandardMaterial({map:sign,roughness:.6}));sg.position.set(-24,3.6,-25.97);root.add(sg);
   const gfx=new THREE.Mesh(new THREE.PlaneGeometry(10,3.75),new THREE.MeshStandardMaterial({map:T.gfx[3],transparent:true,depthWrite:false,roughness:.8}));gfx.position.set(26,2.2,-29.97);root.add(gfx);
  }};
-function trees(root,list,W,sc=1){const tg=[],fg=[];for(const[x,z,y]of list){const gy=y??W.H(x,z);const s=sc*(.8+Math.random()*.5);const t=new THREE.CylinderGeometry(.12*s,.18*s,2.6*s,7);t.translate(x,gy+1.3*s,z);tg.push(t);
-  for(let i=0;i<4;i++){const f=new THREE.IcosahedronGeometry((1.1+Math.random()*.6)*s,1);f.translate(x+(Math.random()-.5)*1.4*s,gy+(2.8+Math.random()*1.4)*s,z+(Math.random()-.5)*1.4*s);fg.push(f);}}
- if(!tg.length)return;const a=new THREE.Mesh(mergeG(tg),new THREE.MeshStandardMaterial({color:0x4a3626,roughness:.9}));const b=new THREE.Mesh(mergeG(fg),new THREE.MeshStandardMaterial({color:0x3f6a2c,roughness:.85,flatShading:true}));a.castShadow=b.castShadow=true;root.add(a,b);}
+/* ---------------- props and floor decals (merged into the bag: one draw call per material) ---------------- */
+const C3=c=>new THREE.Color(c);
+function dress(L,W,bag,root){const[x0,x1,z0,z1]=L.bounds,base=W.base;
+ const flat=(x,z,r)=>{for(const[a,b]of[[0,0],[r,0],[-r,0],[0,r],[0,-r],[r*.7,r*.7],[-r*.7,-r*.7],[r*.7,-r*.7],[-r*.7,r*.7]]){if(Math.abs(W.H(x+a,z+b)-base)>.002)return false;}return!W.hazard(x,z)&&!W.rail({x,y:base,z},r+.3,-1,2);};
+ const quad=(k,cell,x,z,w,d,rot,y=base+.004)=>{const c=Math.cos(rot),s=Math.sin(rot),P=(a,b)=>[x+a*c+b*s,y,z-a*s+b*c];const A=P(-w/2,-d/2),B=P(w/2,-d/2),C=P(w/2,d/2),D=P(-w/2,d/2);
+  let u0=0,u1=1,v0=0,v1=1;if(cell>=0){u0=(cell%4)/4+.004;u1=u0+.242;v1=1-(cell/4|0)/2-.004;v0=v1-.492;}bag.tris(k,[...A,...C,...B,...A,...D,...C],[u0,v1,u1,v0,u1,v1,u0,v1,u0,v0,u1,v0]);};
+ const scatter=(n,cells,smin,smax)=>{let tries=0;while(n>0&&tries++<n*40){const x=x0+2+Math.random()*(x1-x0-4),z=z0+2+Math.random()*(z1-z0-4),sz=smin+Math.random()*(smax-smin);if(!flat(x,z,sz*.6))continue;quad('decal',cells[Math.random()*cells.length|0],x,z,sz,sz,Math.random()*6.28);n--;}};
+ const P=(g,c,x,y,z)=>{g.translate(x,y,z);bag.add('prop',g,'world',C3(c));};
+ const cone=(x,z)=>{const y=W.H(x,z);P(new THREE.BoxGeometry(.38,.035,.38),0x1e1e20,x,y+.018,z);P(new THREE.CylinderGeometry(.025,.15,.52,14,1,true),0xff5a10,x,y+.29,z);P(new THREE.CylinderGeometry(.075,.1,.1,14,1,true),0xf2f2f2,x,y+.33,z);};
+ const pallets=(x,z,n,ry=0)=>{for(let i=0;i<n;i++){const y=base+i*.15,r=ry+(Math.random()-.5)*.12;for(let k=0;k<5;k++){const g=new THREE.BoxGeometry(1.2,.022,.16);g.translate(0,.139,-.42+k*.21);g.rotateY(r);g.translate(x,y,z);bag.add('wood',g);}for(const a of[-.5,0,.5]){const g=new THREE.BoxGeometry(.12,.11,1.0);g.translate(a,.072,0);g.rotateY(r);g.translate(x,y,z);bag.add('wood',g);}}};
+ const bin=(x,z,c=0x2f5a3a)=>{const y=W.H(x,z);P(new THREE.CylinderGeometry(.3,.27,.9,16),c,x,y+.45,z);P(new THREE.CylinderGeometry(.32,.32,.06,16),0x1c1c1e,x,y+.93,z);};
+ const bollard=(x,z)=>{const y=W.H(x,z);P(new THREE.CylinderGeometry(.1,.11,.85,12),0x2c3036,x,y+.425,z);P(new THREE.SphereGeometry(.1,12,6,0,6.29,0,1.6),0x2c3036,x,y+.85,z);P(new THREE.CylinderGeometry(.112,.112,.06,12,1,true),0xe8b020,x,y+.7,z);};
+ const rack=(x,z,n,ry=0)=>{for(let i=0;i<n;i++){const g=new THREE.TorusGeometry(.34,.024,6,14,Math.PI);g.translate(0,.4,0);g.translate((i-(n-1)/2)*.7,0,0);g.rotateY(ry);g.translate(x,W.H(x,z),z);bag.add('rail',g,'keep');for(const s of[-1,1]){const l=new THREE.CylinderGeometry(.024,.024,.4,6);l.translate((i-(n-1)/2)*.7+s*.34,.2,0);l.rotateY(ry);l.translate(x,W.H(x,z),z);bag.add('rail',l,'keep');}}};
+ if(L.env==='indoor'){scatter(26,[0,1,1,2],1.6,3.4);quad('decal',7,6,8,3,3,.2);
+  for(const[x,z]of[[-34.6,-24.6],[-33.6,-25],[-35,-23.4],[35,19.2],[34.1,19.9],[35.2,-18.8]])cone(x,z);pallets(-33,-21.6,4,.1);pallets(-31.4,-24.6,2,-.2);pallets(33.6,21.6,3);
+  for(const[x,z]of[[-29.5,-25.2],[-28.7,-25.3]]){P(new THREE.CylinderGeometry(.3,.3,.88,16),0x2e6fb0,x,base+.44,z);}
+  // neon sign on a dark backing board
+  const bk=new THREE.BoxGeometry(.1,2.9,10.6);bk.translate(x1-.06,8.3,2);bag.add('dark',bk);{const g=new THREE.PlaneGeometry(10,2.5);g.rotateY(-Math.PI/2);g.translate(x1-.13,8.3,2);bag.add('neon',g,'keep');}
+  // banners hung in front of the long walls between the high windows
+  for(let i=0,x=x0+7.5;x<x1-4;x+=7,i++)for(const z of[z0+.7,z1-.7]){if(Math.abs(x)<10&&z<0)continue;const g=new THREE.PlaneGeometry(1.8,4.2);const uv=g.attributes.uv,c=(i+(z>0?2:0))%4;for(let k=0;k<uv.count;k++)uv.setX(k,(c+uv.getX(k))/4);if(z>0)g.rotateY(Math.PI);g.translate(x,7.4,z);bag.add('banner',g,'keep');const rod=new THREE.CylinderGeometry(.03,.03,2.1,6);rod.rotateZ(Math.PI/2);rod.translate(x,9.55,z);bag.add('dark',rod);}}
+ if(L.env==='day'){scatter(30,[0,0,2,1],1.4,3);for(const[x,z]of[[-8,30],[10,-2],[-30,-4],[30,8],[20,28]])if(flat(x,z,1))quad('decal',3,x,z,1.4,1.4,Math.random()*6);
+  for(const[x,z]of[[-12,24.5],[12,24.5],[-30,24],[30,24]])if(flat(x,z,1))quad('decal',6,x,z,1.2,1.2,0);
+  for(let x=-38;x<=38;x+=4)if(Math.abs(x)>9)bollard(x,z1-1.1);bin(-19.5,10,0x2a4a3a);bin(19.5,10,0x2a4a3a);bin(-8,-21.6,0x3a3a40);bin(8,-21.6,0x3a3a40);rack(-36,28,4);rack(36,-12,3,Math.PI/2);}
+ if(L.env==='dusk'){scatter(24,[0,1,2,2],1.6,3.4);
+  for(let i=0;i<7;i++)quad('decal',5,36+i*1.0,33,3.6,.9,Math.PI/2);quad('decal',4,-6,34,1.6,3.2,0);for(const[x,z]of[[-3,11],[-3,8],[0,11],[0,8]])if(flat(x,z,7)){quad('play',-1,x,z,14,7,0);break;}quad('decal',7,6,10,3,3,-.3);
+  let n=0,t=0;while(n<12&&t++<300){const x=x0+4+Math.random()*(x1-x0-8),z=-24+Math.random()*60,w=2.4+Math.random()*3,d=1.6+Math.random()*2;if(!flat(x,z,Math.max(w,d)*.55))continue;quad('puddle',-1,x,z,w,d,Math.random()*6.28,base+.006);n++;}
+  // dumpster against the gym wall, cones by the quarter pipes, a bike rack on the yard
+  {const x=39,z=-28.4,g=new THREE.BoxGeometry(2.2,1.15,1.2);P(g,0x2a5a3c,x,base+.62,z);const l=new THREE.BoxGeometry(2.3,.08,1.3);l.rotateX(-.12);P(l,0x1d3a28,x,base+1.24,z);for(const s of[-1,1]){P(new THREE.CylinderGeometry(.06,.06,.1,8),0x111111,x+s*.9,base+.05,z);}}
+  for(const[x,z]of[[12,-28.6],[12.8,-28.8],[20,-3.6]])cone(x,z);rack(10,-1.6,3);bin(-10,14,0x3a4a5a);bin(30,22.4,0x3a4a5a);}}
+
+// trees: tapered trunk with two limbs and a canopy of lumpy clusters, vertex-coloured (darker inside, sunlit on top)
+function trees(root,list,W,sc=1){const tg=[],fg=[];const C=new THREE.Color();
+ for(const[x,z,y]of list){const gy=y??W.H(x,z);const s=sc*(.8+Math.random()*.5);const t=new THREE.CylinderGeometry(.1*s,.2*s,2.8*s,8);t.translate(x,gy+1.4*s,z);tg.push(t);
+  for(let b=0;b<2;b++){const a=Math.random()*6.28,l=new THREE.CylinderGeometry(.05*s,.09*s,1.4*s,6);l.translate(0,.7*s,0);l.rotateZ(.7);l.rotateY(a);l.translate(x,gy+2*s,z);tg.push(l);}
+  const hue=.24+Math.random()*.06,n=6+(Math.random()*3|0);for(let i=0;i<n;i++){const r=(.8+Math.random()*.6)*s,f=new THREE.IcosahedronGeometry(r,1),P=f.attributes.position;
+   for(let k=0;k<P.count;k++){const j=1+(Math.sin(P.getX(k)*7.1+i)*Math.cos(P.getZ(k)*6.3+P.getY(k)*5)*.16);P.setXYZ(k,P.getX(k)*j,P.getY(k)*j*.85,P.getZ(k)*j);}
+   const a=i/n*6.28,d=i===0?0:(.7+Math.random()*.5)*s,cy=gy+(i===0?4.1:3.1+Math.random()*1.3)*s;f.translate(x+Math.cos(a)*d,cy,z+Math.sin(a)*d);f.computeVertexNormals();const nf=f;
+   const col=new Float32Array(nf.attributes.position.count*3);for(let k=0;k<nf.attributes.position.count;k++){const h=(nf.attributes.position.getY(k)-gy)/(5*s);C.setHSL(hue+Math.random()*.03,.5+Math.random()*.1,.07+h*.13+Math.random()*.03);col.set([C.r,C.g,C.b],k*3);}
+   nf.setAttribute('color',new THREE.BufferAttribute(col,3));fg.push(nf);}}
+ if(!tg.length)return;const a=new THREE.Mesh(mergeG(tg),new THREE.MeshStandardMaterial({color:0x4a3626,roughness:.95}));const g=mergeG(fg);let n=0;fg.forEach(f=>n+=f.attributes.color.count);const cc=new Float32Array(n*3);let o=0;fg.forEach(f=>{cc.set(f.attributes.color.array,o);o+=f.attributes.color.array.length;});g.setAttribute('color',new THREE.BufferAttribute(cc,3));
+ const b=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8,flatShading:true}));a.castShadow=b.castShadow=true;a.receiveShadow=b.receiveShadow=true;root.add(a,b);}

@@ -1,24 +1,36 @@
 // PET BRAWL — procedural low-poly pets (14 body plans + features), baked into a few vertex-coloured meshes each.
 import * as THREE from '../vendor/three.module.min.js';
 const V=THREE.Vector3;
-const GEO={sph:new THREE.IcosahedronGeometry(1,1),sph2:new THREE.IcosahedronGeometry(1,2),cyl:new THREE.CylinderGeometry(1,1,1,7),cone:new THREE.ConeGeometry(1,1,6),box:new THREE.BoxGeometry(1,1,1),tor:new THREE.TorusGeometry(1,.3,6,14),oct:new THREE.OctahedronGeometry(1,0)};
-const MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:0,flatShading:true});
-const MATS=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.35,metalness:0,flatShading:false});
+import {quality} from '../js/fx3d.js';
+// geometry + materials per graphics level: low keeps the faceted look, medium/ultra get rounder parts, soft "vinyl toy" shading,
+// a felt bump and glossy eyes (ultra adds a sheen layer)
+const GEO_LO={sph:new THREE.IcosahedronGeometry(1,1),sph2:new THREE.IcosahedronGeometry(1,2),cyl:new THREE.CylinderGeometry(1,1,1,7),cone:new THREE.ConeGeometry(1,1,6),box:new THREE.BoxGeometry(1,1,1),tor:new THREE.TorusGeometry(1,.3,6,14),oct:new THREE.OctahedronGeometry(1,0)};
+const GEO_HI={sph:new THREE.IcosahedronGeometry(1,2),sph2:new THREE.IcosahedronGeometry(1,2),cyl:new THREE.CylinderGeometry(1,1,1,12),cone:new THREE.ConeGeometry(1,1,10),box:new THREE.BoxGeometry(1,1,1),tor:new THREE.TorusGeometry(1,.3,8,20),oct:new THREE.OctahedronGeometry(1,0)};
+let GEO=GEO_LO;
+function feltTex(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#808080';x.fillRect(0,0,128,128);let s=7;const r=()=>(s=(s*16807)%2147483647)/2147483647;for(let i=0;i<2600;i++){const v=90+r()*120|0;x.strokeStyle=`rgb(${v},${v},${v})`;x.lineWidth=.8;const px=r()*128,py=r()*128,a=r()*6.3;x.beginPath();x.moveTo(px,py);x.lineTo(px+Math.cos(a)*3,py+Math.sin(a)*3);x.stroke();}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,3);return t;}
+const MATQ=[];function mats(q){if(MATQ[q])return MATQ[q];let m;
+ if(q===0)m=[new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:0,flatShading:true}),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.35,metalness:0,flatShading:false})];
+ else{const bump=MATQ.bump||(MATQ.bump=feltTex());m=[q>=2?new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.62,metalness:0,bumpMap:bump,bumpScale:.8,sheen:.35,sheenRoughness:.55,sheenColor:new THREE.Color(0xfff4e8),envMapIntensity:.6}):new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:0,bumpMap:bump,bumpScale:.8,envMapIntensity:.6}),
+  new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.18,metalness:0,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.3})];}
+ return MATQ[q]=m;}
+let MAT,MATS;
 const C=c=>new THREE.Color(c);
 // a part = [geo, pos, scale, rot, color, smooth?]
 function part(g,geo,col,x,y,z,sx,sy=sx,sz=sx,rx=0,ry=0,rz=0,smooth){const m=new THREE.Mesh(GEO[geo]||geo,null);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.set(rx,ry,rz);m.userData.c=C(col);m.userData.smooth=smooth;g.add(m);return m;}
-function bake(g){// merge direct child meshes into one or two meshes (flat + smooth)
+const sst=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
+function bake(g,oy=0,s=1){// merge direct child meshes into one or two meshes (flat + smooth); bake a soft ground-occlusion gradient + tint jitter into the vertex colours
  const flat=[],smooth=[];for(const m of [...g.children])if(m.isMesh&&m.userData.c){(m.userData.smooth?smooth:flat).push(m);g.remove(m);}
  for(const[list,mat]of[[flat,MAT],[smooth,MATS]]){if(!list.length)continue;let n=0;const gs=list.map(m=>{m.updateMatrix();const q=(m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone());q.applyMatrix4(m.matrix);n+=q.attributes.position.count;return[q,m.userData.c];});
-  const pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3);let o=0;for(const[q,c]of gs){const k=q.attributes.position.count;pos.set(q.attributes.position.array,o*3);if(!q.attributes.normal)q.computeVertexNormals();nor.set(q.attributes.normal.array,o*3);for(let i=0;i<k;i++){col[(o+i)*3]=c.r;col[(o+i)*3+1]=c.g;col[(o+i)*3+2]=c.b;}o+=k;q.dispose();}
-  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.computeBoundingSphere();
+  const pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3),uv=new Float32Array(n*2);let o=0;for(const[q,c]of gs){const k=q.attributes.position.count,P=q.attributes.position,tj=.95+Math.random()*.1;pos.set(P.array,o*3);if(!q.attributes.normal)q.computeVertexNormals();nor.set(q.attributes.normal.array,o*3);if(q.attributes.uv)uv.set(q.attributes.uv.array,o*2);
+   for(let i=0;i<k;i++){const y=P.getY(i)+oy,ny=q.attributes.normal.getY(i),f=(.6+.4*sst(-.05*s,.55*s,y))*(1+ny*.06)*tj;col[(o+i)*3]=c.r*f;col[(o+i)*3+1]=c.g*f;col[(o+i)*3+2]=c.b*f;}o+=k;q.dispose();}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));geo.computeBoundingSphere();
   const mesh=new THREE.Mesh(geo,mat);mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);}
- for(const c of g.children)if(c.isGroup)bake(c);}
+ for(const c of g.children)if(c.isGroup)bake(c,oy+c.position.y,s);}
 function eyes(g,y,z,sep,r,o={}){for(const s of[-1,1]){part(g,'sph2','#ffffff',s*sep,y,z,r,r*1.1,r*.7,0,0,0,1);part(g,'sph2',o.col||'#14141a',s*sep,y+.005,z+r*.5,r*.62,r*.72,r*.4,0,0,0,1);part(g,'sph2','#ffffff',s*sep+r*.2,y+r*.3,z+r*.78,r*.2,r*.2,r*.15,0,0,0,1);}}
 function grp(parent,x,y,z){const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);return g;}
 const dark='#2a2a30';
 
-export function makePet(m){const s=m.s||1,root=new THREE.Group(),body=grp(root,0,0,0);const U={legs:[],wings:[],body,root,plan:m.b,s};
+export function makePet(m){const Q=quality();GEO=Q?GEO_HI:GEO_LO;[MAT,MATS]=mats(Q);const s=m.s||1,root=new THREE.Group(),body=grp(root,0,0,0);const U={legs:[],wings:[],body,root,plan:m.b,s};
  const c=m.c,c2=m.c2;let head=null;
  const legsQuad=(h,spread,zf,zb,r=.09)=>{for(const[x,z]of[[-spread,zf],[spread,zf],[-spread,zb],[spread,zb]]){const L=grp(body,x*s,h*s,z*s);part(L,'cyl',c,0,-h*s/2,0,r*s,h*s,r*s);part(L,'sph',c2,0,-h*s,0,r*1.25*s,r*.8*s,r*1.4*s);U.legs.push(L);}};
  const tail=(type,y,z)=>{if(!type||type==='none')return;const T=grp(body,0,y*s,z*s);U.tail=T;
@@ -116,9 +128,10 @@ export function makePet(m){const s=m.s||1,root=new THREE.Group(),body=grp(root,0
  else if(plan==='octo'){const by=.75*s;part(body,'sph',c,0,by,0,.45*s,.5*s,.45*s);for(let i=0;i<5;i++)part(body,'sph',c2,Math.cos(i)*.3*s,by+.1*s+Math.sin(i*2)*.15*s,.3*s,.06*s);
   head=grp(body,0,by,.3*s);eyes(head,0,.1*s,.18*s,.1*s);
   for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const L=grp(body,Math.cos(a)*.3*s,by-.35*s,Math.sin(a)*.3*s);L.rotation.y=-a;for(let k=0;k<3;k++)part(L,'sph',k%2?c2:c,.12*s+k*.14*s,-.15*s-k*.08*s+k*k*.04*s,0,(.1-k*.02)*s);U.legs.push(L);}}
- U.head=head;bake(root);
+ U.head=head;bake(root,0,s);
  // shadow-friendly glow material for firefly / phoenix parts handled via emissive tint
  if(m.glow)root.traverse(o=>{if(o.isMesh&&o.material===MATS){o.material=MATS.clone();o.material.emissive=new THREE.Color(m.glow);o.material.emissiveIntensity=.6;}});
+ GEO=GEO_LO;
  root.userData=U;return root;}
 
 // idle / walk / attack pose; t = time, k = per-pet phase

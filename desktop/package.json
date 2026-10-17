@@ -1,0 +1,95 @@
+{
+  "name": "pixel-arcade-desktop",
+  "productName": "Pixel Arcade",
+  "version": "1.2.0",
+  "description": "Pixel Arcade: 503 original games, 48 full-3D worlds and a game builder, as a desktop app.",
+  "main": "main.js",
+  "author": "Normansrule",
+  "license": "MIT",
+  "homepage": "https://normansrule.github.io/pixel-arcade/",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "io.github.normansrule.pixelarcade",
+    "productName": "Pixel Arcade",
+    "directories": {
+      "output": "release"
+    },
+    "icon": "../docs/icons/icon-1024.png",
+    "files": [
+      "main.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "..",
+        "to": "site",
+        "filter": [
+          "**/*",
+          "!desktop/**",
+          "!dist/**",
+          "!node_modules/**",
+          "!.git/**",
+          "!.github/**",
+          "!**/*.py",
+          "!**/*.md",
+          "!tests/**",
+          "!tools/**",
+          "!games/index.json",
+          "!docs/readme/**",
+          "!docs/QUALITY*",
+          "!docs/*.png",
+          "!**/*.mjs"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Pixel-Arcade-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Pixel-Arcade-Portable-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.games",
+      "artifactName": "Pixel-Arcade-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Game",
+      "artifactName": "Pixel-Arcade-${version}-${arch}.${ext}"
+    }
+  }
+}

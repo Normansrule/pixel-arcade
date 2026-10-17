@@ -8,6 +8,8 @@ import * as S from './sim.js';
 import {Diorama,makeFood,TEAM_X,TEAM_Z,SHOP_Y,SHOP_Z,shopX,BAT_X,BAT_Z} from './scene.js';
 import {makePet} from './models.js';
 import {Sound} from './sound.js';
+import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
+import {postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
 const SHOP_TIME=60,FACE_TEAM=Math.PI/2-.42,FACE_SHOP=.25;
@@ -18,7 +20,7 @@ const KEY_LABEL=['B','V','C','X','Z'];
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
 const D=new Diorama(R);const snd=new Sound();
 let gfx=quality(),fxP=null;
-function applyQuality(q){gfx=q;R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));D.sun.castShadow=q>0;fxP=null;}
+function applyQuality(q){gfx=q;R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));D.sun.castShadow=q>0;D.setQuality(q);fxP=null;}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 
 /* ================= state ================= */
@@ -151,13 +153,13 @@ function proc(e,instant){let w=0;
     v.stat={a:u.a,h:u.h,lv:u.lv,perk:u.perk,id:u.id};v.side=u.side;v.face=u.side?-Math.PI/2:Math.PI/2;}
    for(const[k]of [...D.views])if(k[0]==='t'){D.removeView(k,true);dropBadge(k);}relayout();w=1.4;break;}
   case'phase':if(!instant)banner('START OF BATTLE','','',.8);w=.5;break;
-  case'ability':{const v=bview(e.uid);if(!instant){callout(v,e.trig,e.n);snd.play('ability');}if(v){v.pop=1;}w=.55;break;}
+  case'ability':{const v=bview(e.uid);if(!instant){callout(v,e.trig,e.n);snd.play('ability');}if(v){v.pop=1;if(!instant)D.aura(v.g.position);}w=.55;break;}
   case'buff':{const v=bview(e.uid);if(v){v.stat.a=e.na;v.stat.h=e.nh;if(!instant){floatText(v,(e.a?(e.a>0?'+':'')+e.a:'')+(e.a&&e.h?'/':'')+(e.h?(e.h>0?'+':'')+e.h:''),e.a<0?'neg':'buff');v.pop=1;}}w=.3;break;}
-  case'dmg':{const v=bview(e.uid);if(v){v.stat.h=e.h;if(!instant){floatText(v,'-'+e.n,'dmg',1.3);v.hurt=1;if(!e.atk){const sv=bview(e.src);if(sv)D.sparkle(v.g.position,'#ffb03a',10);snd.play('hit');}}}w=e.atk?.12:.38;break;}
-  case'attack':{const a=bview(e.a),b=bview(e.b);if(a)a.lunge=1;if(b)b.lunge=1;if(!instant){D.shake=.5;snd.play('hit');if(a&&b)setTimeout(()=>D.poof(new THREE.Vector3(0,.4,BAT_Z),['#ffffff','#ffe0a0'],14),130/speed);}w=.5;break;}
+  case'dmg':{const v=bview(e.uid);if(v){v.stat.h=e.h;if(!instant){floatText(v,'-'+e.n,'dmg',1.3);v.hurt=1;D.hit(v.g.position,e.atk?'#ff7a3a':'#ffb03a');if(!e.atk){const sv=bview(e.src);if(sv)D.sparkle(v.g.position,'#ffb03a',10);snd.play('hit');}}}w=e.atk?.12:.38;break;}
+  case'attack':{const a=bview(e.a),b=bview(e.b);if(a)a.lunge=1;if(b)b.lunge=1;if(!instant){D.shake=.5;snd.play('hit');if(a&&b)setTimeout(()=>D.impact(new THREE.Vector3(0,.3,BAT_Z)),130/speed);}w=.5;break;}
   case'block':{const v=bview(e.uid);if(!instant)floatText(v,'BLOCKED','blk');w=.28;break;}
   case'perk':{const v=bview(e.uid);if(v){v.stat.perk=e.perk;if(!instant){if(e.pop){D.poof(v.g.position,['#9af0ff','#ffffff'],20);floatText(v,'POP!','blk');}else floatText(v,e.perk?PERKS[e.perk].ic+' '+PERKS[e.perk].n:'PERK LOST',e.perk?'buff':'neg');}}w=.3;break;}
-  case'faint':{const v=bview(e.uid);if(v){v.faint=.001;v.removeAt=time+(instant?0:.7);if(!instant)D.poof(v.g.position,['#ffffff','#d8d8e8','#ffd0e0'],22);}B.order=e.order;relayout();if(!instant)snd.play('faint');w=.5;break;}
+  case'faint':{const v=bview(e.uid);if(v){v.faint=.001;v.removeAt=time+(instant?0:.7);if(!instant){D.poof(v.g.position,['#ffffff','#d8d8e8','#ffd0e0'],22);D.soul(v.g.position);}}B.order=e.order;relayout();if(!instant)snd.play('faint');w=.5;break;}
   case'summon':{const u=e.unit;B.order=e.order;const i=B.order[u.side].indexOf(u.uid);const v=D.petView('b'+u.uid,u.id,{x:BAT_X(u.side,i),y:.3,z:BAT_Z});v.spawn=0;v.stat={a:u.a,h:u.h,lv:u.lv,perk:u.perk,id:u.id};v.face=u.side?-Math.PI/2:Math.PI/2;v.side=u.side;relayout();if(!instant){D.sparkle(v.g.position,'#b8f0ff',22);snd.play('summon');}w=.45;break;}
   case'end':{B.done=true;w=0;break;}}
  return w;}
@@ -182,9 +184,9 @@ function portrait(id,food){const k=(food?'f:':'p:')+id;if(PORT.has(k))return POR
 function score(){return S.score(G);}
 function award(){const pts=score(),won=G.over==='win';const team=G.team.filter(Boolean);const mvp=team.slice().sort((a,b)=>b.dmg-a.dmg)[0];
  lastAward={pts,won,wins:G.wins,lives:G.lives,turns:G.turn,record:`${G.wins}-${G.losses}-${G.draws}`,diff:['casual','normal','tough'][G.diff],mvp:mvp?petById(mvp.id).n:''};
- const tok=5+Math.min(60,pts/25|0);try{const p=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};p.played++;p.tokens+=tok;if(won)p.wins++;localStorage.setItem('pxd_profile',JSON.stringify(p));
-  const k='pxd_hs_'+(p.user?p.user.toLowerCase()+'_':'')+ID;if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);localStorage.setItem('petbrawl_best',Math.max(+(localStorage.getItem('petbrawl_best')||0),G.wins));}catch(e){}return tok;}
-function best(){try{const p=JSON.parse(localStorage.getItem('pxd_profile'))||{};return +(localStorage.getItem('pxd_hs_'+(p.user?p.user.toLowerCase()+'_':'')+ID)||0);}catch(e){return 0;}}
+ const tok=5+Math.min(60,pts/25|0);addRound(tok,won);saveBest(ID,pts);
+  try{localStorage.setItem('petbrawl_best',Math.max(+(localStorage.getItem('petbrawl_best')||0),G.wins));}catch(e){}return tok;}
+function best(){return bestScore(ID);}
 function showOver(){app='over';const tok=award();const won=G.over==='win';$('oeye').textContent=won?'RUN COMPLETE · 10 TROPHIES':'RUN OVER · OUT OF LIVES';$('ores').textContent=won?'CHAMPIONS!':'KNOCKED OUT';$('ores').style.color=won?'#ffd23a':'#ff5a5a';
  const st=[['TROPHIES',G.wins+'/10'],['LIVES LEFT',G.lives],['TURNS',G.turn],['RECORD',`${G.wins}-${G.losses}-${G.draws}`],['SCORE',lastAward.pts]];$('ostats').innerHTML=st.map(([a,b])=>`<div><i>${a}</i><b>${b}</b></div>`).join('');
  const team=G.team.filter(Boolean),mvp=team.slice().sort((a,b)=>b.dmg-a.dmg)[0];
@@ -210,9 +212,8 @@ $('go').onclick=()=>newRun();$('again').onclick=()=>newRun();$('omenu').onclick=
 $('b-roll').onclick=()=>act('roll');$('b-freeze').onclick=()=>act('freeze');$('b-sell').onclick=()=>act('sell');$('b-end').onclick=()=>act('end');
 $('speed').querySelectorAll('button').forEach(b=>b.onclick=()=>{const v=+b.dataset.v;if(v===99){skipBattle();return;}setSpeed(v);});
 function setSpeed(v){speed=v;$('speed').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));}
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
- const body=`Game: Pet Brawl\nScore: ${a.pts||0}\nResult: ${a.won?'champion':'knocked out'} · ${a.wins||0} trophies · record ${a.record||''}\nTurns: ${a.turns||0} · lives left ${a.lives??''}\nMVP: ${a.mvp||''} · ${a.diff||''} ghosts\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] '+ID+' '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+postButton($('post'),ID,()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Pet Brawl\nScore: ${a.pts||0}\nResult: ${a.won?'champion':'knocked out'} · ${a.wins||0} trophies · record ${a.record||''}\nTurns: ${a.turns||0} · lives left ${a.lives??''}\nMVP: ${a.mvp||''} · ${a.diff||''} ghosts`];});
 addEventListener('keydown',e=>{if(e.repeat)return;snd.init();const c=e.code;
  if(indexOpen){if(c==='Escape'||c==='KeyI')closeIndex();return;}
  if(c==='KeyI'&&app!=='menu'){openIndex();return;}
@@ -240,7 +241,7 @@ function frame(){updateBadges();if(app==='shop'||app==='prebattle')updateTimer()
 function render(){const w=W(),h=H();if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);if(fxP)fxP.w=0;}D.cam.aspect=w/h;D.cam.updateProjectionMatrix();
  if(!fxP){fxP=cinematic(R,D.scene,D.cam,{exposure:1.02,bloom:.32,bloomThreshold:.92,bloomRadius:.4,vignette:.3,saturation:1.1,grain:.012,aoStrength:.7});fxP.w=0;}if(fxP.w!==w*9999+h){fxP.w=w*9999+h;fxP.setSize(w,h);}fxP.render();}
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);frame();render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);frame();render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.PETS={get state(){return app;},get app(){return app;},get G(){return G;},newRun,newGame:()=>newRun(),toMenu,step,frame,render,

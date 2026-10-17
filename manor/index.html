@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hollow Manor · Pixel Arcade</title>
+<meta name="description" content="Hollow Manor: first-person survival horror. Find three sigils in a dark manor and escape before dawn while something hunts you by sound and sight.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="manor.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hideov" hidden><i></i></div>
+<div id="nearov"></div><div id="hurtov"></div><div id="scareov"></div><div id="fade"></div>
+<div id="hud" hidden>
+  <div id="tl"><p id="room"></p><p id="obj"></p></div>
+  <div id="tr"><b id="clock">3:00</b><small>AM · DAWN AT SIX</small><div class="dawn"><em id="dawnBar"></em></div></div>
+  <div id="eye"><svg viewBox="0 0 64 32"><path id="eyeLid" d="M2 16 Q32 -8 62 16 Q32 40 2 16Z"/><circle id="eyePupil" cx="32" cy="16" r="6"/></svg><span id="eyeT"></span></div>
+  <div id="bl"><div id="sig"><span></span><span></span><span></span></div><div id="inv"></div><div id="wounds"></div></div>
+  <div id="br"><div id="bat"><svg viewBox="0 0 34 14"><rect x="1" y="1" width="28" height="12" rx="2"/><rect x="29" y="4" width="4" height="6" rx="1"/></svg><div class="cells"><i></i><i></i><i></i><i></i><i></i></div></div><span id="spare"></span><small id="flashK">[F] LIGHT · [R] BATTERY</small></div>
+  <div id="dot"></div>
+  <div id="prompt"></div>
+  <div id="msg"></div>
+  <div id="stam"><em></em></div>
+  <div id="breath" hidden><div class="bar"><em></em></div><span>HOLD [SPACE] TO HOLD YOUR BREATH · [E] LEAVE</span></div>
+</div>
+<div id="note" hidden><div class="paper"><h4 id="noteT"></h4><div id="noteB"></div><small>[E] CLOSE</small></div></div>
+<div id="safe" hidden><div class="box"><p class="eye">STUDY SAFE</p><div class="dials"><div class="dial"><b>0</b></div><div class="dial"><b>0</b></div><div class="dial"><b>0</b></div></div><p class="hint">[A][D] SELECT · [W][S] / WHEEL TURN · [E] TRY · [Q] STEP AWAY</p></div></div>
+<div id="mapov" hidden><div class="mbox"><p class="eye" id="mapT">GROUND FLOOR</p><canvas id="mapc" width="600" height="440"></canvas><p class="hint">[M] CLOSE · ROOMS YOU HAVE SEEN · <i class="me"></i> YOU</p></div></div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SURVIVAL HORROR</p>
+  <h1>HOLLOW<br><span>MANOR</span></h1>
+  <p class="how">The front door will not open. Three sigils bind it, hidden about the house — behind locked doors, a dead fuse box, a safe and a wall of portraits. Something in a torn veil walks these halls. It hunts by sound and by light. Find the sigils and get out before dawn.</p>
+  <div class="opts">
+    <label>THE MOURNER</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>UNTIL DAWN</label><div class="seg" id="o-len"><button data-v="12">12 MIN</button><button data-v="18">18 MIN</button><button data-v="25">25 MIN</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">ENTER THE MANOR</button></div>
+  <p class="best" id="best"></p>
+  <p class="warn">Headphones recommended · contains jump scares</p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS</h3>
+  <table>
+    <tr><td>Move · look</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
+    <tr><td>Sprint (loud) · crouch (quiet)</td><td><kbd>Shift</kbd> <kbd>C</kbd></td></tr>
+    <tr><td>Use · open · hide · pick up</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Flashlight · fresh battery</td><td><kbd>F</kbd> <kbd>R</kbd></td></tr>
+    <tr><td>Hold breath (hidden)</td><td><kbd>Space</kbd></td></tr>
+    <tr><td>Floor plan · pause · graphics</td><td><kbd>M</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+    <tr><td>Gamepad</td><td><span class="pad">A use · X light · B crouch · LB sprint · Y map</span></td></tr>
+  </table>
+  <p>It hears footsteps, doors and anything you drop on a puzzle. It sees your flashlight from far away. Break its line of sight, then hide in a wardrobe or under a bed and hold your breath.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br><span>STILL</span></h1><p class="how">The house waits for you. Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.8">MED-</button><button data-v="1">MED</button><button data-v="1.4">HIGH</button><button data-v="2">MAX</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="65">65</button><button data-v="75">75</button><button data-v="85">85</button><button data-v="95">95</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye"></p>
+  <div class="grade"><b id="ograde">A</b><div><p class="res" id="ores">ESCAPED</p><p class="sub" id="osub"></p></div></div>
+  <p class="fs" id="ofs">0</p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="lockov" hidden><b>CLICK TO CONTINUE</b><span>The mouse is free. Click to look around again.</span></div>
+<div id="loading"><b>HOLLOW MANOR</b><span>THE HOUSE IS SETTLING…</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

@@ -1,12 +1,12 @@
 // BLOCK BEASTS — synthesized sound effects and a tiny generative soundtrack (no audio files).
+import {boot,master,gain,noiseBuf,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.music=null;this.mode='';this.nextT=0;this.step=0;}
- init(){if(this.ac)return;try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=.6;this.out.connect(comp);
-  this.mus=ac.createGain();this.mus.gain.value=.0;this.mus.connect(this.out);const n=ac.sampleRate,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  const dl=ac.createDelay(1);dl.delayTime.value=.33;const fb=ac.createGain();fb.gain.value=.32;dl.connect(fb);fb.connect(dl);this.echo=ac.createGain();this.echo.gain.value=.5;this.echo.connect(dl);dl.connect(this.mus);if(this.mode)this.setMusic(this.mode);}catch(e){this.ac=null;}}
+ init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,.6,-24,12);this.mus=gain(ac,0,this.out);this.noise=noiseBuf(ac,2.1);
+  const dl=ac.createDelay(1);dl.delayTime.value=.33;dl.connect(gain(ac,.32,dl));this.echo=gain(ac,.5,dl);dl.connect(this.mus);if(this.mode)this.setMusic(this.mode);});}
  toggle(){this.on=!this.on;if(this.out)this.out.gain.value=this.on?.6:0;return this.on;}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random()*.5);s.stop(t+dur);}
- _o(type,f0,f1,dur,vol,delay=0,dest){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(dest||this.out);o.start(t);o.stop(t+dur+.02);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0,dest){tone(this.ac,dest||this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.012);}
  notes(seq,type='square',vol=.06,gap=.09){seq.forEach((f,i)=>f&&this._o(type,f,f,gap*1.6,vol,i*gap));}
  play(k,a=1){if(!this.ac||!this.on)return;try{switch(k){
   case'blip':this._o('square',880,880,.05,.04);break;

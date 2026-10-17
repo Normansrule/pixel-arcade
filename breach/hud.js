@@ -1,6 +1,7 @@
 // BREACH POINT — DOM HUD: score bar, vitals, ammo, money, dynamic crosshair, hitmarkers, damage arcs, kill feed,
 // minimap with callouts, buy menu with spray previews, scoreboard, banners, spectator + death cards.
 import {CS} from './maps.js';
+import {toast} from '../js/kit3d/ui.js';
 const $=id=>document.getElementById(id);
 const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 export class HUD{
@@ -15,9 +16,9 @@ export class HUD{
  toast(m){if(!m)return;$('toast').textContent=m;$('toast').classList.add('on');this.toastT=2;}
  cash(d,why){const el=$('cashd');el.textContent=(d>0?'+$':'-$')+Math.abs(d)+'  '+why;el.classList.remove('on');void el.offsetWidth;el.classList.add('on');}
  clearFeed(){$('feed').innerHTML='';$('radio').innerHTML='';}
- radio(n,t){const d=document.createElement('div');d.innerHTML=`<b>${n}</b> ${t}`;$('radio').append(d);setTimeout(()=>d.remove(),4500);while($('radio').children.length>3)$('radio').firstChild.remove();}
- feed(e){const G=this.G,S=this.X.SIDE;const d=document.createElement('div');if(e.me)d.className='me';
-  d.innerHTML=`${e.k?`<b style="color:${S[e.ks].css}">${e.k}</b>`:''}<i>${e.w}${e.hs?' <em>◉</em>':''}${e.wb?' <em>⫽</em>':''}</i><b style="color:${S[e.vs].css}">${e.v}</b>`;$('feed').prepend(d);setTimeout(()=>d.remove(),6500);while($('feed').children.length>6)$('feed').lastChild.remove();}
+ radio(n,t){toast($('radio'),`<b>${n}</b> ${t}`,4500,3,false);}
+ feed(e){const G=this.G,S=this.X.SIDE;
+  const d=toast($('feed'),`${e.k?`<b style="color:${S[e.ks].css}">${e.k}</b>`:''}<i>${e.w}${e.hs?' <em>◉</em>':''}${e.wb?' <em>⫽</em>':''}</i><b style="color:${S[e.vs].css}">${e.v}</b>`,6500,6);if(e.me)d.className='me';}
  hitmark(kind,kill){const h=$('hit');h.className=kind+(kill?' kill':'');h.style.opacity=1;this.hitT=kill?.45:.22;}
  hurt(ang,yaw,dmg){const a=this.arcs.find(x=>x.t<=0)||this.arcs[0];a.t=1.4;a.ang=ang;a.el.style.opacity=Math.min(1,.4+dmg/40);$('hurtov').style.opacity=Math.min(.75,dmg/60);}
  flash(k){this.flashK=Math.max(this.flashK,k);}

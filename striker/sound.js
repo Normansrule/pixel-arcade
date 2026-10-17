@@ -1,16 +1,16 @@
 // STRIKER 11 — synthesized audio (no files): crowd bed + roars, referee whistle, ball strikes, post, net, chants.
+import {boot,master,gain,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.hypeV=0;}
- init(){if(this.ac)return;try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=.75;this.out.connect(comp);
+ init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,.75,-24,12);
   const n=ac.sampleRate*3,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);let p=0;for(let i=0;i<n;i++){const w=Math.random()*2-1;p=p*.97+w*.03;d[i]=w*.6+p*3;}this.noise=b;
   // crowd bed: two band-passed noise layers with slow swells
-  const bed=(f,q,g)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;s.playbackRate.value=.7+Math.random()*.2;const bf=ac.createBiquadFilter();bf.type='bandpass';bf.frequency.value=f;bf.Q.value=q;const gg=ac.createGain();gg.gain.value=g;s.connect(bf);bf.connect(gg);gg.connect(this.out);s.start();return{gg,bf};};
+  const bed=(f,q,g)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;s.playbackRate.value=.7+Math.random()*.2;const bf=ac.createBiquadFilter();bf.type='bandpass';bf.frequency.value=f;bf.Q.value=q;const gg=gain(ac,g,this.out);s.connect(bf);bf.connect(gg);s.start();return{gg,bf};};
   this.bedA=bed(520,.7,.05);this.bedB=bed(1400,.9,.025);
-  const lfo=ac.createOscillator();lfo.frequency.value=.13;const lg=ac.createGain();lg.gain.value=.018;lfo.connect(lg);lg.connect(this.bedA.gg.gain);lfo.start();}catch(e){this.ac=null;}}
+  const lfo=ac.createOscillator();lfo.frequency.value=.13;const lg=gain(ac,.018,this.bedA.gg.gain);lfo.connect(lg);lfo.start();});}
  hype(v){if(!this.ac)return;const t=this.ac.currentTime;this.bedA.gg.gain.setTargetAtTime(.05+v*.3,t,.3);this.bedB.gg.gain.setTargetAtTime(.025+v*.16,t,.3);this.bedA.bf.frequency.setTargetAtTime(520+v*260,t,.4);}
- _n(dur,f0,f1,q,vol,type='bandpass',delay=0,att=.01){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
-  const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+att);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random()*2);s.stop(t+dur+.05);}
- _o(type,f0,f1,dur,vol,delay=0,att=.008){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+att);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.03);}
+ _n(dur,f0,f1,q,vol,type='bandpass',delay=0,att=.01){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,att,20);}
+ _o(type,f0,f1,dur,vol,delay=0,att=.008){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,att);}
  whistle(len=.35,delay=0){const ac=this.ac,t=ac.currentTime+delay;const o=ac.createOscillator(),o2=ac.createOscillator(),lfo=ac.createOscillator(),lg=ac.createGain(),g=ac.createGain();o.frequency.value=2850;o2.frequency.value=2930;lfo.frequency.value=38;lg.gain.value=180;
   lfo.connect(lg);lg.connect(o.frequency);lg.connect(o2.frequency);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.07,t+.02);g.gain.setValueAtTime(.07,t+len);g.gain.exponentialRampToValueAtTime(.001,t+len+.08);
   o.connect(g);o2.connect(g);g.connect(this.out);[o,o2,lfo].forEach(x=>{x.start(t);x.stop(t+len+.1);});}

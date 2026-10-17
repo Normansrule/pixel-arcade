@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silent Contract · Pixel Arcade</title>
+<meta name="description" content="Silent Contract: a third-person stealth assassination sandbox in the browser. Infiltrate a cliffside villa gala at sunset, take disguises, read routines, stage accidents and leave two targets dead without a trace.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="shadow.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="instov"></div><div id="hurtov"></div><div id="fade"></div>
+<div id="hud" hidden>
+  <div id="tl">
+    <div id="dis"><i id="disic">S</i><div><span>DISGUISE</span><b id="disname">YOUR SUIT</b></div></div>
+    <p id="zone"><em></em><span id="zonet">GROUNDS</span></p>
+    <p id="enf" hidden>ENFORCER NEARBY</p>
+  </div>
+  <div id="top"><span id="tlabel">CONTRACT TIME</span><b id="clock">12:00</b><p id="status" class="ok">UNDETECTED</p></div>
+  <div id="tr"><div id="tgts"></div></div>
+  <div id="opps"><h4>OPPORTUNITIES <kbd>O</kbd></h4><ul id="oppl"></ul></div>
+  <div id="feed"></div>
+  <div id="marks"></div>
+  <div id="cross"><i></i></div>
+  <div id="prompt"><div id="pkeys"></div><div class="bar"><i id="pbar"></i></div></div>
+  <div id="inv"><div id="items"></div><div id="ammo"><b id="mag">12</b><span id="res">/ 24</span><em>SILENCED PISTOL</em></div></div>
+  <div id="hp"><i id="hpb"></i></div>
+  <div id="hint"><kbd>X</kbd> INSTINCT <kbd>M</kbd> MAP <kbd>F</kbd> SUBDUE <kbd>V</kbd> WIRE <kbd>Q</kbd> COIN</div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+</div>
+<div id="map" hidden><canvas id="mapc" width="720" height="720"></canvas><div id="maplegend"><b>VILLA SERAFINA</b><span><i class="lp"></i>PUBLIC</span><span><i class="ls"></i>STAFF</span><span><i class="lh"></i>SECURITY / PRIVATE</span><span><i class="lt"></i>TARGET</span><span><i class="lo"></i>OPPORTUNITY</span><em>M / TAB TO CLOSE</em></div></div>
+<div id="lockov" hidden><b>CLICK TO PLAY</b><span>MOUSE LOCK LOST · ESC PAUSES</span></div>
+<div id="load"><b>SILENT CONTRACT</b><span id="loadt">PREPARING THE VILLA…</span></div>
+<div id="menu" class="scr" hidden>
+  <div class="mcol">
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · STEALTH ASSASSINATION · THIRD PERSON</p>
+    <h1>SILENT<br>CONTRACT<em>.</em></h1>
+    <p class="loc">VILLA SERAFINA · COSTA AMBRA · THE AMBER GALA AT SUNSET</p>
+    <p class="how">Two names, one evening. Slip into the gala, borrow the right uniform, learn the routines and make it look like an accident. Leave by car or by boat before the clock runs out.</p>
+    <div class="dossier">
+      <div class="tcard v"><i></i><div><b>DARIO VANE</b><span>Host. Arms broker. Gives a toast in the ballroom, takes a nightcap in his study, inspects the cellar.</span></div></div>
+      <div class="tcard c"><i></i><div><b>INES CORVO</b><span>Buyer. Never far from a drink. Likes the sea air: the cliff lookout, the pier, her boat.</span></div></div>
+    </div>
+    <div class="opts">
+      <label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+      <label>ARRIVAL</label><div class="seg" id="o-start"><button data-v="0">FRONT DRIVE</button><button data-v="1">SERVICE ROAD</button></div>
+      <label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.8">MED-</button><button data-v="1">MED</button><button data-v="1.5">HIGH</button><button data-v="2.2">MAX</button></div>
+      <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+    </div>
+    <p class="dnote" id="dnote"></p>
+    <div class="row"><button id="go" class="go">BEGIN CONTRACT</button><span class="best" id="best"></span></div>
+  </div>
+  <div class="card" id="keys">
+    <h3>CONTROLS<em>.</em></h3>
+    <table>
+      <tr><td>Move · run · crouch</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>C</kbd></td></tr>
+      <tr><td>Interact · drag/hide body (hold)</td><td><kbd>E</kbd></td></tr>
+      <tr><td>Take disguise from a body</td><td><kbd>T</kbd></td></tr>
+      <tr><td>Subdue · fiber wire</td><td><kbd>F</kbd> <kbd>V</kbd></td></tr>
+      <tr><td>Aim · fire silenced pistol</td><td><kbd>RMB</kbd> <kbd>LMB</kbd> <kbd>R</kbd></td></tr>
+      <tr><td>Throw coin</td><td><kbd>Q</kbd></td></tr>
+      <tr><td>Instinct (see through walls)</td><td><kbd>X</kbd> hold</td></tr>
+      <tr><td>Map · opportunities</td><td><kbd>M</kbd> <kbd>O</kbd></td></tr>
+      <tr><td>Pause · graphics quality</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+    </table>
+    <p>Disguises open areas: guests mingle in public, staff work the kitchen, cellar and pier, security goes anywhere. Enforcers (white dot in instinct) see through their own uniform. Meters over heads show suspicion. Bodies are found unless hidden. <b>Silent Assassin</b>: only targets dead, no bodies found, never seen.</p>
+  </div>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>STILL<em>.</em></h1><p class="how">The contract clock is stopped. Click resume to lock the mouse again.</p>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">ABANDON CONTRACT</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">CONTRACT COMPLETE</p>
+  <p class="rating" id="orate">SILENT ASSASSIN</p><p class="stars" id="ostars"></p>
+  <p class="score"><span>SCORE</span><b id="oscore">0</b></p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

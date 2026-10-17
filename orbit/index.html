@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit Lab · Pixel Arcade</title>
+<meta name="description" content="Orbit Lab: build rockets, fly real orbital mechanics and learn the maths — Tsiolkovsky, vis-viva, Hohmann transfers, suicide burns — in full 3D in the browser.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="orbit.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- ============ MENU ============ -->
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · ROCKET SCIENCE</p>
+  <h1>ORBIT<br>LAB<em>.</em></h1>
+  <p class="how">Build a rocket, fly it on real orbital mechanics, and watch the maths do the work. Every number on screen comes from an equation you can see — Tsiolkovsky, vis-viva, Hohmann.</p>
+  <div class="opts">
+    <label>SESSION</label><div class="seg" id="o-len"><button data-v="1800">30 MIN</button><button data-v="3600">60 MIN</button><button data-v="0">ENDLESS</button></div>
+    <label>PHYSICS</label><div class="seg" id="o-easy"><button data-v="0">NORMAL</button><button data-v="1">EASY · FORGIVING</button></div>
+    <label>HINTS</label><div class="seg" id="o-hints"><button data-v="1">COACH TIPS ON</button><button data-v="0">OFF</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">START CAREER</button><button id="free" class="ghost">FREE FLIGHT</button><button id="mnote" class="ghost">MATH NOTEBOOK</button></div>
+  <p class="small" id="career-line"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Pitch · yaw · roll</td><td><kbd>W</kbd><kbd>S</kbd> <kbd>A</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd></td></tr>
+    <tr><td>Throttle up / down · full · cut</td><td><kbd>Shift</kbd> <kbd>Ctrl</kbd> <kbd>Z</kbd> <kbd>X</kbd></td></tr>
+    <tr><td>Stage (ignite / separate)</td><td><kbd>Space</kbd></td></tr>
+    <tr><td>SAS off/hold · modes</td><td><kbd>T</kbd> <kbd>1</kbd>–<kbd>0</kbd></td></tr>
+    <tr><td>Time warp</td><td><kbd>.</kbd> <kbd>,</kbd> <kbd>/</kbd></td></tr>
+    <tr><td>Map · Hohmann helper</td><td><kbd>M</kbd> <kbd>H</kbd></td></tr>
+    <tr><td>Execute node · delete node</td><td><kbd>B</kbd> <kbd>Del</kbd></td></tr>
+    <tr><td>Autopilot coach</td><td><kbd>C</kbd></td></tr>
+    <tr><td>Chute · legs · solar</td><td><kbd>P</kbd> <kbd>L</kbd> <kbd>U</kbd></td></tr>
+    <tr><td>Notebook · math panel · pause</td><td><kbd>N</kbd> <kbd>I</kbd> <kbd>Esc</kbd></td></tr>
+    <tr><td>Camera · graphics</td><td>drag · wheel · <kbd>G</kbd></td></tr>
+  </table>
+  <p>Gamepad: sticks steer, triggers throttle, <span class="pad">A</span> stage, <span class="pad">X</span> SAS prograde, <span class="pad">Y</span> map.</p>
+</div>
+
+<!-- ============ MISSION CONTROL ============ -->
+<div id="hub" class="scr2" hidden>
+  <div class="bar"><b class="logo">ORBIT LAB<em>.</em></b><span class="sub">MISSION CONTROL</span><span class="sp"></span>
+    <span class="stat"><i>FUNDS</i><b id="h-funds">0</b></span><span class="stat"><i>SESSION PTS</i><b id="h-score">0</b></span><span class="stat"><i>SESSION</i><b id="h-clock">30:00</b></span>
+    <button class="ghost sm" id="h-note">NOTEBOOK</button><button class="ghost sm" id="h-end">END SESSION</button></div>
+  <div class="hubgrid">
+    <div class="mlist" id="mlist"></div>
+    <div class="brief" id="brief"></div>
+  </div>
+</div>
+
+<!-- ============ VAB ============ -->
+<div id="vab" hidden>
+  <div class="bar"><b class="logo">ASSEMBLY<em>.</em></b><span class="sub" id="v-mission"></span><span class="sp"></span>
+    <span class="stat"><i>FUNDS</i><b id="v-funds">0</b></span><span class="stat"><i>COST</i><b id="v-cost">0</b></span><span class="stat"><i>SESSION</i><b id="v-clock">30:00</b></span>
+    <button class="ghost sm" id="v-back">◀ MISSION CONTROL</button></div>
+  <div class="vleft">
+    <div class="tabs" id="v-tabs"></div>
+    <div class="plist" id="v-parts"></div>
+    <div class="pinfo" id="v-pinfo"></div>
+  </div>
+  <div class="vstack"><h4>STACK <small>top → bottom</small></h4><div id="v-stack"></div>
+    <div class="row tight"><select id="v-tpl"><option value="">TEMPLATES…</option></select><button class="ghost xs" id="v-clear">CLEAR</button></div></div>
+  <div class="vright">
+    <h4>STATS <small id="v-env">STAGE 1 AT SEA LEVEL</small></h4>
+    <div id="v-stats"></div>
+    <div id="v-warn"></div>
+    <div class="launch"><div class="seg" id="v-start"><button data-v="0" class="on">LAUNCH PAD</button><button data-v="1">SKIP ASCENT</button></div>
+      <button class="go" id="v-launch">LAUNCH</button><button class="ghost xs" id="v-grant" hidden>EMERGENCY GRANT +15,000 (−100 PTS)</button></div>
+  </div>
+</div>
+
+<!-- ============ FLIGHT HUD ============ -->
+<div id="hud" hidden>
+  <div id="ftop"><div class="obj"><i id="f-mn">MISSION</i><b id="f-obj"></b><span id="f-status"></span></div>
+    <div class="clocks"><span><i>MET</i><b id="f-met">0:00</b></span><span><i>SESSION</i><b id="f-clock">30:00</b></span><span class="warp" id="f-warp">1×</span></div></div>
+  <div id="fpanel"><h4>FLIGHT MATH <small>I</small></h4><div id="f-math"></div></div>
+  <div id="fright"><div id="f-stages"></div><div id="f-target" hidden></div></div>
+  <div id="coach" hidden><i id="c-who">COACH</i><b id="c-title"></b><p id="c-text"></p></div>
+  <div id="sb" hidden><i>SUICIDE BURN</i><div class="gauge"><div id="sb-d"></div><div id="sb-h"></div></div><p id="sb-t"></p></div>
+  <div id="navwrap">
+    <div id="sas"></div>
+    <div class="nb"><canvas id="navball" width="180" height="180"></canvas><div class="thr"><div id="thr-f"></div></div><span id="nb-hdg"></span></div>
+    <div id="dvbox"></div>
+  </div>
+  <div id="node" hidden></div>
+  <div id="hoh" hidden></div>
+  <div id="labels"></div>
+  <div id="handles"></div>
+  <div id="toast"></div>
+  <div id="banner"><b id="bn-t"></b><span id="bn-s"></span></div>
+  <div id="hint"></div>
+</div>
+<div id="fover" hidden></div>
+
+<!-- ============ overlays ============ -->
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLD<em>.</em></h1><p class="how">Press <b>Esc</b> to resume.</p>
+  <div class="row"><button id="p-resume" class="go">RESUME</button><button id="p-revert" class="ghost">REVERT TO LAUNCH</button><button id="p-vab" class="ghost">BACK TO VAB</button><button id="p-hub" class="ghost">MISSION CONTROL</button><button id="p-quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="note" hidden><div class="nbox"><div class="nhead"><h2>MATH NOTEBOOK<em>.</em></h2><span id="n-count"></span><button class="ghost sm" id="n-close">CLOSE · N</button></div><div id="n-list"></div></div></div>
+<div id="over" hidden>
+  <p class="eye" id="o-eye">SESSION COMPLETE</p>
+  <p class="res" id="o-res">FLIGHT REPORT</p>
+  <p class="fs" id="o-pts"></p>
+  <table id="o-stats"></table>
+  <p class="tok" id="o-tok"></p>
+  <div class="row"><button id="o-again" class="go">NEW SESSION</button><button id="o-menu" class="ghost">MENU</button><button id="o-post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

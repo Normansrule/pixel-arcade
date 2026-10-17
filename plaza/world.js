@@ -1,7 +1,7 @@
 // PENGUIN PLAZA — the island: terrain, rooms, buildings, interiors, props, lights, day/night, party decorations.
 import {THREE,V3,M,merge,cl,lerp,rnd,sstep,ctex,textSprite,rng} from './util.js';
 import {ImprovedNoise} from '../vendor/jsm/math/ImprovedNoise.js';
-import {Batch,skyDome,palette,snowMaterial,pineGeometry,instancedPines,waterMaterial} from './env.js';
+import {Batch,skyDome,palette,snowMaterial,iceMaterial,boardMaterial,SNOWU,pineGeometry,instancedPines,waterMaterial} from './env.js';
 import {furnModel,PARTIES} from './items.js';
 const G=THREE,PI=Math.PI;
 
@@ -18,7 +18,7 @@ export const ROOMS={
 };
 export const SPACE_ORIGIN={out:[0,0,0],coffee:[1000,0,0],club:[1100,0,0],igloo:[1200,0,0]};
 const noise=new ImprovedNoise();
-const FLAT=[{x:0,z:0,r:24,h:2},{x:-50,z:18,r:20,h:2},{x:-48,z:-36,r:22,h:2.2},{x:3,z:-44,r:9,h:4.2},{x:-48,z:36,r:12,h:2}];
+const FLAT=[{x:0,z:0,r:24,h:2},{x:-50,z:18,r:20,h:2},{x:-48,z:-36,r:22,h:2.2},{x:3,z:-44,r:9,h:4.2},{x:-48,z:36,r:12,h:2},{x:29,z:33,r:11,h:1.9}];
 function rawH(x,z){const a=Math.atan2(z,x),coast=106+7*Math.sin(a*3+1)+4*Math.sin(a*7+2),d=Math.hypot(x,z*1.04);
  let h=2.1+noise.noise(x*.035,z*.035,.5)*1.6+noise.noise(x*.12,z*.12,2.3)*.35;
  h-=sstep(58,90,z)*sstep(-46,-24,x)*(1-sstep(52,70,x))*3.4;
@@ -35,7 +35,7 @@ const PLAT=[{x:16,z:92,hw:2.2,hd:20,y:1.7,n:'pier'},{x:-61,z:18,hw:4.5,hd:8.5,y:
 
 export function buildWorld(R,scene,opts={}){
  const W={rooms:ROOMS,triggers:[],emit:[],obst:{out:[],coffee:[],club:[],igloo:[]},seats:{},spots:{},anim:[],signs:[],coins:[],partyG:null,party:null,space:'out'};
- const solid=new Batch(),glow=new Batch(),snowB=new Batch(),winIn=new Batch();
+ const solid=new Batch(),glow=new Batch(),snowB=new Batch(),winIn=new Batch(),wood=new Batch(),iceB=new Batch();
  const ROCK=0x7a808c,WOOD=0x8a5a3a,WOODL=0xb07a50,DARK=0x2a2a30,WARM=new G.Color(1,.72,.38);
  const groundY=(x,z)=>{let h=height(x,z);for(const p of PLAT){const ins=p.r?Math.hypot(x-p.x,z-p.z)<p.r:Math.abs(x-p.x)<p.hw&&Math.abs(z-p.z)<p.hd;if(ins)h=Math.max(h,p.y);}return h;};
  W.height=height;
@@ -62,9 +62,9 @@ export function buildWorld(R,scene,opts={}){
  {const S=300,N=200,g=new G.PlaneGeometry(S,S,N,N);g.rotateX(-PI/2);const p=g.attributes.position,col=new Float32Array(p.count*3),c=new G.Color();
   for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);p.setY(i,height(x,z));}
   g.computeVertexNormals();const nr=g.attributes.normal;
-  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),ny=nr.getY(i);c.setRGB(.86,.9,.97);
-   const n=noise.noise(x*.08,z*.08,7)*.5+.5;c.offsetHSL(0,0,-n*.04);
-   const pd=pathD(x,z);if(pd<3.2)c.lerp(new G.Color(.8,.86,.95),(1-sstep(1.8,3.2,pd))*.8);
+  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),ny=nr.getY(i);c.setRGB(.93,.95,1);
+   const n=noise.noise(x*.08,z*.08,7)*.5+.5;c.offsetHSL(0,0,-n*.05);const cav=noise.noise(x*.21,z*.21,3.3);if(cav<0)c.lerp(new G.Color(.8,.88,1),-cav*.6);
+   const pd=pathD(x,z);if(pd<3.2)c.lerp(new G.Color(.82,.86,.94),(1-sstep(1.8,3.2,pd))*.75);
    const sand=sstep(1.4,.3,y)*sstep(56,70,z);if(sand>0)c.lerp(new G.Color(.88,.8,.64),sand*.8);
    if(y<.1)c.lerp(new G.Color(.45,.6,.7),sstep(.1,-2,y));
    const rock=sstep(.86,.7,ny);if(rock>0)c.lerp(new G.Color(.5,.53,.6),rock*.85);
@@ -73,8 +73,8 @@ export function buildWorld(R,scene,opts={}){
   const m=new G.Mesh(g,snowMaterial());m.receiveShadow=true;scene.add(m);W.terrain=m;W.snowMats=[m.material];}
  const water=new G.Mesh(new G.PlaneGeometry(1400,1400,80,80),waterMaterial());water.rotation.x=-PI/2;water.position.y=-.05;scene.add(water);W.water=water;
  // ice floes
- {const L=[];const r=rng(7);for(let i=0;i<46;i++){const a=r()*PI*2,d=114+r()*40;L.push([new G.CylinderGeometry(1,1.2,.5,7),M(Math.cos(a)*d,.05,Math.sin(a)*d*1.04,0,r()*7,0,1.5+r()*3,1,1.2+r()*2.5),0xf0f8ff]);}
-  const m=new G.Mesh(merge(L),snowMaterial());m.receiveShadow=true;scene.add(m);W.snowMats.push(m.material);}
+ {const L=[],SF=[];const r=rng(7);for(let i=0;i<46;i++){const a=r()*PI*2,d=114+r()*40;const ry=r()*7,sx=1.5+r()*3,sz=1.2+r()*2.5,x=Math.cos(a)*d,z=Math.sin(a)*d*1.04;L.push([new G.CylinderGeometry(1,1.2,.5,7),M(x,.05,z,0,ry,0,sx,1,sz)]);SF.push([new G.CylinderGeometry(.86,.98,.16,7),M(x,.35,z,0,ry+.2,0,sx*(.8+r()*.2),1,sz*(.8+r()*.2)),0xffffff]);}
+  const m=new G.Mesh(merge(L),iceMaterial({color:0x8fd0ee,deep:0x1c6890}));m.receiveShadow=true;scene.add(m);const m2=new G.Mesh(merge(SF),snowMaterial());m2.receiveShadow=true;scene.add(m2);W.snowMats.push(m2.material);}
 
  /* ---------- helpers ---------- */
  const Bx=(w,h,d)=>new G.BoxGeometry(w,h,d),Cy=(a,b,h,s=12)=>new G.CylinderGeometry(a,b,h,s),Sp=(r,a=12,b=8)=>new G.SphereGeometry(r,a,b),Pl=(w,h)=>new G.PlaneGeometry(w,h);
@@ -89,7 +89,13 @@ export function buildWorld(R,scene,opts={}){
  const snowman=(x,z,ry=0,s=1)=>{const gy=height(x,z),P=M(x,gy,z,0,ry,0,s);snowB.add(Sp(.9,16,12),L(P,0,.8,0),0xffffff).add(Sp(.65,16,12),L(P,0,1.95,0),0xffffff).add(Sp(.45,14,10),L(P,0,2.85,0),0xffffff);
   solid.add(new G.ConeGeometry(.09,.5,8),L(P,0,2.85,.6,PI/2),0xff7a1a).add(Sp(.06),L(P,.16,2.98,.38),0x111111).add(Sp(.06),L(P,-.16,2.98,.38),0x111111).add(Cy(.04,.04,1.3,5),L(P,.8,2.1,0,0,0,1.1),WOOD).add(Cy(.04,.04,1.3,5),L(P,-.8,2.1,0,0,0,-1.1),WOOD).add(new G.TorusGeometry(.5,.12,8,18),L(P,0,2.45,0,PI/2),0xd8383e);ob('out',{x,z,r:1});};
  const house=(o)=>{const gy=o.y??height(o.x,o.z),P=at(o.x,gy,o.z,o.ry),w=o.w,d=o.d,h=o.h;
-  solid.add(Bx(w,h,d),L(P,0,h/2,0),o.wall);for(const sx of[-1,1])for(const sz of[-1,1])solid.add(Bx(.35,h+.1,.35),L(P,sx*w/2,h/2,sz*d/2),o.trim??WOOD);
+  wood.add(Bx(w,h,d),L(P,0,h/2,0),o.wall);for(const sx of[-1,1])for(const sz of[-1,1])wood.add(Bx(.35,h+.1,.35),L(P,sx*w/2,h/2,sz*d/2),o.trim??WOOD);
+  // icicles under the eaves + soft drifts banked against the walls
+  const icy=(x0,z0,x1,z1,y)=>{const n=Math.max(2,Math.round(Math.hypot(x1-x0,z1-z0)/.42));for(let i=0;i<n;i++){if(Math.random()<.22)continue;const t=(i+.5)/n,len=.25+Math.random()**2*1.1;iceB.add(new G.ConeGeometry(.045+len*.04,len,5),L(P,lerp(x0,x1,t)+rnd(-.08,.08),y-len/2,lerp(z0,z1,t)+rnd(-.08,.08),PI),0xffffff);}};
+  if(o.flat){const ex=(w+.6)/2,ez=(d+.6)/2;icy(-ex,ez,ex,ez,h);icy(-ex,-ez,ex,-ez,h);icy(ex,-ez,ex,ez,h);icy(-ex,-ez,-ex,ez,h);}
+  else{const ex=(w+1.45)/2,ez=(d+1.25)/2;icy(ex,-ez,ex,ez,h+.02);icy(-ex,-ez,-ex,ez,h+.02);}
+  for(const sd of[-1,1]){for(let i=0;i<3;i++)snowB.add(Sp(1,12,6),L(P,sd*(w/2+.15),0,-d/2+d*(i+.5)/3,0,rnd(-.3,.3),0,.75+rnd(.3),.5+rnd(.35),1.2+rnd(.5)),0xffffff);
+   snowB.add(Sp(1,12,6),L(P,sd*w*.3,0,-d/2-.1,0,0,0,w*.22,.55+rnd(.3),.8),0xffffff);snowB.add(Sp(1,12,6),L(P,sd*(w/2-.5),0,d/2+.15,0,0,0,.9,.45,.8),0xffffff);}
   solid.add(Bx(w+.3,.4,d+.3),L(P,0,.2,0),ROCK);
   if(o.flat){solid.add(Bx(w+.6,.4,d+.6),L(P,0,h+.2,0),o.roof);snowB.add(Bx(w+.5,.35,d+.5),L(P,0,h+.55,0),0xffffff);}
   else{const rh=w*.42;solid.add(prism(w+1.4,rh,d+1.2),L(P,0,h,0),o.roof);snowB.add(prism(w+1.5,rh*.98,d+1.3),L(P,0,h+.22,0),0xffffff);
@@ -110,7 +116,7 @@ export function buildWorld(R,scene,opts={}){
   const uv=g.attributes.uv,pp=g.attributes.position;for(let i=0;i<uv.count;i++){const x=pp.getX(i),z=pp.getZ(i);uv.setXY(i,(Math.atan2(z,x)/PI/2+.5)*36,(Math.hypot(x,z)-4.5)/2.2);}pv.material.map.wrapS=pv.material.map.wrapT=G.RepeatWrapping;scene.add(pv);
   // frozen fountain
   const P=at(0,2,0);solid.add(Cy(4.4,4.6,.9,32),L(P,0,.45,0),0xa8b4c8).add(Cy(1,1.2,2.2,16),L(P,0,1.1,0),0xa8b4c8).add(Cy(1.8,1.6,.4,20),L(P,0,2.2,0),0xa8b4c8);snowB.add(new G.TorusGeometry(4.3,.25,8,40),L(P,0,.95,0,PI/2),0xffffff);
-  const ice=new G.Mesh(merge([[Cy(4,4,.15,32),L(P,0,.8,0)],[Cy(1.6,1.6,.1,20),L(P,0,2.42,0)]]),new G.MeshStandardMaterial({color:0xa8e0ff,roughness:.05,metalness:.1,envMapIntensity:1.8,transparent:true,opacity:.85}));scene.add(ice);
+  const ice=new G.Mesh(merge([[Cy(4,4,.15,32),L(P,0,.8,0)],[Cy(1.6,1.6,.1,20),L(P,0,2.42,0)]]),iceMaterial({color:0xa8e0ff,deep:0x2a6a9a,opacity:.92}));ice.receiveShadow=true;scene.add(ice);
   // ice sculpture: a giant snowflake
   const flake=[];for(let i=0;i<6;i++){const a=i*PI/3;flake.push([Bx(.28,3.2,.28),M(0,0,0,0,0,a)]);for(const k of[.8,1.25])for(const sd of[-1,1])flake.push([Bx(.18,.8,.18),M(-Math.sin(a)*k+Math.sin(a+sd*.8)*.3,Math.cos(a)*k-Math.cos(a+sd*.8)*.3,0,0,0,a+sd*.8)]);}
   const fl=new G.Mesh(merge(flake),new G.MeshStandardMaterial({color:0xc8f0ff,roughness:.04,metalness:.15,envMapIntensity:2.2,emissive:0x2a6a9a,emissiveIntensity:.35,transparent:true,opacity:.9}));fl.position.set(0,6.4,0);fl.castShadow=true;scene.add(fl);W.anim.push(dt=>{fl.rotation.y+=dt*.3;});ob('out',{x:0,z:0,r:4.8});
@@ -138,6 +144,11 @@ export function buildWorld(R,scene,opts={}){
   {const P=at(15,2,-18);const neon=[0xff3cac,0x2fe0ff,0xffe14a];for(let i=0;i<3;i++)glow.add(Bx(10.2,.14,.14),L(P,0,1.2+i*1.3,4.1),new G.Color(neon[i]).multiplyScalar(1.6));
    W.clubNeon=neon;for(const sx of[-1,1])glow.add(Bx(.14,5,.14),L(P,sx*5.1,2.6,4.1),new G.Color(neon[0]).multiplyScalar(1.6));W.emit.push({space:'out',x:15,y:3,z:-12.5,col:0xd040ff,i:10,night:true});}
   W.emit.push({space:'out',x:-15,y:2.5,z:-12.6,col:0xffa050,i:10,night:true});
+  // frozen skating pond east of the square: glossy cracked ice, banked snow rim, benches + lamp
+  {const px=29,pz=33,pr=7;const pond=new G.Mesh(Cy(pr,pr,.1,48),iceMaterial({color:0xa6dcf6,deep:0x1f5f8c}));pond.position.set(px,1.97,pz);pond.receiveShadow=true;scene.add(pond);
+   for(let i=0;i<26;i++){const a=i/26*PI*2+rnd(.08);snowB.add(Sp(1,10,6),M(px+Math.cos(a)*(pr+.25),1.9,pz+Math.sin(a)*(pr+.25),0,-a,0,.8+rnd(.5),.3+rnd(.3),1.4+rnd(.8)),0xffffff);}
+   for(let i=0;i<5;i++){const a=rnd(7),d=rnd(1,5);snowB.add(Sp(1,8,5),M(px+Math.cos(a)*d,2.0,pz+Math.sin(a)*d,0,rnd(7),0,.5+rnd(.6),.05,.3+rnd(.3)),0xffffff);}
+   bench(px-9.6,pz-1,PI/2+.1,'town');bench(px+1,pz-9.6,PI-.1,'town');lamp(px+7,pz-7);snowman(px+8.6,pz+3.5,-1.4,.75);}
  }
 
  /* ================= SKI HILL ================= */
@@ -175,7 +186,8 @@ export function buildWorld(R,scene,opts={}){
   for(const[x,z,c]of[[-6,70,0xff6f9a],[2,76,0x2fc4d8],[30,70,0xffd84a],[-14,66,0x8a55d0]]){const y=height(x,z);solid.add(Cy(.07,.07,3.6,6),at(x,y+1.8,z),0xeeeeee).add(new G.ConeGeometry(2.2,.9,10),at(x,y+3.7,z),c).add(Bx(1.4,.04,2.4),M(x+1.4,y+.03,z+.6,0,.3,0),c);ob('out',{x,z,r:.4});}
   for(const[x,z]of[[-2,64],[24,64]]){const y=height(x,z),P=at(x,y,z,.2);solid.add(Bx(1,.12,2.4),L(P,0,.5,0,.15),0xffffff).add(Bx(1,.1,1),L(P,0,.9,-1.1,-.9),0xffffff);(W.seats.dock=W.seats.dock||[]).push({x,z:z+.3,ry:.2,y:y+.95});ob('out',{x,z,r:.9});}
   // ice-fishing cove: ice sheet + hut
-  {const ice=new G.Mesh(Cy(10,10.4,.4,40),snowMaterial({vc:false,color:0xdff2ff}));ice.position.set(40,-.02,98);ice.receiveShadow=true;scene.add(ice);W.snowMats.push(ice.material);
+  {const ice=new G.Mesh(Cy(10,10.4,.4,40),iceMaterial({color:0xb8e4fa,deep:0x2a72a0}));ice.position.set(40,-.02,98);ice.receiveShadow=true;scene.add(ice);
+   {const rim=[];for(let i=0;i<22;i++){const a=i/22*PI*2+rnd(.1);rim.push([Sp(1,10,6),M(40+Math.cos(a)*10,.1,98+Math.sin(a)*10,0,-a,0,.9+rnd(.6),.35+rnd(.25),2+rnd(1.4))]);}for(let i=0;i<9;i++){const a=i/9*PI*2;rim.push([Sp(1,10,6),M(41+Math.cos(a)*1.15,.18,97+Math.sin(a)*1.15,0,-a,0,.28,.16,.5)]);}const rm=new G.Mesh(merge(rim),snowMaterial({vc:false}));rm.receiveShadow=true;scene.add(rm);W.snowMats.push(rm.material);}
    const hole=new G.Mesh(new G.CircleGeometry(1,24),new G.MeshStandardMaterial({color:0x0a3a5a,roughness:.1}));hole.rotation.x=-PI/2;hole.position.set(41,.2,97);scene.add(hole);
    house({x:44,z:103,ry:-.6,w:4.5,d:4,h:3,y:.18,wall:0x3f86e0,roof:0xffffff,sign:'FISHING',signBg:'rgba(20,60,120,.9)',wins:[[0,1.9]]});
    solid.add(Bx(.6,.5,.6),at(39,.4,96.4),0x8a5a3a);}
@@ -228,7 +240,7 @@ export function buildWorld(R,scene,opts={}){
   spots.forEach(([x,z,ry],i)=>{const y=height(x,z),P=at(x,y,z,ry);igloos.push([new G.SphereGeometry(3.4,28,14,0,PI*2,0,PI/2),L(P,0,0,0),icol[i]],[new G.CylinderGeometry(1.3,1.3,2.4,16,1,true,0,PI),L(P,0,0,3.2,PI/2,0,0),icol[i]]);
    solid.add(new G.CircleGeometry(.95,16,0,PI),L(P,0,.02,4.42),0x1a2a40);ob('out',{x,z,r:3.6});if(i===5){my={x:x+Math.sin(ry)*5,z:z+Math.cos(ry)*5,P};}});
   const tex=ctex(256,128,(x,w,h)=>{x.fillStyle='#fff';x.fillRect(0,0,w,h);x.strokeStyle='rgba(120,150,190,.55)';x.lineWidth=2;for(let r=0;r<8;r++){const y=r*h/8;x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke();for(let c=0;c<12;c++){const xx=c*w/12+(r%2)*w/24;x.beginPath();x.moveTo(xx,y);x.lineTo(xx,y+h/8);x.stroke();}}});
-  const im=snowMaterial({spark:.6});im.map=tex;const igm=new G.Mesh(merge(igloos),im);igm.castShadow=igm.receiveShadow=true;scene.add(igm);W.snowMats.push(im);
+  const im=snowMaterial({spark:.6,relief:.25});im.map=tex;const igm=new G.Mesh(merge(igloos),im);igm.castShadow=igm.receiveShadow=true;scene.add(igm);W.snowMats.push(im);
   // my igloo flag + door
   {const P=my.P;solid.add(Cy(.06,.06,4,6),L(P,2,3.6,0),0x666666);const fl=new G.Mesh(Pl(1.6,1),new G.MeshStandardMaterial({color:0xff4d00,side:G.DoubleSide,roughness:.7}));fl.position.set(2.8,5,0);fl.applyMatrix4(P);scene.add(fl);W.myFlag=fl;
    W.anim.push((dt,t)=>{fl.rotation.y=Math.sin(t*3)*.2;});trig({kind:'door',space:'out',x:my.x,z:my.z,r:1.5,to:'igloo',label:'MY IGLOO'});W.doorOut.igloo=[my.x,my.z+0];W.myIglooFront=my;
@@ -247,7 +259,7 @@ export function buildWorld(R,scene,opts={}){
  }
 
  /* ================= trees, rocks, mounds ================= */
- {const r=rng(42),pt=[];let n=0;const busy=[[0,0,24],[-50,18,22],[-48,-36,24],[70,4,16],[16,80,18],[40,98,14],[3,-44,10],[-13,-46,8],[10,-46,6],[-60,-20,7],[-48,36,10]];
+ {const r=rng(42),pt=[];let n=0;const busy=[[0,0,24],[-50,18,22],[-48,-36,24],[70,4,16],[16,80,18],[40,98,14],[3,-44,10],[-13,-46,8],[10,-46,6],[-60,-20,7],[-48,36,10],[29,33,10]];
   while(pt.length<300&&n++<8000){const x=r()*230-115,z=r()*230-115,h=height(x,z);if(h<1.2||Math.hypot(x,z)>106)continue;if(busy.some(([a,b,c])=>Math.hypot(x-a,z-b)<c))continue;if(pathD(x,z)<4.5)continue;if(z<-48&&Math.abs(x-3)<9)continue;if(z<-44&&Math.abs(x-9)<4)continue;
    pt.push({x,y:h-.2,z,s:.6+r()*.8});}
   W.trees=instancedPines(scene,pt);for(const p of pt)if(p.s>.75)ob('out',{x:p.x,z:p.z,r:.7*p.s});
@@ -315,6 +327,7 @@ export function buildWorld(R,scene,opts={}){
  const solidM=new G.MeshStandardMaterial({vertexColors:true,roughness:.78,envMapIntensity:.5});scene.add(solid.mesh(solidM));
  const glowM=new G.MeshBasicMaterial({vertexColors:true,color:new G.Color(1,1,1)});const gm=glow.mesh(glowM,{cast:false,recv:false});scene.add(gm);W.glowM=glowM;
  const sm=snowMaterial();scene.add(snowB.mesh(sm));W.snowMats.push(sm);
+ scene.add(wood.mesh(boardMaterial()));{const icm=iceMaterial({color:0xd8f2ff,deep:0x5aa0d0,rough:.05,env:1.8});const im=iceB.mesh(icm,{cast:true,recv:false});scene.add(im);}
  const winM=new G.MeshBasicMaterial({vertexColors:true,color:new G.Color(.6,.8,1)});scene.add(winIn.mesh(winM,{cast:false,recv:false}));W.winM=winM;
 
  /* ---------- game spots ---------- */
@@ -377,7 +390,7 @@ export function buildWorld(R,scene,opts={}){
   const n=pal.night;W.glowM.color.setScalar(inside?1.8:.55+n*1.9);W.winM.color.copy(pal.hor).lerp(pal.top,.4).multiplyScalar(inside?1.1:1);
   if(W.treeLights)W.treeLights.material.color.setScalar(.6+n*2.2+Math.sin(t*3)*.15*n);if(W.partyBulbs)W.partyBulbs.material.color.setScalar(.4+n*2.4);
   W.lens.material.emissiveIntensity=.6+n*4;W.beam.g.rotation.y+=dt*.6;W.beam.m.uniforms.uA.value=sstep(.3,.9,n);
-  for(const m of W.snowMats){m.userData.U.uT.value=t;m.userData.U.uSpark.value=inside?0:1-n*.6;}
+  SNOWU.uSun.value.copy(inside?new V3(.3,1,.5).normalize():pal.lightDir);for(const m of W.snowMats){m.userData.U.uT.value=t;m.userData.U.uSpark.value=inside?0:1-n*.6;}
   W.water.material.userData.U.uT.value=t;colM.uniforms.uT.value=t;
   for(const f of W.anim)f(dt,t);
   if(W.partyG)W.partyG.traverse(o=>{if(o.userData.flicker)o.scale.y=1+Math.sin(t*12+o.position.x)*.15;});
@@ -392,5 +405,5 @@ export function buildWorld(R,scene,opts={}){
   lightT-=dt;if(lightT<=0){lightT=.25;const list=W.emit.filter(e=>e.space===sp&&(!e.night||n>.15)).map(e=>({e,d:(e.x-focus.x)**2+(e.z-focus.z)**2})).sort((a,b)=>a.d-b.d);
    pts.forEach((p,i)=>{const it=list[i];if(!it||it.d>60*60){p.userData.target=0;return;}p.position.set(it.e.x,it.e.y,it.e.z);p.color.set(it.e.col);p.distance=inside?18:16;p.userData.target=it.e.i*(it.e.night?sstep(.15,.6,n):1);});}
   pts.forEach(p=>{p.intensity=lerp(p.intensity,p.userData.target||0,Math.min(1,dt*4));});};
- W.setShadowQuality=q=>{sun.castShadow=q>0;const s=q>=2?2048:1024;if(sun.shadow.mapSize.x!==s){sun.shadow.mapSize.set(s,s);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}};
+ W.setShadowQuality=q=>{sun.castShadow=q>0;SNOWU.uDetail.value=q>0?1:0;const s=q>=2?2048:1024;if(sun.shadow.mapSize.x!==s){sun.shadow.mapSize.set(s,s);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}};
  W.PARTIES=PARTIES;return W;}

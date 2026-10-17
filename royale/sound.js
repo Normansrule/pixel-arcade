@@ -1,13 +1,13 @@
 // STORM ROYALE — synthesized audio (no files): guns, pickaxe, building, storm, glider, UI stingers. Distance-attenuated.
+import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.listener=null;}
- init(){if(this.ac)return;try{const ac=this.ac=new (window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.connect(ac.destination);this.out=ac.createGain();this.out.gain.value=.6;this.out.connect(comp);
-  const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;this.noise=b;
-  const loop=(f,q,type='lowpass')=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;s.connect(fl);fl.connect(g);g.connect(this.out);s.start();return{g,fl};};
-  this.wind=loop(600,.7,'bandpass');this.storm=loop(180,.8);this.engine=(()=>{const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=52;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=260;const g=ac.createGain();g.gain.value=0;o.connect(f);f.connect(g);g.connect(this.out);o.start();return{g,o};})();}catch(e){this.ac=null;}}
- set(k,v,f){if(!this.ac)return;const t=this.ac.currentTime,L=this[k];if(!L)return;L.g.gain.setTargetAtTime(this.on?v:0,t,.15);if(f&&L.fl)L.fl.frequency.setTargetAtTime(f,t,.2);}
- _n(dur,f0,f1,q,vol,type='lowpass',delay=0){const ac=this.ac,t=ac.currentTime+delay,s=ac.createBufferSource();s.buffer=this.noise;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(this.out);s.start(t,Math.random());s.stop(t+dur+.05);}
- _o(type,f0,f1,dur,vol,delay=0){const ac=this.ac,t=ac.currentTime+delay,o=ac.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.out);o.start(t);o.stop(t+dur+.02);}
+ init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,.6,-14,12);const b=this.noise=noiseBuf(ac);
+  const loop=(f,q,type='lowpass')=>bed(ac,b,type,f,q,this.out);
+  this.wind=loop(600,.7,'bandpass');this.storm=loop(180,.8);this.engine=(()=>{const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=52;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=260;const g=gain(ac,0,this.out);o.connect(f);f.connect(g);o.start();return{g,o};})();});}
+ set(k,v,f){if(!this.ac)return;const t=this.ac.currentTime,L=this[k];if(!L)return;L.g.gain.setTargetAtTime(this.on?v:0,t,.15);if(f&&L.f)L.f.frequency.setTargetAtTime(f,t,.2);}
+ _n(dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
+ _o(type,f0,f1,dur,vol,delay=0){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,.008);}
  // a = volume scale (0..1) from distance
  play(k,a=1,x){if(!this.ac||!this.on||a<.02)return;try{switch(k){
   case'ar':this._n(.16,5000,600,.7,.32*a);this._o('square',180,60,.08,.1*a);break;

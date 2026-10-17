@@ -3,10 +3,13 @@ import * as THREE from '../vendor/three.module.min.js';
 import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import * as PH from './physics.js';
 import {Bean,DT} from './physics.js';
-import {makeMats,makeEnv,buildStage,Beans,Particles,Confetti,COLORS,PATTERNS,HATS,randomLook,CZ} from './models.js';
+import {makeMats,makeEnv,buildStage,Beans,Particles,Confetti,COLORS,PATTERNS,HATS,randomLook,CZ,setGloss} from './models.js';
 import {ROUNDS,RACES,SURV,buildRound} from './rounds.js';
 import {DIFF,initBot,think} from './ai.js';
 import {Sound} from './sound.js';
+import {addRound,saveBest} from '../js/kit3d/score.js';
+import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {stored,postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -17,10 +20,10 @@ const TAGCOL={RACE:'#3fd4ff',SURVIVAL:'#ff5fa2',TEAM:'#7cf05a',FINAL:'#ffd23a'};
 /* ================= renderer + scene ================= */
 const canvas=$('c');const RD=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});RD.setPixelRatio(Math.min(devicePixelRatio,1.5));
 RD.shadowMap.enabled=true;RD.shadowMap.type=THREE.PCFSoftShadowMap;
-const scene=new THREE.Scene();scene.environment=makeEnv(RD);scene.fog=new THREE.Fog(0xb4d4ff,240,1000);
-scene.add(new THREE.HemisphereLight(0xd6eaff,0xffb3d9,.9));
+const scene=new THREE.Scene();scene.environment=makeEnv(RD);scene.fog=new THREE.Fog(0x9cc4ff,260,1100);
+const hemi=new THREE.HemisphereLight(0xc4dcff,0xd890c0,.55);scene.add(hemi);
 const stage=buildStage(scene);
-const sun=new THREE.DirectionalLight(0xfff0d8,2.75);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+const sun=new THREE.DirectionalLight(0xfff0d8,3.1);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 Object.assign(sun.shadow.camera,{left:-38,right:38,top:38,bottom:-38,near:5,far:260});sun.shadow.bias=-.0004;sun.shadow.normalBias=.04;scene.add(sun,sun.target);
 const mats=makeMats(),vis=new Beans(scene,N),puffs=new Particles(scene,1600,false),sparks=new Particles(scene,1400,true),confetti=new Confetti(scene,1500),snd=new Sound();
 const cam=new THREE.PerspectiveCamera(60,1,.1,2600);
@@ -29,7 +32,7 @@ const cam=new THREE.PerspectiveCamera(60,1,.1,2600);
 const PK='pxd_tumble';
 function loadProf(){let p={kudos:0,crowns:0,shows:0,best:0,look:{c1:'#ff5fa2',c2:'#ffe94a',pat:1,hat:1}};try{const s=JSON.parse(localStorage.getItem(PK));if(s)p={...p,...s,look:{...p.look,...(s.look||{})}};}catch(e){}return p;}
 let prof=loadProf();const saveProf=()=>{try{localStorage.setItem(PK,JSON.stringify(prof));}catch(e){}};
-let opt={show:1,round:'spin',diff:1};try{Object.assign(opt,JSON.parse(localStorage.getItem('pxd_tumble_opt'))||{});}catch(e){}
+let opt={show:1,round:'spin',diff:1};stored('pxd_tumble_opt',opt);
 const patOK=i=>prof.kudos>=PATTERNS[i].k,hatOK=i=>HATS[i].crowns?prof.crowns>=HATS[i].crowns:prof.kudos>=HATS[i].k;
 
 /* ================= state ================= */
@@ -137,7 +140,7 @@ function crown(w){show.done=true;show.winner=w;$('intro').hidden=true;$('summary
  field.forEach(b=>{b.cele=true;b.frozen=false;if(b!==w)b.yaw=Math.atan2(w.p.x-b.p.x,w.p.z-b.p.z);});
  banner(w===me?'CROWNED!':'WINNER!',w===me?'YOU ARE THE TUMBLE ROYALE CHAMPION':`${w.name} TAKES THE CROWN`,'#ffd23a',4.2);snd.play('crown');snd.setMusic(true,.1);
  confetti.burst(new V(0,5,CZ),360,12);hype=1;}
-function showOver(){app='over';phase='over';$('hud').hidden=true;document.body.classList.remove('playing');hideAll();try{document.exitPointerLock();}catch(e){}
+function showOver(){app='over';phase='over';$('hud').hidden=true;document.body.classList.remove('playing');hideAll();I.unlock();
  const w=show.winner,won=w===me;if(R.kind!=='lobby'||!w){const f=w?[w]:[me];setupRound('lobby',f);}const sh=w||me;sh.place(R.podium.x,R.podium.y+.05,R.podium.z,Math.PI);sh.crowned=!!w;sh.cele=true;sh.frozen=false;
  const last=show.res[show.res.length-1]||{};
  $('oeye').textContent=show.practice?`PRACTICE · ${ROUNDS[show.list[0]].name}`:`SHOW OVER · ${show.list.length} ROUNDS · BOTS ${diff.n}`;
@@ -150,9 +153,8 @@ function showOver(){app='over';phase='over';$('hud').hidden=true;document.body.c
 let lastAward=null;
 function award(pts,won){lastAward={pts,won,rounds:show.res.length,diff:diff.n.toLowerCase(),show:show.practice?'practice':show.list.length===3?'quick':'full',best:show.res.filter(r=>r.res==='Q'||r.res==='W').length};
  prof.kudos+=pts;if(won)prof.crowns++;prof.shows++;prof.best=Math.max(prof.best||0,pts);saveProf();
- const tok=5+Math.min(60,pts/10|0);try{const pr=JSON.parse(localStorage.getItem('pxd_profile'))||{user:'',tokens:0,played:0,wins:0};pr.played++;pr.tokens+=tok;if(won)pr.wins++;localStorage.setItem('pxd_profile',JSON.stringify(pr));
-  const k='pxd_hs_'+(pr.user?pr.user.toLowerCase()+'_':'')+'tumble';if(+(localStorage.getItem(k)||0)<pts)localStorage.setItem(k,pts);}catch(e){}return tok;}
-function toMenu(){app='menu';phase='lobby';show=null;G.playing=false;hideAll();$('menu').hidden=false;$('keys').hidden=false;$('hud').hidden=true;document.body.classList.remove('playing');try{document.exitPointerLock();}catch(e){}
+ const tok=5+Math.min(60,pts/10|0);addRound(tok,won);saveBest('tumble',pts);return tok;}
+function toMenu(){app='menu';phase='lobby';show=null;G.playing=false;hideAll();$('menu').hidden=false;$('keys').hidden=false;$('hud').hidden=true;document.body.classList.remove('playing');I.unlock();
  looks[0]={...prof.look};const field=[me,...beans.slice(1,8)];for(let i=1;i<8;i++)looks[i]=randomLook();setupRound('lobby',field);me.place(R.podium.x,R.podium.y+.05,R.podium.z,Math.PI);me.cele=false;me.menuPose=true;
  field.forEach((b,i)=>{if(b===me)return;b.cele=true;const a=(i-4)*.42+(i%2?.12:-.12),r=4.5+(i%3);b.place(R.podium.x+Math.sin(a)*r*1.2,.05,R.podium.z+3+Math.cos(a)*r*.7,Math.PI+a*.3);});refreshMenu();snd.ac&&snd.setMusic(true,.06);}
 
@@ -173,23 +175,20 @@ function onDoor(col,b,real){const p=new V(col.c.x,1.6,col.c.z);if(real){puffAt(p
  else{if(b===me||near(p,12))snd.play('fake');if(b===me)feed('FAKE DOOR!','bad');}}
 
 /* ================= input ================= */
-const keys={},edge={},mouse={l:false,r:false};let locked=false;
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(!keys[e.code])edge[e.code]=true;keys[e.code]=true;
- if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)||(app==='show'&&(e.code==='ControlLeft'||e.code==='ControlRight')))e.preventDefault();
+const I=controls(canvas,{canLock:()=>app==='show'&&(phase==='play'||phase==='countdown'||phase==='intro'),menu:e=>e.target===canvas,
+ onLock:(on,was)=>{if(was&&!on&&app==='show'&&phase==='play')pause(true);},
+ look:e=>{if(I.locked){CAM.yaw-=e.movementX*.0027;CAM.pitch=cl(CAM.pitch+e.movementY*.0022,-.25,1.15);camIdle=0;}return false;},
+ onWheel:e=>{if(app==='show')CAM.dist=cl(CAM.dist+Math.sign(e.deltaY)*.8,5.5,15);},
+ onKey:e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)||(app==='show'&&(e.code==='ControlLeft'||e.code==='ControlRight')))e.preventDefault();
  if(e.code==='Escape'){if(app==='show')pause(true);else if(app==='paused')pause(false);}
- if(e.code==='KeyM'){snd.music=!snd.music;snd.ac&&snd.setMusic(snd.music,.08);feed(snd.music?'MUSIC ON':'MUSIC OFF','');}});
-addEventListener('keyup',e=>{keys[e.code]=false;});addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
-canvas.addEventListener('mousedown',e=>{if(app==='show'&&!locked&&(phase==='play'||phase==='countdown'||phase==='intro')){try{canvas.requestPointerLock();}catch(err){}return;}if(e.button===0)mouse.l=true;if(e.button===2)mouse.r=true;});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.l=false;if(e.button===2)mouse.r=false;});canvas.addEventListener('contextmenu',e=>e.preventDefault());
-document.addEventListener('pointerlockchange',()=>{const was=locked;locked=document.pointerLockElement===canvas;if(was&&!locked&&app==='show'&&phase==='play')pause(true);});
-addEventListener('mousemove',e=>{if(!locked)return;CAM.yaw-=e.movementX*.0027;CAM.pitch=cl(CAM.pitch+e.movementY*.0022,-.25,1.15);camIdle=0;});
-addEventListener('wheel',e=>{if(app==='show')CAM.dist=cl(CAM.dist+Math.sign(e.deltaY)*.8,5.5,15);},{passive:true});
+ if(e.code==='KeyM'){snd.music=!snd.music;snd.ac&&snd.setMusic(snd.music,.08);feed(snd.music?'MUSIC ON':'MUSIC OFF','');}}});
+const {keys,edge,mouse}=I;
 const padPrev={};
-function gp(){const l=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];return l[0]||null;}
+const gp=gamepad;
 function readInput(dt){if(me.botCtl)return;const k=me.ctrl,kb=c=>!!keys[c];let mx=(kb('KeyD')?1:0)-(kb('KeyA')?1:0),mz=(kb('KeyW')?1:0)-(kb('KeyS')?1:0);
  const spectating=me.out||me.elim||!me.inRound;let cy=0;if(!spectating||true){cy=(kb('ArrowLeft')?1:0)-(kb('ArrowRight')?1:0);if(spectating)cy=0;}
  k.jump=kb('Space');k.dive=kb('ControlLeft')||kb('ControlRight')||kb('KeyC')||mouse.r;k.grab=kb('ShiftLeft')||kb('ShiftRight')||kb('KeyE')||mouse.l;
- const g=gp();if(g){const ax=g.axes,bt=g.buttons,dz=v=>Math.abs(v)>.18?v:0;const sx=dz(ax[0]||0),sy=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);if(sx||sy){mx=sx;mz=-sy;}
+ const g=gp();if(g){const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.18);const sx=dz(ax[0]||0),sy=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);if(sx||sy){mx=sx;mz=-sy;}
   if(rx||ry){CAM.yaw-=rx*2.6*dt;CAM.pitch=cl(CAM.pitch+ry*1.6*dt,-.25,1.15);camIdle=0;}
   if(bt[0]?.pressed)k.jump=true;if(bt[2]?.pressed||bt[1]?.pressed)k.dive=true;if((bt[7]?.value||0)>.3||bt[5]?.pressed)k.grab=true;
   if(bt[0]?.pressed&&!padPrev.a)edge.PadA=true;if(bt[9]?.pressed&&!padPrev.st)pause(app==='show');if(bt[14]?.pressed&&!padPrev.l)edge.ArrowLeft=true;if(bt[15]?.pressed&&!padPrev.r)edge.ArrowRight=true;
@@ -197,8 +196,8 @@ function readInput(dt){if(me.botCtl)return;const k=me.ctrl,kb=c=>!!keys[c];let m
  if(cy){CAM.yaw+=cy*2.4*dt;camIdle=0;}
  const fx=Math.sin(CAM.yaw),fz=Math.cos(CAM.yaw);k.x=fx*mz-fz*mx;k.z=fz*mz+fx*mx;
  if(me.frozen||phase==='intro'){k.x=k.z=0;}
- camIdle+=dt;if(!locked&&camIdle>1.6&&Math.hypot(mx,mz)>.1&&mz>=0&&me.state==='run'){let d=me.yaw-CAM.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));if(Math.abs(d)<2.2)CAM.yaw+=d*Math.min(1,dt*1.1);}}
-function pause(on){if(on&&app==='show'){app='paused';$('pause').hidden=false;document.body.classList.remove('playing');try{document.exitPointerLock();}catch(e){}}else if(!on&&app==='paused'){app='show';$('pause').hidden=true;document.body.classList.add('playing');}}
+ camIdle+=dt;if(!I.locked&&camIdle>1.6&&Math.hypot(mx,mz)>.1&&mz>=0&&me.state==='run'){let d=me.yaw-CAM.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));if(Math.abs(d)<2.2)CAM.yaw+=d*Math.min(1,dt*1.1);}}
+function pause(on){if(on&&app==='show'){app='paused';$('pause').hidden=false;document.body.classList.remove('playing');I.unlock();}else if(!on&&app==='paused'){app='show';$('pause').hidden=true;document.body.classList.add('playing');}}
 
 /* ================= simulation ================= */
 let tick=0;
@@ -224,7 +223,7 @@ function grabs(dt){for(const a of act){if(a.out||a.hidden)continue;if(a.grabCd>0
 let roleT=0;
 function step(dt){dt=Math.min(dt,.1);
  if(app==='show'&&R.kind!=='lobby')readInput(dt);else{me.ctrl.grab=false;}
- const skip=edge.Space||edge.Enter||edge.PadA,leave=edge.Enter,sl=edge.ArrowLeft,sr=edge.ArrowRight;for(const k in edge)delete edge[k];
+ const skip=edge.Space||edge.Enter||edge.PadA,leave=edge.Enter,sl=edge.ArrowLeft,sr=edge.ArrowRight;I.flush();
  if(app==='paused'){visuals(0);return;}
  if(app==='show')flow(dt,skip,leave,sl,sr);
  acc+=dt*timeScale;let n=0;while(acc>=DT&&n<14){fixed(DT);acc-=DT;n++;}if(n>=14)acc=0;
@@ -265,14 +264,14 @@ function camUpdate(dt){let fov=58;const ks=1-Math.exp(-dt*7);
  else{const b=spec||me;const p=b.hidden&&b.respawnT>0&&b.resp?b.resp:b.p;want.set(p.x,p.y+1.5,p.z);if(CAM.snap)CAM.tgt.copy(want);else CAM.tgt.lerp(want,1-Math.exp(-dt*(b.state==='rag'?6:11)));
   if(CAM.snap&&spec)CAM.yaw=spec.yaw;
   const cp=Math.cos(CAM.pitch),dd=CAM.dist;want.set(CAM.tgt.x-Math.sin(CAM.yaw)*cp*dd,CAM.tgt.y+Math.sin(CAM.pitch)*dd,CAM.tgt.z-Math.cos(CAM.yaw)*cp*dd);
-  if(spec&&!locked){let d=spec.yaw-CAM.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));CAM.yaw+=d*Math.min(1,dt*.6);}
+  if(spec&&!I.locked){let d=spec.yaw-CAM.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));CAM.yaw+=d*Math.min(1,dt*.6);}
   CAM.pos.lerp(want,CAM.snap?1:1-Math.exp(-dt*14));CAM.look.copy(CAM.tgt);CAM.snap=false;fov=58+Math.min(6,Math.hypot(b.v.x,b.v.z)*.35);}
  CAM.fov+=(fov-CAM.fov)*Math.min(1,dt*4);cam.fov=CAM.fov;cam.position.copy(CAM.pos);CAM.shake=Math.max(0,CAM.shake-dt*1.6);const s=CAM.shake*CAM.shake*.5;if(s>0)cam.position.add(tv.set(rnd(s)-s/2,rnd(s)-s/2,rnd(s)-s/2));cam.lookAt(CAM.look);
  sun.position.copy(CAM.tgt).addScaledVector(stage.sunDir,130);sun.target.position.copy(CAM.tgt);}
 
 /* ================= HUD ================= */
 let feedEl=$('feed');const hc={};
-function feed(t,cls){const d=document.createElement('div');d.textContent=t;if(cls)d.className=cls;feedEl.prepend(d);setTimeout(()=>d.remove(),4200);while(feedEl.children.length>5)feedEl.lastChild.remove();}
+function feed(t,cls){const d=toast(feedEl,'',4200,5);d.textContent=t;if(cls)d.className=cls;}
 function banner(t,s,col,dur){$('bt').textContent=t;$('bt').style.color=col;$('bs').textContent=s;$('bs').hidden=!s;$('banner').classList.add('on');banT=dur;}
 const fmt=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 function setTxt(id,v){if(hc[id]!==v){hc[id]=v;$(id).textContent=v;}}
@@ -302,9 +301,9 @@ function hud(dt){if(banT>0){banT-=dt;if(banT<=0)$('banner').classList.remove('on
  setTxt('tag',tag);}
 
 /* ================= rendering ================= */
-const POST={exposure:.93,bloom:.26,bloomThreshold:.94,bloomRadius:.35,vignette:.2,saturation:1.14,grain:.012,aoStrength:.5};
+const POST={exposure:.84,bloom:.3,bloomThreshold:.9,bloomRadius:.4,vignette:.24,saturation:1.2,grain:.012,aoStrength:.65};
 let fx=null,gfx=quality();
-function applyQuality(q){gfx=q;sun.castShadow=q>0;const ms=q>=2?2048:1024;sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}RD.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));fx=null;}
+function applyQuality(q){gfx=q;sun.castShadow=q>0;setGloss(q);stage.lowGfx(q);const ms=q>=2?2048:1024;sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}RD.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));fx=null;}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(RD.domElement.width!==Math.floor(w*RD.getPixelRatio())||RD.domElement.height!==Math.floor(h*RD.getPixelRatio())){RD.setSize(w,h,false);if(fx)fx.w=0;}
  if(!fx){fx=cinematic(RD,scene,cam,{...POST,quality:gfx,ao:gfx>=2});fx.w=0;}if(fx.w!==w*9999+h){fx.w=w*9999+h;fx.setSize(w,h);}
@@ -324,13 +323,12 @@ function refreshMenu(){const L=prof.look;
  if(!patOK(L.pat))L.pat=0;if(!hatOK(L.hat))L.hat=0;looks[0]={...L};if(app==='menu')vis.setLook(0,looks[0]);
  $('prof').innerHTML=`<b>${prof.crowns}</b> CROWNS · <b>${prof.kudos}</b> KUDOS · ${prof.shows} SHOWS · BEST ${prof.best||0}`;}
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
-$('post').onclick=()=>{const a=lastAward||{};let u='';try{u=(JSON.parse(localStorage.getItem('pxd_profile'))||{}).user||'';}catch(e){}
- const body=`Game: Tumble Royale\nPoints: ${a.pts||0}\nResult: ${a.won?'crowned':'eliminated'}\nRounds qualified: ${a.best||0} of ${a.rounds||0}\nShow: ${a.show||''} · bots ${a.diff||''}\n\nPosted from Pixel Arcade${u?' as @'+u:''}. Do not edit the title.`;
- open('https://github.com/Normansrule/pixel-arcade/issues/new?title='+encodeURIComponent('[score] tumble '+(a.pts||0))+'&body='+encodeURIComponent(body),'_blank');};
+postButton($('post'),'tumble',()=>{const a=lastAward||{};
+ return[a.pts||0,`Game: Tumble Royale\nPoints: ${a.pts||0}\nResult: ${a.won?'crowned':'eliminated'}\nRounds qualified: ${a.best||0} of ${a.rounds||0}\nShow: ${a.show||''} · bots ${a.diff||''}`];});
 
 /* ================= loop ================= */
 toMenu();
-let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
 window.TUMBLE={get state(){return app==='show'?phase:app;},get app(){return app;},get phase(){return phase;},step,render,start,toMenu,beans,me,get R(){return R;},get W(){return W;},get show(){return show;},

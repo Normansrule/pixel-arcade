@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aeonfall · Pixel Arcade</title>
+<meta name="description" content="Aeonfall: a 5v5 top-down battle arena in full 3D. Ten original champions, three lanes, jungle camps, two neutral bosses, towers, inhibitors and the Aeon Heart. CPU allies and enemies at three difficulties.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="moba.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="ov"></canvas>
+<div id="hud" hidden>
+  <div id="topbar">
+    <div class="tm a"><b id="kA">0</b><span><i class="tw"></i><em id="tA">0</em></span><span class="dr" id="dA"></span></div>
+    <div class="clk"><b id="clock">0:00</b><span id="left"></span></div>
+    <div class="tm b"><b id="kB">0</b><span><i class="tw"></i><em id="tB">0</em></span><span class="dr" id="dB"></span></div>
+  </div>
+  <div id="mystat"><span>K/D/A <b id="myKDA">0/0/0</b></span><span>CS <b id="myCS">0</b></span></div>
+  <div id="allies"></div>
+  <div id="feed"></div>
+  <div id="banner"><b></b><span></span></div>
+  <div id="tinfo" hidden><img id="tiPor" alt=""><div><b id="tiName"></b><span id="tiSub"></span><div class="bar"><i id="tiHp"></i></div><p id="tiStats"></p></div></div>
+  <div id="dead" hidden><p>YOU HAVE BEEN SLAIN</p><b id="rsp">0</b><span>Press <kbd>P</kbd> to shop while you wait</span></div>
+  <div id="recallbar" hidden><span>RECALLING</span><div><i id="recallFill"></i></div></div>
+  <div id="panel">
+    <div class="stats" id="stats"></div>
+    <div class="por"><img id="mePor" alt=""><b id="meLvl">1</b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" id="xpRing"/></svg></div>
+    <div class="mid">
+      <div class="abs" id="abs"></div>
+      <div class="bars"><div class="bar hp"><i id="hpFill"></i><em id="hpShield"></em><b id="hpTxt"></b></div><div class="bar mp"><i id="mpFill"></i><b id="mpTxt"></b></div></div>
+    </div>
+    <div class="inv"><div class="items" id="items"></div><div class="gold"><b id="gold">0</b><span>GOLD</span></div></div>
+  </div>
+  <div id="mapbox"><canvas id="mini" width="440" height="440"></canvas></div>
+  <div id="hint"></div>
+  <div id="board" hidden></div>
+  <div id="shop" hidden>
+    <div class="sh-head"><h2>THE AEON MARKET<em>.</em></h2><span id="shopGold"></span><span class="sh-note" id="shopNote"></span><button id="shopX" class="ghost">CLOSE <kbd>P</kbd></button></div>
+    <div class="sh-body"><div class="sh-list"><div class="sh-rec"><p>RECOMMENDED</p><div id="shopRec"></div></div><div id="shopCats"></div></div>
+      <div class="sh-info" id="shopInfo"></div></div>
+    <div class="sh-inv"><p>YOUR ITEMS · right-click an item to sell</p><div id="shopInv"></div></div>
+  </div>
+</div>
+
+<div id="menu" class="scr">
+  <div class="mtop"><p class="eye">[ PIXEL ARCADE ] FULL 3D · 5V5 BATTLE ARENA</p><h1>AEON<em>FALL</em></h1>
+  <p class="how">Three lanes, a living jungle and two ancient bosses. Pick a champion, last-hit minions, take towers and break the enemy's Aeon Heart, with four CPU allies against five CPU rivals.</p></div>
+  <div class="pick" id="pick"></div>
+  <div class="cinfo" id="cinfo"></div>
+  <div class="opts">
+    <label>ROLE</label><div class="seg" id="o-role"><button data-v="auto">AUTO</button><button data-v="top">TOP</button><button data-v="jungle">JUNGLE</button><button data-v="mid">MID</button><button data-v="bot">BOT</button><button data-v="sup">SUPPORT</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>MATCH</label><div class="seg" id="o-min"><button data-v="12">12 MIN</button><button data-v="20">20 MIN</button><button data-v="25">25 MIN</button><button data-v="30">30 MIN</button></div>
+    <label>CONTROLS</label><div class="seg" id="o-ctl"><button data-v="classic">CLASSIC · RIGHT-CLICK</button><button data-v="wasd">WASD</button></div>
+    <label>SPELL</label><div class="seg" id="o-sp"><button data-v="mend">MEND</button><button data-v="scorch">SCORCH</button><button data-v="haste">HASTE</button><button data-v="barrier">BARRIER</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">ENTER THE VALE</button><button id="howb" class="ghost">CONTROLS</button><span class="best" id="best"></span></div>
+</div>
+<div class="card" id="keys" hidden>
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · attack</td><td><kbd>Right-click</kbd> ground / enemy</td></tr>
+    <tr><td>Abilities (cast at cursor)</td><td><kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd> <kbd>R</kbd></td></tr>
+    <tr><td>Level an ability</td><td><kbd>Ctrl</kbd>+<kbd>Q</kbd>…<kbd>R</kbd> (if auto-level is off)</td></tr>
+    <tr><td>Summoner spells · ward</td><td><kbd>D</kbd> <kbd>F</kbd> · <kbd>4</kbd></td></tr>
+    <tr><td>Attack-move · stop · recall</td><td><kbd>A</kbd>+click · <kbd>S</kbd> · <kbd>B</kbd></td></tr>
+    <tr><td>Camera</td><td>screen edges · <kbd>Space</kbd> centre · <kbd>Y</kbd> lock · wheel zoom</td></tr>
+    <tr><td>Shop · scoreboard · pause</td><td><kbd>P</kbd> · <kbd>Tab</kbd> · <kbd>Esc</kbd></td></tr>
+    <tr><td>WASD scheme</td><td><kbd>WASD</kbd> move · <kbd>LMB</kbd> attack · <kbd>1</kbd>–<kbd>4</kbd> abilities · <kbd>Z</kbd> <kbd>X</kbd> spells · <kbd>C</kbd> ward</td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p>Last-hit minions for gold. Towers guard each lane: let your minions take the hits first. Kill the Ember Drake for permanent power and the Aeon Warden to empower your team. Destroy an inhibitor to spawn super minions, then break the enemy Aeon Heart. If time runs out the team with the higher score wins (kills 1, towers 3, inhibitors 4, drakes 2, warden 4).</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<em>.</em></h1><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">SURRENDER TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">MATCH COMPLETE</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="why" id="owhy"></p>
+  <div id="otable"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iron Vanguard · Pixel Arcade</title>
+<meta name="description" content="Iron Vanguard: large-scale combined-arms warfare in full 3D. 16 versus 16 Conquest across a 700 metre valley of villages, hills, forest and a river bridge, with tanks, jeeps, attack helicopters and jets, four soldier classes, squad spawns and ticket bleed.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="warfront.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hurt"></div><div id="lowhp"></div><div id="flashov"></div>
+<div id="scope" hidden><div class="ring"></div><i class="h"></i><i class="v"></i><b></b></div>
+<div id="hud" hidden>
+  <div id="mmw"><canvas id="mini" width="220" height="220"></canvas><span class="n">N</span></div>
+  <div id="tix">
+    <div class="tk f" id="tkf"><i>VANGUARD</i><b id="tf">300</b><div class="bar"><u id="tfb"></u></div></div>
+    <div class="clk"><b id="clock">12:00</b><span>CONQUEST</span></div>
+    <div class="tk e" id="tke"><i>KORVAN BLOC</i><b id="te">300</b><div class="bar"><u id="teb"></u></div></div>
+  </div>
+  <div id="flags"></div>
+  <div id="cap"><b id="capt"></b><div class="bar"><u id="capb"></u></div><span id="caps"></span></div>
+  <div id="feed"></div>
+  <div id="radio"></div>
+  <div id="squad"></div>
+  <div id="vit"><div id="cls"></div><div id="hp"><i></i></div><div id="gad"></div></div>
+  <div id="wpn"><p class="nm" id="wname">HAVOC-4</p><p class="am"><b id="amag">30</b><span id="ares">/ 150</span></p><p class="eq"><span id="efrag"></span><span id="watt"></span></p></div>
+  <div id="veh" hidden><p class="nm" id="vname"></p><p class="sub" id="vsub"></p><div class="hpb" id="vhp"><i></i></div><div class="rows" id="vrows"></div><div class="w" id="vw"></div></div>
+  <div id="cross"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><em></em></div>
+  <div id="vret"></div><div id="lockbox"></div>
+  <div id="hit"><i></i><i></i><i></i><i></i></div>
+  <div id="kc"></div>
+  <div id="dmg"></div>
+  <div id="nades"></div>
+  <div id="marks"></div>
+  <div id="tags"></div>
+  <div id="prompt"><span id="ptxt"></span><div class="pb"><i></i></div></div>
+  <div id="xp"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="oob"><b>RETURN TO THE BATTLEFIELD</b><span id="oobt"></span></div>
+  <div id="dead" hidden><b>K.I.A.</b><span id="deadby"></span><em id="deadt"></em><em id="deadh" class="hint"></em></div>
+  <div id="board" hidden></div>
+  <div id="ann"></div>
+</div>
+<div id="menu" class="scr">
+  <div id="rank"><b id="rname">RECRUIT</b><span id="rxp">0 XP</span><div class="bar"><i id="rbar"></i></div></div>
+  <div class="mcol">
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · COMBINED ARMS</p>
+    <h1>IRON<br>VANGUARD<em>.</em></h1>
+    <p class="how"><b>CONQUEST · ASHVALE VALLEY</b> — 16 versus 16 across 700 metres of farmland, forest, hills and a river crossing. Hold more of the five flags to bleed the enemy's tickets; every death costs one. Take the fight on foot or in tanks, jeeps, attack helicopters and jets. First army to zero tickets, or the fewest when the clock runs out, loses.</p>
+    <div class="opts" style="margin-top:14px"><label>DIFFICULTY</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>BATTLE</label><div class="seg" id="o-len"><button data-v="0">SKIRMISH · 8 MIN</button><button data-v="1" class="on">STANDARD · 12 MIN</button><button data-v="2">GRAND · 20 MIN</button></div></div>
+    <div class="row"><button id="go" class="go">ENTER BATTLE</button></div>
+  </div>
+</div>
+<div id="deploy" class="scr" hidden>
+  <div class="left">
+    <p class="eye">CHOOSE YOUR KIT</p><h2>DEPLOY<em>.</em></h2>
+    <div id="classes"></div>
+    <p id="dsel"></p><p id="dtix"></p><p id="dcnt"></p>
+    <div class="row"><button id="dgo" class="go">DEPLOY</button><button id="dquit" class="ghost">QUIT</button></div>
+  </div>
+  <div id="dmapw"><canvas id="dmap" width="640" height="640"></canvas></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · sprint · jump · crouch</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>Space</kbd> <kbd>C</kbd></td></tr>
+    <tr><td>Fire · aim · reload</td><td><kbd>LMB</kbd> <kbd>RMB</kbd> <kbd>R</kbd></td></tr>
+    <tr><td>Weapons · gadgets · frag</td><td><kbd>1</kbd><kbd>2</kbd> <kbd>3</kbd><kbd>4</kbd> <kbd>Q</kbd></td></tr>
+    <tr><td>Class ability · interact</td><td><kbd>F</kbd> <kbd>E</kbd> (hold)</td></tr>
+    <tr><td>Enter / exit vehicle</td><td><kbd>E</kbd></td></tr>
+    <tr><td>Vehicle fire · alt fire / zoom</td><td><kbd>LMB</kbd> <kbd>RMB</kbd></td></tr><tr><td>Helicopter climb · descend</td><td><kbd>Space</kbd> <kbd>Ctrl</kbd></td></tr>
+    <tr><td>Spot enemy · scores · pause · gfx</td><td><kbd>Z</kbd> <kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Medics revive downed allies (hold E) and drop med kits (F). Engineers fire rockets (3) and repair with the torch (4). Recons spot everything in view (F). Assault drops ammo (F). Gamepad supported.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>THE LINE<em>.</em></h1><p class="how">Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.6">LOW</button><button data-v="1" class="on">MED</button><button data-v="1.6">HIGH</button><button data-v="2.3">MAX</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8" class="on">MED</button><button data-v="1.1">HIGH</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">CONQUEST OVER</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="fs" id="ofs"></p>
+  <div id="stats"></div>
+  <div id="oxp"><span id="oxpt"></span><div class="bar"><i id="oxpb"></i></div></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

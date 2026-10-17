@@ -23,6 +23,8 @@ function base(P,R,SP){const F=n=>Math.max(1,Math.round(n*SP)),D=d=>Math.round(d*
   dair:{f:F(44),ll:F(18),h:[h(14,18,.1,-.05,.64,13,270,22,90)],p:['dairW','dair'],lb:'fR',air:1},
   grab:{f:F(30),h:[h(6,8,.85,1.0,.58,0,0,0,0,{grab:1})],p:['grabW','grab'],lb:'hR'},
   ledgeAtk:{f:32,h:[H(14,18,.95,.5,.75,8,361,45,30)],p:['crouch','sweepLow'],lb:'fR'},
+  batSwing:{f:F(36),h:[h(9,13,1.55,1.15,.9,15,361,42,102,{fx:'impact'})],p:['smashW','smash'],lb:'hR',bat:1,m:[[F(8),.12]]},
+  batAir:{f:F(32),ll:F(10),h:[h(7,11,1.45,1.05,.85,12,361,36,98,{fx:'impact'})],p:['fairW','fair'],lb:'hR',air:1,bat:1},
   getupAtk:{f:32,h:[H(10,14,1,.4,.65,7,361,48,40),H(10,14,-1,.4,.65,7,150,48,40)],p:['crouch','dsm'],lb:'fR'},
   throws:{f:{d:D(8),a:45,b:62,g:64,f:24,rel:12,p:'throwF'},b:{d:D(10),a:135,b:62,g:70,f:30,rel:16,p:'throwB',turn:1},u:{d:D(7),a:90,b:72,g:62,f:28,rel:14,p:'throwU'},d:{d:D(6),a:78,b:72,g:34,f:30,rel:16,p:'throwD'}},
  };}
@@ -32,7 +34,7 @@ const pr=(o)=>Object.assign({grav:.012,life:60,r:.35,d:6,a:361,b:10,g:40,spd:.3,
 export const ROSTER=[
  {id:'bolt',name:'BOLT',type:'ALL-ROUNDER',desc:'Quick hands, a spark shot and a counter for anyone who swings carelessly.',
   w:98,walk:.15,run:.27,air:.15,airAcc:.01,grav:.0133,fall:.245,jump:.38,hop:.25,djump:.38,jumps:1,W:.9,Hh:1.95,P:1,R:1,SP:1,fx:'elec',
-  look:{build:'mid',suit:0x1d4fe0,trim:0x0d1a40,skin:0xe8b48e,glow:0xffd21a,hair:'spikes',hairC:0xffd21a,visor:true,alt:{suit:0xe01d3a,trim:0x3a0812,glow:0x7ef6ff,hairC:0xffffff}},
+  look:{build:'mid',suit:0x2f6cff,trim:0xffcf1f,skin:0xf2c19c,glow:0xffe04a,glove:0xffffff,boot:0xffcf1f,hair:'spikes',hairC:0xffd21a,visor:true,alt:{suit:0xff3550,trim:0xffffff,glow:0x7ef6ff,glove:0x30d8ff,boot:0xffffff,hairC:0xfff4e0}},
   stats:[3,3,3,3],
   sp:{
    nspec:{f:34,sp:{kind:'shoot',at:12,proj:pr({t:'bolt',spd:.36,grav:0,life:48,r:.38,d:6,a:30,b:14,g:35,fx:'elec',max:2})},p:['castW','cast'],lb:'hR'},
@@ -44,7 +46,7 @@ export const ROSTER=[
 
  {id:'granite',name:'GRANITE',type:'HEAVYWEIGHT',desc:'A walking quarry. Slow, armoured and devastating once a fist lands.',
   w:128,walk:.12,run:.225,air:.13,airAcc:.008,grav:.0152,fall:.27,jump:.37,hop:.24,djump:.35,jumps:1,W:1.35,Hh:2.4,P:1.22,R:1.18,SP:1.0,fx:'rock',
-  look:{build:'heavy',suit:0x5d5953,trim:0x2a2724,skin:0x8a837a,glow:0xff6a1a,hair:'rocks',hairC:0x6e6a64,alt:{suit:0x3f5f6e,trim:0x1a2a32,glow:0x56d8ff,skin:0x7a8c94}},
+  look:{build:'heavy',suit:0xa89a86,trim:0x6a5e50,skin:0xbcae98,glow:0xff7a1a,glove:0x8a7c6a,boot:0x6a5e50,hair:'rocks',hairC:0x938672,alt:{suit:0x7fa4ba,trim:0x3e5a6a,glow:0x56d8ff,skin:0xa6bccb,glove:0x5c7a8c,boot:0x3e5a6a,hairC:0x6e8ea2}},
   stats:[5,1,2,4],
   sp:{
    nspec:{f:56,sp:{kind:'cpunch',at:10,max:90,cm:1.8},h:[H(15,19,1.4,1.1,.9,11,361,40,96,{fx:'rock'})],m:[[14,.22]],p:['smashW','smash'],lb:'hR'},
@@ -56,7 +58,7 @@ export const ROSTER=[
 
  {id:'vex',name:'VEX',type:'SPEEDSTER',desc:'A shadow with three jumps. Blinks through attacks and never stands still.',
   w:78,walk:.19,run:.34,air:.175,airAcc:.013,grav:.0142,fall:.27,jump:.39,hop:.27,djump:.36,jumps:2,W:.8,Hh:1.75,P:.78,R:.92,SP:.82,fx:'dark',
-  look:{build:'slim',suit:0x1b1a2e,trim:0x0a0912,skin:0xd9a07a,glow:0xb04dff,hair:'mask',hairC:0x1b1a2e,scarf:true,alt:{suit:0xe8e8ee,trim:0x6a6a78,glow:0xff2f6a}},
+  look:{build:'slim',suit:0x6a35c8,trim:0x2a1650,skin:0xe2aa84,glow:0xe07bff,glove:0x2a1650,boot:0x2a1650,hair:'mask',hairC:0x6a35c8,scarf:true,alt:{suit:0xf0f0f6,trim:0x8a2a48,glow:0xff3a6a,glove:0x8a2a48,boot:0x8a2a48}},
   stats:[1,5,4,2],
   sp:{
    nspec:{f:22,sp:{kind:'shoot',at:7,proj:pr({t:'star4',spd:.5,grav:0,life:40,r:.3,d:3.5,a:361,b:6,g:22,fx:'dark',max:3})},p:['castW','throwStar'],lb:'hR'},
@@ -68,7 +70,7 @@ export const ROSTER=[
 
  {id:'nova',name:'NOVA',type:'ZONER',desc:'Floats above the fight, charging starlight orbs and bending shots back at you.',
   w:88,walk:.14,run:.24,air:.165,airAcc:.009,grav:.0098,fall:.2,jump:.35,hop:.22,djump:.37,jumps:2,W:.85,Hh:1.85,P:1.03,R:1.08,SP:.96,fx:'arcane',
-  look:{build:'robe',suit:0x2a2f78,trim:0x101436,skin:0xf1cfb3,glow:0x4ef0ff,hair:'hat',hairC:0x2a2f78,alt:{suit:0x6a1d5c,trim:0x2a0a24,glow:0xffb84e}},
+  look:{build:'robe',suit:0x3a50e8,trim:0xffcc66,skin:0xf6d6bc,glow:0x4ef0ff,glove:0xffcc66,boot:0xffcc66,hair:'hat',hairC:0x3a50e8,alt:{suit:0xc0308e,trim:0xffe2a8,glow:0xffb84e,glove:0xffe2a8,boot:0xffe2a8,hairC:0xc0308e}},
   stats:[2,2,5,3],
   sp:{
    nspec:{f:30,sp:{kind:'cshot',at:8,max:80,proj:pr({t:'orb',spd:.3,grav:0,life:70,r:.3,d:5,a:361,b:18,g:55,fx:'arcane'}),big:{r:.8,d:22,b:40,g:82,spd:.36}},p:['castW','cast'],lb:'hR'},
@@ -80,7 +82,7 @@ export const ROSTER=[
 
  {id:'riptide',name:'RIPTIDE',type:'SPACER',desc:'Trident reach and tidal waves. Keeps you exactly where she wants you.',
   w:96,walk:.14,run:.24,air:.14,airAcc:.009,grav:.0128,fall:.24,jump:.37,hop:.24,djump:.35,jumps:1,W:.95,Hh:2.0,P:1,R:1.35,SP:1.1,fx:'water',
-  look:{build:'mid',suit:0x0f7f86,trim:0x063034,skin:0x9fd6d0,glow:0x37fff0,hair:'fin',hairC:0x0f7f86,trident:true,alt:{suit:0x8a5a12,trim:0x2a1a04,glow:0xfff07a,skin:0xe8c79a}},
+  look:{build:'mid',suit:0x14c2b8,trim:0x0a5a74,skin:0xaee8de,glow:0x6afff4,glove:0x0a5a74,boot:0x0a5a74,hair:'fin',hairC:0x14c2b8,trident:true,alt:{suit:0xf0a828,trim:0x8a4a10,glow:0xfff07a,skin:0xf2d2a4,glove:0x8a4a10,boot:0x8a4a10,hairC:0xf0a828}},
   stats:[3,3,4,3],
   sp:{
    nspec:{f:36,sp:{kind:'shoot',at:12,proj:pr({t:'wave',spd:.26,grav:0,life:64,r:.55,d:8,a:70,b:36,g:58,ground:1,fx:'water',max:1})},p:['smashW','slam'],lb:'hR'},
@@ -92,7 +94,7 @@ export const ROSTER=[
 
  {id:'ember',name:'EMBER',type:'RUSHDOWN',desc:'Hair of fire, feet of fire. Breathes a flame stream and leaves traps behind.',
   w:88,walk:.16,run:.29,air:.16,airAcc:.011,grav:.0145,fall:.265,jump:.38,hop:.255,djump:.37,jumps:1,W:.88,Hh:1.9,P:.92,R:.95,SP:.94,fx:'fire',
-  look:{build:'mid',suit:0x2a1410,trim:0x120806,skin:0xd88a5e,glow:0xff4a12,hair:'flame',hairC:0xff4a12,alt:{suit:0x14222a,trim:0x060c10,glow:0x4aa8ff}},
+  look:{build:'mid',suit:0xe8481c,trim:0x3c1c16,skin:0xeaa478,glow:0xff8a1a,glove:0xffc040,boot:0x3c1c16,hair:'flame',hairC:0xff6a12,alt:{suit:0x2a82ea,trim:0x14284a,glow:0x6ad8ff,glove:0x9ae8ff,boot:0x14284a,hairC:0x4aa8ff}},
   stats:[3,4,2,4],
   sp:{
    nspec:{f:110,sp:{kind:'breath',a:8,max:80,end:14},h:[H(8,88,1.55,1.15,.78,1.2,40,14,8,{rh:6,fx:'fire'})],p:['castW','breath'],lb:'hR'},
@@ -104,7 +106,7 @@ export const ROSTER=[
 
  {id:'kodiak',name:'KODIAK',type:'GRAPPLER',desc:'Bear-hugs through shields, lariats through crowds, belly-flops from orbit.',
   w:118,walk:.13,run:.245,air:.135,airAcc:.009,grav:.0145,fall:.26,jump:.37,hop:.24,djump:.35,jumps:1,W:1.25,Hh:2.25,P:1.15,R:1.08,SP:1.04,fx:'impact',
-  look:{build:'heavy',suit:0x6b3f1e,trim:0x2a170a,skin:0x8a5a32,glow:0xffb020,hair:'ears',hairC:0x5a3418,belt:true,alt:{suit:0xd8d8d0,trim:0x5a5a52,glow:0x9cff3a,skin:0xc8c8be,hairC:0xb0b0a6}},
+  look:{build:'heavy',suit:0xa8642c,trim:0x5e3616,skin:0xa8642c,glow:0xffc02a,glove:0xd84a2a,boot:0x5e3616,hair:'ears',hairC:0x8a4e1e,belt:true,alt:{suit:0xeaeae0,trim:0x8a8a80,glow:0x9cff3a,skin:0xeaeae0,glove:0x3a8a3a,boot:0x8a8a80,hairC:0xcacabe}},
   stats:[4,2,2,5],
   sp:{
    nspec:{f:46,h:[H(8,14,1.0,1.0,.75,0,0,0,0,{grab:1,cmd:1})],sp:{kind:'cmd'},thr:{d:18,a:70,b:74,g:72,f:46,rel:34,p:'slam'},p:['grabW','grab'],lb:'hR',m:[[7,.2]]},
@@ -116,7 +118,7 @@ export const ROSTER=[
 
  {id:'cog',name:'COG',type:'GADGETEER',desc:'A tin trickster: bouncing bombs, homing rockets, drill mines and a jetpack.',
   w:104,walk:.14,run:.25,air:.14,airAcc:.009,grav:.0133,fall:.24,jump:.36,hop:.235,djump:.35,jumps:1,W:1.0,Hh:1.95,P:1,R:1,SP:1.05,fx:'tech',
-  look:{build:'robot',suit:0x9aa4ae,trim:0x2c333a,skin:0x9aa4ae,glow:0x5dff6a,hair:'antenna',hairC:0x2c333a,jetpack:true,alt:{suit:0xc8a63a,trim:0x3a2c08,skin:0xc8a63a,glow:0xff4ad8}},
+  look:{build:'robot',suit:0xdce2ea,trim:0x3c4654,skin:0xdce2ea,glow:0x4dff6a,glove:0x3c4654,boot:0x3c4654,hair:'antenna',hairC:0x3c4654,jetpack:true,alt:{suit:0xf4c63e,trim:0x5a4410,glow:0xff4ad8,skin:0xf4c63e,glove:0x5a4410,boot:0x5a4410}},
   stats:[3,3,5,2],
   sp:{
    nspec:{f:36,sp:{kind:'shoot',at:12,proj:pr({t:'bomb',spd:.27,ang:32,grav:.011,life:100,r:.36,d:11,a:60,b:42,g:74,bounce:2,explode:1.5,fx:'tech',max:2})},p:['castW','throwStar'],lb:'hR'},

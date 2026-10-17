@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Longbow Keep · Pixel Arcade</title>
+<meta name="description" content="Longbow Keep: full 3D medieval archery capture-the-flag in the browser. Draw, lead and loose arrows with real drop, duel with sword and shield, lob fire pots and raise barricades. 5v5 against CPU knights across three castle battlefields.">
+<link rel="stylesheet" href="bow.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="ov"></canvas>
+<div id="hurt"></div><div id="carryov"></div>
+<div id="hud" hidden>
+  <div id="top">
+    <div class="tm t0"><i class="fl home" id="f0"></i><span>AZURE</span><b id="c0">0</b></div>
+    <div class="clk"><b id="clock">8:00</b><span>FIRST TO 3</span></div>
+    <div class="tm t1"><b id="c1">0</b><span>CRIMSON</span><i class="fl home" id="f1"></i></div>
+  </div>
+  <div id="fstat"><span id="fs0" class="fs"></span><span id="fs1" class="fs"></span></div>
+  <canvas id="compass" width="460" height="44"></canvas>
+  <div id="feed"></div>
+  <div id="carry">⚑ YOU HAVE THE FLAG · RETURN IT TO YOUR KEEP</div>
+  <div id="vit"><i>✚</i><b id="hp">100</b><div class="bar"><em id="hpb"></em></div></div>
+  <div id="wpn"><p class="wn" id="wname">LONGBOW</p><p class="am"><b id="ammo">16</b><span id="aname">ARROWS</span></p><div id="slots"></div></div>
+  <div id="hint"></div>
+  <div id="cd"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="dead" hidden><p id="dkill"></p><p class="rt">RESPAWN IN <b id="dtime">5</b></p><p class="lab">NEXT LOADOUT · PRESS 1 2 3</p>
+    <div id="dload"><button data-v="long"><b>1</b>LONGBOW<span>slow draw · heavy hit</span></button><button data-v="short"><b>2</b>SHORTBOW<span>quick draw · more arrows</span></button><button data-v="cross"><b>3</b>CROSSBOW<span>loaded bolt · flat shot</span></button></div></div>
+  <div id="board" hidden></div>
+</div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · ARCHERY CAPTURE THE FLAG</p>
+  <h1>LONGBOW<br>KEEP<em>.</em></h1>
+  <p class="how">Five against five, two castles, two flags. Draw, lead your target and loose — arrows drop, stick and can be picked back up. Steal the enemy banner and carry it home while your flag still flies. First to three captures.</p>
+  <div class="opts">
+    <label>FIELD</label><div class="seg" id="o-map"><button data-v="0">GREENWATER VALE</button><button data-v="1">CLOUDSPIRE</button><button data-v="2">FROSTFANG PASS</button></div>
+    <label>LOADOUT</label><div class="seg" id="o-load"><button data-v="long">LONGBOW</button><button data-v="short">SHORTBOW</button><button data-v="cross">CROSSBOW</button></div>
+    <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">SQUIRE</button><button data-v="1">KNIGHT</button><button data-v="2">WARLORD</button></div>
+    <label>CLOCK</label><div class="seg" id="o-time"><button data-v="5">5 MIN</button><button data-v="8">8 MIN</button><button data-v="10">10 MIN</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">TO ARMS</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Move · aim</td><td><kbd>WASD</kbd> <kbd>Mouse</kbd></td></tr>
+    <tr><td>Jump · sprint</td><td><kbd>Space</kbd> <kbd>Shift</kbd></td></tr>
+    <tr><td>Draw (hold) · loose (release)</td><td><kbd>LMB</kbd></td></tr>
+    <tr><td>Cancel draw · shield block</td><td><kbd>RMB</kbd></td></tr>
+    <tr><td>Bow · sword · fire pot · build</td><td><kbd>1</kbd>–<kbd>4</kbd> <kbd>Wheel</kbd> <kbd>Q</kbd></td></tr>
+    <tr><td>Build: place · rotate · type</td><td><kbd>LMB</kbd> <kbd>R</kbd> <kbd>F</kbd></td></tr>
+    <tr><td>Ladders</td><td><kbd>W</kbd> / <kbd>S</kbd> · <kbd>Space</kbd> lets go</td></tr>
+    <tr><td>Scoreboard · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Hold a full draw too long and your aim starts to shake. Headshots deal double. Walk over stuck arrows to pick them up; restock at the quiver rack and plank pile in your courtyard. Gamepad: sticks, RT draw, LT block, A jump, RB weapon, Y build.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>THE LINE<em>.</em></h1><p class="how">Click resume to lock the mouse again.</p>
+  <div class="opts"><label>MOUSE</label><div class="seg" id="o-sens"><button data-v="0.5">LOW</button><button data-v="0.8">MED-</button><button data-v="1">MED</button><button data-v="1.5">HIGH</button><button data-v="2.2">MAX</button></div>
+  <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  <label>FOV</label><div class="seg" id="o-fov"><button data-v="85">85</button><button data-v="95">95</button><button data-v="105">105</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">MATCH OVER</p>
+  <p class="res" id="ores">VICTORY</p>
+  <p class="fs" id="ofs"></p>
+  <div id="ostats"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
