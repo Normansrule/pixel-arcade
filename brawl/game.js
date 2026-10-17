@@ -10,7 +10,7 @@ import {Particles,Trail,Shocks,Sparks,Beams,FX} from './fx.js';
 import {think} from './ai.js';
 import {Sound} from './sound.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
-import {controls,deadzone} from '../js/kit3d/input.js';
+import {controls,deadzone,gamepads,playerPad} from '../js/kit3d/input.js';
 import {stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a,DT=1/60;
@@ -207,10 +207,9 @@ const KB=[{l:['KeyA'],r:['KeyD'],u:['KeyW'],d:['KeyS'],jump:['Space'],atk:['KeyJ
  {l:['ArrowLeft'],r:['ArrowRight'],u:['ArrowUp'],d:['ArrowDown'],jump:['Numpad0'],atk:['Comma','Numpad1'],spc:['Period','Numpad2'],smash:['Slash','Numpad3'],shield:['ShiftRight','NumpadDecimal'],grab:['Enter','NumpadEnter']}];
 const padPrev=[{},{}],PK=['jumpP','atkP','spcP','smashP','shieldP','grabP'];
 function mergeIn(prev,I){if(!prev)return I;for(const k of PK)I[k]=I[k]||prev[k];if(prev.smashP&&!I.sx&&!I.sy){I.sx=prev.sx;I.sy=prev.sy;}return I;}
-function pads(){return navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];}
 function readHuman(i){const solo=opt.humans===1,maps=solo?KB:[KB[i]];const on=n=>maps.some(m=>m[n].some(k=>keys[k])),pr=n=>maps.some(m=>m[n].some(k=>edge[k]));
  const I=blankInput();I.x=(on('r')?1:0)-(on('l')?1:0);I.y=(on('u')?1:0)-(on('d')?1:0);I.jump=on('jump');I.jumpP=pr('jump');I.atk=on('atk');I.atkP=pr('atk');I.spc=on('spc');I.spcP=pr('spc');I.smash=on('smash');I.smashP=pr('smash');I.shield=on('shield');I.shieldP=pr('shield');I.grabP=pr('grab');
- const list=pads(),g=solo?list[0]:list.length===1?(i===1?list[0]:null):list[i];if(g){const a=g.axes,b=g.buttons,P=padPrev[i],dz=v=>deadzone(v,.24),btn=k=>!!(b[k]&&b[k].pressed),edg=(k,n)=>btn(k)&&!P[n];
+ const g=playerPad(i,opt.humans,1);if(g){const a=g.axes,b=g.buttons,P=padPrev[i],dz=v=>deadzone(v,.24),btn=k=>!!(b[k]&&b[k].pressed),edg=(k,n)=>btn(k)&&!P[n];
   const lx=dz(a[0]||0)+(btn(15)?1:0)-(btn(14)?1:0),ly=-dz(a[1]||0)+(btn(12)?1:0)-(btn(13)?1:0);if(lx)I.x=cl(lx,-1,1);if(ly)I.y=cl(ly,-1,1);
   const rx=a[2]||0,ry=-(a[3]||0),rm=Math.hypot(rx,ry);if(rm>.6){I.smash=true;if(!P.rs){I.smashP=true;I.sx=rx;I.sy=ry;}}
   if(btn(0))I.atk=true;if(edg(0,'a'))I.atkP=true;if(btn(1))I.spc=true;if(edg(1,'b'))I.spcP=true;if(btn(2)||btn(3))I.jump=true;if(edg(2,'x')||edg(3,'y'))I.jumpP=true;
@@ -218,7 +217,7 @@ function readHuman(i){const solo=opt.humans===1,maps=solo?KB:[KB[i]];const on=n=
   if(edg(9,'st')){if(app==='match')pause(true);else if(app==='paused')pause(false);else if(app==='menu'||app==='over')start();}
   Object.assign(P,{a:btn(0),b:btn(1),x:btn(2),y:btn(3),rb:btn(5),lt:btn(6),rt:btn(7),lb:btn(4),st:btn(9),rs:rm>.6});}
  return I;}
-function menuPads(){for(let i=0;i<2;i++){const g=pads()[i];if(!g)continue;const b=g.buttons,P=padPrev[i];const st=!!(b[9]&&b[9].pressed);if(st&&!P.st){if(app==='paused')pause(false);else if(app==='menu'||app==='over')start();}P.st=st;}}
+function menuPads(){for(let i=0;i<2;i++){const g=gamepads()[i];if(!g)continue;const b=g.buttons,P=padPrev[i];const st=!!(b[9]&&b[9].pressed);if(st&&!P.st){if(app==='paused')pause(false);else if(app==='menu'||app==='over')start();}P.st=st;}}
 
 /* ================= main step ================= */
 let lastClockAnn=-1;

@@ -24,6 +24,9 @@
 //  Window blur releases every key and mouse button.
 //
 //  gamepad()          first connected gamepad, or null
+//  gamepads()         every connected gamepad in slot order, empty slots skipped (so slots 0 and 2 come back as [0,2])
+//  playerPad(i,humans,lone=0)  local-multiplayer pad for human i: the first pad when humans<2, else gamepads()[i];
+//                     with two humans and one pad, that pad goes to human `lone` (1 when player 1 keeps the keyboard), others get null
 //  deadzone(v,t=.15)  0 inside the dead zone, v outside;  deadzone(v,t,true) rescales the rest to 0..1
 export function controls(canvas,o={}){
  const keys={},edge={},mouse={dx:0,dy:0,l:false,r:false,le:false,re:false,wheel:0},can=()=>!o.canLock||o.canLock(),ov=o.overlay;
@@ -44,5 +47,7 @@ export function controls(canvas,o={}){
  addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.l=mouse.r=false;});
  return I;}
 
-export function gamepad(){return navigator.getGamepads?[...navigator.getGamepads()].find(Boolean)||null:null;}
+export function gamepads(){return navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];}
+export function gamepad(){return gamepads()[0]||null;}
+export function playerPad(i,humans,lone=0){const l=gamepads();return(humans<2?l[0]:l.length>1?l[i]:i===lone?l[0]:null)||null;}
 export function deadzone(v,t=.15,rescale){return Math.abs(v)>t?(rescale?(v-Math.sign(v)*t)/(1-t):v):0;}

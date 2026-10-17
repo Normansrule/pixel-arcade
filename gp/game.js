@@ -12,7 +12,7 @@ import {thinkRace,thinkBattle} from './ai.js';
 import {Sound} from './sound.js';
 import {V,cl,lerp,wrapA,Particles,Skids,icon,rng} from './util.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
-import {controls,deadzone} from '../js/kit3d/input.js';
+import {controls,deadzone,playerPad} from '../js/kit3d/input.js';
 import {postButton,toast} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id),rnd=(a=1)=>Math.random()*a;
@@ -99,7 +99,7 @@ const KB=[{f:['KeyW'],b:['KeyS'],l:['KeyA'],r:['KeyD'],d:['Space','ShiftLeft'],i
  {f:['ArrowUp'],b:['ArrowDown'],l:['ArrowLeft'],r:['ArrowRight'],d:['ShiftRight','Slash','Numpad0'],i:['Enter','Period','NumpadEnter'],lk:['Comma','Numpad1']}];
 const anyK=a=>a.some(k=>keys[k]);const padPrev=[{},{}],latch=[{},{}];
 addEventListener('keydown',e=>{if(e.repeat)return;KB.forEach((m,i)=>{if(m.i.includes(e.code))latch[i].i=1;if(m.d.includes(e.code))latch[i].d=1;});});
-function gpad(i){const l=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];return opt.players===2?l[i]:i===0?l[0]:null;}
+function gpad(i){return playerPad(i,opt.players);}
 function readHuman(k){const c=k.ctrl,i=k.human,solo=opt.players===1;const maps=solo?[KB[0],KB[1]]:[KB[i]];const on=n=>maps.some(m=>anyK(m[n]));
  c.thr=on('f')?1:0;c.brake=on('b')?1:0;c.steer=(on('l')?1:0)-(on('r')?1:0);c.drift=on('d');c.itemBtn=on('i');c.back=on('b');c.look=on('lk');
  const g=gpad(i);if(g){const ax=g.axes,bt=g.buttons,dz=v=>deadzone(v,.18),sx=dz(ax[0]||0),rt=bt[7]?.value||0,lt=bt[6]?.value||0;

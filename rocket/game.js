@@ -7,7 +7,7 @@ import {TEAM,makeEnv,buildArena,buildPads,makeCar,makeBall,Particles,Trail,Shock
 import {DIFF,assignRoles,think} from './ai.js';
 import {Sound} from './sound.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
-import {controls,gamepad,deadzone} from '../js/kit3d/input.js';
+import {controls,playerPad,deadzone} from '../js/kit3d/input.js';
 import {stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
@@ -130,8 +130,7 @@ const {keys,edge}=I;
 const KB=[{f:['KeyW'],b:['KeyS'],l:['KeyA'],r:['KeyD'],j:['Space'],bo:['ShiftLeft'],hb:['ControlLeft','KeyB'],rl:['KeyQ'],rr:['KeyE']},
  {f:['ArrowUp'],b:['ArrowDown'],l:['ArrowLeft'],r:['ArrowRight'],j:['Enter','Slash','Numpad0'],bo:['Period','ShiftRight','NumpadDecimal'],hb:['Comma','ControlRight'],rl:['Semicolon'],rr:['Quote']}];
 const any=a=>a.some(k=>keys[k]);const padPrev=[{},{}];
-// pad 1 is the kit's gamepad(); split screen gives player 2 the next connected pad (the kit only hands out the first)
-function gp(i){const a=gamepad();if(!i||!a)return a;return opt.humans===2&&[...navigator.getGamepads()].find(g=>g&&g!==a)||null;}
+function gp(i){return playerPad(i,opt.humans);}
 function readHuman(c){const k=c.ctrl,i=c.human,solo=cars.filter(x=>x.human>=0).length===1;const maps=solo?[KB[0],KB[1]]:[KB[i]];
  const on=n=>maps.some(m=>any(m[n]));k.thr=(on('f')?1:0)-(on('b')?1:0);k.steer=(on('l')?1:0)-(on('r')?1:0);k.jump=on('j');k.boost=on('bo');k.hb=on('hb');k.roll=(on('rr')?1:0)-(on('rl')?1:0);
 

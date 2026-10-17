@@ -10,7 +10,7 @@ import {Particles,Trail,Shocks,Sparks,FX} from './fx.js';
 import {think} from './ai.js';
 import {Sound} from './sound.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
-import {controls,deadzone} from '../js/kit3d/input.js';
+import {controls,deadzone,gamepads,playerPad} from '../js/kit3d/input.js';
 import {$,stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a,DT=1/60,ID='tempestfist';
@@ -183,12 +183,11 @@ const {keys,edge}=IN;
 const KB=[{l:['KeyA'],r:['KeyD'],u:['KeyW'],d:['KeyS'],P:['KeyJ'],K:['KeyK'],H:['KeyL'],T:['KeyU'],S:['KeyI'],U:['KeyO'],SS:['Space']},
  {l:['ArrowLeft'],r:['ArrowRight'],u:['ArrowUp'],d:['ArrowDown'],P:['Numpad1','Comma'],K:['Numpad2','Period'],H:['Numpad3','Slash'],T:['Numpad4','Semicolon'],S:['Numpad5','Quote'],U:['Numpad6','BracketRight'],SS:['Numpad0','ShiftRight']}];
 const BT=['P','K','H','T','S','U','SS'],padPrev=[{},{}];
-function pads(){return navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[]}
 const camR=new V(),camF=new V(),relLock=[0,0];
 // raw screen-space input → fighter-relative input (x +1 = toward the opponent, sidestep side from up/down)
 function readHuman(f){const i=f.human,solo=!(world.f[1].human>=0),maps=solo?KB:[KB[i]];const on=n=>maps.some(m=>m[n].some(k=>keys[k])),pr=n=>maps.some(m=>m[n].some(k=>edge[k]));
  let sx=(on('r')?1:0)-(on('l')?1:0),sy=(on('u')?1:0)-(on('d')?1:0);const I=blankIn();for(const b of BT){I[b]=on(b);I[b+'p']=pr(b);}
- const list=pads(),g=solo?list[0]:list.length>=2?list[i]:list.length===1&&i===1?list[0]:null;
+ const g=playerPad(i,solo?1:2,1);
  if(g){const a=g.axes,b=g.buttons,P=padPrev[i],btn=k=>!!(b[k]&&b[k].pressed),edg=(k,n)=>btn(k)&&!P[n];
   const lx=deadzone(a[0]||0,.35)+(btn(15)?1:0)-(btn(14)?1:0),ly=-deadzone(a[1]||0,.45)+(btn(12)?1:0)-(btn(13)?1:0);if(lx)sx=Math.sign(lx);if(ly)sy=Math.sign(ly);
   const map=[['P',2],['K',0],['H',3],['S',1],['T',5],['U',7],['SS',4],['SS',6]];for(const[n,k]of map){if(btn(k))I[n]=true;if(edg(k,'b'+k))I[n+'p']=true;}
@@ -197,7 +196,7 @@ function readHuman(f){const i=f.human,solo=!(world.f[1].human>=0),maps=solo?KB:[
  // screen right → toward/away from the opponent; the mapping holds while a direction is held so a camera swing never flips a guard
  const o=f.opp;const side=Math.sign((o.x-f.x)*camR.x+(o.z-f.z)*camR.z)||1;if(!sx||!relLock[i])relLock[i]=side;I.x=sx*relLock[i];I.y=sy;
  const lx=f.fz,lz=-f.fx,wx=camF.x*(sy<0?-1:1),wz=camF.z*(sy<0?-1:1);I.ss=Math.sign(lx*wx+lz*wz)||1;if(I.SS)I.y=0;return I;}
-function menuPads(){for(let i=0;i<2;i++){const g=pads()[i];if(!g)continue;const b=g.buttons,P=padPrev[i];const st=!!(b[9]&&b[9].pressed),a=!!(b[0]&&b[0].pressed);if(st&&!P.st){if(app==='paused')pause(false);else if(app==='menu')start();else if(app==='over')$('again').click();}if(a&&!P.ma&&app==='menu')start();P.st=st;P.ma=a;}}
+function menuPads(){for(let i=0;i<2;i++){const g=gamepads()[i];if(!g)continue;const b=g.buttons,P=padPrev[i];const st=!!(b[9]&&b[9].pressed),a=!!(b[0]&&b[0].pressed);if(st&&!P.st){if(app==='paused')pause(false);else if(app==='menu')start();else if(app==='over')$('again').click();}if(a&&!P.ma&&app==='menu')start();P.st=st;P.ma=a;}}
 function mergeIn(prev,I){if(!prev)return I;for(const b of BT)I[b+'p']=I[b+'p']||prev[b+'p'];return I;}
 
 /* ================= main step ================= */
@@ -254,8 +253,8 @@ function visuals(dt,rdt=dt){const t=time;
    let sx=0,sz=0;if(world.stop>0&&(f.st==='hit'||f.st==='air'||f.st==='sup'||f.st==='kd'||f.st==='wall')){const a=.035;sx=(rnd()-.5)*a*2;sz=(rnd()-.5)*a*2;}
    rig.root.position.set(f.x+sx,f.y,f.z+sz);rig.root.visible=!(frozen&&cineF&&cineF!==f&&cineT<.9);
    v.ring.visible=app==='match'&&!world.training&&phase!=='vs';v.ring.position.set(f.x,.02,f.z);v.ring.material.opacity=.35+(f.meter>=100?.35+.25*Math.sin(t*8):0);
-   // flashes: hit, super-ready shimmer, rage
-   const U=rig.U;if(f.flash>0){const lk=f.st==='sup'||f.mname==='sup';U.uFlC.value.setRGB(1,1,1);U.uFl.value=lk?Math.min(.28,f.flash/8):f.flash/6;}else if(cineF===f&&frozen){U.uFlC.value.copy(v.glowC);U.uFl.value=.5+.3*Math.sin(t*30);}else if(f.rage){U.uFlC.value.setRGB(1,.25,.1);U.uFl.value=.12+.08*Math.sin(t*9);}else U.uFl.value=0;
+   // flashes: hit (capped, and tinted the attacker's colour while a super lands, so a flurry never bleaches the victim white), super-ready shimmer, rage
+   const U=rig.U;if(f.flash>0){const lk=f.st==='sup'||f.mname==='sup',ls=f.opp&&f.opp.mname==='sup';if(ls)U.uFlC.value.copy(f.opp.vis.glowC);else U.uFlC.value.setRGB(1,1,1);U.uFl.value=lk||ls?Math.min(.28,f.flash/8):f.flash/6;}else if(cineF===f&&frozen){U.uFlC.value.copy(v.glowC);U.uFl.value=.5+.3*Math.sin(t*30);}else if(f.rage){U.uFlC.value.setRGB(1,.25,.1);U.uFl.value=.12+.08*Math.sin(t*9);}else U.uFl.value=0;
    U.uRimS.value=.38+(f.meter>=100?.35+.2*Math.sin(t*6):0);
    // swoosh on the striking limb (supers: saturated hue, capped brightness, so a flurry's overlapping streaks don't blow out to white)
    let swing=false;if(f.st==='atk'&&f.move)for(const h of f.move.h)if(f.mt>=h.s-1&&f.mt<=h.e+1)swing=true;rig.root.updateMatrixWorld(true);rig.limb(f.move&&f.move.lb||'hR').getWorldPosition(tq);
@@ -271,12 +270,12 @@ function visuals(dt,rdt=dt){const t=time;
    if(p.kind==='quake'){g.children[0].scale.setScalar(.6+Math.sin(t*30)*.1);if(rnd()<.9)parts.emit(p.x+(rnd()-.5)*.6,.05,p.z+(rnd()-.5)*.6,(rnd()-.5),2+rnd(2),(rnd()-.5),.6,.5,.4,.12,.5,8,1);if(rnd()<.5)parts.emit(p.x,.1,p.z,0,1,0,2.2,1,.3,.18,.25);}
    if(g.userData.tr)g.userData.tr.push(g.position,true,dt||1e-3,14);}
   for(const[id,g]of projVis){if(!seen.has(id)){if(g.userData.tr)disposeVis(g.userData.tr.mesh);disposeVis(g);projVis.delete(id);}}
-  // super-specific visuals: Sera's prism beam, the Monarch's edict pillar
+  // super-specific visuals: Sera's prism beam, the Monarch's edict pillar (both in their hue at capped brightness: a white-hot core washed the target out)
   beam.visible=false;pillar.visible=false;
   for(const f of world.f){if(f.st!=='atk'||f.mname!=='sup')continue;const m=f.move;
-   if(m.beam&&f.mt>=18&&f.mt<=76){beam.visible=true;f.vis.rig.limb('hR').getWorldPosition(tq);beam.position.set(tq.x,f.y+m.beam.y*f.H/1.8,tq.z);beam.rotation.set(0,Math.atan2(f.fx,f.fz),0);const w=.35*(f.mt<22?(f.mt-17)/5:f.mt>70?(77-f.mt)/7:1)*(1+Math.sin(t*50)*.08);beam.scale.set(w,w,m.beam.len);beamM.color.copy(f.vis.glowC).multiplyScalar(1.8);
+   if(m.beam&&f.mt>=18&&f.mt<=76){beam.visible=true;f.vis.rig.limb('hR').getWorldPosition(tq);beam.position.set(tq.x,f.y+m.beam.y*f.H/1.8,tq.z);beam.rotation.set(0,Math.atan2(f.fx,f.fz),0);const w=.35*(f.mt<22?(f.mt-17)/5:f.mt>70?(77-f.mt)/7:1)*(1+Math.sin(t*50)*.08);beam.scale.set(w,w,m.beam.len);const gc=f.vis.glowC;beamM.color.copy(gc).multiplyScalar(.7);beamCore.material.color.copy(gc).multiplyScalar(1.7/Math.max(gc.r,gc.g,gc.b,.05)).addScalar(.2);
     if(rnd()<.8)parts.emit(tq.x+f.fx*rnd(8),beam.position.y+(rnd()-.5)*.4,tq.z+f.fz*rnd(8),(rnd()-.5)*2,(rnd()-.5)*2,(rnd()-.5)*2,f.vis.glowC.r*2,f.vis.glowC.g*2,f.vis.glowC.b*2,.06,.3);}
-   if(f.def.id==='monarch'&&f.locked&&f.mt>=14&&f.mt<=82){const d=f.locked;pillar.visible=true;pillar.position.set(d.x,4,d.z);const w=.9+Math.sin(t*40)*.08;pillar.scale.set(w,8,w);pillar.material.color.set(f.mt<70?0x8a50ff:0xffc040).multiplyScalar(1.6);if(rnd()<.8)parts.emit(d.x+(rnd()-.5),rnd(3),d.z+(rnd()-.5),0,4,0,2,1.6,.6,.08,.5);}}
+   if(f.def.id==='monarch'&&f.locked&&f.mt>=14&&f.mt<=82){const d=f.locked;pillar.visible=true;pillar.position.set(d.x,4,d.z);const w=.9+Math.sin(t*40)*.08;pillar.scale.set(w,8,w);pillar.material.color.set(f.mt<70?0x8a50ff:0xffc040).multiplyScalar(.8);if(rnd()<.8)parts.emit(d.x+(rnd()-.5),rnd(3),d.z+(rnd()-.5),0,4,0,2,1.6,.6,.08,.5);}}
   if(stageVis){stageVis.update(t,rdt,cam,hype);const A=stageVis.amb;if(A&&gfx>0){ambAcc+=rdt*A.n;while(ambAcc>1){ambAcc--;const a=rnd(Math.PI*2),r=A.flash?A.r+rnd(10):rnd(A.r);const c=A.col[rnd(A.col.length)|0];
     if(A.rain){const x=camLook.x+(rnd()-.5)*14,z=camLook.z+(rnd()-.5)*14;parts.emit(x,A.y0+rnd(A.y1-A.y0),z,A.v[0],A.v[1],A.v[2],c.r,c.g,c.b,A.size,A.life,0,0);}
     else parts.emit(Math.sin(a)*r,A.y0+rnd(A.y1-A.y0),Math.cos(a)*r,A.v[0]*(rnd()-.5)*2,A.v[1]*(.5+rnd()),A.v[2],c.r,c.g,c.b,A.size*(.6+rnd(.8)),A.life*(.5+rnd()),A.ember?-.3:0,A.ember?.3:0);}}}}

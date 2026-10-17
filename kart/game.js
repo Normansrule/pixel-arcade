@@ -16,7 +16,7 @@ import {Sound} from './sound.js';
 import {HUD,icon,drawMini} from './hud.js';
 import {V,cl,lerp,wrapA,ORD,fmtT,fmtClock,textSprite,sstep} from './util.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
-import {controls,deadzone} from '../js/kit3d/input.js';
+import {controls,deadzone,playerPad} from '../js/kit3d/input.js';
 import {postButton} from '../js/kit3d/ui.js';
 
 const $=id=>document.getElementById(id);
@@ -52,7 +52,7 @@ const IN=controls(canvas,{canLock:()=>false,menu:()=>false,onKey:e=>{
 const {keys,edge}=IN;
 const MAP=[{f:['KeyW'],b:['KeyS'],l:['KeyA'],r:['KeyD'],d:['Space'],i:['KeyE','KeyF'],k:['KeyQ']},{f:['ArrowUp'],b:['ArrowDown'],l:['ArrowLeft'],r:['ArrowRight'],d:['Slash','ShiftRight'],i:['Enter','Period'],k:['Comma']}];
 const any=a=>a.some(k=>keys[k]);
-function pad(i){const g=navigator.getGamepads?navigator.getGamepads()[i]:null;if(!g)return null;const b=k=>g.buttons[k]&&(g.buttons[k].pressed||g.buttons[k].value>.3);
+function pad(i){const g=playerPad(i,humansN());if(!g)return null;const b=k=>g.buttons[k]&&(g.buttons[k].pressed||g.buttons[k].value>.3);
  return{gas:b(0)||b(7)?1:0,brake:b(1)||b(6)?1:0,x:deadzone(g.axes[0]),y:-deadzone(g.axes[1],.2),item:b(2),drift:b(5)||b(4),look:b(3),start:b(9)};}
 function readInput(r){const h=r.human,m=MAP[h],I=r.inp,solo=humansN()===1;const kb=k=>any(m[k])||(solo&&any(MAP[1][k]));
  const eg=k=>m[k].some(c=>edge[c])||(solo&&MAP[1][k].some(c=>edge[c]));const gp_=pad(h);let gas=kb('f')?1:0,br=kb('b')?1:0,st=(kb('l')?1:0)-(kb('r')?1:0),dr=kb('d')||eg('d'),it=(kb('i')||eg('i'))&&app!=='hub';
