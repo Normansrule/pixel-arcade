@@ -75,17 +75,30 @@ A.add({id:'sumten',name:'SUM TEN',cat:'PUZZLE',how:'A SELECTS A NUMBER, A ON A N
  return g;}});
 
 A.add({id:'tilepairs',name:'TILE PAIRS',cat:'PUZZLE',how:'MATCH TWO FREE TILES (NOTHING ON TOP, A SIDE OPEN). CLEAR THE STACK.',make(){
- const g={over:null,score:0},SYM=['@','#','$','%','&','*','+','?','!','='],CO=['#e03040','#2a6ad8','#1a9a4a','#d0307a','#e07020','#1aa8a0','#c89a10','#8a4ad8','#e03040','#2a6ad8'],fx=X.fx();let tiles=[],c=0,sel=null;
+ const g={over:null,score:0},SYM=['@','#','$','%','&','*','+','?','!','='],CO=['#e03040','#1a9a4a','#e0a010','#2a6ad8','#e8407a','#5a4ad8','#f07020','#14a090','#c03ad0','#d8b000'],fx=X.fx();let tiles=[],c=0,sel=null;
  const pos=[];for(let y=0;y<4;y++)for(let x=0;x<8;x++)pos.push({x,y,z:0});for(let y=1;y<3;y++)for(let x=2;x<6;x++)pos.push({x,y,z:1});pos.push({x:3.5,y:1.5,z:2},{x:3.5,y:1.5,z:3});
  const ids=[];for(let i=0;i<pos.length/2;i++){ids.push(i%10,i%10);}shuf(ids);tiles=pos.map((p,i)=>({...p,s:ids[i],gone:false,g:0}));
  const free=t=>!t.gone&&!tiles.some(o=>!o.gone&&o.z>t.z&&Math.abs(o.x-t.x)<1&&Math.abs(o.y-t.y)<1)&&(!tiles.some(o=>!o.gone&&o.z===t.z&&o.y===t.y&&o.x===t.x-1)||!tiles.some(o=>!o.gone&&o.z===t.z&&o.y===t.y&&o.x===t.x+1));
  const tp=t=>[40+t.x*30-t.z*3,40+t.y*40-t.z*4];
  g.update=()=>{tiles.forEach(t=>{if(t.gone&&t.g<20)t.g++;});const live=tiles.map((t,i)=>i).filter(i=>free(tiles[i]));if(!live.includes(c))c=live[0]??0;const h=A.hit(0);if(h.l||h.r||h.u||h.d){const cur=tiles[c];const dir=h.l?[-1,0]:h.r?[1,0]:h.u?[0,-1]:[0,1];let best=null,bd=1e9;for(const i of live){if(i===c)continue;const t=tiles[i],dx=t.x-cur.x,dy=t.y-cur.y;if(dx*dir[0]+dy*dir[1]<=0)continue;const d=Math.abs(dx)+Math.abs(dy)+Math.abs(dx*dir[1]+dy*dir[0])*2;if(d<bd){bd=d;best=i;}}if(best!==null){c=best;S('blip');}}
-  if(h.a){if(sel===null){sel=c;S('blip');}else if(sel!==c&&tiles[sel].s===tiles[c].s){tiles[sel].gone=tiles[c].gone=true;[sel,c].forEach(j=>{const[x,y]=tp(tiles[j]);fx.spark(x+14,y+19,CO[tiles[j].s],8,2);});g.score+=10;S('coin');sel=null;if(tiles.every(t=>t.gone)){g.over='BOARD CLEAR! WIN';A.confetti();}else if(!(()=>{const f=tiles.filter(free);return f.some((a,i)=>f.some((b,j)=>j>i&&a.s===b.s));})())g.over='NO MOVES LEFT';}else{sel=null;S('lose');}}};
- g.draw=()=>{X.cache('tpairs_bg',()=>{X.turf(0,0,W,H,'#0f5a2a','#126330',20);X.vignette(.5);});const cx=A.c;
-  tiles.slice().sort((a,b)=>a.z-b.z||a.y-b.y).forEach(t=>{if(t.gone&&t.g>=20)return;const i=tiles.indexOf(t),[x,y]=tp(t),fr=free(t);if(t.gone){cx.globalAlpha=1-t.g/20;}cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(x+4,y+4,28,38);X.rr(x+2,y+2,28,38,3,'#b8a880');X.rr(x,y,28,38,3,X.lg(0,y,0,y+38,fr?['#fffbf0','#f0e4c8']:['#d8ccb0','#c4b898']));cx.fillStyle='rgba(255,255,255,.5)';cx.fillRect(x+3,y+2,22,1.5);T(SYM[t.s],x+14,y+13,CO[t.s],2,'c',1);
-   if(i===sel){X.glow(x+14,y+19,22,'#ffcf3f',.35);X.rrs(x-1,y-1,30,40,3,'#ffcf3f',1.6);}else if(i===c)X.rrs(x-1,y-1,30,40,3,'#ff4f9a',1.4);cx.globalAlpha=1;});
-  fx.draw();X.bar('SCORE '+g.score,'LEFT '+tiles.filter(t=>!t.gone).length);};
+  if(h.a){if(sel===null){sel=c;S('blip');}else if(sel!==c&&tiles[sel].s===tiles[c].s){tiles[sel].gone=tiles[c].gone=true;[sel,c].forEach(j=>{const[x,y]=tp(tiles[j]);fx.spark(x+14,y+19,CO[tiles[j].s],10,2.4);fx.ring(x+14,y+19,CO[tiles[j].s],18,12);});{const[x,y]=tp(tiles[c]);fx.pop(x+14,y,'+10',K.y);}g.score+=10;S('coin');sel=null;if(tiles.every(t=>t.gone)){g.over='BOARD CLEAR! WIN';A.confetti();}else if(!(()=>{const f=tiles.filter(free);return f.some((a,i)=>f.some((b,j)=>j>i&&a.s===b.s));})())g.over='NO MOVES LEFT';}else{if(sel!==c){A.shake=2;fx.pop(160,228,'NO MATCH',K.r);}sel=null;S('lose');}}};
+ const ico=(k,x,y,col)=>{const c=A.c,d=X.lt(col,.6);switch(k){
+  case 0:X.disc(x,y,7,X.rg(x-2,y-2,1,x,y,7,[X.lt(col,1.4),col,d]));X.disc(x,y,4,'#fff6e0');X.disc(x,y,2.2,col);break;
+  case 1:for(const o of[-4,0,4]){X.rr(x+o-1.5,y-8,3,16,1.5,X.lg(x+o-1.5,0,x+o+1.5,0,[X.lt(col,1.4),col,d]));c.fillStyle=d;c.fillRect(x+o-1.8,y-2,3.6,1);c.fillRect(x+o-1.8,y+4,3.6,1);}break;
+  case 2:{const P=[];for(let i=0;i<10;i++){const r=i%2?3.4:8,a=-1.5708+i*.6283;P.push([x+Math.cos(a)*r,y+Math.sin(a)*r]);}X.poly(P,X.lg(0,y-8,0,y+8,[X.lt(col,1.5),col,d]));break;}
+  case 3:X.gem(x,y,16,col);break;
+  case 4:X.heart(x,y-2,1.5,col);break;
+  case 5:c.save();c.beginPath();c.arc(x,y,7.5,0,6.2832);if(c.clip)c.clip();c.beginPath();c.rect(x-8,y-8,16,16);c.arc(x+3.5,y-2.5,6.5,0,6.2832,true);c.fillStyle=X.lg(0,y-7,0,y+7,[X.lt(col,1.4),col]);c.fill();c.restore();break;
+  case 6:for(let i=0;i<8;i++){const a=i*.785+.39;X.poly([[x+Math.cos(a)*9,y+Math.sin(a)*9],[x+Math.cos(a+.3)*5,y+Math.sin(a+.3)*5],[x+Math.cos(a-.3)*5,y+Math.sin(a-.3)*5]],col);}X.disc(x,y,5,X.rg(x-1.5,y-1.5,.5,x,y,5,['#ffe080',col]));break;
+  case 7:X.ell(x,y,4.5,8.5,X.lg(x-4,0,x+4,0,[X.lt(col,1.4),col,d]),.6);X.stroke([[x-3.5,y+5.5],[x+3.5,y-5.5]],'rgba(255,255,255,.7)',1);break;
+  case 8:for(let i=0;i<5;i++){const a=i*1.2566-1.5708;X.disc(x+Math.cos(a)*4.5,y+Math.sin(a)*4.5,3.6,X.lt(col,1.2));}X.disc(x,y,2.6,'#ffcf3f');break;
+  default:X.poly([[x+2,y-9],[x-5,y+1],[x-.5,y+1],[x-2,y+9],[x+5,y-2],[x+.5,y-2]],X.lg(0,y-9,0,y+9,['#fff4a0',col,d]));}};
+ g.draw=()=>{X.cache('tpairs_bg2',()=>{X.vg(0,0,W,H,['#0e5a3a','#0c4a30','#062a1a']);const c=A.c;for(let i=0;i<700;i++){c.fillStyle=i%2?'rgba(255,255,255,.03)':'rgba(0,0,0,.07)';c.fillRect((i*137)%W,(i*71)%H,1,1);}c.strokeStyle='rgba(255,230,160,.12)';c.lineWidth=1;for(let i=0;i<4;i++){c.strokeRect(14+i*4,24+i*4,292-i*8,208-i*8);}X.glow(160,120,170,'#9affc8',.1);X.shadow(160,232,120,6,.4);X.vignette(.5);});const cx=A.c;
+  const fr0=tiles.filter(free);let pairs=0;fr0.forEach((a_,i)=>fr0.forEach((b_,j)=>{if(j>i&&a_.s===b_.s)pairs++;}));
+  tiles.slice().sort((a,b)=>a.z-b.z||a.y-b.y).forEach(t=>{if(t.gone&&t.g>=20)return;const i=tiles.indexOf(t),[x0,y0]=tp(t),fr=free(t),lift=i===sel?3:0,x=x0,y=y0-lift-(t.gone?t.g*1.5:0);if(t.gone){cx.globalAlpha=1-t.g/20;}cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(x+4,y+5+lift,28,38);X.rr(x+2,y+2,28,38,3,X.lg(0,y,0,y+40,['#c8b890','#8a7a50']));X.rr(x+1,y+1,28,38,3,'#3a8a5a');X.rr(x,y,28,38,3,X.lg(0,y,0,y+38,fr?['#fffcf2','#f0e4c8']:['#cfc4a8','#b8ac90']));cx.fillStyle='rgba(255,255,255,.6)';cx.fillRect(x+3,y+1.5,22,1.5);
+   if(!fr)cx.globalAlpha*=.6;ico(t.s,x+14,y+19,CO[t.s]);if(!fr)cx.globalAlpha=t.gone?1-t.g/20:1;
+   if(i===sel){X.glow(x+14,y+19,24,'#ffcf3f',.4);X.rrs(x-1,y-1,30,40,3,'#ffcf3f',1.8);}else if(i===c){const p=Math.sin(A.t*.2)*.6;X.rrs(x-1-p,y-1-p,30+2*p,40+2*p,3,'#ff4f9a',1.5);}cx.globalAlpha=1;});
+  fx.draw();X.bar('SCORE '+g.score,'LEFT '+tiles.filter(t=>!t.gone).length,'PAIRS OPEN '+pairs);};
  return g;}});
 
 A.add({id:'parking',name:'PARKING JAM',cat:'PUZZLE',low:1,how:'A PICKS A CAR, ARROWS SLIDE IT. GET THE RED CAR OUT THE RIGHT EXIT.',make(){

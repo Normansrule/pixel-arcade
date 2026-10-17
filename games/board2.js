@@ -656,21 +656,27 @@ const HNG={moves:HN.moves,play:HN.play,
  order(s,mv){}};
 A.add({id:'hnefatafl',name:'HNEFATAFL',cat:'BOARD',vs:1,warm:30,time:540,how:'PICK A SIDE. PIECES MOVE LIKE ROOKS AND CAPTURE BY SANDWICH. KING ESCAPES TO A CORNER.',make(){
  const g=base(),b=Array(81).fill(0);[3,4,5,13,27,36,45,37,35,44,53,43,75,76,77,67].forEach(i=>b[i]=1);[22,31,49,58,38,39,41,42].forEach(i=>b[i]=2);b[40]=3;
- g.st={b,t:0,ca:0,cd:0,kc:false,ke:false};g.ph='pick';g.pk=0;g.c={x:4,y:1};g.sel=-1;g.last=null;g.anim=null;
+ g.st={b,t:0,ca:0,cd:0,kc:false,ke:false};g.ph='pick';g.pk=0;g.c={x:4,y:1};g.sel=-1;g.last=null;g.anim=null;const X=A.gx,fx=X.fx();
  const OX=10,OY=13,CS=23,cxy=i=>[OX+(i%9)*CS+CS/2,OY+(i/9|0)*CS+CS/2];
  const finish=()=>{const s=g.st;g.turn=s.t;g.legal=HN.moves(s);g.sel=-1;if(s.kc){g.over=winT(g,0);g.msg='KING CAPTURED';S('win');}else if(s.ke){g.over=winT(g,1);g.msg='THE KING ESCAPED';S('win');}else if(!g.legal.length){g.over=winT(g,1-s.t);g.msg='NO MOVES LEFT';}};
- const doMove=m=>{const s=g.st,ns=HN.play(s,m);slide(g,cxy(m.f),cxy(m.t));g.animI=m.t;for(let i=0;i<81;i++)if(s.b[i]&&!ns.b[i]&&i!==m.f){const[x,y]=cxy(i);fxHit(x,y,K.r);}S(ns.ca+ns.cd>s.ca+s.cd?'hit':'blip');g.st=ns;g.last=m;finish();};
+ const doMove=m=>{const s=g.st,ns=HN.play(s,m);slide(g,cxy(m.f),cxy(m.t));g.animI=m.t;for(let i=0;i<81;i++)if(s.b[i]&&!ns.b[i]&&i!==m.f){const[x,y]=cxy(i);fxHit(x,y,K.r);fx.ring(x,y,'#ffffff',18,14);fx.debris(x,y,s.b[i]===1?'#3a3844':'#dcb070',9,2);fx.pop(x,y-12,s.b[i]===3?'KING TAKEN':'CAPTURED',K.y);}if(ns.ke){const[x,y]=cxy(m.t);fx.ring(x,y,'#ffd850',40,24);fx.spark(x,y,'#ffd850',20,3);fx.flash('#ffd850',8);}S(ns.ca+ns.cd>s.ca+s.cd?'hit':'blip');g.st=ns;g.last=m;finish();};
  finish();
  g.timeUp=()=>{const s=g.st,la=s.ca/16,ld=s.cd/8;return tupT(g,Math.abs(la-ld)<.01?-1:la<ld?0:1);};
  g.update=()=>{touch(g);if(pickUpd(g)){g.c=g.pk?{x:4,y:3}:{x:4,y:1};return;}slideStep(g);if(g.over)return;const s=g.st,t=s.t;
   if(isCPU(g,t)){if(cpuGo(g)){const m=search(HNG,s,cfg(t,[{maxD:1,noise:30},{maxD:2,noise:3},{maxD:6}]));if(m)doMove(m);}return;}
   const m=gridSel(g,inp(g,t),9,9,OX,OY,CS,i=>t===0?s.b[i]===1:s.b[i]>=2);if(m)doMove(m);};
- g.draw=()=>{table('#14110d');const c=A.c,s=g.st,t=s.t;frame(OX,OY,9*CS,9*CS,'walnut',6);wood(OX,OY,9*CS,9*CS,'oak',33);c.strokeStyle='rgba(50,24,6,.55)';c.lineWidth=1;for(let k=0;k<=9;k++){c.beginPath();c.moveTo(OX+k*CS+.5,OY);c.lineTo(OX+k*CS+.5,OY+9*CS);c.stroke();c.beginPath();c.moveTo(OX,OY+k*CS+.5);c.lineTo(OX+9*CS,OY+k*CS+.5);c.stroke();}
-  for(const i of HCOR.concat([HTH])){const[x,y]=cxy(i);c.fillStyle='rgba(90,40,10,.45)';c.fillRect(x-CS/2+2,y-CS/2+2,CS-4,CS-4);c.strokeStyle='rgba(255,220,150,.5)';c.beginPath();c.moveTo(x-7,y-7);c.lineTo(x+7,y+7);c.moveTo(x+7,y-7);c.lineTo(x-7,y+7);c.stroke();}
+ const crown=(x,y,r)=>{X.poly([[x-r*.6,y-r*.55],[x-r*.6,y-r*1.15],[x-r*.3,y-r*.8],[x,y-r*1.3],[x+r*.3,y-r*.8],[x+r*.6,y-r*1.15],[x+r*.6,y-r*.55]],X.lg(0,y-r*1.3,0,y-r*.5,['#fff0a0','#e0a820','#8a5a10']));X.disc(x,y-r*1.3,1.1,'#ff4f6d');};
+ g.draw=()=>{const c=A.c,s=g.st,t=s.t;X.cache('hnef_bg2',()=>{table('#14110d');const cc=A.c;cc.fillStyle='rgba(0,0,0,.25)';for(let y=0;y<H;y+=14)for(let x=(y/14%2)*18;x<W;x+=36)cc.fillRect(x,y,35,13);cc.fillStyle='rgba(255,220,160,.05)';for(let y=0;y<H;y+=14)cc.fillRect(0,y,W,1);X.glow(OX+9*CS/2,OY+9*CS/2,150,'#ffb060',.1);
+   frame(OX,OY,9*CS,9*CS,'walnut',6);wood(OX,OY,9*CS,9*CS,'oak',33);cc.fillStyle='rgba(255,230,180,.06)';for(let k=0;k<81;k++)if((k%9+(k/9|0))%2)cc.fillRect(OX+(k%9)*CS,OY+(k/9|0)*CS,CS,CS);cc.strokeStyle='rgba(50,24,6,.55)';cc.lineWidth=1;for(let k=0;k<=9;k++){cc.beginPath();cc.moveTo(OX+k*CS+.5,OY);cc.lineTo(OX+k*CS+.5,OY+9*CS);cc.stroke();cc.beginPath();cc.moveTo(OX,OY+k*CS+.5);cc.lineTo(OX+9*CS,OY+k*CS+.5);cc.stroke();}
+   for(const i of HCOR){const[x,y]=cxy(i);cc.fillStyle=X.lg(0,y-CS/2,0,y+CS/2,['#7a4a1c','#4a2a0c']);cc.fillRect(x-CS/2+1.5,y-CS/2+1.5,CS-3,CS-3);X.rrs(x-CS/2+2.5,y-CS/2+2.5,CS-5,CS-5,1,'rgba(255,216,80,.65)',1);X.poly([[x-6,y+6],[x-6,y-2],[x-4,y-2],[x-4,y-5],[x-1.5,y-5],[x-1.5,y-2],[x+1.5,y-2],[x+1.5,y-5],[x+4,y-5],[x+4,y-2],[x+6,y-2],[x+6,y+6]],'rgba(255,220,150,.55)');cc.fillStyle='rgba(60,30,8,.8)';cc.fillRect(x-1.5,y+1.5,3,4.5);}
+   {const[x,y]=cxy(HTH);cc.fillStyle='rgba(90,40,10,.5)';cc.fillRect(x-CS/2+1.5,y-CS/2+1.5,CS-3,CS-3);X.rrs(x-CS/2+2.5,y-CS/2+2.5,CS-5,CS-5,1,'rgba(255,216,80,.6)',1);for(const r of[8,5]){cc.strokeStyle='rgba(255,220,150,.45)';cc.beginPath();cc.arc(x,y,r,0,6.283);cc.stroke();}for(let k=0;k<8;k++){const an=k*.785;X.stroke([[x+Math.cos(an)*5,y+Math.sin(an)*5],[x+Math.cos(an)*8,y+Math.sin(an)*8]],'rgba(255,220,150,.45)',1);}}
+   for(const yy of[OY-6,OY+9*CS+3])for(let x=OX;x<OX+9*CS;x+=8)X.poly([[x+1,yy+1.5],[x+4,yy],[x+7,yy+1.5],[x+4,yy+3]],'rgba(255,220,150,.25)');});
+  const kd=HN.kdist(s.b);if(kd<=1&&!g.over){for(const i of HCOR){const[x,y]=cxy(i);X.glow(x,y,16,'#ff4f6d',.25+.2*pulse());}}
   if(g.ph==='play')selMarks(g,cxy,CS,t,i=>s.b[i]);
-  for(let i=0;i<81;i++){const v=s.b[i];if(!v||(g.anim&&g.animI===i))continue;const[x,y]=cxy(i);piece(x,y,v===3?10:9,v===1?'ebony':'maple',{sel:i===g.sel,king:v===3});}
-  if(g.anim){const[x,y]=slidePos(g.anim),v=s.b[g.animI];if(v)piece(x,y,v===3?10:9,v===1?'ebony':'maple',{king:v===3});}if(g.ph==='play')gridCursor(g,OX,OY,CS,owner(g,t)?1:0);
-  const kd=HN.kdist(s.b);panel(g,{mat:['ebony','maple'],stat:['ATTACKERS '+(16-s.ca),'DEFENDERS '+(8-s.cd)],stat2:['CAPTURE THE KING','KING TO A CORNER'],lines:[[g.ph!=='play'||isCPU(g,t)?'':g.sel>=0?'PICK A SQUARE':'PICK A PIECE',K.y],['SANDWICH TO CAPTURE',K.gr],[kd<=2&&!g.over?'KING '+kd+' MOVE'+(kd>1?'S':'')+' FROM ESCAPE':'',K.o],g.over?[g.msg,K.c]:null]});
+  for(let i=0;i<81;i++){const v=s.b[i];if(!v||(g.anim&&g.animI===i))continue;const[x,y]=cxy(i);if(v===3&&A.gfx!=='off')X.glow(x,y,16,'#ffd850',.25);piece(x,y,v===3?10:9,v===1?'ebony':'maple',{sel:i===g.sel,king:v===3});if(v===3)crown(x,y,10);}
+  if(g.anim){const[x,y]=slidePos(g.anim),v=s.b[g.animI];if(v){piece(x,y,v===3?10:9,v===1?'ebony':'maple',{king:v===3});if(v===3)crown(x,y,10);}}if(g.ph==='play')gridCursor(g,OX,OY,CS,owner(g,t)?1:0);fx.draw();
+  panel(g,{mat:['ebony','maple'],stat:['ATTACKERS '+(16-s.ca),'DEFENDERS '+(8-s.cd)],stat2:['CAPTURE THE KING','KING TO A CORNER'],lines:[[g.ph!=='play'||isCPU(g,t)?'':g.sel>=0?'PICK A SQUARE':'PICK A PIECE',K.y],['SANDWICH TO CAPTURE',K.gr],[kd<=2&&!g.over?'KING '+kd+' MOVE'+(kd>1?'S':'')+' FROM ESCAPE':'',K.o],g.over?[g.msg,K.c]:null]});
+  {const y=210,x=236;X.panel(x,y-4,W-4-x,28);T('TAKEN',x+6,y,K.gr,1);for(let k=0;k<Math.min(16,s.ca);k++)piece(x+8+(k%8)*9,y+11+(k>>3)*6,3.2,'ebony',{flat:1});for(let k=0;k<Math.min(8,s.cd);k++)piece(x+48+(k%4)*8,y+2+(k>>2)*6,3.2,'maple',{flat:1});}
   pickDraw(g,['ATTACK','DEFEND'],['ebony','maple']);};
  return g;}});
 
