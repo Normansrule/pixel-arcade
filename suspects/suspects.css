@@ -199,3 +199,4 @@ body.playing a.back{display:none}
 @media (max-width:1100px){.card{display:none}#roster{grid-template-columns:repeat(2,minmax(0,1fr));max-width:560px}}
 @media (max-width:900px){.mgrid{grid-template-columns:1fr}#tiles{grid-template-columns:repeat(3,1fr)}#tl{width:210px}#tasks{display:none}#mini{width:150px;height:113px}.a{width:66px;height:66px;border-radius:20px}}
 @media (max-height:720px){h1{font-size:4rem}.how{display:none}.tile{min-height:40px;padding:4px 8px 4px 4px}.tile .hd{width:32px;height:32px}.tile .st{display:none}#mtitle{font-size:1.6rem}#chat{font-size:.66rem}#tasks{font-size:.58rem;line-height:1.6}}
+#menu,#over,#pause{justify-content:safe flex-end}

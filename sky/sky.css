@@ -100,3 +100,4 @@ body.playing{cursor:none}
 @media (max-height:700px){h1{font-size:4rem}.how{display:none}}
 #menu .col>.row{position:sticky;bottom:0;padding:14px 0 18px;background:linear-gradient(transparent,rgba(3,5,9,.95) 35%);margin-top:4px}
 #menu .how{margin:10px 0 14px;font-size:.8rem}
+#over{justify-content:safe center}

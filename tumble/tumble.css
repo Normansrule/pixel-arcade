@@ -92,3 +92,5 @@ body.playing a.back{display:none}
 @media (max-width:1180px){.card{display:none}}
 @media (max-height:760px){.how{display:none}h1{font-size:4.4rem}}
 @media (max-width:640px){#count{transform:scale(.8);transform-origin:top right}#rname{min-width:0}#feed{display:none}}
+#menu,#over,#pause{justify-content:safe flex-end}
+@media (max-width:520px){#count{top:84px;right:12px}}

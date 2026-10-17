@@ -209,3 +209,5 @@ body.results .back{left:auto;right:18px;top:16px;bottom:auto}
 #ann{top:27%}
 #flags div em{background:none;height:auto;top:auto}
 #banner{top:34%}
+@media (max-height:620px){#deploy{padding-top:14px;padding-bottom:14px}#deploy .left{gap:5px}#deploy .eye{margin:0}#deploy h2{font-size:34px}.ccard{padding:5px 10px;grid-template-columns:28px 1fr;gap:8px}.ccard svg{width:26px;height:26px}.ccard b{font-size:17px}.ccard:not(.on) small{display:none}.ccard small{margin-top:2px}#dsel{margin:2px 0}#dtix,#dcnt{margin:0}#deploy .go{margin-top:0}}
+@media (max-height:620px) and (min-width:600px){#deploy{grid-template-columns:minmax(280px,360px) 1fr}#dmapw{width:min(84vh,46vw)}}

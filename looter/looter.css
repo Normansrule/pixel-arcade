@@ -161,3 +161,4 @@ body.playing a.back{display:none}body.playing{cursor:none}
 @media (max-height:620px){#over{padding-top:3vh;padding-bottom:4vh}#over .eye{margin-bottom:4px;font-size:.62rem}#over .res{font-size:2.4rem}#over .fs{margin:4px 0 6px;font-size:.62rem}#opow{font-size:1.2rem}
  #stats{margin:6px 0 2px}#stats th{padding:3px 8px}#stats td{padding:4px 8px}#over .lh{margin:6px 0 4px}#oloot{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));max-width:900px;gap:5px}#oloot .itm{padding:6px 8px 6px 11px;min-height:54px}
  #over .tok{margin:6px 0 8px}#over .row button{padding:11px 24px}}
+@media (max-width:520px){#obj{top:86px;left:16px}}

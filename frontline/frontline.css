@@ -159,3 +159,4 @@ kbd{display:inline-block;min-width:18px;padding:1px 5px;border:1px solid rgba(25
 body.playing .back{display:none}
 body.results .back{left:auto;right:18px;top:16px;bottom:auto}
 @media (max-width:860px){.modes,.maps{grid-template-columns:repeat(2,1fr)}.card{display:none}#rank{display:none}.lgrid{grid-template-columns:1fr}#mmw{width:130px;height:130px}#obj{top:156px}#vit{width:200px}}
+@media (max-width:520px){#mmw{top:84px;width:110px;height:110px}#obj{top:204px;max-width:62vw}}

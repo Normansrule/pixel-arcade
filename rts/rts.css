@@ -83,3 +83,4 @@ button{font-family:var(--mono);cursor:pointer}
 body.aim #c{cursor:crosshair}body.foe #c{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='8' fill='none' stroke='%23ff5040' stroke-width='2.5'/%3E%3Cpath d='M12 1v6M12 17v6M1 12h6M17 12h6' stroke='%23ff5040' stroke-width='2'/%3E%3C/svg%3E") 12 12,crosshair}
 #boxsel{position:fixed;z-index:3;border:1px solid #7dff9a;background:rgba(125,255,154,.08);pointer-events:none}
 @media (max-width:900px){#card{width:250px}#mapbox{width:170px;height:170px}#sel{height:150px}.sone .por{width:80px;height:80px}}
+@media (max-width:520px){#scorebox{top:62px}}

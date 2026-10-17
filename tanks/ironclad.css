@@ -143,3 +143,5 @@ body.playing{cursor:none}
 @media (max-width:1100px),(max-height:620px){#tankp{width:230px;left:12px;bottom:12px;padding:9px 11px}#tankp .nm b{font-size:1.05rem}#tankp .hp{height:17px}#tankp .hp span{font-size:.85rem;top:1px}
  #mini{width:150px;height:150px;right:12px;bottom:12px}#board .tm{font-size:1.7rem;min-width:84px;padding:0 12px}#board .clk b{font-size:1.55rem}#board .clk{min-width:100px;padding:5px 12px 3px}#obj{top:62px}#feed{font-size:.6rem;right:10px;top:10px}#msg{top:108px}}
 @media (max-height:700px){#over{padding-bottom:4vh}#over .res{font-size:3.4rem}#over .fs{font-size:1.6rem;margin:2px 0 8px}#stats td{padding:3px 8px}#stats th{padding:3px 8px}#over .tok{margin:-4px 0 10px;font-size:.64rem}#over button.go,#over button.ghost{padding:11px 20px}#over .eye{margin-bottom:4px}}
+@media (max-width:900px){body:not(.playing){overflow-y:auto}body:not(.playing) #c{position:fixed;inset:0}body:not(.playing) #menu{position:relative;inset:auto;overflow:visible;padding-bottom:6px}#garage{margin:4px 5vw 70px}}
+@media (max-width:520px){#tankp{width:200px;left:10px;bottom:10px}#mini{width:120px;height:120px;right:10px;bottom:10px}}

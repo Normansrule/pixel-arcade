@@ -87,3 +87,5 @@ body.playing .card,body.playing .back{display:none}
 .back{position:fixed;right:20px;top:16px;z-index:6;font:700 .64rem var(--mono);letter-spacing:.16em;color:#eee;text-decoration:none;padding:9px 14px;border-radius:999px;background:rgba(2,14,22,.72);border:1px solid rgba(255,255,255,.14)}.back:hover{border-color:var(--a)}
 #loading{position:fixed;inset:0;z-index:20;display:grid;place-content:center;text-align:center;background:#021018;transition:opacity .6s}#loading.done{opacity:0;pointer-events:none}#loading b{font:400 3rem var(--disp);letter-spacing:.04em}#loading span{font-size:.62rem;letter-spacing:.3em;color:var(--a)}
 @media (max-width:820px){.scr{padding:24px 20px;width:100%}.scr h1{font-size:3.8rem}.card{display:none}#obj{width:220px}#quick{display:none}#comp{width:220px}.cols,#tabbody{grid-template-columns:1fr}#depth{width:150px}}
+@media (max-width:520px){#obj{top:84px;left:12px;width:200px}#depth{bottom:auto;top:84px;right:12px;width:130px}}
+.scr{justify-content:safe center}

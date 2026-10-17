@@ -129,3 +129,6 @@ body.playing a.back{display:none}body.playing{cursor:none}
 @media (max-width:640px){.scr{padding:0 16px 5vh}.seg button{padding:7px 9px;font-size:.58rem}#wpn{display:none}#cov{width:70vw}}
 
 .scr>*{flex-shrink:0}
+#over{justify-content:flex-start}#over>:first-child{margin-top:auto}#over>:last-child{margin-bottom:auto}
+@media (max-height:620px){#over{padding:2vh 4vw}#ojudge{margin:0 0 8px}#tally .lane{height:40px}#tally .nums{margin-top:6px}#tally .nums b{font-size:clamp(2rem,5vw,3rem)}#over .res{font-size:clamp(2.4rem,6vw,3.4rem);margin:6px 0 4px}#stats{margin:2px 0 6px}#stats td,#stats th{padding:2px 8px}#over .tok{margin:0 0 6px}}
+@media (max-width:520px){#top{gap:6px}.squad{gap:3px}.squad i{width:24px;height:24px;border-width:2px;font-size:.7rem}#top .clk{min-width:84px;padding:5px 10px 4px}#top .clk b{font-size:1.6rem}}

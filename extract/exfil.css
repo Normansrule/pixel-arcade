@@ -134,3 +134,4 @@ body.playing a.back{display:none}
 @media (max-height:700px){h1{font-size:4.2rem}.how{display:none}#over .res{font-size:3.4rem}#over .fs{font-size:1.3rem;margin:4px 0 8px}}
 .hero h1{margin-bottom:12px}
 @media (max-width:900px){#topbar{flex-wrap:wrap;gap:10px}.split{flex-direction:column}.meta{margin-left:0}}
+@media (max-width:520px){#topbar{padding:12px 14px;gap:8px}#tabs{max-width:100%;overflow-x:auto}#tabs button{padding:10px 8px;font-size:.62rem;letter-spacing:.08em}}

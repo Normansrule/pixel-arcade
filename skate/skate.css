@@ -97,3 +97,4 @@ body.playing a.back{display:none}
 @media (max-width:1150px){.card{display:none}}
 @media (max-width:860px){.card2{display:none}#tr #spec{width:140px}}
 @media (max-height:760px){h1{font-size:4.6rem}.how{font-size:.8rem;margin:10px 0 12px}}@media (max-height:640px){.how{display:none}.card2{display:none}}
+@media (max-width:520px){#tr{top:86px;right:14px}#tl{left:16px}}
