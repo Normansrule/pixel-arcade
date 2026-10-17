@@ -52,14 +52,16 @@ const M={
  k2_nova:{anim:'kneelStab',w:2.1,a:.3,r:1.6,dmg:70,reach:10,arc:6.3,parry:0,ub:1,fx:'nova',phase:3,max:30}};
 for(const k in M)M[k].id=k;
 
+/* great foes: bd = hit-damage scale per difficulty [EASY,NORMAL,HARD] (EASY stays near the raw move damage so each blow is forgiving),
+   bt = windup scale; both tuned against the human-like autopilot (ASHEN.auto(true,null,true)) */
 export const FOES={
  knight:{name:'Hollow Knight',hp:130,r:.5,h:2,walk:2.2,run:4.4,turn:5,poise:45,cd:1.5,sight:15,moves:['k_slash','k_thrust','k_bash'],shield:true,score:120,guard:'knight',bodyY:1.2,headY:2.05},
  hound:{name:'Ash Hound',hp:60,r:.45,h:1.1,walk:3,run:8.2,turn:9,poise:18,cd:1.0,sight:16,moves:['h_bite','h_pounce'],quad:true,score:70,bodyY:.75,headY:1.3},
  archer:{name:'Gaunt Archer',hp:70,r:.42,h:1.9,walk:2.4,run:3.8,turn:6,poise:20,cd:1.8,sight:24,moves:['a_shot','a_stab'],ranged:true,score:90,guard:'bow',bodyY:1.15,headY:1.95},
- bell:{name:'VARGUL, THE BELLWARDEN',hp:1050,r:1.05,h:4,walk:2.4,run:5.2,turn:3.2,poise:260,cd:1.1,moves:['b_oh','b_sweep','b_charge','b_toll'],boss:true,bd:2.75,bt:.61,score:3000,guard:'hammer',phases:[.5],bodyY:2.2,headY:3.9},
- mother:{name:'GRISKA, MOTHER OF HOUNDS',hp:950,r:1.2,h:2.6,walk:3.4,run:8.5,turn:4.5,poise:220,cd:1.0,moves:['m_bite','m_pounce','m_sweep','m_breath','m_howl'],boss:true,bd:2.6,bt:.74,quad:true,score:3000,phases:[.55],bodyY:1.6,headY:3.2},
- cantor:{name:'SERAPHEL, THE CINDER CANTOR',hp:820,r:.8,h:3.4,walk:2.4,run:3.6,turn:4,poise:180,cd:1.15,moves:['c_volley','c_rain','c_staff','c_blink','c_beam'],boss:true,bd:3.6,bt:.62,score:3000,guard:'staff',phases:[.5],float:true,bodyY:2.4,headY:4.0},
- king:{name:'ORDHAL, THE ASHEN KING',hp:1700,r:1.25,h:5,walk:2.6,run:5.6,turn:3,poise:340,cd:1.0,moves:['k2_oh','k2_sweep','k2_thrust','k2_stomp','k2_leap','k2_embers','k2_nova'],boss:true,bd:1.5,bt:.88,score:5000,guard:'king',phases:[.6,.25],bodyY:2.9,headY:5.2}};
+ bell:{name:'VARGUL, THE BELLWARDEN',hp:1050,r:1.05,h:4,walk:2.4,run:5.2,turn:3.2,poise:260,cd:1.1,moves:['b_oh','b_sweep','b_charge','b_toll'],boss:true,bd:[1.15,2.75,1.375],bt:.61,score:3000,guard:'hammer',phases:[.5],bodyY:2.2,headY:3.9},
+ mother:{name:'GRISKA, MOTHER OF HOUNDS',hp:950,r:1.2,h:2.6,walk:3.4,run:8.5,turn:4.5,poise:220,cd:1.0,moves:['m_bite','m_pounce','m_sweep','m_breath','m_howl'],boss:true,bd:[1.15,2.6,1.6],bt:.74,quad:true,score:3000,phases:[.55],bodyY:1.6,headY:3.2},
+ cantor:{name:'SERAPHEL, THE CINDER CANTOR',hp:820,r:.8,h:3.4,walk:2.4,run:3.6,turn:4,poise:180,cd:1.15,moves:['c_volley','c_rain','c_staff','c_blink','c_beam'],boss:true,bd:[1.2,3.6,1.15],bt:.62,score:3000,guard:'staff',phases:[.5],float:true,bodyY:2.4,headY:4.0},
+ king:{name:'ORDHAL, THE ASHEN KING',hp:1700,r:1.25,h:5,walk:2.6,run:5.6,turn:3,poise:340,cd:1.0,moves:['k2_oh','k2_sweep','k2_thrust','k2_stomp','k2_leap','k2_embers','k2_nova'],boss:true,bd:[1.1,1.5,.75],bt:.88,score:5000,guard:'king',phases:[.6,.25],bodyY:2.9,headY:5.2}};
 
 export class Foe{
  constructor(G,kind,sp,boss){this.G=G;this.kind=kind;this.D=FOES[kind];const D=this.D;this.boss=boss||null;
@@ -143,7 +145,7 @@ export class Foe{
   if(mv.fx==='stomp')G.decal({x:this.p.x,y:this.p.y,z:this.p.z,r:mv.reach,dur:mv.w*this.wk+.1,col:0xff6a20});
   if(mv.fx==='rain'||mv.fx==='embers'){const P=G.P;const n=mv.fx==='rain'?(this.phase>=2?6:3):(this.phase>=3?12:8);this.marks=[];for(let i=0;i<n;i++){const a=i/n*6.283+rnd(.5),d=i===0?0:(mv.fx==='rain'?2.6+rnd(2.2):2.4+rnd(5));const x=P.p.x+Math.cos(a)*d+P.v.x*.4,z=P.p.z+Math.sin(a)*d+P.v.z*.4;
     const delay=mv.w*this.wk+mv.a+(mv.fx==='embers'?.9+i*.06:.15+i*.05);this.marks.push(G.hazard({type:'circle',x,y:P.p.y,z,r:mv.fx==='rain'?2.1:2.4,delay,dmg:this.dmg(mv),src:this,fx:mv.fx}));}}}
- dmg(mv){return Math.round(mv.dmg*this.G.dm.dmg*(this.D.boss?this.D.bd*this.G.dm.bdmg*[1,1,1.08,1.15][this.phase]:1));}
+ dmg(mv){return Math.round(mv.dmg*this.G.dm.dmg*(this.D.boss?this.D.bd[this.G.dm.i]*[1,1,1.08,1.15][this.phase]:1));}
  attack(dt,R){const G=this.G,P=G.P,D=this.D,st=this.st,mv=this.mv;const W=mv.w*this.wk,A=mv.a,Rc=mv.r*(D.boss?[1,1,.9,.75][this.phase]:1)/(G.dm.aggr>1.1?1.12:1);const t=this.t;
   const f=Math.sin(this.yaw),c=Math.cos(this.yaw);st.guard=D.guard;st.mode=D.float?'float':'idle';st.speed=0;
   if(t<W){// windup: track the player, hold the raised pose

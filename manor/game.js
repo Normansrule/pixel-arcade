@@ -15,7 +15,8 @@ const mmss=s=>{s=Math.max(0,Math.round(s));return(s/60|0)+':'+String(s%60).padSt
 
 /* ================= boot ================= */
 try{await Promise.race([Promise.all([document.fonts.load('64px Anton'),document.fonts.load('20px "JetBrains Mono"')]),new Promise(r=>setTimeout(r,2500))]);}catch(e){}
-const canvas=$('c');const RR=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});RR.setPixelRatio(Math.min(devicePixelRatio,1.5));RR.shadowMap.enabled=true;RR.shadowMap.type=THREE.PCFSoftShadowMap;
+const canvas=$('c');const RR=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});RR.setPixelRatio(Math.min(devicePixelRatio,1.5));RR.shadowMap.enabled=true;RR.shadowMap.type=THREE.PCFSoftShadowMap;RR.shadowMap.autoUpdate=false;// redrawn once per frame in render(): not again for the AO normal pass, not while the torch is dark
+
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x010102);scene.fog=new THREE.FogExp2(0x030305,.07);
 const cam=new THREE.PerspectiveCamera(75,1,.03,90);cam.rotation.order='YXZ';scene.add(cam);
 const T=makeTextures();
@@ -378,7 +379,7 @@ applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(RR.domElement.width!==Math.floor(w*RR.getPixelRatio())||RR.domElement.height!==Math.floor(h*RR.getPixelRatio()))RR.setSize(w,h,false);
  cam.aspect=w/h;cam.updateProjectionMatrix();const sc=h*RR.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));flames.material.uniforms.uScale.value=bulbs.material.uniforms.uScale.value=dustU.uScale.value=sc;
  const key=w+'x'+h;if(!fxStack){fxStack=cinematic(RR,scene,cam,{exposure:1.15,bloom:.7,bloomThreshold:.55,bloomRadius:.6,saturation:.8,tint:0xf0eef4,vignette:.62,grain:.07,aoStrength:1.1,quality:gfx});fxSize='';}
- if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);}fxStack.render();}
+ if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);}RR.shadowMap.needsUpdate=flash.castShadow&&flash.intensity>0;fxStack.render();}
 
 /* ================= menus ================= */
 const seg=pickers(G.opt,saveOpt);seg('o-diff','diff');seg('o-len','len');seg('o-sens','sens');seg('o-vol','vol',true,v=>snd.setVol(v));seg('o-fov','fov');

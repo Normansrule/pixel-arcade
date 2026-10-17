@@ -269,10 +269,23 @@ function stepDeadEye(rdt){const de=G.de;if(de.on){P.de-=rdt*.11;if(P.de<=0){P.de
 
 /* ================= duel ================= */
 function startDuel(){const a=leader;if(!a||!a.alive||G.duel)return;if(P.mounted){P.mounted.spd=0;dismount();}if(P.carry)return;
- const dx=a.pos.x-P.pos.x,dz=a.pos.z-P.pos.z,d=Math.hypot(dx,dz)||1;placeOnGround(a,P.pos.x+dx/d*12.5,P.pos.z+dz/d*12.5);world.collide(a.pos,.4,1.8,.5);a.state='duel';a.pose='duel';a.hold='';a.vel.set(0,0,0);
+ let dx=a.pos.x-P.pos.x,dz=a.pos.z-P.pos.z;const d=Math.hypot(dx,dz)||1,sp=duelSpot(dx,dz);if(sp){placeOnGround(P,sp[0],sp[1]);placeOnGround(a,sp[2],sp[3]);}else{placeOnGround(a,P.pos.x+dx/d*12.5,P.pos.z+dz/d*12.5);world.collide(a.pos,.4,1.8,.5);}
+ dx=a.pos.x-P.pos.x;dz=a.pos.z-P.pos.z;a.state='duel';a.pose='duel';a.hold='';a.vel.set(0,0,0);
  a.yaw=Math.atan2(-dx,-dz);P.yaw=Math.atan2(dx,dz);P.vel.set(0,0,0);camYaw=P.yaw;camPitch=-.03;P.wpn='revolver';P.ammo.revolver.mag=Math.max(1,P.ammo.revolver.mag);exitDeadEyeQuiet();
  G.duel={a,stage:'setup',t:0,react:G.D.duel*(.9+Math.random()*.25),wait:1.8+Math.random()*1.8,early:false,hb:0};snd.setMode('duel');snd.play('anvil');banner('DUEL',`${G.contract.short} · WAIT FOR THE SIGNAL, THEN DRAW`,'#f2e4c4',2.2);
  document.body.classList.add('cine');$('duelui').hidden=false;$('duelui').className='';$('duelt').textContent='STEADY…';}
+/* duel spot: the leader stands ~12.5 m off on a clear, level line (no camp rocks, tents or walls between the two, nothing under his boots,
+   open for the side-on setup camera); if the player's own spot has none, both step out to the nearest open ground */
+function duelFree(x,z){const g=world.groundAt(x,z,99);if(g-world.heightAt(x,z)>.25||world.waterDepth(x,z)>-.05)return false;return!world.collide(new V(x,g,z),.7,1.8,.5);}
+function duelClear(x0,z0,x1,z1,cam){const y0=world.groundAt(x0,z0,99),y1=world.groundAt(x1,z1,99);if(Math.abs(y1-y0)>1.6)return false;const L=Math.hypot(x1-x0,z1-z0),nx=-(z1-z0)/L,nz=(x1-x0)/L,o=new V(),t=new V();
+ for(const f of world.fires){const u=cl(((f.x-x0)*(x1-x0)+(f.z-z0)*(z1-z0))/(L*L),0,1);if(Math.hypot(x0+(x1-x0)*u-f.x,z0+(z1-z0)*u-f.z)<2.4)return false;}
+ const ok=(L2)=>{const dd=t.clone().sub(o),n=dd.length();dd.divideScalar(n);const h=world.ray(o,dd,n);return!h||h.t>n-L2;};
+ for(const h of[.9,1.55])for(const s of[-.4,.4]){o.set(x0+nx*s,y0+h,z0+nz*s);t.set(x1+nx*s,y1+h,z1+nz*s);if(!ok(.3))return false;}
+ if(cam){const mx=(x0+x1)/2,mz=(z0+z1)/2,my=(y0+y1)/2;o.set(mx+nx*9,my+1.2,mz+nz*9);if(world.heightAt(o.x,o.z)>o.y-.3)return false;for(const[x,y,z]of[[x0,y0,z0],[x1,y1,z1]])for(const h of[.8,1.6]){t.set(x,y+h,z);if(!ok(.5))return false;}}return true;}
+function duelSpot(dx,dz){const a0=Math.atan2(dx,dz),offs=[[0,0]];for(const r of[4,8,12])for(let i=0;i<8;i++)offs.push([Math.sin(a0+i*.785)*r,Math.cos(a0+i*.785)*r]);
+ for(let pass=0;pass<2;pass++)for(const[ox,oz]of offs){const x0=P.pos.x+ox,z0=P.pos.z+oz;if(!duelFree(x0,z0))continue;
+  for(let k=0;k<25;k++){const a=a0+(k&1?1:-1)*((k+1)>>1)*.26;for(const L of[12.5,11,14,9.5]){const x1=x0+Math.sin(a)*L,z1=z0+Math.cos(a)*L;if(duelFree(x1,z1)&&duelClear(x0,z0,x1,z1,!pass))return[x0,z0,x1,z1];}}}
+ return null;}
 function exitDeadEyeQuiet(){G.de.on=false;G.de.firing=false;G.de.marks=[];G.timeScale=1;$('de').style.opacity=0;}
 function stepDuelPlayer(dt){P.aim=G.duel.stage==='draw';P.vel.set(0,0,0);}
 function stepDuel(rdt){const D=G.duel;if(!D)return;D.t+=rdt;const a=D.a,inp=P.inp;

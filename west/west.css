@@ -94,8 +94,18 @@ button.ghost{font:700 .85rem var(--mono);background:transparent;color:var(--fg);
 #lock{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(10,6,2,.35);cursor:pointer;z-index:4}#lock b{font:400 2.4rem var(--disp);letter-spacing:.06em}#lock span{font-size:.7rem;color:var(--mut)}
 a.back{position:fixed;right:18px;bottom:16px;font:.75rem var(--mono);color:var(--fg);text-decoration:none;border:1px solid rgba(255,240,210,.25);border-radius:2px;padding:8px 14px;z-index:5;background:rgba(0,0,0,.4)}
 body.playing a.back{display:none}
-@media (max-width:1100px){.card{display:none}#opost{zoom:.62;right:4vw}}@media (max-width:820px),(max-height:420px){#opost{display:none!important}}
+@media (max-width:1100px){.card{display:none}#opost{zoom:.62;right:4vw}}
+/* compact results poster: beside the stats on small landscape screens, above them on phones (hidden only when there is truly no room) */
+@media (max-width:820px),(max-height:560px){#opost{zoom:.5;right:3vw}}@media (max-height:420px){#opost{zoom:.36}}
+@media (max-width:600px){#opost{zoom:.46;top:34px;right:40px;transform:rotate(4deg)}#ostats{grid-template-columns:repeat(3,minmax(0,1fr));width:100%}#ostats div{flex-direction:column;align-items:flex-start;gap:3px;padding:6px 8px}#ostats span{font-size:.5rem;letter-spacing:.08em}
+ #over .row button{padding:13px 16px}#ohon div{width:min(200px,40vw)}}
+@media (max-width:600px) and (max-height:780px),(max-width:440px) and (max-height:600px){#opost{display:none!important}}
 @media (max-height:640px){h1{font-size:4.2rem}.how{display:none}#over .cashb{font-size:5rem}}
 @media (max-width:760px){#mini{width:130px;height:130px}#job{max-width:220px}}
 @media (max-height:820px){#posters{zoom:.82}#board h2{margin-bottom:12px}#board .note{margin-top:10px}}
 @media (max-height:640px){#posters{zoom:.66}#board h2{font-size:2rem;margin-bottom:8px}#board .eye{margin:0 0 4px}}
+@media (max-height:560px){#banner{top:34%}#banner b{font-size:clamp(2.2rem,6vw,4rem)}#mini{width:150px;height:150px}#job{top:12px}#jobj{font-size:.66rem;line-height:1.4}}
+@media (max-width:600px){#job{left:12px;top:12px;max-width:58vw;padding:8px 10px 8px 10px}#job b{font-size:1.1rem}#jobj{font-size:.64rem;line-height:1.4}
+ #cash{right:14px;top:12px}#cash>b{font-size:1.6rem}#hon div{width:78px}#clockw{left:auto;right:14px;top:62px;transform:none;text-align:right}#clockw b{font-size:1.5rem}
+ #feed{right:14px;top:122px;font-size:.64rem}#banner{top:30%}#banner span{font-size:.64rem;letter-spacing:.12em}#radar{left:12px;bottom:14px}#wpn{right:14px;bottom:14px}#prompt{white-space:normal;max-width:90vw;text-align:center}}
+@media (max-width:600px){#posters{zoom:.46;gap:18px;flex-wrap:nowrap}#board{padding:0 10px}#board h2{font-size:2.3rem}#board .eye{text-align:center;font-size:.6rem}#board .note{font-size:.62rem}}

@@ -50,6 +50,7 @@ class GB{constructor(){this.d={};}
   for(let i=0;i<P.count;i++){T.p.push(P.getX(i),P.getY(i),P.getZ(i));n.set(N.getX(i),N.getY(i),N.getZ(i)).applyMatrix3(nm).normalize();T.n.push(n.x,n.y,n.z);T.u.push(U?U.getX(i)*us:0,U?U.getY(i)*us:0);T.c.push(1,1,1);}}
  build(mats,group){const out=[];for(const k in this.d){const T=this.d[k];if(!T.p.length)continue;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(T.p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(T.n,3));
   g.setAttribute('uv',new THREE.Float32BufferAttribute(T.u,2));g.setAttribute('color',new THREE.Float32BufferAttribute(T.c,3));g.computeBoundingSphere();const m=new THREE.Mesh(g,mats[k]||mats.wood);m.name=k;m.receiveShadow=true;m.castShadow=!/^(oak|marble|ktile|stonef|ceil|planksF|shaft|patch|glass|rug)$/.test(k);group.add(m);out.push(m);}return out;}}
+const mergeG=gs=>{const o=new THREE.BufferGeometry();for(const[a,k]of[['position',3],['normal',3],['uv',2]]){const f=new Float32Array(gs.reduce((n,g)=>n+g.attributes[a].array.length,0));let i=0;for(const g of gs){f.set(g.attributes[a].array,i);i+=g.attributes[a].array.length;}o.setAttribute(a,new THREE.BufferAttribute(f,k));}o.computeBoundingSphere();return o;};
 const M4=new THREE.Matrix4(),Q4=new THREE.Quaternion(),E4=new THREE.Euler();
 const mtx=(x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1)=>M4.compose(new V(x,y,z),Q4.setFromEuler(E4.set(rx,ry,rz)),new V(sx,sy,sz)).clone();
 
@@ -204,7 +205,9 @@ export class House{
   const gate=d.lock==='power';const lf=new THREE.Mesh(new THREE.BoxGeometry(.92,2.36,gate?.04:.065),gate?M.ironO:M.door);lf.position.set(.46,1.18,0);lf.castShadow=true;g.add(lf);
   if(gate){lf.visible=false;for(let i=0;i<7;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(.035,2.3,.035),M.ironO);b.position.set(.08+i*.13,1.17,0);g.add(b);}for(const yy of[.15,1.2,2.25]){const b=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.05),M.ironO);b.position.set(.46,yy,0);g.add(b);}
    const box=new THREE.Mesh(new THREE.BoxGeometry(.16,.24,.12),M.ironO);box.position.set(.8,1.15,.06);g.add(box);d.led=new THREE.Mesh(new THREE.SphereGeometry(.025,8,6),new THREE.MeshBasicMaterial({color:new THREE.Color(3,.2,.1)}));d.led.position.set(.8,1.22,.13);g.add(d.led);}
-  else{const kn=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),M.brassO);for(const s of[-1,1]){const k=kn.clone();k.position.set(.82,1.0,s*.06);g.add(k);}if(d.locked){const pl=new THREE.Mesh(new THREE.BoxGeometry(.06,.16,.08),M.brassO);pl.position.set(.82,.86,0);g.add(pl);}}
+  else{// both knobs (and the lock plate) as one shared brass mesh: one draw per door instead of two or three
+   if(!this._knobG){const kn=[-1,1].map(s=>new THREE.SphereGeometry(.035,10,8).toNonIndexed().translate(.82,1.0,s*.06));this._knobG=[mergeG(kn),mergeG([...kn,new THREE.BoxGeometry(.06,.16,.08).toNonIndexed().translate(.82,.86,0)])];}
+   g.add(new THREE.Mesh(this._knobG[d.locked?1:0],M.brassO));}
   if(d.passZ){piv.position.set(d.x+.04,y,d.z+.5);}else{piv.position.set(d.x+.5,y,d.z+.96);piv.rotation.y=Math.PI/2;}d.base=piv.rotation.y;d.piv=piv;this.group.add(piv);}
  setDoor(d,t){d.t=t;if(d.leaves){d.leaves[0].rotation.y=-t*1.4;d.leaves[1].rotation.y=t*1.4;}else d.piv.rotation.y=d.base+d.sign*t*1.62;d.pass=t>.55;}
 

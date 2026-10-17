@@ -30,7 +30,7 @@ const phys=new Phys();
 const L=buildLevel(scene,phys);
 const parts=new Particles(scene,5000,true),sparks=new Particles(scene,1600,true),smoke=new Particles(scene,1600,false);
 const decals=new Decals(scene);const snd=new Sound();
-const DIFF=[{n:'EASY',hp:.75,dmg:.6,aggr:.75,tele:1.35,heal:.6,flasks:5,mult:.75,feint:false,bdmg:1.1,btele:.95},{n:'NORMAL',hp:1.1,dmg:1.2,aggr:1.1,tele:1,heal:.5,flasks:4,mult:1,feint:false,bdmg:1,btele:1},{n:'HARD',hp:1.35,dmg:1.65,aggr:1.35,tele:.8,heal:.42,flasks:3,mult:1.4,feint:true,bdmg:.5,btele:1.3}];
+const DIFF=[{n:'EASY',i:0,hp:.75,dmg:.6,aggr:.75,tele:1.35,heal:.6,flasks:5,mult:.75,feint:false,btele:.95},{n:'NORMAL',i:1,hp:1.1,dmg:1.2,aggr:1.1,tele:1,heal:.5,flasks:4,mult:1,feint:false,btele:1},{n:'HARD',i:2,hp:1.35,dmg:1.65,aggr:1.35,tele:.8,heal:.42,flasks:3,mult:1.4,feint:true,btele:1.3}];
 
 /* ================= shared context ================= */
 const timers=[];
