@@ -32,7 +32,17 @@ export class World{
  genHeights(){const H=this.H=new Float32Array(N*N);
   for(let j=0;j<N;j++)for(let i=0;i<N;i++){const x=-EXT+i*STEP,z=-EXT+j*STEP;let y=this.rawH(x,z);
    for(const f of this.flats){const dx=Math.max(f.x0-x,0,x-f.x1),dz=Math.max(f.z0-z,0,z-f.z1),dr=Math.hypot(dx,dz);if(dr>=f.blend)continue;const w=1-sstep(0,f.blend,dr);y=lerp(y,f.y,w);}
-   H[j*N+i]=y;}}
+   H[j*N+i]=y;}
+  this.makeCraters();}
+ // shell craters across the open fields (own RNG so the rest of the layout is unchanged): bowl + raised rim baked into the heightfield
+ roadDist(x,z){let b=1e9;for(const rd of ROADS)for(let i=1;i<rd.length;i++){const[ax,az]=rd[i-1],[bx,bz]=rd[i],dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz,t=cl(((x-ax)*dx+(z-az)*dz)/l2,0,1);b=Math.min(b,Math.hypot(x-ax-dx*t,z-az-dz*t));}return b;}
+ makeCraters(){const r=mulberry(this.seed*31+5),H=this.H;this.craters=[];let tries=0;
+  while(this.craters.length<46&&tries++<4000){const band=r()<.6,x=(r()*2-1)*(PLAY-30),z=band?(r()*2-1)*170:(r()*2-1)*(PLAY-40);
+   if(riverDist(x,z)<RIVER_HW+12||this.roadDist(x,z)<9||this.forestK(x,z)>.32)continue;if(this.flats.some(f=>x>f.x0-f.blend*.6&&x<f.x1+f.blend*.6&&z>f.z0-f.blend*.6&&z<f.z1+f.blend*.6))continue;
+   if(Math.abs(z-HQ[0].z)<60||Math.abs(z-HQ[1].z)<60)continue;if(this.craters.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+9))continue;
+   const big=r()<.3,R=big?5+r()*2:3+r()*1.6,D=big?1.5+r()*.6:.8+r()*.5;this.craters.push({x,z,r:R,d:D});
+   const i0=Math.max(0,Math.floor((x-R*1.8+EXT)/STEP)),i1=Math.min(N-1,Math.ceil((x+R*1.8+EXT)/STEP)),j0=Math.max(0,Math.floor((z-R*1.8+EXT)/STEP)),j1=Math.min(N-1,Math.ceil((z+R*1.8+EXT)/STEP));
+   for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const d=Math.hypot(-EXT+i*STEP-x,-EXT+j*STEP-z)/R;if(d>1.8)continue;H[j*N+i]+=-D*Math.max(0,1-d*d)*1.15+D*.38*Math.exp(-Math.pow((d-1.05)/.32,2));}}}
  height(x,z){const gx=(x+EXT)/STEP,gz=(z+EXT)/STEP;if(gx<0||gz<0||gx>=N-1||gz>=N-1)return 60;const i=gx|0,j=gz|0,fx=gx-i,fz=gz-j,h=this.H,a=h[j*N+i],b=h[j*N+i+1],c=h[(j+1)*N+i],d=h[(j+1)*N+i+1];
   return a+(b-a)*fx+(c-a)*fz+(a-b-c+d)*fx*fz;}
  normal(x,z,out=new V()){const e=1.6;return out.set(this.height(x-e,z)-this.height(x+e,z),2*e,this.height(x,z-e)-this.height(x,z+e)).normalize();}

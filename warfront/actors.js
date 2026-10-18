@@ -20,7 +20,7 @@ const BW=BONES.map(()=>new V());BONES.forEach((b,i)=>{BW[i].set(b[2],b[3],b[4]);
 
 let KIT=null;
 export function makeKit(TX){KIT={TX,mats:{}};
- const mk=(map)=>new THREE.MeshStandardMaterial({map,vertexColors:true,roughness:.86,metalness:.02});KIT.mats.A=mk(TX.kitA);KIT.mats.B=mk(TX.kitB);KIT.mats.V=mk(TX.kitA);
+ const mk=(map)=>new THREE.MeshStandardMaterial({map,normalMap:TX.kitN,normalScale:new THREE.Vector2(.6,.6),vertexColors:true,roughness:.86,metalness:.02});KIT.mats.A=mk(TX.kitA);KIT.mats.B=mk(TX.kitB);KIT.mats.V=mk(TX.kitA);
  KIT.flash=new THREE.MeshBasicMaterial({map:TX.flash,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,color:new THREE.Color(3,2.4,1.6),side:THREE.DoubleSide});return KIT;}
 
 // ---------- geometry assembly ----------

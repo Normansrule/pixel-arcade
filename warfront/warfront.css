@@ -177,6 +177,7 @@ body.results .back{left:auto;right:18px;top:16px;bottom:auto}
 #veh{position:absolute;right:22px;bottom:18px;text-align:right;min-width:260px}#veh .nm{margin:0;font:400 26px/1 var(--disp);letter-spacing:.03em}#veh .sub{margin:3px 0 8px;font:700 10px var(--mono);letter-spacing:.18em;color:var(--mut)}
 #veh .hpb{height:8px;background:rgba(255,255,255,.14);margin-bottom:8px}#veh .hpb i{display:block;height:100%;margin-left:auto;background:linear-gradient(90deg,#e8e4dc,#fff);transition:width .2s}#veh .hpb.low i{background:linear-gradient(90deg,#ff7a50,#ff3b30)}
 #veh .rows{display:flex;gap:14px;justify-content:flex-end;font:700 11px var(--mono);letter-spacing:.1em;color:#d8d4cc}#veh .rows b{font:400 22px var(--disp);color:#fff;margin-left:4px;letter-spacing:.02em}#veh .w{margin-top:6px;font:700 10px var(--mono);letter-spacing:.14em;color:#c8c4bc}#veh .w span.rdy{color:var(--g)}#veh .w span.rl{color:var(--o2)}
+#veh .rows{flex-wrap:wrap;row-gap:2px}#veh .rows .z{font-size:9px;color:#9fd8a8}#veh .rows .z b{font:700 12px var(--mono);color:#9fd8a8}#veh .rows .wz,#veh .rows .wz b{color:#ffc24a}#veh .rows .dz,#veh .rows .dz b{color:#ff5a4e}
 #vret{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px;border:2px solid rgba(255,255,255,.85);border-radius:50%;box-shadow:0 0 3px rgba(0,0,0,.8);display:none}#vret::after{content:'';position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:#fff}
 #vret.sq{border-radius:4px;width:30px;height:30px;margin:-15px}#vret.lk{border-color:var(--e);animation:blink .3s infinite}
 #lockbox{position:absolute;width:44px;height:44px;margin:-22px;border:2px solid var(--y);display:none;transform:rotate(45deg)}#lockbox.on{border-color:var(--e)}
@@ -211,3 +212,6 @@ body.results .back{left:auto;right:18px;top:16px;bottom:auto}
 #banner{top:34%}
 @media (max-height:620px){#deploy{padding-top:14px;padding-bottom:14px}#deploy .left{gap:5px}#deploy .eye{margin:0}#deploy h2{font-size:34px}.ccard{padding:5px 10px;grid-template-columns:28px 1fr;gap:8px}.ccard svg{width:26px;height:26px}.ccard b{font-size:17px}.ccard:not(.on) small{display:none}.ccard small{margin-top:2px}#dsel{margin:2px 0}#dtix,#dcnt{margin:0}#deploy .go{margin-top:0}}
 @media (max-height:620px) and (min-width:600px){#deploy{grid-template-columns:minmax(280px,360px) 1fr}#dmapw{width:min(84vh,46vw)}}
+/* squad order highlight */
+#flags div.ord::after{content:'';position:absolute;inset:-1px;transform:rotate(45deg);border:2px solid #ffd23a;z-index:-2;box-shadow:0 0 10px rgba(255,210,58,.6)}
+#marks .flag.ord b{color:#ffd23a}#marks .flag.ord{color:#ffe9a0}
