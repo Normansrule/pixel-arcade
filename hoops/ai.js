@@ -33,18 +33,21 @@ function handler(p,T,dt){const H=hoopOf(p.team),D=T.diff,d=dHoop(p);p.ai.face={x
   // outlet to a team-mate already up the floor and open
   const up=T.pl.find(m=>m!==p&&(m.p.x-p.p.x)*H.s>6&&openness(m)>3.5&&laneClear(p,m.p.x,m.p.z,p.team,.9));if(up&&rnd()<.35*D.iq)pass(p,up);return;}
  const c=contestOf(p),three=isThree(H,p.p.x,p.p.z),q=shotProb(p,d,c),ev=q*(three?3:2);
- const drv=p.ai.drv>S.time;if(drv&&d>=4.1){const ux=H.x-p.p.x,uz=-p.p.z,ul=hyp(ux,uz)||1;if(d<5.6&&c<.3&&rnd()<.3){shoot(p,false);return;}go(p,p.p.x+ux/ul*3-uz/ul*p.ai.ds*.7,p.p.z+uz/ul*3+ux/ul*p.ai.ds*.7,true);return;}
- // finish at the rim
- const lane=laneClear(p,H.x,0,p.team,.8);
- if(d<4.1&&(lane||d<1.9||drv)){if(canDunk(p)&&rnd()<.8&&(lane||p.at.dunk>80)){drive(p,true);return;}if(d<2.5){drive(p,false);return;}go(p,H.x,0,true);return;}
+ // shot discipline: smarter CPUs only fire with a cleaner look; dunk or lay it in, rolled once per trip to the rim
+ const ctol=.62-.32*D.iq,lane=laneClear(p,H.x,0,p.team,.8);if(!(p.ai.finT>S.time)){p.ai.finT=S.time+1.4;p.ai.finR=rnd();}const dk=canDunk(p)&&p.ai.finR<cl((p.at.dunk-64)/28,0,1)*(lane?.75:.3)*(.4+.6*D.iq);
+ const drv=p.ai.drv>S.time;if(drv&&d>=4.1){const ux=H.x-p.p.x,uz=-p.p.z,ul=hyp(ux,uz)||1;if(d<5.6&&c<.3&&rnd()<.3){shoot(p,false);return;}
+  // the drive is cut off: pull up from mid-range
+  if(!lane&&!three&&d<7.2&&c<ctol+.1&&rnd()<.3*(.5+D.iq*.5)){shoot(p,false);return;}go(p,p.p.x+ux/ul*3-uz/ul*p.ai.ds*.7,p.p.z+uz/ul*3+ux/ul*p.ai.ds*.7,true);return;}
+ // finish at the rim (or a floater over a big in the way)
+ if(d<4.1&&(lane||d<1.9||drv)){if(dk){drive(p,true);return;}if(d<2.5){drive(p,false);return;}if(!lane&&c<ctol+.2&&rnd()<.25){shoot(p,false);return;}go(p,H.x,0,true);return;}
  // take the shot?
- let thr=1.14-urg*.62+(three?(p.at.three>85?-.06:.12):0);if(S.sc<2.2||(S.clock<2.5&&!S.street&&S.clock<S.sc))thr=-1;
- if((ev>thr&&c<.55)||thr<0){if(d<3.2)drive(p,canDunk(p));else shoot(p,false);return;}
+ let thr=1.14-urg*.62+(three?(p.at.three>85?-.02:.2):0)+(D.iq-.82)*.15+Math.min(0,D.iq-.82)*.5;if(S.sc<2.2||(S.clock<2.5&&!S.street&&S.clock<S.sc))thr=-1;
+ if((ev>thr&&c<(three?ctol-.06:ctol))||thr<0){if(d<3.2)drive(p,dk);else shoot(p,false);return;}
  // look for the open man
  let best=null,bv=-1;for(const m of T.pl){if(m===p)continue;const dm=dHoop(m),om=openness(m),cm=cl((2.3-om)/1.6,0,1);let v=shotProb(m,dm,cm)*(isThree(H,m.p.x,m.p.z)?3:2);
   if(m.ai.cutT>0||(T.play&&T.play.scr===m&&T.play.ph==='roll'))v+=.35;if(!laneClear(p,m.p.x+m.v.x*.3,m.p.z+m.v.z*.3,p.team,.7))continue;const dd=hyp(m.p.x-p.p.x,m.p.z-p.p.z);if(dd<2.5||dd>16)continue;if(v>bv){bv=v;best=m;}}
  const lob=best&&dHoop(best)<4.2&&best.at.dunk>=60&&(best.ai.cutT>0||T.play&&T.play.scr===best&&T.play.ph==='roll')&&rnd()<.5;
- if(best&&(bv>ev+.22-(p.holdT>2.5?.3:0)-urg*.2||(p.holdT>4&&bv>.6))){pass(p,best,lob);return;}
+ if(best&&(bv>ev+.22+(1-D.iq)*.3-(p.holdT>2.5?.3:0)-urg*.2||(p.holdT>4&&bv>.6))){pass(p,best,lob);return;}
  // pick and roll
  if(!T.play&&d<10.5&&rnd()<.22*D.iq&&S.sc>8){const scr=[...T.pl].filter(m=>m!==p).sort((a,b)=>(b.pos==='C'?2:b.pos==='PF'?1:0)-(a.pos==='C'?2:a.pos==='PF'?1:0))[0];if(scr)T.play={k:'pnr',scr,h:p,ph:'go',t:0,side:rnd()<.5?-1:1};}
  const pl=T.play;if(pl&&pl.h===p){if(pl.ph==='set'||pl.ph==='roll'){const sc=pl.scr,ux=H.x-sc.p.x,uz=-sc.p.z,ul=hyp(ux,uz)||1;go(p,sc.p.x-uz/ul*pl.side*1.3+ux/ul*2.2,sc.p.z+ux/ul*pl.side*1.3+uz/ul*2.2,true);}

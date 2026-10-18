@@ -2,7 +2,17 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `v29-heavy-3d`)
+## Unreleased (on branch `v30`)
+
+- **New 3D game: BASTION LINE** (`bastion/`): 3D tower defense on three diorama maps. Seven towers with two upgrade paths each, two levelling heroes, armoured, flying, shielded, splitting and healer enemies, a Juggernaut every tenth wave and a final Iron Colossus. An adaptive enemy warlord (EASY/NORMAL/HARD) counters your defence; targeting priorities, x2/x3 speed, interest, mouse, touch and keyboard controls, and a star-rated results screen.
+- **New 3D game: FAIRWAY LEGENDS** (`links/`): 3D links golf on a nine-hole coastal course (or a quick three). Thirteen clubs plus putter, draw/fade and spin, a 3-click meter or drag tempo swing, wind, Magnus-lift ball flight, lies, water and out-of-bounds drops, putting grid, hole flyovers and green-read camera. CPU rivals (EASY/NORMAL/HARD) plan shots with the real physics; up to four golfers hot-seat, each on a round clock, with a full scorecard and stats at the end.
+- **COURT KINGS:** shot contests are averaged between gather and release, threes fall at about 35% instead of 22-32%, dunks drop from up to 60% of shots to about 12%, layups leave from in front of the rim, CPU shot choice and defence scale with difficulty, and a late free throw no longer crashes the game. Phone and 800x500 menus fit.
+- **SILENT CONTRACT:** a first-objective panel and waypoint guide you to the late guest's dinner jacket, both arrivals face the villa gate, the menu camera looks over the villa to the sea, and the phone HUD no longer overlaps.
+- **3D post-processing:** the ambient occlusion pass no longer re-renders shadow maps or makes an extra full-screen copy (for example 505 to 373 draw calls in DUSTWATER at HIGH); the look is unchanged.
+- **Art pass (43 canvas games):** balloon pop, millipede, cube hop, miner, chopper, depth charge, boss rush, traffic, runner, skee-ball, rail, drone, laser maze, shuffleboard, soda slide, tube wars, columns, stack tower, color switch, knife hit, poker, blackjack, crazy eights, paint, dots, mancala, ultimate tic-tac-toe, ice slide, pipes, memory, hex mines, penalty, badminton, cricket, bocce, cornhole, penalty duel, hammer, rocket landing, ski jump, long drive, trench run and mesh drift.
+- **Fixes:** cornhole hole now scores, ski jump inrun slopes the right way, badminton shuttle bounces off the net, hammer, code breaker, FreeCell and pipe flow now post real scores, drone winch works.
+
+## v29 update (released 17 Oct 2026 from branch `v29-heavy-3d`)
 
 - **Repository layout:** tests moved to `tests/`, Python and Node tools to `tools/`.
 - **Engine:** `js/engine.js` split into 13 modules in `js/engine/`; the `A.gx` art kit moved from `games/sports1.js` to `js/gx.js`.
