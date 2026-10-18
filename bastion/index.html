@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Bastion Line · Pixel Arcade</title>
+<meta name="description" content="Bastion Line: a 3D tower-defense game. Build and upgrade seven towers along two upgrade paths, place and level a hero, and hold three maps against an adaptive enemy warlord and a final boss wave.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="bastion.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="ov"></canvas>
+<div id="hud" hidden>
+  <div id="stats">
+    <div class="st"><i class="ic heart"></i><b id="hLives">0</b><span>LIVES</span></div>
+    <div class="st"><i class="ic coin"></i><b id="hGold">0</b><span id="hInt">GOLD</span></div>
+    <div class="st"><i class="ic flag"></i><b id="hWave">0/0</b><span>WAVE</span></div>
+    <div class="st"><i class="ic clock"></i><b id="hClock">0:00</b><span>CLOCK</span></div>
+  </div>
+  <div id="ctrl">
+    <button id="spd" class="pill" title="Game speed (F)"><b>x1</b><kbd>F</kbd></button>
+    <button id="nextB" class="next" title="Start the next wave now (Space)"><b id="nextL">START WAVE 1</b><span id="nextT"></span><kbd>SPACE</kbd></button>
+    <button id="pauseB" class="pill" title="Pause (Esc)"><b>II</b></button>
+  </div>
+  <div id="preview"></div>
+  <div id="boss" hidden><b id="bossN">BOSS</b><div class="bar"><i id="bossHp"></i><i id="bossSh"></i></div></div>
+  <div id="banner"><b></b><span></span></div>
+  <div id="msgs"></div>
+  <div id="panel" hidden></div>
+  <div id="bar"><div id="towers"></div></div>
+  <div id="tip" hidden></div>
+</div>
+
+<div id="menu" class="scr">
+  <div class="mtop"><p class="eye">[ PIXEL ARCADE ] FULL 3D · TOWER DEFENSE</p><h1>BASTION<em> LINE</em></h1>
+  <p class="how">Hold the road. Build towers beside it, upgrade each down one of two paths, place your hero and stop every wave before it reaches the keep. The enemy warlord studies your defences and sends what beats them.</p></div>
+  <div class="maps" id="maps"></div>
+  <div class="opts">
+    <label>WARLORD</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>WAVES</label><div class="seg" id="o-waves"><button data-v="15">15 · SKIRMISH</button><button data-v="25">25 · CAMPAIGN</button><button data-v="35">35 · SIEGE</button></div>
+    <label>HERO</label><div class="seg" id="o-hero"></div>
+  </div>
+  <p class="mapd" id="mapd"></p>
+  <div class="row"><button id="go" class="go">DEFEND</button><button id="howb" class="ghost">CONTROLS</button><span class="best" id="best"></span></div>
+</div>
+<div class="card" id="keys" hidden>
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Build</td><td><kbd>1</kbd>…<kbd>7</kbd> or tap a tower card, then click / tap beside the road · <kbd>Shift</kbd> keeps building · right-click or <kbd>Esc</kbd> cancels</td></tr>
+    <tr><td>Select · upgrade</td><td>Click / tap a tower · <kbd>Z</kbd> path A · <kbd>X</kbd> path B · <kbd>Tab</kbd> targeting (first, last, strong, close) · <kbd>Del</kbd> sell</td></tr>
+    <tr><td>Hero</td><td><kbd>H</kbd> place or select the hero · click ground to move · <kbd>R</kbd> <kbd>T</kbd> abilities</td></tr>
+    <tr><td>Waves · speed</td><td><kbd>Space</kbd> start / call the next wave early (bonus gold) · <kbd>F</kbd> speed x1 / x2 / x3</td></tr>
+    <tr><td>Camera</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows · drag · wheel or pinch zoom · <kbd>Q</kbd> <kbd>E</kbd> rotate · <kbd>C</kbd> recentre</td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> / <kbd>P</kbd> · <kbd>G</kbd></td></tr>
+  </table>
+  <p>Armour (Ironhide, Juggernaut) shrugs off arrows and shot: use arcane, piercing or heavy upgrades. Flyers ignore bombards and mortars. Shields break twice as fast to arcane. Kill Menders first. Gold left in the bank earns interest after each wave.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<em>.</em></h1><div class="row"><button id="resume" class="go">RESUME</button><button id="restart" class="ghost">RESTART</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">BATTLE OVER</p>
+  <p class="res" id="ores">BASTION HELD</p>
+  <div class="stars" id="ostars"><i></i><i></i><i></i></div>
+  <p class="why" id="owhy"></p>
+  <div id="otable"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
