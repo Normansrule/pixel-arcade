@@ -51,8 +51,17 @@ export function thinkRace(k,G,dt){const c=k.ctrl,D=k.human>=0?G.D2:G.diff,C=G.C,
 function thinkItems(k,G,dt,curv){const c=k.ctrl,D=k.human>=0?G.D2:G.diff;k.itemT=(k.itemT||0)+dt;
  if(k.wantItem){k.wantItem=false;c.item=true;return;}
  if(!k.item&&!k.orbs)return;if(k.roulette>0)return;
+ // incoming fire: a seeker locked on, or an orb closing from behind
+ const threat=G.items.list.some(p=>p.owner!==k&&p.life>0&&((p.type==='seeker'&&p.target===k&&p.p.distanceToSquared(k.p)<900)||(p.type==='orb'&&p.p.distanceToSquared(k.p)<400&&((p.p.x-k.p.x)*Math.sin(k.yaw)+(p.p.z-k.p.z)*Math.cos(k.yaw))<0)));
+ // trailing a peel or bomb as a rear shield: hold it until a rival is right behind, then let it go
+ if(k.trail){const rel2=o=>{const dx=o.p.x-k.p.x,dz=o.p.z-k.p.z;return{f:dx*Math.sin(k.yaw)+dz*Math.cos(k.yaw),l:dx*Math.cos(k.yaw)-dz*Math.sin(k.yaw)};};
+  const close=G.karts.some(o=>{if(o===k||o.out)return false;const r=rel2(o);return r.f<-2&&r.f>-9&&Math.abs(r.l)<2.5;});
+  const tgtAhead=k.trail==='bomb'&&G.karts.some(o=>{if(o===k||o.out)return false;const r=rel2(o);return r.f>8&&r.f<30&&Math.abs(r.l)<4;});
+  c.item=!(close&&Math.random()<D.skill*dt*8)&&!(tgtAhead&&Math.random()<dt*2)&&k.itemT<16;c.back=k.trail==='bomb'&&!tgtAhead;return;}
+ if((k.item==='peel'||k.item==='bomb')&&!k.orbs&&(threat||(k.place<=4&&Math.random()<D.skill*dt*1.5))&&G.diffI>0){c.item=true;k.itemT=0;return;}
  if(k.itemT<.6+D.react*3)return;
  const it=k.orbs?'orb':k.item,others=G.karts.filter(o=>o!==k&&!o.out&&o.respawn<=0);
+ if(threat&&it==='aura'&&Math.random()<D.skill){c.item=true;k.itemT=0;return;}
  const rel=o=>{const dx=o.p.x-k.p.x,dz=o.p.z-k.p.z;return{f:dx*Math.sin(k.yaw)+dz*Math.cos(k.yaw),l:dx*Math.cos(k.yaw)-dz*Math.sin(k.yaw)};};
  const ahead=others.some(o=>{const r=rel(o);return r.f>4&&r.f<34&&Math.abs(r.l)<3+r.f*.08;}),behind=others.some(o=>{const r=rel(o);return r.f<-2&&r.f>-16&&Math.abs(r.l)<3;});
  let use=false,back=false;const roll=Math.random()<D.item*dt*3;
