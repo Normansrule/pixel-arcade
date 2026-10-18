@@ -5,6 +5,7 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 ## Unreleased (on branch `round8`)
 
 - **New 3D game: BEACON RESCUE** (`rescue/`): a three-room lighthouse rescue puzzle. A small repair robot learns that power travels (battery, cable, socket), then that a weight holds a gate, then combines both in a final room with two valid solutions. Live cables glow, every room has a reset, lost objects return, progress checkpoints per room, the storm clock is set by difficulty, and the relit beam sweeps the sea at the end.
+- **New 3D game: TIDEWAY COURIER** (`courier/`): a delivery kart race round a sunny flooded harbor of little islands and bridges. Three laps through six ordered checkpoints (reversing never counts), a three-tier drift shown by spark colour, meter and pitch, a start boost, wall and sea recovery, a parcel pickup and drop every lap, three CPU couriers (EASY/NORMAL/HARD), a personal-best ghost lap and a resumable race save.
 
 ## v30 update (released 18 Oct 2026 from branch `v30`)
 

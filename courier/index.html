@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tideway Courier · Pixel Arcade</title>
+<meta name="description" content="Tideway Courier: a full 3D delivery kart race around a sunny flooded harbor. Drift to charge boosts, grab a parcel at the depot, drop it at the Post House bay every lap, and beat three rival couriers before the clock runs out.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="courier.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div class="tl"><div id="place">1<i>ST</i><small>/4</small></div><div class="pill" id="lap">LAP 1/3</div><div class="sub" id="ltime">LAP 0:00.00</div><div class="sub" id="lbest">BEST —</div></div>
+  <div id="clock"><i>TIME LEFT</i><b>3:20</b></div>
+  <div class="tr"><div class="parc" id="parc"><span class="box" id="pbox"></span><b id="pn">0</b><i>DELIVERED</i></div><div class="sub r" id="score">SCORE 0</div></div>
+  <div id="obj"><span id="objic"></span><span id="objt"></span></div>
+  <canvas id="mini" width="180" height="180"></canvas>
+  <div id="drift"><div class="segs"><span><i></i><b>I</b></span><span><i></i><b>II</b></span><span><i></i><b>III</b></span></div><p id="dlabel">DRIFT</p></div>
+  <div id="spd"><b>0</b><i>KM/H</i></div>
+  <div id="startm" hidden><p>HOLD GAS WHEN <b>1</b> SHOWS</p><div class="bar"><s></s><i id="sfill"></i></div></div>
+  <div id="cd"></div>
+  <div id="msg"></div>
+  <div id="warn"></div>
+</div>
+<div id="touch" hidden>
+  <div class="tl2"><button data-k="left" aria-label="Steer left">◀</button><button data-k="right" aria-label="Steer right">▶</button></div>
+  <div class="tr2"><button data-k="drift" class="dr" aria-label="Drift">DRIFT</button><button data-k="brake" aria-label="Brake">BRAKE</button><button data-k="gas" class="gas" aria-label="Gas">GAS</button></div>
+  <button id="tpause" aria-label="Pause">II</button><button id="treset" aria-label="Back to last gate">↺</button>
+</div>
+<div id="menu">
+  <div class="left">
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · KART DELIVERY RACE</p>
+    <h1>TIDEWAY<br>COURIER<em>.</em></h1>
+    <p class="how">Three laps around the flooded harbor. Each lap, drive through the yellow <b>PICK UP</b> pad at the Breakwater Depot, then the green <b>DROP</b> pad at the Post House bay. Hold drift through corners until the meter shows <b>III</b>, release for a boost, and beat three rival couriers before the clock runs out.</p>
+    <div class="opts"><label>RIVALS</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+      <label></label><p class="info" id="dinfo"></p></div>
+    <p class="rec" id="rec"></p>
+    <div class="row"><button id="go" class="go">START RACE ▸</button><button id="resume" class="ghost" hidden>RESUME SAVED RACE</button><button id="reset" class="ghost small">RESET RECORDS</button></div>
+  </div>
+  <div class="card" id="keys">
+    <h3>CONTROLS<em>.</em></h3>
+    <table>
+      <tr><td>Gas · brake / reverse</td><td><kbd>W</kbd> <kbd>S</kbd> <span class="pad">A/RT · B/LT</span></td></tr>
+      <tr><td>Steer</td><td><kbd>A</kbd> <kbd>D</kbd> <span class="pad">stick</span></td></tr>
+      <tr><td>Hop + drift (hold)</td><td><kbd>Space</kbd> <kbd>Shift</kbd> <span class="pad">X/RB</span></td></tr>
+      <tr><td>Back to last gate</td><td><kbd>R</kbd> <span class="pad">Y</span></td></tr>
+      <tr><td>Pause · music · graphics</td><td><kbd>Esc</kbd> <kbd>M</kbd> <kbd>G</kbd></td></tr>
+    </table>
+    <p>Arrows work too. Drift meter: <b>I</b> blue → <b>II</b> orange → <b>III</b> pink, with a rising tone; let go for a boost. Start boost: press gas as <b>1</b> appears. Walls slow you but never stop the race; fall in the sea and you are back at the last numbered gate.</p>
+  </div>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h2>TEA<br>BREAK<em>.</em></h2><p class="info" id="pinfo">Your race is saved at the last gate.</p><div class="row"><button id="bres" class="go">RESUME</button><button id="bretry" class="ghost">RESTART</button><button id="bquit" class="ghost">MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">DELIVERY REPORT</p>
+  <p class="res" id="ores">1ST!</p>
+  <div id="otab"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">RACE AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="tip"></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
