@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Lantern Street · Pixel Arcade</title>
+<meta name="description" content="Lantern Street: a festival-night street in full 3D. Meet three neighbours, find three cardboard parts, build a lighthouse costume whose beam opens the loft stairs, and win a timed turn-based battle to relight the street before the parade.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="lantern.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="ov"></canvas>
+<div id="fade"></div>
+
+<div id="hud" hidden>
+  <div id="obj" class="panel"><p class="cap">TONIGHT</p><b id="objMain">Talk to Granny Fern</b><ul id="objList"></ul></div>
+  <div id="clockw" class="panel">
+    <div class="ck"><span>PARADE IN</span><b id="clock">8:00</b></div>
+    <div class="bar"><i id="clockBar"></i></div>
+    <div class="row2"><span id="lanterns">LANTERNS 0/14</span><span id="partsInv"></span></div>
+  </div>
+  <div id="prompt" hidden></div>
+  <div id="beamw" hidden><span id="beamL">GLOOM KNOT</span><div class="bar"><i id="beamBar"></i></div></div>
+  <div id="toasts"></div>
+  <div id="banner"><b></b><span></span></div>
+  <div id="touch">
+    <div id="stick"><i></i></div>
+    <button id="bBeam" class="tb" hidden><b>BEAM</b><kbd>Q</kbd></button>
+    <button id="bAct" class="tb act"><b>ACT</b><kbd>E</kbd></button>
+  </div>
+  <button id="pauseB" class="pill" title="Pause (Esc)">II</button>
+</div>
+
+<div id="dlg" hidden>
+  <div class="who"><b id="dlgN">GRANNY FERN</b><span id="dlgR">dumpling stall</span></div>
+  <p id="dlgT"></p>
+  <span class="nx">E / SPACE / TAP ▸</span>
+</div>
+
+<div id="bhud" hidden>
+  <div id="hero" class="panel">
+    <div class="hn"><b>LIGHTHOUSE KNIGHT</b><span id="heroHpT">42/42 HP</span></div>
+    <div class="hp"><i id="heroHp"></i></div>
+    <div class="gl"><span>GLOW</span><span id="glowPips"></span><b id="glowT">2/6</b></div>
+  </div>
+  <div id="tags"></div>
+  <div id="moves" class="panel"><p class="cap" id="tgtL">TARGET: PUFFKIN A · ◀ ▶ TO CHANGE</p><div id="mlist"></div></div>
+  <div id="bmsg"></div>
+  <div id="assistTag" hidden>AUTO-TIMING ON</div>
+</div>
+
+<div id="menu" class="scr">
+  <div class="mtop">
+    <p class="eye">[ PIXEL ARCADE ] FULL 3D · FESTIVAL ADVENTURE</p>
+    <h1>LANTERN<em> STREET</em></h1>
+    <p class="how">The Puffkins have blown out every lantern on your street, and the parade starts at the bell. Meet the neighbours, find three cardboard parts, build a lighthouse costume whose beam unties the gloom on the loft stairs, then win a timed battle up on the roof to light the street again.</p>
+  </div>
+  <div class="opts">
+    <label>CLOCK</label><div class="seg" id="o-diff"><button data-v="0">EASY · 9:00</button><button data-v="1">NORMAL · 6:30</button><button data-v="2">HARD · 4:30</button></div>
+    <label>TIMING</label><div class="seg" id="o-assist"><button data-v="0">I'LL PRESS</button><button data-v="1">AUTO-TIMING</button></div>
+    <label>EFFECTS</label><div class="seg" id="o-fx"><button data-v="1">FULL</button><button data-v="0">REDUCED</button></div>
+  </div>
+  <p class="mapd" id="dd"></p>
+  <div class="row"><button id="cont" class="go" hidden>CONTINUE</button><button id="go" class="go">NEW NIGHT</button><button id="howb" class="ghost">CONTROLS</button><span class="best" id="best"></span></div>
+</div>
+<div class="card" id="keys" hidden>
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Walk</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows · touch stick · gamepad left stick</td></tr>
+    <tr><td>Talk · pick up · use</td><td><kbd>E</kbd> / <kbd>Space</kbd> · ACT button · pad <kbd>A</kbd></td></tr>
+    <tr><td>Lighthouse beam</td><td>hold <kbd>Q</kbd> or <kbd>F</kbd> · hold BEAM · pad <kbd>X</kbd> (after the costume is built)</td></tr>
+    <tr><td>Battle</td><td><kbd>1</kbd>-<kbd>4</kbd> or click a move · <kbd>◀</kbd> <kbd>▶</kbd> / click a foe to target · press <kbd>Space</kbd> / click / tap when the ring closes</td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> / <kbd>P</kbd> · <kbd>G</kbd> cycles quality · <kbd>R</kbd> in the pause menu returns you to the gate</td></tr>
+  </table>
+  <p>Progress saves at every milestone. CONTINUE on the menu brings back the same street, parts and conversations. Timing results always show as words (GREAT, GOOD, EARLY, LATE), never only as colour.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED · THE CLOCK IS STOPPED</p><h1>HUSH<em>.</em></h1><div class="row"><button id="resume" class="go">RESUME</button><button id="unstuck" class="ghost">BACK TO THE GATE (R)</button><button id="restart" class="ghost">RESTART NIGHT</button><button id="quit" class="ghost">SAVE &amp; QUIT</button></div></div>
+<div id="lose" class="scr" hidden><p class="eye">THE PUFFKINS SNUFFED YOUR LAMP</p><h1>NOT<em> YET.</em></h1><p class="how">Your progress is safe. Try the fight again at full strength, or step back down the stairs and come back when you're ready. The clock is paused while you decide.</p><div class="row"><button id="retry" class="go">RETRY BATTLE</button><button id="stepback" class="ghost">STEP BACK</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye" id="oeye">FESTIVAL NIGHT</p>
+  <p class="res" id="ores">THE PARADE BEGINS</p>
+  <div class="stars" id="ostars"><i></i><i></i><i></i></div>
+  <p class="why" id="owhy"></p>
+  <div id="otable"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

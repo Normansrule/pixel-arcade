@@ -2,7 +2,14 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `v30`)
+## Unreleased (on branch `round8`)
+
+- **New 3D game: BEACON RESCUE** (`rescue/`): a three-room lighthouse rescue puzzle. A small repair robot learns that power travels (battery, cable, socket), then that a weight holds a gate, then combines both in a final room with two valid solutions. Live cables glow, every room has a reset, lost objects return, progress checkpoints per room, the storm clock is set by difficulty, and the relit beam sweeps the sea at the end.
+- **New 3D game: TIDEWAY COURIER** (`courier/`): a delivery kart race round a sunny flooded harbor of little islands and bridges. Three laps through six ordered checkpoints (reversing never counts), a three-tier drift shown by spark colour, meter and pitch, a start boost, wall and sea recovery, a parcel pickup and drop every lap, three CPU couriers (EASY/NORMAL/HARD), a personal-best ghost lap and a resumable race save.
+- **New 3D game: HARBOR PALS** (`critters/`): three original helper creatures with different shapes and powers (Mollo digs, Stilt becomes a bridge, Fizz glows and zaps machines). Pick one, meet the others, swap the leader, and use at least two powers to winch a stranded boat ashore before the tide rises. Followers handle stairs and corners and teleport back if stuck; difficulty sets the tide, hints and crank effort; progress saves and resumes.
+- **New 3D game: LANTERN STREET** (`festival/`): a lantern-festival street at night. Meet three neighbours, find three cardboard parts and build a lighthouse-knight costume whose beam opens the loft stairs, then fight the lantern-snuffing Puffkins in a turn-based battle with timed presses (and an auto-timing option). Winning relights fourteen lanterns, opens the stalls and changes what the neighbours do; the parade clock is set by difficulty, and the repaired street is saved.
+
+## v30 update (released 18 Oct 2026 from branch `v30`)
 
 - **New 3D game: BASTION LINE** (`bastion/`): 3D tower defense on three diorama maps. Seven towers with two upgrade paths each, two levelling heroes, armoured, flying, shielded, splitting and healer enemies, a Juggernaut every tenth wave and a final Iron Colossus. An adaptive enemy warlord (EASY/NORMAL/HARD) counters your defence; targeting priorities, x2/x3 speed, interest, mouse, touch and keyboard controls, and a star-rated results screen.
 - **New 3D game: FAIRWAY LEGENDS** (`links/`): 3D links golf on a nine-hole coastal course (or a quick three). Thirteen clubs plus putter, draw/fade and spin, a 3-click meter or drag tempo swing, wind, Magnus-lift ball flight, lies, water and out-of-bounds drops, putting grid, hole flyovers and green-read camera. CPU rivals (EASY/NORMAL/HARD) plan shots with the real physics; up to four golfers hot-seat, each on a round clock, with a full scorecard and stats at the end.

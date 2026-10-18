@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harbor Pals · Pixel Arcade</title>
+<meta name="description" content="Harbor Pals: a cozy 3D harbor rescue. Team up with three helper creatures (a digger, a living bridge and a glowing zapper) to winch a stranded boat ashore before the tide comes in.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="harbor.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="tags"></div>
+<div id="hud" hidden>
+  <div id="obj"><p class="eye"><span id="stepn"></span>THE PUFFIN IS STRANDED</p><h2>RESCUE THE PUFFIN<em>.</em></h2><ol id="steps"></ol><p id="hint"></p></div>
+  <div id="tide"><div class="tt"><span class="wv">≈</span><b id="tclock">4:15</b></div><div class="bar"><i id="tfill"></i></div><span id="tpct">TIDE 0% IN</span></div>
+  <div id="pals"></div>
+  <div id="prompts"><div id="pE" class="pr" hidden><kbd>E</kbd><span id="pEt"></span></div><div id="pF" class="pr"><kbd>F</kbd><span id="pFt"></span></div><div id="abl" class="sr"></div></div>
+  <div id="winchbar" hidden><span id="wlbl">HAND CRANK</span><div class="bar"><i id="wfill"></i></div></div>
+  <div id="toasts"></div>
+  <div id="touchui"><div id="stick"><i id="knob"></i></div><div id="tbtns"><button id="tE">E<small>USE</small></button><button id="tF">F<small>ABILITY</small></button><button id="tPal">PAL<small>SWAP</small></button><button id="tCam">⟳<small>CAMERA</small></button></div><button id="tPause">II</button></div>
+</div>
+<div id="banner"><b id="bt"></b><span id="bs"></span></div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · COZY HARBOR RESCUE</p>
+  <h1>HARBOR<br>PALS<em>.</em></h1>
+  <p class="how">The little boat <b>Puffin</b> is stuck on a sandbar and the tide is coming in. Team up with three helper creatures (one digs, one becomes a bridge, one zaps machines) and winch her ashore in time.</p>
+  <label class="lbl">PICK YOUR FIRST PAL</label>
+  <div class="seg pals3" id="o-pal"><button data-v="mollo"></button><button data-v="stilt"></button><button data-v="fizz"></button></div>
+  <p class="mpal" id="mpal"></p>
+  <div class="opts">
+    <label>TIDE</label><div class="seg" id="o-diff"><button data-v="0">EASY · 6:00</button><button data-v="1">NORMAL · 4:15</button><button data-v="2">HARD · 3:00</button></div>
+    <label>EFFECTS</label><div class="seg" id="o-fx"><button data-v="0">FULL</button><button data-v="1">REDUCED</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">SET OUT ▸</button><button id="cont" class="ghost" hidden>CONTINUE</button><button id="wipe" class="ghost sm">RESET SAVE</button></div>
+  <p class="prog" id="mbest"></p>
+</div>
+<div class="card" id="keys">
+  <h3>HOW TO PLAY<em>.</em></h3>
+  <table>
+    <tr><td>Move · jog</td><td><kbd>WASD</kbd> <kbd>Shift</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Use / talk / pet · hold to crank</td><td><kbd>E</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Pal ability</td><td><kbd>F</kbd> <kbd>Space</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Choose pal · cycle</td><td><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> <kbd>Tab</kbd> <span class="pad">LB RB</span></td></tr>
+    <tr><td>Turn camera · zoom</td><td><kbd>Z</kbd><kbd>C</kbd> drag · wheel <span class="pad">R-stick</span></td></tr>
+    <tr><td>Back to the Pal Post</td><td><kbd>R</kbd> twice</td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd> <span class="pad">Start</span></td></tr>
+  </table>
+  <p>Each pal has one job. The pal in front of the line is the active one; its ability is on <kbd>F</kbd>. Falling in the sea is safe, but the tide keeps rising. Your pals and progress are saved.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED · PROGRESS SAVED</p><h1>TEA<br>BREAK<em>.</em></h1><p class="how">The tide waits while you rest.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="prestart" class="ghost">RESTART</button><button id="pmenu" class="ghost">SAVE &amp; MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye"></p>
+  <p class="res" id="ores"></p>
+  <div id="ostars"></div>
+  <ul id="ocrit"></ul>
+  <div class="ostats" id="ostats"></div>
+  <p class="lbl">PALS ON THIS RESCUE</p>
+  <div id="opals"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
