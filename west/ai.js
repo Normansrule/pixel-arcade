@@ -4,13 +4,13 @@
 import {V,cl,angDiff} from './util.js';
 
 export const DIFF=[
- {n:'EASY',sight:42,react:1.3,cd:1.7,spread:.085,dmg:8,hp:90,count:4,bounty:.8,duel:1.3,hear:110},
- {n:'NORMAL',sight:60,react:.85,cd:1.2,spread:.055,dmg:10,hp:100,count:6,bounty:1,duel:.9,hear:140},
- {n:'HARD',sight:78,react:.55,cd:1,spread:.038,dmg:12,hp:120,count:8,bounty:1.4,duel:.62,hear:170}];
+ {n:'EASY',sight:42,react:1.3,cd:1.7,spread:.085,dmg:8,hp:90,count:4,bounty:.8,duel:1.3,hear:110,flank:0,dyn:0,flee:.5,reinf:55},
+ {n:'NORMAL',sight:60,react:.85,cd:1.2,spread:.055,dmg:10,hp:100,count:6,bounty:1,duel:.9,hear:140,flank:.3,dyn:.1,flee:.25,reinf:40},
+ {n:'HARD',sight:78,react:.55,cd:1,spread:.038,dmg:12,hp:120,count:8,bounty:1.4,duel:.62,hear:170,flank:.55,dyn:.22,flee:0,reinf:28}];
 const NAMES=['JED','CLEM','AMOS','RUFUS','WADE','HOLT','CASS','BRODY','DUKE','LEFTY','ZEKE','MORGAN','TUCK','SAWYER','BOONE','CALLUM','DECKER','FLINT'];
 export const bName=i=>NAMES[i%NAMES.length];
 const tv=new V();
-export function newBrain(){return{state:'idle',alert:0,react:0,seeT:0,think:0,goal:null,coverT:0,strafeT:0,strafe:0,lastSeen:null,heard:null,idleT:Math.random()*5,shots:0,yell:0};}
+export function newBrain(){return{state:'idle',hidT:0,dynT:4+Math.random()*6,flankS:Math.random()<.5?-1:1,alert:0,react:0,seeT:0,think:0,goal:null,coverT:0,strafeT:0,strafe:0,lastSeen:null,heard:null,idleT:Math.random()*5,shots:0,yell:0};}
 // called every frame for a living, free bandit; writes a.inp {mx,mz (world move dir), run, face (yaw target), fire, aim}
 export function think(a,G,dt){const b=a.ai,D=G.diff,P=G.player,I=a.inp;I.mx=I.mz=0;I.run=false;I.fire=false;I.aim=false;
  b.think-=dt;const dx=P.pos.x-a.pos.x,dz=P.pos.z-a.pos.z,dist=Math.hypot(dx,dz);
@@ -23,6 +23,9 @@ export function think(a,G,dt){const b=a.ai,D=G.diff,P=G.player,I=a.inp;I.mx=I.mz
   b.idleT-=dt;if(b.idleT<=0){b.idleT=4+Math.random()*7;const r=a.lookout?0:2.5;b.goal=new V(a.home.x+(Math.random()-.5)*r*2,0,a.home.z+(Math.random()-.5)*r*2);b.look=a.home.face+(Math.random()-.5)*1.6;}
   if(b.goal){const gx=b.goal.x-a.pos.x,gz=b.goal.z-a.pos.z,gd=Math.hypot(gx,gz);if(gd>.4){I.mx=gx/gd*.45;I.mz=gz/gd*.45;I.face=Math.atan2(gx,gz);}else{b.goal=null;}}else I.face=b.look??a.home.face;return;}
  a.pose='';
+ if(b.state==='fight'){b.dynT-=dt;b.hidT=b.sees?0:b.hidT+dt;
+  // HARD/NORMAL: smoke a player who has gone to ground with a stick of dynamite
+  if(D.dyn&&b.hidT>2.2&&b.dynT<=0&&b.lastSeen&&!a.lookout&&G.throwDyn){const ld=Math.hypot(b.lastSeen.x-a.pos.x,b.lastSeen.z-a.pos.z);b.dynT=3+Math.random()*4;if(ld>7&&ld<30&&Math.random()<D.dyn*2.5){b.dynT=10+Math.random()*8;G.throwDyn(a,b.lastSeen);}}}
  if(b.state==='alert'){const h=b.heard||b.lastSeen;if(h){const gx=h.x-a.pos.x,gz=h.z-a.pos.z,gd=Math.hypot(gx,gz);I.face=Math.atan2(gx,gz);I.aim=true;if(gd>6){I.mx=gx/gd*.6;I.mz=gz/gd*.6;}}return;}
  // ---- fight ----
  I.aim=true;const see=b.sees;if(see){b.react-=dt;I.face=Math.atan2(dx,dz);}else{b.react=Math.max(b.react,D.react*.5);}
@@ -31,6 +34,10 @@ export function think(a,G,dt){const b=a.ai,D=G.diff,P=G.player,I=a.inp;I.mx=I.mz
   for(const c of a.camp.cover){const ox=c.x-P.pos.x,oz=c.z-P.pos.z,od=Math.hypot(ox,oz)||1,sx=c.x+ox/od*(c.r+.9),sz=c.z+oz/od*(c.r+.9);const sd=Math.hypot(sx-a.pos.x,sz-a.pos.z),pd=Math.hypot(sx-P.pos.x,sz-P.pos.z);
    let sc=sd*.8+Math.abs(pd-pref)*.6+(G.coverTaken(c,a)?40:0)+Math.random()*6;if(sc<bs){bs=sc;best={x:sx,z:sz,c};}}
   if(G.diff.n==='HARD'&&Math.random()<.25&&dist>14)best={x:a.pos.x+dx*.35,z:a.pos.z+dz*.35,c:null};
+  // flanking: swing wide around the player's side while the others keep him pinned
+  b.flank=false;if(D.flank&&!a.lookout&&dist>10&&dist<70&&Math.random()<D.flank&&G.flankers(a)<(D.n==='HARD'?2:1)){const ang=Math.atan2(a.pos.x-P.pos.x,a.pos.z-P.pos.z)+b.flankS*(1.05+Math.random()*.35),R=Math.min(dist,pref+4);best={x:P.pos.x+Math.sin(ang)*R,z:P.pos.z+Math.cos(ang)*R,c:null};b.flank=true;b.coverT=5+Math.random()*3;}
+  // badly hurt: fall back away from the player toward the far side of camp
+  if(a.hp<a.max*.35&&a.kind!=='leader'){const ox=a.pos.x-P.pos.x,oz=a.pos.z-P.pos.z,od=Math.hypot(ox,oz)||1;best={x:a.pos.x+ox/od*12,z:a.pos.z+oz/od*12,c:null};b.wounded=true;b.flank=false;}
   if(!see&&b.lastSeen&&Math.random()<.5)best={x:b.lastSeen.x+(Math.random()-.5)*8,z:b.lastSeen.z+(Math.random()-.5)*8,c:null};
   if(best){b.goal=new V(best.x,0,best.z);b.cover=best.c;}}
  let mvx=0,mvz=0;if(b.goal){const gx=b.goal.x-a.pos.x,gz=b.goal.z-a.pos.z,gd=Math.hypot(gx,gz);if(gd>.7){mvx=gx/gd;mvz=gz/gd;I.run=gd>4;if(!see)I.face=Math.atan2(gx,gz);}
@@ -38,4 +45,4 @@ export function think(a,G,dt){const b=a.ai,D=G.diff,P=G.player,I=a.inp;I.mx=I.mz
  if(dist<7){mvx-=dx/dist*.8;mvz-=dz/dist*.8;}
  I.mx=mvx;I.mz=mvz;
  // fire
- if(see&&b.react<=0&&a.cd<=0&&a.reloadT<=0&&dist<D.sight*1.4){if(a.mag>0){I.fire=true;}else{a.reloadT=2.2;}}}
+ if(see&&b.react<=0&&a.cd<=0&&a.reloadT<=0&&dist<D.sight*1.4&&!(b.wounded&&Math.random()<.5)&&!(b.flank&&b.goal&&Math.hypot(b.goal.x-a.pos.x,b.goal.z-a.pos.z)>3&&Math.random()<.6)){if(a.mag>0){I.fire=true;}else{a.reloadT=2.2;}}}

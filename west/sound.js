@@ -72,6 +72,9 @@ export class Sound extends SpatialSound{
   case'fail':{D(.5);[45,48,52,57].forEach((m,i)=>this.pluck(m-1,now+i*.12,.25,d));break;}
   case'click':D(.35);this._o(d,'square',1300,1200,.02,.12);break;
   case'pop':if(!D(.25,30))return;this._n(d,.03,3000,1500,2,.4,'bandpass');break;
+  case'boom':if(!D(1.3,600))return;this._n(d,1.6,1400*r,50,.7,1);this._o(d,'sine',68,24,1.3,1);this._n(d,.2,6000,1500,.5,.5,'highpass');if(this._v>.15){const e=this.ac.createGain();e.gain.value=this._v*.9;e.connect(this.canyon);this._n(e,1.4,900,120,.6,.8);}break;
+  case'fuse':if(!D(.22,30))return;this._n(d,.5,7000,6000,2,.3,'bandpass');break;
+  case'pat':D(.45);this._n(d,.07,700,400,2,.5,'bandpass');this._n(d,.07,700,400,2,.42,'bandpass',.2);break;
   case'splash':if(!D(.3,40))return;this._n(d,.25,1500,400,1,.4);break;}}catch(e){}}
  pluck(m,t,v,dst){const b=this.ks&&this.ks[Math.max(40,Math.min(84,m|0))];if(!b)return;const s=this.ac.createBufferSource();s.buffer=b;const g=this.ac.createGain();g.gain.value=v;s.connect(g);g.connect(dst||this.musG);if(!dst)g.connect(this.gEcho);s.start(t);s.stop(t+2.2);}
  // ---------------- music ----------------
