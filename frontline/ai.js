@@ -1,7 +1,8 @@
 // FRONTLINE OPS — bot brains: perception (FOV + line of sight + hearing + smoke), cover, flanking, burst fire, grenades, callouts.
 import * as THREE from '../vendor/three.module.min.js';
 const V=THREE.Vector3;
-export const DIFF=[{n:'RECRUIT',err:4.2,react:.95,turn:3.5,dmg:.3,burst:[2,4],pause:[.7,1.3],nade:.2,flank:.2},{n:'REGULAR',err:2.9,react:.62,turn:5.5,dmg:.48,burst:[3,5],pause:[.5,.9],nade:.4,flank:.35},{n:'VETERAN',err:1.9,react:.38,turn:8,dmg:.72,burst:[3,6],pause:[.35,.65],nade:.6,flank:.5}];
+// cover: chance per think to break for cover when exposed at range; supp: lay suppressive fire on a fresh last-known position; coord: share contacts with the squad + send a flanker; smoke: pop smoke when falling back hurt
+export const DIFF=[{n:'RECRUIT',err:4.2,react:.95,turn:3.5,dmg:.3,burst:[2,4],pause:[.7,1.3],nade:.2,flank:.2,cover:.1,supp:0,coord:.3,smoke:0},{n:'REGULAR',err:2.9,react:.62,turn:5.5,dmg:.48,burst:[3,5],pause:[.5,.9],nade:.4,flank:.35,cover:.18,supp:.5,coord:.7,smoke:.25},{n:'VETERAN',err:1.9,react:.38,turn:8,dmg:.72,burst:[3,6],pause:[.35,.65],nade:.6,flank:.55,cover:.26,supp:.85,coord:1,smoke:.5}];
 // bot-vs-bot gunfights in versus modes (mode.skirm) run on one fixed profile so match pace does not depend on the chosen difficulty; difficulty only sets how bots treat the player
 export const SKIRM={n:'SKIRM',err:2.35,react:.48,turn:7,burst:[3,6],pause:[.4,.72]};
 const rr=(a,b)=>a+Math.random()*(b-a),ang=a=>Math.atan2(Math.sin(a),Math.cos(a));
@@ -35,7 +36,9 @@ export function think(a,W){const ai=a.ai,L=W.level,D=W.diff,me=a.pos;ai.think=rr
  let best=null,bd=1e9;for(const b of W.actors){if(!b.alive||b.team===a.team||b.ghost)continue;const d=me.distanceTo(b.pos);if(d>80)continue;
   const known=ai.target===b&&ai.seen>0;if(!canSee(a,b,W)){continue;}let s=d;if(b===ai.lastAttacker&&W.time-ai.hurtT<4)s*=.5;if(known)s*=.7;if(b.vip)s*=1.8;if(s<bd){bd=s;best=b;}}
  if(best){if(ai.target!==best||ai.seen<=0){ai.react=(!best.isPlayer&&W.mode&&W.mode.skirm?SKIRM:D).react*rr(.8,1.3)*(W.night&&!best.firingT?1.4:1);ai.onT=0;if(!ai.alerted&&a.team===0)W.callout(a,'contact',best);ai.alerted=true;}
-  ai.target=best;ai.seen=1;ai.last=best.pos.clone();ai.lastT=W.time;}
+  ai.target=best;ai.seen=1;ai.last=best.pos.clone();ai.lastT=W.time;
+  // squad comms: pass the contact to squadmates who have nothing better (difficulty scales how reliably)
+  if(ai.squad!=null&&W.time-(ai.shareT||-9)>1.2&&Math.random()<D.coord){ai.shareT=W.time;for(const b of W.actors){if(b===a||!b.alive||!b.ai||b.team!==a.team||b.ai.squad!==ai.squad||b.ai.seen)continue;if(b.pos.distanceTo(a.pos)>45)continue;b.ai.last=best.pos.clone();b.ai.lastT=W.time;b.ai.alerted=true;b.ai.supT=W.time;}}}
  else{if(ai.seen>0&&ai.target&&!ai.target.alive)ai.target=null;ai.seen=0;}
  // hearing
  if(!best)for(const n of W.noises){if(n.team===a.team||n.t<W.time-.6)continue;const d=me.distanceTo(n.p);if(d<n.r){ai.last=n.p.clone();ai.lastT=W.time;ai.alerted=true;if(!ai.target||!ai.target.alive)ai.target=n.src;break;}}
@@ -48,7 +51,13 @@ export function think(a,W){const ai=a.ai,L=W.level,D=W.diff,me=a.pos;ai.think=rr
  if(tgtA){const d=me.distanceTo(tgtA.pos);
   if(ai.static){ai.state='guard';return;}
   if(ai.cover&&ai.state==='cover'){ai.coverT-=.25;if(ai.coverT<=0&&!lowHp&&!reloading){ai.state='engage';ai.cover.owner=null;ai.cover=null;}return;}
-  if((lowHp||reloading||(d>10&&Math.random()<(ai.role==='dom'?.05:.18)))&&W.time-ai.coverPick>2){ai.coverPick=W.time;const c=pickCover(a,tgtA.pos,W);if(c){if(ai.cover)ai.cover.owner=null;ai.cover=c;c.owner=a;ai.state='tocover';ai.coverT=rr(3,6);setPath(a,c.x,c.z,W);if(reloading&&a.team===0)W.callout(a,'reload');return;}}
+  if((lowHp||reloading||(d>10&&Math.random()<(ai.role==='dom'?D.cover*.3:D.cover)))&&W.time-ai.coverPick>2){ai.coverPick=W.time;const c=pickCover(a,tgtA.pos,W);if(c){if(ai.cover)ai.cover.owner=null;ai.cover=c;c.owner=a;ai.state='tocover';ai.coverT=rr(3,6);setPath(a,c.x,c.z,W);if(reloading&&a.team===0)W.callout(a,'reload');
+    if(lowHp&&a.smokes&&Math.random()<D.smoke&&W.popSmoke){W.popSmoke(a);a.smokes--;}return;}}
+  // squad flanker: when two or more of the squad are already on this target, one swings wide around it
+  if(ai.squad!=null&&d>12&&d<45&&!lowHp&&ai.role!=='guard'&&W.time-(ai.flankPick||-99)>8&&Math.random()<D.flank*.35){let on=0;for(const b of W.actors)if(b!==a&&b.alive&&b.ai&&b.team===a.team&&b.ai.squad===ai.squad&&b.ai.target===tgtA&&b.ai.seen)on++;
+   if(on>=1){ai.flankPick=W.time;const dx=me.x-tgtA.pos.x,dz=me.z-tgtA.pos.z,l=Math.hypot(dx,dz)||1,sd=Math.random()<.5?1:-1,ang0=Math.atan2(dz,dx)+sd*1.25,R0=Math.min(14,l*.8);const gx=tgtA.pos.x+Math.cos(ang0)*R0,gz=tgtA.pos.z+Math.sin(ang0)*R0;
+    if(L.free(gx,gz)&&setPath(a,gx,gz,W)){ai.state='flank';ai.flankT=W.time;ai.flank=sd;if(a.team===0)W.callout(a,sd>0?'flankR':'flankL');return;}}}
+  if(ai.state==='flank'&&ai.path&&W.time-ai.flankT<9)return;
   if(ai.state==='tocover'&&ai.path)return;
   if(ai.role==='dom'&&ai.flag&&Math.hypot(me.x-ai.flag.x,me.z-ai.flag.z)>4.5&&d>10&&!lowHp){ai.state='engage';if(!ai.path||W.time-ai.pathT>3)setPath(a,ai.flag.x+rr(-3,3),ai.flag.z+rr(-3,3),W);return;}
   ai.state='engage';if(d>26&&ai.role!=='guard'&&!ai.static&&Math.random()<.55)setPath(a,tgtA.pos.x+rr(-4,4),tgtA.pos.z+rr(-4,4),W);else if(!ai.path||d<14)ai.path=null;return;}
@@ -107,6 +116,11 @@ export function drive(a,W,dt){const ai=a.ai;ai.think-=dt;if(ai.think<=0)think(a,
  else if(speed>.5)wantYaw=Math.atan2(mx,mz);
  else if(ai.state==='guard'||ai.state==='idle'){ai.lookT-=dt;if(ai.lookT<=0){ai.lookT=rr(1.5,4);ai.lookYaw=(ai.baseYaw??a.yaw)+rr(-1.2,1.2);if(ai.baseYaw==null)ai.baseYaw=a.yaw;}wantYaw=ai.lookYaw;}
  const turn=(tgtA?D.turn:3)*dt;a.yaw+=Math.max(-turn,Math.min(turn,ang(wantYaw-a.yaw)));a.pitch+=(wantPitch-a.pitch)*Math.min(1,dt*6);
+ // --- suppressive fire on a fresh last-known position (keeps heads down while the squad moves)
+ const fresh=ai.last&&ai.target&&ai.target.alive&&W.time-ai.lastT<2.6&&W.time-ai.lastT>.35&&ai.state!=='hunt',told=ai.supT&&W.time-ai.supT<2&&ai.last;
+ if(!tgtA&&a.weapon&&!ai.static&&a.reloadT<=0&&(D.supp||0)>0&&(fresh||told)){
+  if(ai.supRoll===undefined||W.time-(ai.supRollT||-9)>3){ai.supRollT=W.time;ai.supRoll=Math.random()<D.supp;}
+  if(ai.supRoll&&a.mag>0&&a.fireT<=0&&Math.abs(ang(Math.atan2(ai.last.x-a.pos.x,ai.last.z-a.pos.z)-a.yaw))<.2&&a.pos.distanceTo(ai.last)<55){if(ai.pauseT>0)ai.pauseT-=dt;else{const ghost={pos:ai.last,crouchV:0,speed:0,alive:true,isPlayer:false};W.botFire(a,ghost,(D.err*2.2+3)*Math.PI/180);ai.burst++;if(ai.burst>=rr(D.burst[0],D.burst[1])){ai.burst=0;ai.pauseT=rr(D.pause[0],D.pause[1])*1.6;}}}}
  // --- fire
  if(tgtA&&a.weapon){ai.react-=dt;ai.onT+=dt;if(a.reloadT>0)return;if(a.mag<=0){W.reload(a);if(a.team===0&&Math.random()<.3)W.callout(a,'reload');return;}
   const off=Math.abs(ang(wantYaw-a.yaw));if(ai.react>0||off>.12||(a.crouch&&ai.state==='cover'))return;if(ai.pauseT>0){ai.pauseT-=dt;return;}

@@ -118,7 +118,7 @@
 .eye{margin:0;font:700 11px var(--mono);letter-spacing:.24em;color:#c8c2b8}
 h1{margin:6px 0 14px;font:400 clamp(40px,min(8vw,12vh),104px)/.86 var(--disp);letter-spacing:.01em;text-shadow:0 4px 30px rgba(0,0,0,.35)}h1 em,h2 em,h3 em{color:var(--o);font-style:normal}
 h2{margin:4px 0 12px;font:400 clamp(36px,8vh,54px)/1 var(--disp)}
-.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.modes{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .modes button,.maps button{appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(16,17,20,.7);color:var(--fg);padding:9px 10px;text-align:left;cursor:pointer;font-family:var(--mono);transition:background .15s,border-color .15s}
 .modes button b{display:block;font:400 17px/1 var(--disp);letter-spacing:.03em}.modes button small,.maps button small{display:block;margin-top:5px;font:700 9px var(--mono);letter-spacing:.14em;color:var(--mut)}
 .modes button:hover,.maps button:hover{border-color:rgba(255,255,255,.5)}
@@ -146,8 +146,8 @@ kbd{display:inline-block;min-width:18px;padding:1px 5px;border:1px solid rgba(25
 #lweap button small{display:block;font:700 9px var(--mono);letter-spacing:.16em;color:var(--mut)}#lweap button.on{background:var(--o);border-color:var(--o)}#lweap button.on small{color:#2a0e00}
 #lweap .sec{margin-top:6px;font-size:11px;line-height:1.7;color:#cfc9c0}#lweap .sec b{color:#fff}
 #ldetail h4{margin:0;font:400 42px/1 var(--disp)}#ldetail .cls{margin:4px 0 14px;font:700 10px var(--mono);letter-spacing:.18em;color:var(--mut)}
-.stat{display:grid;grid-template-columns:110px 1fr;align-items:center;font:700 10px var(--mono);letter-spacing:.14em;margin:6px 0;color:#d8d2c8}.stat div{height:6px;background:rgba(255,255,255,.12)}.stat i{display:block;height:100%;background:#f4f2ee}
-.atts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:16px}.atts button{appearance:none;text-align:left;border:1px solid rgba(255,255,255,.16);background:rgba(16,17,20,.75);color:var(--fg);padding:9px 11px;cursor:pointer;font:700 11px var(--mono);letter-spacing:.1em}
+.stat{display:grid;grid-template-columns:110px 1fr;align-items:center;font:700 10px var(--mono);letter-spacing:.14em;margin:6px 0;color:#d8d2c8}.stat div{height:6px;background:rgba(255,255,255,.12);position:relative}.stat u{position:absolute;top:0;height:100%;text-decoration:none}.stat u.up{background:#5fe08a}.stat u.dn{background:#ff3b30}.stat i{display:block;height:100%;background:#f4f2ee}
+.atts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:16px}.atts .slot{grid-column:1/-1;margin:8px 0 0;font:700 10px var(--mono);letter-spacing:.2em;color:var(--mut)}.atts button{appearance:none;text-align:left;border:1px solid rgba(255,255,255,.16);background:rgba(16,17,20,.75);color:var(--fg);padding:9px 11px;cursor:pointer;font:700 11px var(--mono);letter-spacing:.1em}
 .atts button small{display:block;margin-top:4px;font:400 10px/1.4 var(--mono);letter-spacing:0;color:var(--mut)}.atts button.on{border-color:var(--o);background:rgba(255,77,0,.18)}.atts button.lock{opacity:.4;cursor:not-allowed}
 #pause{background:rgba(8,9,11,.78)}
 #over{background:linear-gradient(90deg,rgba(8,9,11,.9),rgba(8,9,11,.55))}
@@ -158,5 +158,8 @@ kbd{display:inline-block;min-width:18px;padding:1px 5px;border:1px solid rgba(25
 .back{position:fixed;left:18px;bottom:16px;z-index:6;color:#e8e4dc;text-decoration:none;font:700 11px var(--mono);letter-spacing:.14em;background:rgba(10,11,13,.6);padding:8px 12px;border:1px solid rgba(255,255,255,.18)}
 body.playing .back{display:none}
 body.results .back{left:auto;right:18px;top:16px;bottom:auto}
-@media (max-width:860px){.modes,.maps{grid-template-columns:repeat(2,1fr)}.card{display:none}#rank{display:none}.lgrid{grid-template-columns:1fr}#mmw{width:130px;height:130px}#obj{top:156px}#vit{width:200px}}
+@media (max-width:860px){.modes,.maps{grid-template-columns:repeat(2,1fr)}.modes button:last-child{grid-column:1/-1}.card{display:none}#rank{display:none}.lgrid{grid-template-columns:1fr}#mmw{width:130px;height:130px}#obj{top:156px}#vit{width:200px}}
 @media (max-width:520px){#mmw{top:84px;width:110px;height:110px}#obj{top:204px;max-width:62vw}}
+/* medals + world kill marks */
+#kc div.md{gap:10px}#kc div.md em{font:400 15px var(--disp);letter-spacing:.08em;font-style:normal;color:#fff;padding:2px 9px;border:1px solid rgba(255,210,63,.65);background:rgba(40,30,4,.55)}
+#marks div.kx i{width:12px;height:12px;border:none;background:none;transform:none;position:relative;margin:0}#marks div.kx i:before,#marks div.kx i:after{content:'';position:absolute;left:5px;top:-2px;width:2px;height:16px;background:#ff3b30;box-shadow:0 0 6px rgba(255,59,48,.8)}#marks div.kx i:before{transform:rotate(45deg)}#marks div.kx i:after{transform:rotate(-45deg)}

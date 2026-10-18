@@ -5,10 +5,10 @@ const PI=Math.PI,H=PI/2;
 
 // lighting / atmosphere per time of day (tuned for readable silhouettes, no murk)
 export const LOOK={
- noon:{name:'HIGH NOON',sky:{top:0x3a7ccc,mid:0x8cb8e6,hor:0xe8dfcf,cloud:0xffffff,clouds:.32,sunK:1.1,ground:0xd8c8a8},sun:{dir:[.42,.84,.34],c:0xfff0dc,i:3.3},hemi:{s:0xc8def6,g:0xc8a878,i:1.2},fog:{c:0xe4d8c4,d:.0042},exp:.9,tint:0xfff8f0,sat:1.08,env:.75,amb:'wind'},
- golden:{name:'GOLDEN HOUR',sky:{top:0x30508e,mid:0xc28a78,hor:0xffc28a,cloud:0xffd2b0,clouds:.42,sunK:1.5,ground:0x8a6a58,sunSize:.0013},sun:{dir:[-.72,.3,-.62],c:0xffb27a,i:3.4},hemi:{s:0xb8cae8,g:0x8a6a56,i:1.75},fog:{c:0xe6b896,d:.0045},exp:1.05,tint:0xfff2e6,sat:1.08,env:.85,amb:'harbor'},
- snow:{name:'COLD MORNING',sky:{top:0x3a76c4,mid:0x9ec2e8,hor:0xe8eff7,cloud:0xffffff,clouds:.5,sunK:1.05,ground:0xdfe8f2},sun:{dir:[.58,.44,-.68],c:0xffe6c8,i:2.9},hemi:{s:0xd4e4ff,g:0x9ea8b8,i:1.05},fog:{c:0xdde6f0,d:.0045},exp:.78,tint:0xf6f8ff,sat:1.04,env:.8,amb:'snow'},
- dusk:{name:'BLUE HOUR',sky:{top:0x22305e,mid:0x6c5e94,hor:0xff9c6a,cloud:0xb090b0,clouds:.38,sunK:1.3,ground:0x3a3040,sunSize:.0016},sun:{dir:[.86,.12,.42],c:0xffa068,i:2.2},hemi:{s:0xa4b0e6,g:0x54444c,i:1.55},fog:{c:0x84769a,d:.0072},exp:1.18,tint:0xf6eeff,sat:1.06,env:.65,lampsOn:true,amb:'town'}};
+ noon:{name:'HIGH NOON',sky:{top:0x3a7ccc,mid:0x8cb8e6,hor:0xe8dfcf,cloud:0xffffff,clouds:.32,sunK:1.1,ground:0xd8c8a8},sun:{dir:[.42,.84,.34],c:0xfff0dc,i:3.3},hemi:{s:0xc8def6,g:0xc8a878,i:1.2},fog:{c:0xe4d8c4,d:.0042},exp:.9,tint:0xfff8f0,sat:1.08,env:.75,amb:'wind',grime:0x6a5236,dust:1.1},
+ golden:{name:'GOLDEN HOUR',sky:{top:0x30508e,mid:0xc28a78,hor:0xffc28a,cloud:0xffd2b0,clouds:.42,sunK:1.5,ground:0x8a6a58,sunSize:.0013},sun:{dir:[-.72,.3,-.62],c:0xffb27a,i:3.4},hemi:{s:0xb8cae8,g:0x8a6a56,i:1.75},fog:{c:0xe6b896,d:.0045},exp:1.05,tint:0xfff2e6,sat:1.08,env:.85,amb:'harbor',grime:0x4a3a30,dust:.9},
+ snow:{name:'COLD MORNING',sky:{top:0x3a76c4,mid:0x9ec2e8,hor:0xe8eff7,cloud:0xffffff,clouds:.5,sunK:1.05,ground:0xdfe8f2},sun:{dir:[.58,.44,-.68],c:0xffe6c8,i:2.9},hemi:{s:0xd4e4ff,g:0x9ea8b8,i:1.05},fog:{c:0xdde6f0,d:.0045},exp:.78,tint:0xf6f8ff,sat:1.04,env:.8,amb:'snow',grime:0x3a3c40,dust:.7},
+ dusk:{name:'BLUE HOUR',sky:{top:0x22305e,mid:0x6c5e94,hor:0xff9c6a,cloud:0xb090b0,clouds:.38,sunK:1.3,ground:0x3a3040,sunSize:.0016},sun:{dir:[.86,.12,.42],c:0xffa068,i:2.2},hemi:{s:0xa4b0e6,g:0x54444c,i:1.55},fog:{c:0x84769a,d:.0072},exp:1.18,tint:0xf6eeff,sat:1.06,env:.65,lampsOn:true,amb:'town',grime:0x3a3a34,dust:.6}};
 
 // splat map (R = path texture, G = alt texture) painted in world space
 function splat(L,draw){const S=256,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,S,S);const k=S/(L.half*2);

@@ -7,15 +7,29 @@ const M4=(x=0,y=0,z=0,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1)=>new THREE.Matrix4().compos
 
 // dmg [near, far] over range [start falloff, end falloff] (m); spread in degrees; recoil [vertical, horizontal] degrees per shot
 export const WEAPONS={
- ar:{id:'ar',name:'HAVOC-4',cls:'ASSAULT RIFLE',dmg:[31,23],range:[30,65],rpm:740,auto:1,mag:30,res:150,reload:2.0,reloadE:2.6,ads:.22,adsZoom:1.45,hip:3.0,adsSpr:.06,move:2.6,recoil:[.62,.24],kick:1,speed:1,sway:.22,head:1.5,att:['reddot','grip','supp','ext'],snd:{f:1700,b:95,len:.16}},
- smg:{id:'smg',name:'WASP-9',cls:'SUBMACHINE GUN',dmg:[26,15],range:[12,32],rpm:900,auto:1,mag:32,res:192,reload:1.7,reloadE:2.15,ads:.17,adsZoom:1.3,hip:2.2,adsSpr:.14,move:1.4,recoil:[.44,.3],kick:.8,speed:1.08,sway:.18,head:1.4,att:['reddot','grip','supp','ext'],snd:{f:2300,b:120,len:.11}},
- lmg:{id:'lmg',name:'MAULER-60',cls:'LIGHT MACHINE GUN',dmg:[33,25],range:[35,75],rpm:640,auto:1,mag:60,res:180,reload:3.9,reloadE:4.5,ads:.32,adsZoom:1.4,hip:4.2,adsSpr:.1,move:3.2,recoil:[.55,.34],kick:1.15,speed:.9,sway:.32,head:1.4,att:['reddot','grip','supp','ext'],snd:{f:1300,b:80,len:.2}},
- sniper:{id:'sniper',name:'LONGBOW .338',cls:'SNIPER RIFLE',dmg:[110,96],range:[70,140],rpm:52,auto:0,bolt:1,mag:5,res:30,reload:2.7,reloadE:3.2,ads:.36,adsZoom:4.5,hip:7.5,adsSpr:0,move:6,recoil:[3.4,.7],kick:2.6,speed:.93,sway:1.1,head:3,scope:1,att:['grip','supp','ext'],snd:{f:900,b:60,len:.42}},
- shotgun:{id:'shotgun',name:'BREACHER-12',cls:'SHOTGUN',dmg:[17,4],range:[7,22],rpm:78,auto:0,pump:1,pellets:9,mag:7,res:35,reload:.5,shell:1,ads:.2,adsZoom:1.2,hip:4.6,adsSpr:3.4,move:1,recoil:[2.8,.9],kick:2.2,speed:.98,sway:.2,head:1.3,att:['reddot','grip','ext'],snd:{f:1100,b:70,len:.3}},
- pistol:{id:'pistol',name:'P-11',cls:'PISTOL',dmg:[34,21],range:[12,30],rpm:420,auto:0,mag:12,res:72,reload:1.45,reloadE:1.8,ads:.15,adsZoom:1.25,hip:2.2,adsSpr:.35,move:1.2,recoil:[1.3,.45],kick:1.4,speed:1.1,sway:.15,head:1.6,att:['supp'],snd:{f:2000,b:110,len:.13}}};
+ ar:{id:'ar',name:'HAVOC-4',cls:'ASSAULT RIFLE',dmg:[31,23],range:[30,65],rpm:740,auto:1,mag:30,res:150,reload:2.0,reloadE:2.6,ads:.22,adsZoom:1.45,hip:3.0,adsSpr:.06,move:2.6,recoil:[.62,.24],kick:1,speed:1,sway:.22,head:1.5,att:['reddot','holo','acog','supp','comp','grip','agrip','laser','ext'],snd:{f:1700,b:95,len:.16}},
+ smg:{id:'smg',name:'WASP-9',cls:'SUBMACHINE GUN',dmg:[26,15],range:[12,32],rpm:900,auto:1,mag:32,res:192,reload:1.7,reloadE:2.15,ads:.17,adsZoom:1.3,hip:2.2,adsSpr:.14,move:1.4,recoil:[.44,.3],kick:.8,speed:1.08,sway:.18,head:1.4,att:['reddot','holo','supp','comp','grip','agrip','laser','ext'],snd:{f:2300,b:120,len:.11}},
+ lmg:{id:'lmg',name:'MAULER-60',cls:'LIGHT MACHINE GUN',dmg:[33,25],range:[35,75],rpm:640,auto:1,mag:60,res:180,reload:3.9,reloadE:4.5,ads:.32,adsZoom:1.4,hip:4.2,adsSpr:.1,move:3.2,recoil:[.55,.34],kick:1.15,speed:.9,sway:.32,head:1.4,att:['reddot','holo','acog','supp','comp','grip','laser','ext'],snd:{f:1300,b:80,len:.2}},
+ sniper:{id:'sniper',name:'LONGBOW .338',cls:'SNIPER RIFLE',dmg:[110,96],range:[70,140],rpm:52,auto:0,bolt:1,mag:5,res:30,reload:2.7,reloadE:3.2,ads:.36,adsZoom:4.5,hip:7.5,adsSpr:0,move:6,recoil:[3.4,.7],kick:2.6,speed:.93,sway:1.1,head:3,scope:1,att:['supp','grip','laser','ext'],snd:{f:900,b:60,len:.42}},
+ shotgun:{id:'shotgun',name:'BREACHER-12',cls:'SHOTGUN',dmg:[17,4],range:[7,22],rpm:78,auto:0,pump:1,pellets:9,mag:7,res:35,reload:.5,shell:1,ads:.2,adsZoom:1.2,hip:4.6,adsSpr:3.4,move:1,recoil:[2.8,.9],kick:2.2,speed:.98,sway:.2,head:1.3,att:['reddot','holo','grip','agrip','laser','ext'],snd:{f:1100,b:70,len:.3}},
+ pistol:{id:'pistol',name:'P-11',cls:'PISTOL',dmg:[34,21],range:[12,30],rpm:420,auto:0,mag:12,res:72,reload:1.45,reloadE:1.8,ads:.15,adsZoom:1.25,hip:2.2,adsSpr:.35,move:1.2,recoil:[1.3,.45],kick:1.4,speed:1.1,sway:.15,head:1.6,att:['supp','laser'],snd:{f:2000,b:110,len:.13}}};
 export const PRIMARIES=['ar','smg','lmg','sniper','shotgun'];
-export const ATT={reddot:{name:'RED DOT',rank:1,desc:'Reflex optic. Clean sight picture, tighter ADS zoom.'},grip:{name:'VERTICAL GRIP',rank:2,desc:'Foregrip. 25% less recoil and sway.'},
- supp:{name:'SUPPRESSOR',rank:3,desc:'Stay off enemy radar, no muzzle flash. 15% less range.'},ext:{name:'EXTENDED MAG',rank:4,desc:'50% more rounds per magazine, slightly slower reload.'}};
+// attachments: one per slot; each one trades handling (see handling()). rank = unlock rank
+export const ATT={reddot:{name:'RED DOT',slot:'OPTIC',rank:1,desc:'Reflex optic. Clean sight picture, slightly tighter zoom.'},
+ holo:{name:'HOLOGRAPHIC',slot:'OPTIC',rank:3,desc:'Wide window. 6% faster aim-down-sights.'},
+ acog:{name:'3X COMBAT SCOPE',slot:'OPTIC',rank:6,desc:'2.3x magnification for range. Slower to aim, more sway.'},
+ supp:{name:'SUPPRESSOR',slot:'MUZZLE',rank:3,desc:'Off the enemy radar, no muzzle flash. 15% less range.'},
+ comp:{name:'COMPENSATOR',slot:'MUZZLE',rank:2,desc:'22% less vertical recoil, a little more side kick.'},
+ grip:{name:'VERTICAL GRIP',slot:'UNDERBARREL',rank:2,desc:'25% less recoil and sway.'},
+ agrip:{name:'ANGLED GRIP',slot:'UNDERBARREL',rank:5,desc:'15% faster aim-down-sights, 10% less recoil.'},
+ laser:{name:'TAC LASER',slot:'RAIL',rank:4,desc:'Visible beam. 35% tighter hip-fire spread.'},
+ ext:{name:'EXTENDED MAG',slot:'MAGAZINE',rank:4,desc:'50% more rounds. Slower reload and aim.'}};
+export const SLOTS=['OPTIC','MUZZLE','UNDERBARREL','RAIL','MAGAZINE'];
+// handling multipliers for a weapon + its attachments
+export function handling(w,att={}){const h={ads:1,rec:1,recV:1,recH:1,sway:1,hip:1,zoom:w.adsZoom,reload:1,range:1};
+ if(att.reddot&&!w.scope)h.zoom*=1.08;if(att.holo&&!w.scope){h.zoom*=1.05;h.ads*=.94;}if(att.acog&&!w.scope){h.zoom=2.3;h.ads*=1.22;h.sway*=1.35;}
+ if(att.supp)h.range*=.85;if(att.comp){h.recV*=.78;h.recH*=1.12;}if(att.grip){h.rec*=.75;h.sway*=.75;}if(att.agrip){h.ads*=.85;h.rec*=.9;}
+ if(att.laser)h.hip*=.65;if(att.ext){h.reload*=1.12;h.ads*=1.05;}return h;}
 export const RANKS=['RECRUIT','PRIVATE','PRIVATE 1ST CLASS','SPECIALIST','CORPORAL','SERGEANT','STAFF SERGEANT','SERGEANT 1ST CLASS','MASTER SERGEANT','2ND LIEUTENANT','1ST LIEUTENANT','CAPTAIN','MAJOR','LT. COLONEL','COLONEL','BRIGADIER','COMMANDER'];
 export const rankXP=r=>r<=0?0:Math.round(400*r+180*r*r);
 export function rankOf(xp){let r=0;while(r<RANKS.length-1&&xp>=rankXP(r+1))r++;return r;}
@@ -38,10 +52,13 @@ const frontPost=(u,v,base)=>[{geo:BX(.0026,v-base,.004),m:at(u,(v+base)/2)},{geo
 const rail=(u0,u1,v,w=.022)=>{const L=[{geo:BX(w,.006,u1-u0),m:at((u0+u1)/2,v+.003)}];for(let u=u0+.006;u<u1-.004;u+=.0125)L.push({geo:BX(w+.003,.005,.006),m:at(u,v+.008)});return L;};
 
 export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o);
- const M={blk:std({color:0x62666e,roughness:.45,metalness:.3,side:THREE.DoubleSide}),poly:std({color:0x54585e,roughness:.58,metalness:.05}),fde:std({color:0x9c8a66,roughness:.66,metalness:.04}),od:std({color:0x56603e,roughness:.6,metalness:.06}),
-  steel:std({color:0x8a8e94,roughness:.26,metalness:1}),dark:std({color:0x121315,roughness:.5,metalness:.4}),wood:std({map:TX.wood.map,color:0xb07848,roughness:.5}),brass:std({color:0xd8a848,roughness:.3,metalness:1}),
-  glove:std({color:0x4a4234,roughness:.85}),knuck:std({color:0x2c2a26,roughness:.7}),sleeve:std({map:TX.kitA,roughness:.95}),cuff:std({color:0x3e4430,roughness:.9}),watch:std({color:0x1a1a1a,roughness:.4,metalness:.4}),
-  lens:std({color:0x2a5068,roughness:.05,metalness:.9,transparent:true,opacity:.35,depthWrite:false}),dot:new THREE.MeshBasicMaterial({color:new THREE.Color(10,.4,.3)}),
+ const GF=TX.gun;if(GF){for(const t of[GF.map,GF.roughnessMap,GF.normalMap])t.repeat.set(7,7);GF.stipple.repeat.set(9,9);}
+ const phys=o=>new THREE.MeshPhysicalMaterial(o),worn=o=>phys(GF?{map:GF.map,roughnessMap:GF.roughnessMap,normalMap:GF.normalMap,normalScale:new THREE.Vector2(.4,.4),roughness:.82,clearcoat:.35,clearcoatRoughness:.42,...o}:o),stip=o=>std(GF?{normalMap:GF.stipple,normalScale:new THREE.Vector2(.45,.45),...o}:o);
+ const M={blk:worn({color:0x575a60,metalness:.3,clearcoat:.2,side:THREE.DoubleSide}),poly:stip({color:0x44474d,roughness:.6,metalness:.04}),fde:stip({color:0x9c8a66,roughness:.72,metalness:.03}),od:stip({color:0x56603e,roughness:.7,metalness:.04}),
+  steel:worn({color:0x8a8e94,metalness:.75,roughness:.55,clearcoat:.15}),dark:std({color:0x101113,roughness:.55,metalness:.5}),wood:std({map:TX.wood.map,color:0xb07848,roughness:.5}),brass:std({color:0xd8a848,roughness:.28,metalness:1}),
+  glove:stip({color:0x4a4234,roughness:.88}),knuck:std({color:0x2c2a26,roughness:.7}),sleeve:std({map:TX.kitA,roughness:.95,normalMap:TX.fabricN||null,normalScale:new THREE.Vector2(.8,.8)}),cuff:std({color:0x3e4430,roughness:.9}),watch:std({color:0x1a1a1a,roughness:.4,metalness:.4}),
+  lens:std({color:0x2a5068,roughness:.05,metalness:.9,transparent:true,opacity:.35,depthWrite:false}),coat:std({color:0x183040,roughness:.04,metalness:1,transparent:true,opacity:.55,depthWrite:false}),dot:new THREE.MeshBasicMaterial({color:new THREE.Color(10,.4,.3)}),
+  beam:new THREE.MeshBasicMaterial({color:new THREE.Color(.4,6,.6)}),
   flash:new THREE.MeshBasicMaterial({map:TX.flash,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,color:new THREE.Color(2.4,1.9,1.3),side:THREE.DoubleSide}),
   flashS:new THREE.MeshBasicMaterial({map:TX.flashSide,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,color:new THREE.Color(2.2,1.7,1.1),side:THREE.DoubleSide})};
  const root=new THREE.Group();
@@ -55,6 +72,18 @@ export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o
   add(r,new THREE.CircleGeometry(.016,18),M.lens,at(.024,.031));add(r,new THREE.SphereGeometry(.0011,6,4),M.dot,at(.03,.031));r.userData.h=v+.031;return r;};
  const supp=(p,u0,v,r=.019,len=.17)=>{const s=new THREE.Group();s.position.set(0,v,-u0);p.add(s);parts(s,[[M.blk,[{geo:ZC(r,len,18),m:at(len/2,0)},{geo:ZC(r*1.08,.012,18),m:at(.006,0)},{geo:ZC(r*1.04,.008,18),m:at(len-.004,0)}]]]);return s;};
  const vgrip=(p,u0,v)=>{const s=new THREE.Group();s.position.set(0,v,-u0);p.add(s);parts(s,[[M.poly,[{geo:CY(.013,.015,.085,12),m:M4(0,-.045,0,.12)},{geo:rbox(.024,.012,.04,.004),m:at(0,-.004)}]]]);return s;};
+ // holographic sight: hooded window with a projected ring reticle
+ const holo=(p,u0,v)=>{const r=new THREE.Group();r.position.set(0,v,-u0);p.add(r);parts(r,[[M.blk,[{geo:rbox(.03,.012,.07,.003),m:at(0,.006)},{geo:rbox(.005,.036,.046,.0015),m:at(.006,.03,.0175)},{geo:rbox(.005,.036,.046,.0015),m:at(.006,.03,-.0175)},{geo:rbox(.04,.005,.05,.0015),m:at(.006,.05)},
+   {geo:rbox(.036,.006,.006,.0015),m:at(.03,.012)},{geo:rbox(.012,.01,.02,.002),m:at(-.026,.017,.012)},{geo:rbox(.012,.01,.02,.002),m:at(-.026,.017,-.012)}]]]);
+  add(r,new THREE.PlaneGeometry(.03,.032),M.coat,at(.026,.032));add(r,new THREE.TorusGeometry(.0042,.0004,4,24),M.dot,at(.03,.032));add(r,new THREE.SphereGeometry(.0005,4,3),M.dot,at(.03,.032));r.userData.h=v+.032;return r;};
+ // 3x combat scope: tube, objective bell, eyepiece, fibre strip, chevron reticle
+ const acog=(p,u0,v)=>{const r=new THREE.Group();r.position.set(0,v,-u0);p.add(r);parts(r,[[M.blk,[{geo:rbox(.026,.016,.07,.003),m:at(0,.008)},{geo:ZC(.0165,.1,18),m:at(0,.038)},{geo:ZC(.022,.034,18,.0165),m:at(.064,.038)},{geo:ZC(.0175,.03,18),m:at(-.064,.038)},
+   {geo:rbox(.007,.006,.07,.002),m:at(0,.058)},{geo:rbox(.012,.012,.02,.003),m:at(.0,.038,.019)},{geo:rbox(.014,.014,.014,.003),m:at(0,.058,0)}]],[M.dark,[{geo:ZC(.0205,.002,18),m:at(.081,.038)}]]]);
+  add(r,new THREE.CircleGeometry(.019,20),M.coat,at(.08,.038));add(r,new THREE.CircleGeometry(.0155,20),M.lens,at(-.079,.038,0,0,PI,0));const ch=new THREE.ConeGeometry(.0014,.0034,3);add(r,ch,M.dot,at(.07,.0366));r.userData.h=v+.038;return r;};
+ const comp=(p,u0,v,rr=.0125)=>{const s=new THREE.Group();s.position.set(0,v,-u0);p.add(s);parts(s,[[M.steel,[{geo:ZC(rr*1.25,.06,14),m:at(.03,0)}]],[M.dark,[...[.012,.026,.04].map(q=>({geo:BX(.004,.006,.008),m:at(q,rr*1.2)})),...[.012,.026,.04].flatMap(q=>[{geo:BX(.006,.004,.008),m:at(q,0,rr*1.2)},{geo:BX(.006,.004,.008),m:at(q,0,-rr*1.2)}])]]]);return s;};
+ const agrip=(p,u0,v)=>{const s=new THREE.Group();s.position.set(0,v,-u0);p.add(s);parts(s,[[M.poly,[{geo:P([[-.035,0],[.03,0],[.05,-.032],[.035,-.036],[-.012,-.012]],.024,.004)},{geo:rbox(.024,.01,.07,.003),m:at(.005,.002)}]]]);return s;};
+ const laser=(p,u0,v,x)=>{const s=new THREE.Group();s.position.set(x,v,-u0);p.add(s);parts(s,[[M.blk,[{geo:rbox(.02,.024,.052,.004),m:at(0,0)},{geo:rbox(.008,.012,.02,.002),m:at(-.01,0,x>0?.012:-.012)}]],[M.dark,[{geo:ZC(.005,.006,10),m:at(.027,.004)}]]]);
+  const tip=add(s,new THREE.SphereGeometry(.0028,8,6),M.beam,at(.03,.004));s.userData.tip=tip;return s;};
  const grip=(u0,v0,w=.03,c=M.poly)=>[c,[{geo:P([[u0-.032,v0],[u0+.02,v0],[u0+.004,v0-.098],[u0-.05,v0-.104],[u0-.053,v0-.09]],w,.004)}]];
 
  // ---- HAVOC-4 assault rifle
@@ -67,8 +96,8 @@ export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o
   u.mag=add(g,merge([{geo:P([[-.031,0],[.028,0],[.05,-.17],[-.006,-.18]],.03,.004)},{geo:rbox(.034,.014,.064,.004),m:at(.025,-.176,0,-.12)}]),M.poly,at(.1,-.03));u.magY=-.03;u.magZ=-.1;
   u.ext=add(u.mag,rbox(.032,.06,.062,.005),M.poly,at(.03,-.2,0,-.12));
   u.slots.iron=new THREE.Group();g.add(u.slots.iron);parts(u.slots.iron,[[M.blk,[...rearAp(-.02,.113,.086),...frontPost(.455,.113,.094)]]]);
-  u.slots.reddot=redDot(g,.04,.086);u.slots.supp=supp(g,.64,.058);u.slots.fh=new THREE.Group();g.add(u.slots.fh);u.slots.grip=vgrip(g,.36,.026);
-  u.sight={iron:.113,reddot:.117};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.058,-.67);g.add(u.muzzle);u.hand=[new V(0,-.06,.035),new V(0,-.012,-.3)];
+  u.slots.reddot=redDot(g,.04,.086);u.slots.holo=holo(g,.04,.086);u.slots.acog=acog(g,.02,.086);u.slots.supp=supp(g,.64,.058);u.slots.comp=comp(g,.64,.058);u.slots.fh=new THREE.Group();g.add(u.slots.fh);u.slots.grip=vgrip(g,.36,.026);u.slots.agrip=agrip(g,.3,.026);u.slots.laser=laser(g,.4,.056,.032);
+  u.sight={iron:.113,reddot:.117,holo:.118,acog:.124};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.058,-.67);g.add(u.muzzle);u.hand=[new V(0,-.06,.035),new V(0,-.012,-.3)];
   u.bolt=add(g,rbox(.012,.012,.03,.003),M.steel,at(-.075,.07,0));u.eject=new V(.02,.06,-.07);});
  // ---- WASP-9 SMG
  mkGun('smg',(g,u)=>{parts(g,[[M.poly,[{geo:P([[-.07,-.004],[.2,-.004],[.21,.02],[.21,.075],[-.06,.078],[-.07,.06]],.046,.006)},{geo:P([[.09,-.004],[.2,-.004],[.2,-.03],[.1,-.03]],.044,.004)},...rail(-.05,.17,.078,.02)]],
@@ -76,8 +105,8 @@ export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o
    [M.dark,[{geo:BX(.002,.018,.05),m:at(.06,.05,.0235)}]]]);
   u.mag=add(g,merge([{geo:P([[-.022,0],[.02,0],[.03,-.18],[-.012,-.185]],.026,.004)}]),M.blk,at(.07,-.02));u.magY=-.02;u.magZ=-.07;u.ext=add(u.mag,rbox(.026,.07,.04,.004),M.blk,at(.012,-.21));
   u.slots.iron=new THREE.Group();g.add(u.slots.iron);parts(u.slots.iron,[[M.blk,[...rearAp(-.03,.094,.078),...frontPost(.172,.094,.078)]]]);
-  u.slots.reddot=redDot(g,-.0,.078);u.slots.supp=supp(g,.32,.04,.018,.15);u.slots.fh=new THREE.Group();g.add(u.slots.fh);u.slots.grip=vgrip(g,.16,-.03);
-  u.sight={iron:.094,reddot:.109};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.04,-.33);g.add(u.muzzle);u.hand=[new V(0,-.065,.035),new V(0,-.03,-.16)];u.eject=new V(.025,.05,-.06);});
+  u.slots.reddot=redDot(g,-.0,.078);u.slots.holo=holo(g,-.0,.078);u.slots.supp=supp(g,.32,.04,.018,.15);u.slots.comp=comp(g,.32,.04,.011);u.slots.fh=new THREE.Group();g.add(u.slots.fh);u.slots.grip=vgrip(g,.16,-.03);u.slots.agrip=agrip(g,.14,-.03);u.slots.laser=laser(g,.17,.042,.03);
+  u.sight={iron:.094,reddot:.109,holo:.11};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.04,-.33);g.add(u.muzzle);u.hand=[new V(0,-.065,.035),new V(0,-.03,-.16)];u.eject=new V(.025,.05,-.06);});
  // ---- MAULER-60 LMG
  mkGun('lmg',(g,u)=>{parts(g,[[M.blk,[{geo:P([[-.1,-.004],[.26,-.004],[.27,.03],[.26,.092],[-.08,.1],[-.1,.08]],.062,.006)},{geo:P([[-.05,.092],[.22,.092],[.21,.112],[-.04,.118]],.058,.004)},...rail(-.04,.2,.118,.024),
     {geo:ZC(.0125,.36),m:at(.47,.05)},{geo:ZC(.017,.05,12),m:at(.66,.05)},{geo:CY(.004,.004,.2,6),m:at(.42,.022,.012,PI/2-.1)},{geo:CY(.004,.004,.2,6),m:at(.42,.022,-.012,PI/2-.1)},
@@ -86,8 +115,8 @@ export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o
    [M.dark,[...[.3,.34,.38,.42].flatMap(q=>[{geo:BX(.003,.014,.024),m:at(q,.054,.029)},{geo:BX(.003,.014,.024),m:at(q,.054,-.029)}])]],grip(0,-.002)]);
   u.mag=add(g,merge([{geo:rbox(.012,.03,.1,.003),m:at(0,.0,0)},{geo:rbox(.016,.008,.1,.002),m:at(0,.018,0)}]),M.brass,at(.11,.06,-.04));u.magY=.06;u.magZ=-.11;u.ext=add(u.mag,BX(.001,.001,.001),M.brass);u.belt=u.mag;
   u.slots.iron=new THREE.Group();g.add(u.slots.iron);parts(u.slots.iron,[[M.blk,[...rearAp(-.01,.135,.118),{geo:BX(.01,.072,.012),m:at(.59,.098)},...frontPost(.59,.135,.122)]]]);
-  u.slots.reddot=redDot(g,.03,.118);u.slots.supp=supp(g,.66,.05,.022,.18);u.slots.fh=new THREE.Group();g.add(u.slots.fh);u.slots.grip=vgrip(g,.36,.02);
-  u.sight={iron:.135,reddot:.149};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.05,-.69);g.add(u.muzzle);u.hand=[new V(0,-.065,.035),new V(0,-.006,-.33)];u.eject=new V(.03,.06,-.04);
+  u.slots.reddot=redDot(g,.03,.118);u.slots.holo=holo(g,.03,.118);u.slots.acog=acog(g,.02,.118);u.slots.supp=supp(g,.66,.05,.022,.18);u.slots.comp=comp(g,.66,.05,.0135);u.slots.fh=new THREE.Group();g.add(u.slots.fh);u.slots.grip=vgrip(g,.36,.02);u.slots.laser=laser(g,.38,.05,.036);
+  u.sight={iron:.135,reddot:.149,holo:.15,acog:.156};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.05,-.69);g.add(u.muzzle);u.hand=[new V(0,-.065,.035),new V(0,-.006,-.33)];u.eject=new V(.03,.06,-.04);
   u.cover=g.children[0];});
  // ---- LONGBOW sniper
  mkGun('sniper',(g,u)=>{parts(g,[[M.od,[{geo:P([[-.08,-.012],[.43,-.012],[.44,.012],[.43,.05],[-.06,.052]],.054,.008)},{geo:P([[-.08,.0],[-.42,-.022],[-.44,.095],[-.4,.1],[-.24,.098],[-.2,.11],[-.12,.11],[-.1,.06]],.042,.008)}]],grip(0,-.006,.032,M.od),
@@ -97,19 +126,19 @@ export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o
   add(g,new THREE.CircleGeometry(.024,18),M.lens,at(.275,.13));add(g,new THREE.CircleGeometry(.02,18),M.lens,at(-.161,.13,0,0,PI,0));
   u.mag=add(g,rbox(.03,.03,.07,.004),M.blk,at(.07,-.06));u.magY=-.06;u.magZ=-.07;u.ext=add(u.mag,rbox(.03,.03,.07,.004),M.blk,at(0,-.025));
   u.bolt=add(g,merge([{geo:CY(.005,.005,.05,8),m:M4(.03,.07,.0,0,0,PI/2)},{geo:new THREE.SphereGeometry(.011,10,8),m:M4(.056,.07,0)}]),M.steel);
-  u.slots.supp=supp(g,1.0,.06,.024,.2);u.slots.grip=vgrip(g,.34,-.012);u.sight={scope:.13};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.06,-1.01);g.add(u.muzzle);u.hand=[new V(0,-.07,.035),new V(0,-.04,-.32)];u.eject=new V(.03,.07,-.05);});
+  u.slots.supp=supp(g,1.0,.06,.024,.2);u.slots.grip=vgrip(g,.34,-.012);u.slots.laser=laser(g,.3,.02,.034);u.sight={scope:.13};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.06,-1.01);g.add(u.muzzle);u.hand=[new V(0,-.07,.035),new V(0,-.04,-.32)];u.eject=new V(.03,.07,-.05);});
  // ---- BREACHER-12 pump shotgun
  mkGun('shotgun',(g,u)=>{parts(g,[[M.blk,[{geo:P([[-.05,0],[.17,0],[.175,.03],[.17,.07],[-.04,.072],[-.05,.06]],.046,.006)},{geo:ZC(.0145,.5,14),m:at(.42,.055)},{geo:ZC(.0135,.4,14),m:at(.37,.022)},{geo:rbox(.03,.02,.02,.004),m:at(.62,.04)},{geo:new THREE.SphereGeometry(.0035,8,6),m:at(.66,.072)}]],
    [M.poly,[{geo:P([[-.05,.01],[-.37,-.035],[-.38,.062],[-.36,.068],[-.05,.07]],.042,.008)}]],grip(0,.004)]);
   u.pump=add(g,merge([{geo:rbox(.05,.046,.17,.012),m:at(0,0)},...[-.06,-.03,0,.03,.06].map(q=>({geo:BX(.052,.004,.008),m:at(q,-.022)}))]),M.poly,at(.3,.02));u.pumpZ=-.3;u.mag=null;
   u.slots.iron=new THREE.Group();g.add(u.slots.iron);parts(u.slots.iron,[[M.blk,[...rearAp(.08,.082,.07),{geo:BX(.006,.012,.008),m:at(.645,.074)}]],[M.steel,[{geo:new THREE.SphereGeometry(.0032,8,6),m:at(.645,.0815)}]]]);
-  u.slots.reddot=redDot(g,.03,.072);u.slots.grip=vgrip(g,.3,-.01);u.slots.extTube=add(g,ZC(.0135,.12,14),M.blk,at(.63,.022));
-  u.sight={iron:.082,reddot:.103};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.055,-.67);g.add(u.muzzle);u.hand=[new V(0,-.065,.035),new V(0,-.0,-.3)];u.eject=new V(.03,.05,-.05);});
+  u.slots.reddot=redDot(g,.03,.072);u.slots.holo=holo(g,.03,.072);u.slots.grip=vgrip(g,.3,-.01);u.slots.agrip=agrip(g,.3,-.01);u.slots.laser=laser(g,.5,.05,.03);u.slots.extTube=add(g,ZC(.0135,.12,14),M.blk,at(.63,.022));
+  u.sight={iron:.082,reddot:.103,holo:.104};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.055,-.67);g.add(u.muzzle);u.hand=[new V(0,-.065,.035),new V(0,-.0,-.3)];u.eject=new V(.03,.05,-.05);});
  // ---- P-11 pistol
  mkGun('pistol',(g,u)=>{u.slide=add(g,merge([{geo:P([[-.03,.034],[.15,.034],[.152,.06],[.145,.066],[-.022,.068],[-.03,.06]],.028,.004)},{geo:BX(.0035,.013,.005),m:at(.14,.0725)},{geo:BX(.006,.013,.007),m:at(-.016,.0725,.0065)},{geo:BX(.006,.013,.007),m:at(-.016,.0725,-.0065)},...[0,.008,.016,.024].map(q=>({geo:BX(.029,.02,.003),m:at(-.02+q,.05)}))]),M.blk);
   parts(g,[[M.poly,[{geo:P([[-.025,0],[.15,0],[.15,.034],[-.025,.034]],.026,.004)},{geo:P([[-.036,.004],[.018,.004],[.002,-.096],[-.055,-.094],[-.056,-.08]],.03,.005)},{geo:P([[.0,0],[.07,0],[.07,-.006],[.05,-.03],[.0,-.03]],.024,.002)}]],[M.dark,[{geo:ZC(.0055,.004,10),m:at(.152,.05)}]]]);
   u.mag=add(g,rbox(.024,.02,.04,.004),M.blk,at(-.02,-.1,0,.25));u.magY=-.1;u.magZ=.02;
-  u.slots.supp=supp(g,.15,.05,.016,.12);u.sight={iron:.0785};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.05,-.16);g.add(u.muzzle);u.hand=[new V(0,-.06,.03),new V(-.012,-.075,.035)];u.eject=new V(.02,.06,-.03);});
+  u.slots.supp=supp(g,.15,.05,.016,.12);u.slots.laser=laser(g,.09,.012,0);u.sight={iron:.0785};u.muzzle=new THREE.Object3D();u.muzzle.position.set(0,.05,-.16);g.add(u.muzzle);u.hand=[new V(0,-.06,.03),new V(-.012,-.075,.035)];u.eject=new V(.02,.06,-.03);});
  // ---- knife + grenade
  const knife=new THREE.Group();knife.visible=false;root.add(knife);parts(knife,[[M.steel,[{geo:P([[0,-.01],[.17,-.004],[.19,.006],[.16,.014],[0,.014]],.004,.0008)}]],[M.poly,[{geo:rbox(.024,.03,.11,.008),m:at(-.055,.002)},{geo:rbox(.034,.04,.008,.003),m:at(-.003,.002)}]]]);
  const nade=new THREE.Group();nade.visible=false;root.add(nade);parts(nade,[[M.od,[{geo:new THREE.SphereGeometry(.032,14,12),m:M4(0,0,0,0,0,0,1,1.15,1)}]],[M.blk,[{geo:CY(.012,.014,.025,10),m:M4(0,.042,0)},{geo:BX(.012,.05,.008),m:M4(.028,.02,0,0,0,-.25)},{geo:new THREE.TorusGeometry(.011,.002,6,14),m:M4(-.006,.058,0,0,PI/2,0)}]]]);
@@ -131,6 +160,7 @@ export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o
  return{root,guns,knife,nade,arms,pose,M,casings:cs};}
 
 // toggle attachment meshes for a weapon + loadout attachments
-export function applyAttachments(g,id,att){const u=g.userData,s=u.slots;for(const k in s)s[k].visible=false;
- if(s.iron)s.iron.visible=!att.reddot;if(s.reddot)s.reddot.visible=!!att.reddot;if(s.supp)s.supp.visible=!!att.supp;if(s.fh)s.fh.visible=!att.supp;if(s.grip)s.grip.visible=!!att.grip;if(s.extTube)s.extTube.visible=!!att.ext;if(u.ext)u.ext.visible=!!att.ext;
- u.sightY=u.sight.scope??(att.reddot&&u.sight.reddot?u.sight.reddot:u.sight.iron);u.muzzle.position.z=u.muzzle.userData.z0??(u.muzzle.userData.z0=u.muzzle.position.z);if(att.supp&&s.supp)u.muzzle.position.z-=.16;}
+export function applyAttachments(g,id,att){const u=g.userData,s=u.slots;for(const k in s)s[k].visible=false;const opt=att.acog&&s.acog?'acog':att.holo&&s.holo?'holo':att.reddot&&s.reddot?'reddot':null;
+ if(s.iron)s.iron.visible=!opt;if(opt)s[opt].visible=true;if(s.supp)s.supp.visible=!!att.supp;if(s.comp)s.comp.visible=!!att.comp&&!att.supp;if(s.fh)s.fh.visible=!att.supp&&!att.comp;
+ if(s.grip)s.grip.visible=!!att.grip;if(s.agrip)s.agrip.visible=!!att.agrip&&!att.grip;if(s.laser)s.laser.visible=!!att.laser;if(s.extTube)s.extTube.visible=!!att.ext;if(u.ext)u.ext.visible=!!att.ext;
+ u.sightY=u.sight.scope??(opt&&u.sight[opt]?u.sight[opt]:u.sight.iron);u.optic=opt;u.muzzle.position.z=u.muzzle.userData.z0??(u.muzzle.userData.z0=u.muzzle.position.z);if(att.supp&&s.supp)u.muzzle.position.z-=.16;else if(att.comp&&s.comp)u.muzzle.position.z-=.055;}
