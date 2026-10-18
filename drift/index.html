@@ -18,7 +18,7 @@
   <div id="combo"><div id="chainw"><b id="chain"></b><i id="mult"></i></div><div class="gb"><i id="grace"></i></div><div id="tags"></div></div>
   <div id="pops"></div>
   <div id="anglew"><svg viewBox="0 0 200 110"><path class="bg" d="M14 100 A86 86 0 0 1 186 100"/><path id="angarc" class="fg" d="M14 100 A86 86 0 0 1 186 100"/></svg><b id="angle">0°</b><span>DRIFT ANGLE</span></div>
-  <div id="tandem" hidden><span>TANDEM</span><div class="tb"><i id="tandb"></i></div><em id="tandd">—</em></div>
+  <div id="tandem" hidden><span>TANDEM</span><div class="tb"><i id="tandb"></i></div><em id="tandd">—</em><div id="cpuw"><span>LEAD CPU</span><b id="cpus">0</b></div></div>
   <div id="gauge"><svg viewBox="0 0 200 200"><circle class="bg" cx="100" cy="100" r="84"/><circle id="red" class="red" cx="100" cy="100" r="84"/><circle id="rpm" class="fg" cx="100" cy="100" r="84"/></svg>
     <b id="kmh">0</b><span>KM/H</span><i id="gear">1</i><em id="trans">AUTO</em><div class="boost"><i id="boost"></i></div><u id="cam">CHASE</u></div>
   <canvas id="mini" width="300" height="300"></canvas>
@@ -31,13 +31,15 @@
   <h1>SIDE<br>WAYS<em>.</em></h1>
   <p class="how">Throw it in, hold the angle, link the corners. Points flow at <b>angle × speed</b>, the chain multiplier grows the longer you stay sideways and banks when you straighten. Touch a wall and it's gone.</p>
   <div class="opts">
-    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0" class="on">SOLO</button><button data-v="1">TANDEM</button></div>
-    <label>TRACK</label><div class="seg" id="o-track"></div>
-    <label>RUN</label><div class="seg" id="o-time"><button data-v="2" class="on">2 MIN</button><button data-v="4">4 MIN</button><button data-v="6">6 MIN</button></div>
-    <label>LEAD CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0" class="on">SOLO</button><button data-v="1">TANDEM BATTLE</button><button data-v="2">CAREER</button></div>
+    <label class="fr">TRACK</label><div class="seg fr" id="o-track"></div>
+    <label class="fr">TIME</label><div class="seg fr" id="o-tod"><button data-v="auto" class="on">TRACK</button><button data-v="day">DAY</button><button data-v="sunset">SUNSET</button><button data-v="night">NIGHT</button></div>
+    <label class="fr">RUN</label><div class="seg fr" id="o-time"><button data-v="2" class="on">2 MIN</button><button data-v="4">4 MIN</button><button data-v="6">6 MIN</button></div>
+    <label class="fr">LEAD CPU</label><div class="seg fr" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
     <label>ASSIST</label><div class="sl"><input type="range" id="o-assist" min="0" max="100" step="5" value="60"><b id="o-assistv">60%</b><span>counter-steer</span></div>
     <label>GEARBOX</label><div class="seg" id="o-trans"><button data-v="1" class="on">AUTO</button><button data-v="0">MANUAL</button></div>
   </div>
+  <div id="ladder" hidden></div>
   <p class="tinfo" id="tinfo"></p>
   <div class="row"><button id="go" class="go">DRIFT →</button><button id="gar" class="ghost">GARAGE</button><span class="money" id="mmoney">$0</span></div>
 </div>
@@ -69,13 +71,15 @@
 <div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>ON<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="restart" class="ghost">RESTART</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
 
 <div id="over" class="scr" hidden>
+  <div id="rlabel"></div>
   <p class="eye" id="oeye">RUN COMPLETE</p>
   <div id="medal"></div>
   <p class="res" id="ores">0</p>
   <p class="sub">POINTS</p>
+  <div id="battle" hidden></div>
   <table id="stats"></table>
   <p class="tok" id="otok"></p>
-  <div class="row"><button id="again" class="go">RUN IT BACK</button><button id="ogar" class="ghost">GARAGE</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+  <div class="row"><button id="onext" class="go" hidden>NEXT EVENT →</button><button id="again" class="go">RUN IT BACK</button><button id="ogar" class="ghost">GARAGE</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
 </div>
 <a class="back" href="../">← ARCADE</a>
 <script type="module" src="game.js"></script>

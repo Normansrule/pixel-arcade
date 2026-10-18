@@ -12,9 +12,12 @@ export class Lead{
   for(let i=0;i<n;i++){let k=0;for(let j=-4;j<=10;j++)k=Math.max(k,Math.abs(B.curv[(i+j+n)%n]));vt[i]=Math.min(vmax,Math.sqrt(aLat/Math.max(k,1e-4)));}
   for(let p=0;p<2;p++)for(let i=n-1;i>=0;i--){const nx=vt[(i+1)%n];vt[i]=Math.min(vt[i],Math.sqrt(nx*nx+2*5.5*st));}
   for(let i=0;i<n;i++){let c=0,w=0;for(let j=-6;j<=22;j++){const f=1-Math.abs(j-8)/16;c+=B.curv[(i+j+n)%n]*f;w+=f;}c/=w;const a=cl(Math.abs(c)*1600,0,46)*diff.angle;ang[i]=Math.abs(c)>.006?Math.sign(c)*Math.max(18,a):0;
-   let c2=0;for(let j=6;j<=26;j++)c2+=B.curv[(i+j)%n];lat[i]=cl(-c2/20*900,-1,1)*B.hw[i]*.42;}
+   // line: swing wide before a corner (outside entry), tuck toward the clip as the corner tightens, run out wide on exit.
+   // The difficulty decides how much of the road it dares to use.
+   let c2=0;for(let j=8;j<=30;j++)c2+=B.curv[(i+j)%n];c2/=23;let c0=0;for(let j=-4;j<=4;j++)c0+=B.curv[(i+j+n)%n];c0/=9;let c3=0;for(let j=-24;j<=-6;j++)c3+=B.curv[(i+j+n)%n];c3/=19;
+   const use=diff.line??.42;lat[i]=cl((-c2*1.0+c0*.55-c3*.5)*55,-1,1)*B.hw[i]*use;}
   for(let p=0;p<3;p++){const a=ang.slice(),l=lat.slice();for(let i=0;i<n;i++){ang[i]=(a[(i-2+n)%n]+a[(i-1+n)%n]+a[i]+a[(i+1)%n]+a[(i+2)%n])/5;lat[i]=(l[(i-3+n)%n]+l[i]+l[(i+3)%n])/3;}}
-  this.vt=vt;this.ang=ang;this.lat=lat;this.reset(0);}
+  this.vt=vt;this.ang=ang;this.lat=lat;this.errT=0;this.wob=0;this.reset(0);}
  reset(s){this.s=s;this.v=0;this.l=0;this.a=0;this.yaw=0;this.x=0;this.z=0;this.y=0;this.vx=0;this.vz=0;this.beta=0;this.wait=true;this.wheelRot=0;this.steer=0;this.pose(0);}
  idx(){return Math.floor(this.s/this.B.step)%this.B.n;}
  pose(dt){const B=this.B,n=B.n,f=this.s/B.step,i=Math.floor(f)%n,j=(i+1)%n,t=f-Math.floor(f);
@@ -26,8 +29,11 @@ export class Lead{
   const gap=playerS==null?this.diff.gap:sdiff(B,this.s,playerS);let tv=this.vt[i];
   if(this.wait&&gap>this.diff.gap*1.6)tv=0;else this.wait=false;
   if(gap>this.diff.gap*3.2)tv=Math.min(tv,Math.max(5,pv*.8));else if(gap>this.diff.gap*2)tv=Math.min(tv*.85,Math.max(8,pv*1.05));else if(gap<this.diff.gap*.5)tv*=1.12;
+  // mistakes: now and then a scrappy corner (the angle collapses, the line drifts wide); rarer the harder the CPU
+  this.errT-=dt;if(this.wob>0)this.wob-=dt;else if(this.errT<=0&&Math.abs(this.ang[i])>15){this.errT=1;if(Math.random()<(this.diff.err||0)/60){this.wob=.9+Math.random()*.6;this.mistakes=(this.mistakes||0)+1;}}
+  if(this.wob>0)tv*=.9;
   this.v+=cl(tv-this.v,-7*dt,5*dt);this.s=(this.s+this.v*dt)%B.len;
-  const ta=this.v>8?this.ang[i]:0;this.a+=cl(ta-this.a,-70*dt,70*dt);this.l+=cl(this.lat[i]-this.l,-3*dt,3*dt);
+  const ta=this.v>8?this.ang[i]*(this.wob>0?.3+.25*Math.sin(this.wob*9):1):0;this.a+=cl(ta-this.a,-70*dt,70*dt);this.l+=cl(this.lat[i]-this.l,-3*dt,3*dt);
   this.steer=cl(-this.a/40,-1,1);this.wheelRot+=this.v*dt/.32;this.pose(dt);}
  // track another car at a fixed distance behind it (showcase / autopilot tandem)
  follow(dt,s,v){const B=this.B;let d=s-this.s;while(d>B.len/2)d-=B.len;while(d<-B.len/2)d+=B.len;this.v=Math.max(0,v+d*.8);this.s=(this.s+this.v*dt+B.len)%B.len;const i=this.idx();
