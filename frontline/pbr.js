@@ -85,7 +85,7 @@ export function makePBR(){seed=4242;const f=fields(),S=512,B=f.big,M=f.mid,Fi=f.
  /* ---------- SLAB paving: chamfered flagstones with tint drift and stains ---------- */
  out.slab=surface(S,(i,j,o)=>{const k=j*S+i,cs=128,cx=Math.floor(i/cs),cy=Math.floor(j/cs),u=i%cs,v=j%cs,e=Math.min(u,cs-u,v,cs-v)-1.5,id=hash(cx,cy);const inS=sm(0,3,e);
   const b=at(B,S,i,j,60,60),fi=at(Fi,S,i,j,9,30),m=at(M,S,i,j,200,40);let val=(150+id*34)*(.9+b*.16)+(fi-.5)*16;const stain=sm(.62,.8,m)*.25;val*=1-stain;
-  const g=val*inS+70*(1-inS);o.r=g;o.g=g*.985;o.b=g*.955;o.h=.25+inS*(.6+(fi-.5)*.05);o.ro=inS?.78+(fi-.5)*.1+stain*.1:.95;},2.4);
+  const lip=sm(8,1,e)*.08;const g=val*(1-lip)*inS+val*.66*(1-inS);o.r=g;o.g=g*.985;o.b=g*.955;o.h=.25+inS*(.6+(fi-.5)*.05);o.ro=inS?.78+(fi-.5)*.1+stain*.1:.95;},2.4);
  /* ---------- ROOF (flat): bitumen membrane with gravel and seam lines ---------- */
  out.roof=surface(256,(i,j,o)=>{const fi=at(Fi,S,i*2,j*2,30,0),m=at(M,S,i*2,j*2,0,60);const seam=sm(1.5,0,Math.abs((j%64)-32)-30);let v=88+fi*40+(m-.5)*18;v*=1-seam*.3;
   o.r=v;o.g=v*.98;o.b=v*.95;o.h=.5+fi*.3-seam*.1;o.ro=.9+(fi-.5)*.1;},2.5);

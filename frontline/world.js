@@ -1,6 +1,7 @@
 // FRONTLINE OPS — level geometry (collision boxes, hitscan raycasts, nav grid + A*, cover points) and scene construction
 // (merged architecture with trims/windows/roofs, instanced props + vehicles + trees, terrain, water, sky).
 import * as THREE from '../vendor/three.module.min.js';
+import {buildDressing,contactMap,withContact} from './dress.js';
 
 export const STEP=.5,MANTLE=1.3;
 const V=THREE.Vector3,PI=Math.PI;
@@ -207,8 +208,9 @@ function weather(m,k,L){const dirt=new THREE.Color(L.look.grime??0x5a4c3c);m.onB
  float wxBase=(1.-smoothstep(0.,.55+wxMac*1.3,vWxP.y))*step(abs(vWxN.y),.5);
  float wxSt=smoothstep(.64,.92,wxf(vec2(wxAlong*2.3,vWxP.y*.11)))*smoothstep(.2,1.4,vWxP.y)*step(abs(vWxN.y),.5);
  float wxTop=step(.5,vWxN.y)*smoothstep(.45,.85,wxMac)*.5;
- diffuseColor.rgb*=mix(1.,.82+.3*wxMac,uWxK);vec3 wxG=mix(vec3(dot(uWxC,vec3(.33))),uWxC,.55)*1.6;diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*wxG,clamp((wxBase*.7+wxSt*.32+wxTop)*uWxK,0.,.8));`)
-  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=clamp(roughnessFactor+(wxBase*.08-wxSt*.12)*uWxK,.04,1.);');};
+ diffuseColor.rgb*=mix(1.,.82+.3*wxMac,uWxK);vec3 wxG=mix(vec3(dot(uWxC,vec3(.33))),uWxC,.55)*1.6;diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*wxG,clamp((wxBase*.7+wxSt*.2+wxTop)*uWxK,0.,.8));`)
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=clamp(roughnessFactor+(wxBase*.08-wxSt*.12)*uWxK,.04,1.);')
+  .replace('#include <aomap_fragment>','#include <aomap_fragment>\n {float wa=mix(1.,mix(.42,1.,smoothstep(0.,1.6,vWxP.y)),step(abs(vWxN.y),.5));reflectedLight.indirectDiffuse*=wa;reflectedLight.directDiffuse*=mix(1.,wa,.3);reflectedLight.indirectSpecular*=wa;}');};
  m.customProgramCacheKey=()=>'wx'+k;}
 
 /* ================= scene construction ================= */
@@ -236,8 +238,9 @@ export function buildScene(L,TX,q){const look=L.look;L.timeU=L.timeU||{value:0};
  // ----- terrain: flat play area + sculpted surroundings
  const T=L.terrain,ext=L.half*2+520,seg=q>=2?160:110;const gg=new THREE.PlaneGeometry(ext,ext,seg,seg);gg.rotateX(-PI/2);const gp=gg.attributes.position,guv=gg.attributes.uv,gcol=new Float32Array(gp.count*3);
  const hn=(x,z)=>Math.sin(x*.031+1.3)*Math.cos(z*.027)*.5+Math.sin(x*.071+z*.053)*.3+Math.sin(x*.13-z*.11+2)*.15+.5;
- for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);const e=Math.max(Math.abs(x),Math.abs(z))-L.half-4;let y=0;
-  if(e>0&&!(T.seaSide&&T.seaSide(x,z))){const k=Math.min(1,e/(T.ramp||60));y=k*k*(T.height||20)*(.45+hn(x,z)*.9)+(T.dunes?Math.sin(x*.09+z*.04)*Math.min(1,e/20)*2.5:0);}
+ L.tY=(x,z)=>{const e=Math.max(Math.abs(x),Math.abs(z))-L.half-4;if(e<=0||(T.seaSide&&T.seaSide(x,z)))return 0;const k=Math.min(1,e/(T.ramp||60));return k*k*(T.height||20)*(.45+hn(x,z)*.9)+(T.dunes?Math.sin(x*.09+z*.04)*Math.min(1,e/20)*2.5:0);};
+ for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);let y=0;
+  y=L.tY(x,z);
   if(T.seaSide&&T.seaSide(x,z))y=-2.2;gp.setY(i,y);guv.setXY(i,x/7,-z/7);const v=.86+hn(x*3,z*3)*.22;gcol[i*3]=gcol[i*3+1]=gcol[i*3+2]=v;}
  gg.setAttribute('color',new THREE.Float32BufferAttribute(gcol,3));gg.computeVertexNormals();
  const base=TX[T.base],alt=TX[T.alt||T.base],pathT=TX[T.path||'dirt'];const splat=L.splatTex;
@@ -252,13 +255,14 @@ float th(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float t
  vec2 su=(vWP.xz+uHalf)/(2.*uHalf);vec4 sp=texture2D(uSplat,vec2(su.x,1.-su.y));float inb=step(0.,su.x)*step(su.x,1.)*step(0.,su.y)*step(su.y,1.);
  float pm=smoothstep(.15,.6,sp.r+(tn(vWP.xz*.6)-.5)*.35)*inb;col=mix(col,tc,pm);col=mix(col,tb,sp.g*inb);
  col.rgb*=.86+.28*tn(vWP.xz*.012);diffuseColor*=col;`);};
+ const ct=q>0?contactMap(L):null;if(ct){withContact(gm,ct);withContact(mats.tile,ct,.7);}
  const ground=new THREE.Mesh(gg,gm);ground.receiveShadow=true;G.add(ground);
  // water
  L.water=null;if(T.water){const wm=std({color:T.water.c,roughness:.06,metalness:.2,normalMap:TX.waterN,normalScale:new THREE.Vector2(.35,.35),transparent:true,opacity:.92});wm.normalMap=TX.waterN.clone();wm.normalMap.needsUpdate=true;wm.normalMap.repeat.set(80,80);
   const w=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),wm);w.rotation.x=-PI/2;w.position.y=T.water.y;G.add(w);L.water=wm;}
  // ----- roads + pads + painted lines
  for(const r of L.roads){const len=r.len,w=r.w,t=TX[r.kind]||TX.asphalt;const m=std({map:t.map.clone(),normalMap:t.normalMap.clone(),roughness:.85,polygonOffset:true,polygonOffsetFactor:-2,color:r.col??0xffffff});m.map.needsUpdate=m.normalMap.needsUpdate=true;
-  m.map.repeat.set(w/6,len/6);m.normalMap.repeat.set(w/6,len/6);const me=new THREE.Mesh(new THREE.PlaneGeometry(w,len),m);me.rotation.set(-PI/2,0,r.rot||0);me.position.set(r.x,.02,r.z);me.receiveShadow=true;G.add(me);
+  m.map.repeat.set(w/6,len/6);m.normalMap.repeat.set(w/6,len/6);if(ct)withContact(m,ct);const me=new THREE.Mesh(new THREE.PlaneGeometry(w,len),m);me.rotation.set(-PI/2,0,r.rot||0);me.position.set(r.x,.02,r.z);me.receiveShadow=true;G.add(me);
   if(r.lines){const lm=new THREE.MeshStandardMaterial({color:r.lines,roughness:.7,polygonOffset:true,polygonOffsetFactor:-4});const parts=[];for(let s=-len/2+2;s<len/2-2;s+=6)parts.push({geo:new THREE.PlaneGeometry(.18,3),m:M4(0,0,s+1.5)});if(parts.length){const lg=merge(parts);lg.rotateX(-PI/2);const lme=new THREE.Mesh(lg,lm);lme.rotation.y=r.rot||0;lme.position.set(r.x,.03,r.z);lme.receiveShadow=true;G.add(lme);}}}
  for(const p of L.pads){const m=std({map:TX.pad,roughness:.8,polygonOffset:true,polygonOffsetFactor:-3});const me=new THREE.Mesh(new THREE.PlaneGeometry(p.r*2,p.r*2),m);me.rotation.x=-PI/2;me.position.set(p.x,(p.y||0)+.03,p.z);me.receiveShadow=true;G.add(me);}
  for(const p of L.paint){const m=std({color:p.c,roughness:.7,polygonOffset:true,polygonOffsetFactor:-4,map:p.map||null,transparent:!!p.map});const me=new THREE.Mesh(new THREE.PlaneGeometry(p.w,p.d),m);me.rotation.set(-PI/2,0,p.rot||0);me.position.set(p.x,.035,p.z);me.receiveShadow=true;G.add(me);}
@@ -362,6 +366,8 @@ float th(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float t
  if(q>0&&TX.decals)G.add(buildDecals(L,TX,q));
  // ----- sun shafts through the dusty air + drifting motes: HIGH only
  if(q>=2)G.add(buildShafts(L,look));
+ // ----- street dressing, window surrounds, skyline, haze: MEDIUM and up
+ if(q>0)G.add(buildDressing(L,TX,q,look));
  return{group:G,lights};}
 
 /* ================= decals ================= */

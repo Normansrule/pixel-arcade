@@ -26,9 +26,9 @@ const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(FOV,1,.05,15
 const vmScene=new THREE.Scene(),vmCam=new THREE.PerspectiveCamera(56,1,.01,10);
 const hemi=new THREE.HemisphereLight(0xffffff,0x202020,.6),sun=new THREE.DirectionalLight(0xffffff,2);sun.castShadow=true;scene.add(hemi,sun,sun.target);
 const bounce=new THREE.DirectionalLight(0xffffff,0);scene.add(bounce,bounce.target);// sunlit ground bouncing back up into walls and faces (MEDIUM+)
-const vmHemi=new THREE.HemisphereLight(0xffffff,0x222222,.8),vmKey=new THREE.DirectionalLight(0xffffff,1.4),vmFlash=new THREE.PointLight(0xffaa55,0,3,1.5),vmRim=new THREE.DirectionalLight(0xffffff,1);vmKey.position.set(-1,2,1);vmFlash.position.set(.1,-.05,-.7);vmRim.position.set(2,.5,-1.5);vmScene.add(vmHemi,vmKey,vmFlash,vmRim);
+const vmHemi=new THREE.HemisphereLight(0xffffff,0x222222,.8),vmKey=new THREE.DirectionalLight(0xffffff,1.4),vmFlash=new THREE.PointLight(0xffaa55,0,3,1.5),vmRim=new THREE.DirectionalLight(0xffffff,1);vmKey.position.set(-1,2,1);vmFlash.position.set(.1,-.05,-.7);vmRim.position.set(2,.5,-1.5);const vmFill=new THREE.DirectionalLight(0xffffff,.7);vmFill.position.set(.9,-.25,1);const WHITE=new THREE.Color(1,1,1);vmScene.add(vmHemi,vmKey,vmFlash,vmRim,vmFill);
 const TX=makeTextures();makeKit(TX);
-const fx=new FX(scene,TX);const snd=new Sound();fx.brass.onBounce=(q,small)=>snd.play('clink',small?1.5:.7,panOf(q));const VM=buildViewmodel(TX);vmCam.add(VM.root);vmScene.add(vmCam);
+const fx=new FX(scene,TX);const snd=new Sound();fx.brass.onBounce=(q,small)=>snd.play('clink',small?1.5:.7,panOf(q));fx.brass.floor=(x,z,y)=>G.level?G.level.ground(x,z,y,.03):0;const VM=buildViewmodel(TX);vmCam.add(VM.root);vmScene.add(vmCam);
 const nadeGeo=new THREE.SphereGeometry(.05,10,8),nadeMat=new THREE.MeshStandardMaterial({color:0x4a5034,roughness:.6}),smokeMat=new THREE.MeshStandardMaterial({color:0x8a9098,roughness:.5});
 const markRing=new THREE.Mesh(new THREE.RingGeometry(3.2,3.7,48),new THREE.MeshBasicMaterial({color:new THREE.Color(5,.6,.2),transparent:true,opacity:.85,depthWrite:false,side:THREE.DoubleSide,fog:false}));markRing.rotation.x=-PI/2;markRing.visible=false;scene.add(markRing);
 const laser=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,1,6),new THREE.MeshBasicMaterial({color:new THREE.Color(6,.4,.2),transparent:true,opacity:.7,depthWrite:false}));laser.visible=false;scene.add(laser);
@@ -60,13 +60,13 @@ function loadMap(id){let L=levels[id];if(!L)L=levels[id]=MAPS[id]();if(G.level==
  if(G.level&&built[G.level.id])scene.remove(built[G.level.id].group);
  if(!built[id]||built[id].q!==gfx){if(built[id])disposeGroup(built[id].group);built[id]=buildScene(L,TX,gfx);built[id].q=gfx;}
  scene.add(built[id].group);G.level=L;look=L.look;
- scene.fog=new THREE.FogExp2(look.fog.c,look.fog.d);scene.background=new THREE.Color(look.fog.c);hemi.color.set(look.hemi.s);hemi.groundColor.set(look.hemi.g);hemi.intensity=look.hemi.i;sun.color.set(look.sun.c);sun.intensity=look.sun.i;
+ scene.fog=new THREE.FogExp2(look.fog.c,look.fog.d);scene.background=new THREE.Color(look.fog.c);hemi.color.set(look.hemi.s);hemi.groundColor.set(look.hemi.g);hemi.intensity=look.hemi.i*(gfx>0?look.hk??1:1);sun.color.set(look.sun.c);sun.intensity=look.sun.i*(gfx>0?look.kk??1:1);
  G.sunDir=new V(...look.sun.dir).normalize();sun.shadow.bias=-.0005;sun.shadow.normalBias=.04;
  bounce.color.set(look.sky.ground??look.fog.c).lerp(new THREE.Color(look.sun.c),.3);bounce.intensity=gfx>0?look.sun.i*.22*(look.bounce??1):0;bounce.position.set(-G.sunDir.x,-.35,-G.sunDir.z).multiplyScalar(50);bounce.target.position.set(0,0,0);
  if(sky)scene.remove(sky);sky=makeSky(look);scene.add(sky);
- if(!envCache[id]){const s=new THREE.Scene();s.add(makeSky(look));s.add(new THREE.HemisphereLight(look.hemi.s,look.hemi.g,1));const pm=new THREE.PMREMGenerator(R);envCache[id]=pm.fromScene(s,.04).texture;pm.dispose();}
- scene.environment=envCache[id];scene.environmentIntensity=look.env;vmScene.environment=envCache[id];vmScene.environmentIntensity=1.25;
- vmHemi.color.set(look.hemi.s);vmHemi.groundColor.set(look.hemi.g);vmHemi.intensity=look.hemi.i*.8+.25;vmKey.color.set(look.sun.c);vmKey.intensity=look.sun.i*.7;vmRim.intensity=look.sun.i*.45;vmKey.position.copy(G.sunDir).setY(Math.max(.4,G.sunDir.y));vmRim.color.set(look.hemi.s);
+ if(!envCache[id]){const s=new THREE.Scene();s.add(makeSky(look));s.add(new THREE.HemisphereLight(look.hemi.s,look.hemi.g,1));{const sd=new V(...look.sun.dir).normalize();const sm=new THREE.Mesh(new THREE.SphereGeometry(4,12,8),new THREE.MeshBasicMaterial({color:new THREE.Color(look.sun.c).multiplyScalar(look.lampsOn?3:9)}));sm.position.copy(sd).multiplyScalar(60);s.add(sm);const gd=new THREE.Mesh(new THREE.CircleGeometry(90,24),new THREE.MeshBasicMaterial({color:new THREE.Color(look.sky.ground??look.fog.c).multiplyScalar(.55)}));gd.rotation.x=-PI/2;gd.position.y=-6;s.add(gd);}const pm=new THREE.PMREMGenerator(R);envCache[id]=pm.fromScene(s,.04).texture;pm.dispose();}
+ scene.environment=envCache[id];scene.environmentIntensity=look.env;vmScene.environment=envCache[id];vmScene.environmentIntensity=1.45;
+ vmHemi.color.set(look.hemi.s).lerp(WHITE,.35);vmHemi.groundColor.set(look.hemi.g).lerp(WHITE,.2);vmHemi.intensity=Math.max(1.15,look.hemi.i*.8+.3);vmKey.color.set(look.sun.c).lerp(WHITE,.55);vmKey.intensity=Math.min(3,Math.max(2.2,look.sun.i*.75));vmKey.position.set(-.55,1.2,.9);vmRim.intensity=Math.max(1.2,look.sun.i*.5);vmRim.position.set(1.6,.7,-1.4);vmRim.color.set(look.hemi.s).lerp(WHITE,.3);vmFill.color.set(look.sky.ground??look.fog.c).lerp(WHITE,.5);vmFill.intensity=.7;
  fx.dustK=look.lampsOn?.75:1.05;fx.ground=id==='sandgate'?'sand':id==='northwatch'?'snow':'concrete';fx.smoke.U.uFog.value.set(look.fog.c);fx.smoke.U.uFogD.value=look.fog.d;fx.smoke.U.uLight.value.set(look.hemi.s).lerp(new THREE.Color(look.sun.c),.5).multiplyScalar(look.lampsOn?.7:1);
  R.toneMappingExposure=look.exp;fxStack=null;HUD.mapChanged(G);return L;}
 function disposeGroup(g){g.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
@@ -454,11 +454,11 @@ const render={vis(dt){updateViewmodel(dt);updateCamera(dt);updateShadow();}};
 /* ================= rendering ================= */
 class VMPass extends Pass{constructor(){super();this.needsSwap=false;}render(r,wb,rb){if(!VM.root.visible)return;const ac=r.autoClear;r.autoClear=false;r.setRenderTarget(this.renderToScreen?null:rb);r.clearDepth();r.render(vmScene,vmCam);r.autoClear=ac;}}
 // filmic finish (MEDIUM+): light unsharp mask so surface detail reads, gentle S-curve, split toning (cool shadows / warm highlights)
-class FinishPass extends Pass{constructor(){super();this.U={tDiffuse:{value:null},res:{value:new THREE.Vector2(1,1)},sharp:{value:.35},con:{value:.18},sh:{value:new THREE.Color(.94,.98,1.06)},hi:{value:new THREE.Color(1.05,1.01,.95)}};
+class FinishPass extends Pass{constructor(){super();this.U={tDiffuse:{value:null},res:{value:new THREE.Vector2(1,1)},sharp:{value:.35},con:{value:.18},sh:{value:new THREE.Color(.94,.98,1.06)},hi:{value:new THREE.Color(1.05,1.01,.95)},lift:{value:new THREE.Color(0,0,0)},gam:{value:1}};
   this.q=new FullScreenQuad(new THREE.ShaderMaterial({uniforms:this.U,vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
-  fragmentShader:`uniform sampler2D tDiffuse;uniform vec2 res;uniform float sharp,con;uniform vec3 sh,hi;varying vec2 vUv;
+  fragmentShader:`uniform sampler2D tDiffuse;uniform vec2 res;uniform float sharp,con,gam;uniform vec3 sh,hi,lift;varying vec2 vUv;
   void main(){vec2 px=1./res;vec3 c=texture2D(tDiffuse,vUv).rgb;vec3 n=(texture2D(tDiffuse,vUv+vec2(px.x,0.)).rgb+texture2D(tDiffuse,vUv-vec2(px.x,0.)).rgb+texture2D(tDiffuse,vUv+vec2(0.,px.y)).rgb+texture2D(tDiffuse,vUv-vec2(0.,px.y)).rgb)*.25;
-   c=max(c+(c-n)*sharp,0.);c=clamp(c,0.,1.);c=mix(c,c*c*(3.-2.*c),con);float l=dot(c,vec3(.299,.587,.114));c*=mix(sh,hi,smoothstep(.05,.85,l));gl_FragColor=vec4(c,1.);}`}));}
+   c=max(c+(c-n)*sharp,0.);c=clamp(c,0.,1.);c=mix(c,c*c*(3.-2.*c),con);float l=dot(c,vec3(.299,.587,.114));c*=mix(sh,hi,smoothstep(.05,.85,l));c=pow(max(c,0.),vec3(gam));c+=lift*(1.-c);gl_FragColor=vec4(c,1.);}`}));}
  setSize(w,h){this.U.res.value.set(w,h);}
  render(r,wb,rb){this.U.tDiffuse.value=rb.texture;r.setRenderTarget(this.renderToScreen?null:wb);this.q.render(r);}}
 const POST={bloom:.38,bloomThreshold:.94,bloomRadius:.42,vignette:.26,grain:.025,aoStrength:.85};
@@ -468,7 +468,7 @@ G.applyQuality=applyQuality;
 bindQualityKey(()=>gfx,q=>applyQuality(q));
 function renderFrame(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio()))R.setSize(w,h,false);
  cam.aspect=w/h;cam.updateProjectionMatrix();vmCam.aspect=w/h;vmCam.updateProjectionMatrix();fx.sparks.U.uScale.value=fx.smoke.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*PI/360));
- const key=w+'x'+h;if(!fxStack){fxStack=cinematic(R,scene,cam,{...POST,exposure:look.exp,tint:look.tint,saturation:look.sat,quality:gfx});if(fxStack.composer){fxStack.composer.insertPass(new VMPass(),fxStack.ao?2:1);const fin=new FinishPass();const f=look.fin||{};fin.U.sharp.value=gfx>=2?(f.sharp??.38):(f.sharp??.38)*.7;fin.U.con.value=f.con??.18;if(f.sh)fin.U.sh.value.set(...f.sh);if(f.hi)fin.U.hi.value.set(...f.hi);fxStack.composer.addPass(fin);fxStack.fin=fin;}fxSize='';}
+ const key=w+'x'+h;if(!fxStack){fxStack=cinematic(R,scene,cam,{...POST,exposure:look.exp,tint:look.tint,saturation:look.sat,quality:gfx});if(fxStack.composer){fxStack.composer.insertPass(new VMPass(),fxStack.ao?2:1);const fin=new FinishPass();const f=look.fin||{};fin.U.sharp.value=gfx>=2?(f.sharp??.38):(f.sharp??.38)*.7;fin.U.con.value=f.con??.18;if(f.sh)fin.U.sh.value.set(...f.sh);if(f.hi)fin.U.hi.value.set(...f.hi);if(f.lift)fin.U.lift.value.set(...f.lift);fin.U.gam.value=f.gam??1;fxStack.composer.addPass(fin);fxStack.fin=fin;}fxSize='';}
  if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);if(fxStack.fin)fxStack.fin.setSize(w*R.getPixelRatio(),h*R.getPixelRatio());}
  if(fxStack.grade){const hp=P&&G.app==='play'?P.hp/P.maxHp:1;fxStack.grade.uniforms.sat.value=look.sat*(.4+.6*Math.min(1,hp*1.6));}
  if(fxStack.composer)fxStack.render();else{R.autoClear=true;R.render(scene,cam);R.autoClear=false;R.clearDepth();if(VM.root.visible)R.render(vmScene,vmCam);R.autoClear=true;}}

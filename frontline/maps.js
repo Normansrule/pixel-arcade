@@ -5,10 +5,10 @@ const PI=Math.PI,H=PI/2;
 
 // lighting / atmosphere per time of day (tuned for readable silhouettes, no murk)
 export const LOOK={
- noon:{name:'HIGH NOON',sky:{top:0x3a7ccc,mid:0x8cb8e6,hor:0xe8dfcf,cloud:0xffffff,clouds:.32,sunK:1.1,ground:0xd8c8a8},sun:{dir:[.42,.84,.34],c:0xfff0dc,i:3.3},hemi:{s:0xc8def6,g:0xc8a878,i:1.2},fog:{c:0xe4d8c4,d:.0042},exp:.9,tint:0xfff8f0,sat:1.08,env:.75,amb:'wind',grime:0x6a5236,dust:1.1},
- golden:{name:'GOLDEN HOUR',sky:{top:0x30508e,mid:0xc28a78,hor:0xffc28a,cloud:0xffd2b0,clouds:.42,sunK:1.5,ground:0x8a6a58,sunSize:.0013},sun:{dir:[-.72,.3,-.62],c:0xffb27a,i:3.4},hemi:{s:0xb8cae8,g:0x8a6a56,i:1.75},fog:{c:0xe6b896,d:.0045},exp:1.05,tint:0xfff2e6,sat:1.08,env:.85,amb:'harbor',grime:0x4a3a30,dust:.9},
- snow:{name:'COLD MORNING',sky:{top:0x3a76c4,mid:0x9ec2e8,hor:0xe8eff7,cloud:0xffffff,clouds:.5,sunK:1.05,ground:0xdfe8f2},sun:{dir:[.58,.44,-.68],c:0xffe6c8,i:2.9},hemi:{s:0xd4e4ff,g:0x9ea8b8,i:1.05},fog:{c:0xdde6f0,d:.0045},exp:.78,tint:0xf6f8ff,sat:1.04,env:.8,amb:'snow',grime:0x3a3c40,dust:.7},
- dusk:{name:'BLUE HOUR',sky:{top:0x22305e,mid:0x6c5e94,hor:0xff9c6a,cloud:0xb090b0,clouds:.38,sunK:1.3,ground:0x3a3040,sunSize:.0016},sun:{dir:[.86,.12,.42],c:0xffa068,i:2.2},hemi:{s:0xa4b0e6,g:0x54444c,i:1.55},fog:{c:0x84769a,d:.0072},exp:1.18,tint:0xf6eeff,sat:1.06,env:.65,lampsOn:true,amb:'town',grime:0x3a3a34,dust:.6}};
+ noon:{name:'HIGH NOON',sky:{top:0x3a7ccc,mid:0x8cb8e6,hor:0xe8dfcf,cloud:0xffffff,clouds:.32,sunK:1.1,ground:0xd8c8a8},sun:{dir:[.42,.84,.34],c:0xfff0dc,i:3.3},hemi:{s:0xc8def6,g:0xc8a878,i:1.2},fog:{c:0xe4d8c4,d:.0042},exp:.9,tint:0xfff8f0,sat:1.08,env:.75,amb:'wind',grime:0x6a5236,dust:1.1,kk:1.22,hk:.68,haze:.9,fin:{sh:[.95,.97,1.05],hi:[1.08,1.0,.87],con:.3,lift:[.012,.008,0],gam:1.05}},
+ golden:{name:'GOLDEN HOUR',sky:{top:0x30508e,mid:0xc28a78,hor:0xffc28a,cloud:0xffd2b0,clouds:.42,sunK:1.5,ground:0x8a6a58,sunSize:.0013},sun:{dir:[-.72,.3,-.62],c:0xffb27a,i:3.4},hemi:{s:0xb8cae8,g:0x8a6a56,i:1.75},fog:{c:0xe6b896,d:.0045},exp:1.05,tint:0xfff2e6,sat:1.08,env:.85,amb:'harbor',grime:0x4a3a30,dust:.9,kk:1.18,hk:.7,haze:1,fin:{sh:[.88,.92,1.12],hi:[1.1,.99,.86],con:.3,lift:[.01,0,.016],gam:1.06}},
+ snow:{name:'COLD MORNING',sky:{top:0x3a76c4,mid:0x9ec2e8,hor:0xe8eff7,cloud:0xffffff,clouds:.5,sunK:1.05,ground:0xdfe8f2},sun:{dir:[.58,.44,-.68],c:0xffe6c8,i:2.9},hemi:{s:0xd4e4ff,g:0x9ea8b8,i:1.05},fog:{c:0xdde6f0,d:.0045},exp:.78,tint:0xf2f6ff,sat:.97,env:.8,amb:'snow',grime:0x3a3c40,dust:.7,kk:1.2,hk:.75,haze:1.1,fin:{sh:[.9,.97,1.13],hi:[.99,1.01,1.05],con:.28,lift:[0,.006,.016],gam:1.03}},
+ dusk:{name:'BLUE HOUR',sky:{top:0x22305e,mid:0x6c5e94,hor:0xff9c6a,cloud:0xb090b0,clouds:.38,sunK:1.3,ground:0x3a3040,sunSize:.0016},sun:{dir:[.86,.12,.42],c:0xffa068,i:2.2},hemi:{s:0xa4b0e6,g:0x54444c,i:1.55},fog:{c:0x84769a,d:.0072},exp:1.3,tint:0xf6eeff,sat:1.06,env:.65,lampsOn:true,amb:'town',grime:0x3a3a34,dust:.6,kk:1.1,hk:.82,haze:1.15,fin:{sh:[.84,.9,1.18],hi:[1.15,1.0,.86],con:.32,lift:[.004,0,.016],gam:1.08}}};
 
 // splat map (R = path texture, G = alt texture) painted in world space
 function splat(L,draw){const S=256,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,S,S);const k=S/(L.half*2);
@@ -59,7 +59,7 @@ function sandgate(){const L=new Level({id:'sandgate',name:'SANDGATE',half:60,loo
  crates(L,-24,27,3);crates(L,24,-28,3);crates(L,-46,-26,2);crates(L,46,26,2);crates(L,-10,-26,2);crates(L,12,26,2);crates(L,30,-50,3);crates(L,-30,50,3);
  for(const[x,z]of[[-36,28],[36,-28],[-18,-50],[18,50],[-52,-50],[52,50]])L.prop('barrel',x,z,0,{col:[0x4a6a3a,0xa83a2a,0x2a5a8a][(x+z)&1]});
  for(const[x,z]of[[-30,49],[24,-52],[-46,-52],[50,52],[-16,10],[16,-10]])L.prop('palm',x,z,L.rnd()*6,{free:true,s:.85+L.rnd()*.3});
- L.prop('car',-36,-2,0,{col:0xe8e0d0});L.prop('car',33,18,H,{col:0x3a3a40});
+ L.prop('car',-36,-2,0,{col:0xe8e0d0});L.prop('car',33,18,H,{col:0x3a3a40});L.prop('car',4.4,37.5,PI+.04,{col:0xd8d0c0});L.prop('pickup',-4.3,-38,-.03,{col:0x6a5a48});
  for(const[x,z,r]of[[-4.6,-18,0],[4.6,18,PI],[-4.6,36,0],[4.6,-36,PI]])L.lamp(x,z,r,false);
  // outside the walls: dunes, shrubs, rocks
  for(let i=0;i<40;i++){const a=L.rnd()*6.28,r=66+L.rnd()*60;L.props.push({kind:L.rnd()<.5?'shrub':'rock',x:Math.cos(a)*r,z:Math.sin(a)*r,y:0,rot:L.rnd()*6,s:.8+L.rnd()*1.2,col:null});}
