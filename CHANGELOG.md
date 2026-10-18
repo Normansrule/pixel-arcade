@@ -2,7 +2,17 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round8`)
+## Unreleased (on branch `round9`)
+
+- **Realism and depth pass on six 3D games.** Heavier effects only switch on at MEDIUM and above; LOW quality is as light as before or lighter in every measured view. All checks were headless (software WebGL), not on a real GPU or phone.
+- **FRONTLINE OPS:** baked surface textures with grime and decals, rebuilt soldiers, worn weapon finishes and a lit viewmodel, per-map lighting and colour grading, contact shadows, skylines and street clutter; nine weapon attachments, bot squads that flank, smoke and suppress, a new HARDPOINT mode and kill medals.
+- **SIDEWAYS:** rebuilt cars with clearcoat paint and detailed wheels, a procedural sky for day, sunset, night and rain, textured asphalt with lasting skid marks, trackside detail and billowing smoke; tandem battles, an eight-event career, tuning presets, smarter CPU lines and a results replay.
+- **STRIKER 11:** a mown pitch with wear, two-tier stands with a celebrating crowd, floodlight towers, LED boards, reacting nets, detailed kits and faces, a broadcast intro, goal replays and rain; team shape by difficulty, advantage, stamina, substitutions and better goalkeepers.
+- **DUSTWATER:** blended desert terrain, banded sandstone cliffs, swaying vegetation, rock formations, height fog, a textured town and camps, better horses and riders, gunsmoke, dynamite and a kill cam; payroll strongbox stakes, reinforcements, flanking outlaws, a saved horse bond and reputation, and gangs that return stronger. HARD is now much tougher.
+- **FAIRWAY LEGENDS:** a new sky and lighting, distinct turf and sand detail, layered cliffs, a wave-and-foam sea, real wind-bent pines and gorse instead of blob trees, a rebuilt golfer swing and divots; a Pro Tour with prize money and a gear shop, hole-by-hole weather, eight CPU personalities, shot replays and better putting reads.
+- **NEON BAY:** seven building styles with lit interiors, textured roads, wet streets with reflections, ground fog, nine detailed car models, street furniture and better pedestrians; police that escalate to a helicopter, armoured enforcers and spike strips, three new vehicles, two new missions, speed traps and hidden tags.
+
+## v31 update (released 18 Oct 2026 from branch `round8`)
 
 - **New 3D game: BEACON RESCUE** (`rescue/`): a three-room lighthouse rescue puzzle. A small repair robot learns that power travels (battery, cable, socket), then that a weight holds a gate, then combines both in a final room with two valid solutions. Live cables glow, every room has a reset, lost objects return, progress checkpoints per room, the storm clock is set by difficulty, and the relit beam sweeps the sea at the end.
 - **New 3D game: TIDEWAY COURIER** (`courier/`): a delivery kart race round a sunny flooded harbor of little islands and bridges. Three laps through six ordered checkpoints (reversing never counts), a three-tier drift shown by spark colour, meter and pitch, a start boost, wall and sea recovery, a parcel pickup and drop every lap, three CPU couriers (EASY/NORMAL/HARD), a personal-best ghost lap and a resumable race save.
