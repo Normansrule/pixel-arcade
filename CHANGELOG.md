@@ -2,7 +2,11 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `v30`)
+## Unreleased (on branch `round8`)
+
+- **New 3D game: BEACON RESCUE** (`rescue/`): a three-room lighthouse rescue puzzle. A small repair robot learns that power travels (battery, cable, socket), then that a weight holds a gate, then combines both in a final room with two valid solutions. Live cables glow, every room has a reset, lost objects return, progress checkpoints per room, the storm clock is set by difficulty, and the relit beam sweeps the sea at the end.
+
+## v30 update (released 18 Oct 2026 from branch `v30`)
 
 - **New 3D game: BASTION LINE** (`bastion/`): 3D tower defense on three diorama maps. Seven towers with two upgrade paths each, two levelling heroes, armoured, flying, shielded, splitting and healer enemies, a Juggernaut every tenth wave and a final Iron Colossus. An adaptive enemy warlord (EASY/NORMAL/HARD) counters your defence; targeting priorities, x2/x3 speed, interest, mouse, touch and keyboard controls, and a star-rated results screen.
 - **New 3D game: FAIRWAY LEGENDS** (`links/`): 3D links golf on a nine-hole coastal course (or a quick three). Thirteen clubs plus putter, draw/fade and spin, a 3-click meter or drag tempo swing, wind, Magnus-lift ball flight, lies, water and out-of-bounds drops, putting grid, hole flyovers and green-read camera. CPU rivals (EASY/NORMAL/HARD) plan shots with the real physics; up to four golfers hot-seat, each on a round clock, with a full scorecard and stats at the end.

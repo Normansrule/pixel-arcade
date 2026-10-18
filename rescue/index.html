@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beacon Rescue · Pixel Arcade</title>
+<meta name="description" content="Beacon Rescue: a third-person rescue puzzle. Guide WICK the repair robot through three rooms of a storm-dark lighthouse with batteries, cables and counterweights, and light the beacon before the storm clock runs out.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="rescue.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="tl"><p id="room"></p><p class="chip" id="rule"></p><p id="obj"></p><p id="hint"></p></div>
+  <div id="tr"><small>STORM CLOCK</small><b id="clock">5:00</b><div class="bar"><em id="cbar"></em></div><span id="rs"></span></div>
+  <div id="dev"></div>
+  <div id="toasts"></div>
+  <div id="carry"></div>
+  <div id="prompt"></div>
+  <div id="banner"><span id="bRoom"></span><b id="bName"></b><em id="bRule"></em><p id="bTeach"></p></div>
+  <div id="keysline"><kbd>WASD</kbd> MOVE <kbd>E</kbd> USE <kbd>R</kbd> RESET ROOM <kbd>H</kbd> HINT <kbd>Z</kbd><kbd>X</kbd> / DRAG ORBIT <kbd>ESC</kbd> PAUSE</div>
+</div>
+<div id="touch" hidden><div id="stick"><i id="knob"></i></div><button id="bUse">USE</button><button id="bReset">↺ RESET</button><button id="bHint">HINT</button><button id="bPause">II</button></div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · RESCUE PUZZLE</p>
+  <h1>BEACON<br><span>RESCUE</span></h1>
+  <p class="how">The storm has knocked out the lighthouse. Its keeper is stranded up by the dead lamp. Guide <b>WICK</b>, a small repair robot, through three dark rooms. Carry a battery, plug in cables, set counterweights, and light the beacon before the storm clock runs out.</p>
+  <div class="opts">
+    <label>STORM</label><div class="seg" id="o-diff"><button data-v="0">EASY · 8:00</button><button data-v="1">NORMAL · 5:00</button><button data-v="2">HARD · 3:30</button></div>
+    <label>EFFECTS</label><div class="seg" id="o-fx"><button data-v="1">FULL</button><button data-v="0">REDUCED</button></div>
+    <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  </div>
+  <p class="diffnote">EASY always shows the next step. NORMAL hints when you are stuck or press H. HARD hints cost 10 seconds.</p>
+  <div class="row"><button id="go" class="go">NEW RESCUE</button><button id="cont" class="ghost" hidden>CONTINUE</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>HOW IT WORKS</h3>
+  <table>
+    <tr><td>Move · orbit the camera</td><td><kbd>WASD</kbd> <kbd>Z</kbd><kbd>X</kbd> / drag</td></tr>
+    <tr><td>Pick up · place · plug · drop</td><td><kbd>E</kbd> <kbd>Space</kbd></td></tr>
+    <tr><td>Reset this room · hint</td><td><kbd>R</kbd> <kbd>H</kbd></td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+    <tr><td>Gamepad</td><td><span class="pad">A use · Y reset · X hint · R-stick orbit</span></td></tr>
+  </table>
+  <p><b>⚡</b> powered · <b>▲</b> held by a weight · <b>✕</b> no power. A live cable glows and pulses. Anything dropped where it can't be reached comes back to its spot. Each room you clear is saved as a checkpoint.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br><span>STEADY</span></h1><p class="how">The storm clock is stopped while you are here.</p>
+  <div class="opts"><label>VOLUME</label><div class="seg" id="o-vol2"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div></div>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="preset" class="ghost">RESET ROOM</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye">RESCUE REPORT</p>
+  <p class="res" id="ores">BEACON LIT</p>
+  <div class="stars" id="ostars"></div>
+  <p class="sub" id="osub"></p>
+  <p class="fs" id="ofs">0</p>
+  <table id="stats"></table>
+  <p class="skey" id="ostarkey"></p>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">RESCUE AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="loading"><b>BEACON RESCUE</b><span>WINDING THE GENERATOR…</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
