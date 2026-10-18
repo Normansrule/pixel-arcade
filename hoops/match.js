@@ -46,10 +46,10 @@ export function setCtl(h,p){if(h.pl&&h.pl!==p)h.pl.ctl=-1;h.pl=p;if(p)p.ctl=h.i;
 function feed(txt,team){if(S.feedOn)S.fx('feed',txt,team);}
 function topSpeed(p){const d=S.teams[p.team]?S.teams[p.team].diff:null;return(4.15+p.at.spd/100*1.9)*(d&&!S.teams[p.team].human?d.pace:1);}
 export function contestOf(p){const H=hoopOf(p.team);let c=0;const hx=H.x-p.p.x,hz=-p.p.z,hl=hyp(hx,hz)||1;
- for(const o of opp(p.team).pl){if(o.stun>0)continue;const dx=o.p.x-p.p.x,dz=o.p.z-p.p.z,d=hyp(dx,dz);let k=cl((2.3-d)/1.6,0,1);if(k<=0)continue;const front=(dx*hx+dz*hz)/(d*hl||1);k*=front>.15?1:front>-.3?.6:.25;if(o.p.y>.1||o.hands)k*=1.3;c=Math.max(c,k);}return cl(c,0,1);}
+ for(const o of opp(p.team).pl){if(o.stun>0)continue;const dx=o.p.x-p.p.x,dz=o.p.z-p.p.z,d=hyp(dx,dz);let k=cl((2.3-d)/1.6,0,1);if(k<=0)continue;const front=(dx*hx+dz*hz)/(d*hl||1);k*=front>.15?1:front>-.3?.6:.25;if(o.p.y>.1||o.hands)k*=1.3;c=Math.max(c,k);}const OT=opp(p.team);return cl(c*(OT.human?1:OT.diff.con),0,1);}
 export function shotProb(p,d,c){const a=p.at,H=hoopOf(p.team);let q;
- if(d<2.2)q=.45+.48*a.ins/100;else if(d<4.2)q=.32+.30*a.mid/100;else if(!isThree(H,p.p.x,p.p.z))q=.27+.28*a.mid/100;else q=.19+.31*a.three/100-Math.max(0,d-8)*.08;
- q*=1-.55*c;const T=S.teams[p.team];if(!T.human)q+=T.diff.shot;return cl(q,.02,.96);}
+ if(d<2.2)q=.45+.48*a.ins/100;else if(d<4.2)q=.35+.30*a.mid/100;else if(!isThree(H,p.p.x,p.p.z))q=.3+.28*a.mid/100;else q=.2+.31*a.three/100-Math.max(0,d-8)*.08;
+ q*=1-.45*c;const T=S.teams[p.team];if(!T.human)q+=T.diff.shot;return cl(q,.02,.96);}
 export function openness(p){let m=9;for(const o of opp(p.team).pl)m=Math.min(m,hyp(o.p.x-p.p.x,o.p.z-p.p.z));return m;}
 // is the straight lane from a to b clear of defenders (within rad metres of the segment)?
 export function laneClear(a,bx,bz,team,rad=.85){const ax=a.p.x,az=a.p.z,dx=bx-ax,dz=bz-az,L2=dx*dx+dz*dz||1;
@@ -67,7 +67,7 @@ function nearest(list,pt,excl){let b=null,bd=1e9;for(const q of list){if(q===exc
 /* ================= actions (shared by humans and the AI) ================= */
 // jumper: human=true runs the shot meter (release on button up); CPU releases near the top of the jump
 export function shoot(p,human){if(!holdBall(p)||p.act||p.p.y>0||p.stun>0)return false;const sp=hyp(p.v.x,p.v.z);
- const vy=2.75+p.at.hops/100*.75;p.act={k:'shoot',t:0,vy,T:.2+vy/C.G,human,rel:false,mov:sp>3.2,ft:false};act(p,'shoot',99);p.hold=false;p.drib=0;S.fx('gather',p);return true;}
+ const vy=2.75+p.at.hops/100*.75;p.act={k:'shoot',t:0,vy,T:.2+vy/C.G,human,rel:false,mov:sp>3.2,ft:false,c0:contestOf(p)};act(p,'shoot',99);p.hold=false;p.drib=0;S.fx('gather',p);return true;}
 // layup or dunk at the rim
 export function drive(p,dunk){if(!holdBall(p)||p.act||p.p.y>0||p.stun>0)return false;p.act={k:dunk?'dunk':'layup',t:0,jumped:false,rel:false,side:p.p.z*hoopOf(p.team).s>0?-1:1};
  act(p,dunk?'dunk':'layup',99,{side:p.act.side,v:0});p.hold=false;p.drib=0;return true;}
@@ -95,7 +95,7 @@ export function callPick(p){const T=S.teams[p.team];if(!holdBall(p))return;const
 /* ================= release + shot outcome ================= */
 const tv=new V(),tv2=new V();
 function grade(e,w){const a=Math.abs(e);return a<=w?'green':a<=w*2.6?'good':a<=w*5?(e<0?'slightly early':'slightly late'):(e<0?'very early':'very late');}
-function release(p,e){const b=S.ball,H=hoopOf(p.team),d=dHoop(p),c=contestOf(p),T=S.teams[p.team],human=p.act.human,ft=p.act.ft;
+function release(p,e){const b=S.ball,H=hoopOf(p.team),d=dHoop(p),c=(contestOf(p)+(p.act.c0??contestOf(p)))/2,T=S.teams[p.team],human=p.act.human,ft=p.act.ft;
  let q=ft?cl(.48+.45*p.at.ft/100,.3,.95):shotProb(p,d,c)*(p.act.mov?.85:1),gr=null;
  if(human){const w=(.05+(ft?p.at.ft:d>6.5?p.at.three:p.at.mid)/100*.035)*(1-c*.5)*T.diff.win;gr=grade(e,w);q=gr==='green'?1:gr==='good'?Math.min(.95,q+.18):gr.startsWith('slightly')?q*.72:q*.25;}
  else if(!ft){q*=1-Math.min(.5,Math.abs(e)*.8);}
@@ -167,7 +167,8 @@ function onScore(H){const b=S.ball,sh=b.shot;if(S.phase==='dead'||S.phase==='end
  S.ast=null;S.lastScore={team,pts,by,dunk:sh&&sh.dunk,t:S.time};
  S.fx('score',team,pts,by,sh);
  const foul=sh&&sh.foul;b.shot=null;
- if(sh&&sh.ft){S.ft.made++;S.ft.st='res';S.ft.t=0;if(S.ft.i>=S.ft.n-1){S.ft.t=-.4;}return;}
+ if(sh&&sh.ft){if(!S.ft){toDead(1.3,()=>afterScoreInbound(1-team));return;}// a last free throw that rattled in after play resumed
+  S.ft.made++;S.ft.st='res';S.ft.t=0;if(S.ft.i>=S.ft.n-1){S.ft.t=-.4;}return;}
  if(S.street&&S.score[team]>=S.toWin){toDead(1.6,()=>endGame());return;}
  if(S.sudden){toDead(1.6,()=>endGame());return;}
  if(S.buzz){S.buzz=false;toDead(1.4,()=>endPeriod());return;}
@@ -257,7 +258,7 @@ function stepPlayer(p,dt){const b=S.ball;p.stealCD-=dt;p.moveCD-=dt;p.jumpCD-=dt
   case'layup':case'dunk':{const dunk=a.k==='dunk',ux=H.x-p.p.x,uz=-p.p.z,ul=hyp(ux,uz)||1;
    if(!a.jumped){faceTo(p,H.x,0,dt,12);const sp=Math.max(3,hyp(p.v.x,p.v.z));p.v.x=ux/ul*sp*.85;p.v.z=uz/ul*sp*.85;
     if(a.t>=.18){a.jumped=true;if(dunk){const need=Math.max(.45,C.RH+.18-2.14*p.h);a.vy=Math.sqrt(2*C.G*need)+.2;}else a.vy=2.9+p.at.hops/100*.6;jump(p,a.vy);a.tp=a.vy/C.G;
-     const stop=dunk?.42:.85,tx=H.x-ux/ul*stop,tz=-uz/ul*stop*(dunk?1:.6),dd=hyp(tx-p.p.x,tz-p.p.z),hs=Math.min(dunk?7.5:5,dd/a.tp);p.v.x=(tx-p.p.x)/(dd||1)*hs;p.v.z=(tz-p.p.z)/(dd||1)*hs;}
+     const stop=dunk?.42:.85,tx=dunk?H.x-ux/ul*stop:H.x-H.s*Math.max(.5,-ux/ul*H.s*stop),tz=-uz/ul*stop*(dunk?1:.6),dd=hyp(tx-p.p.x,tz-p.p.z),hs=Math.min(dunk?7.5:5,dd/a.tp);p.v.x=(tx-p.p.x)/(dd||1)*hs;p.v.z=(tz-p.p.z)/(dd||1)*hs;}
     if(!has){p.act=null;p.anim.act='';}}
    else if(!a.rel){if(!has){p.act=null;p.anim.act='';}else if(dunk){if(p.vy<=.15||a.t>=.18+a.tp)slam(p);}else if(p.vy<=.6)layupRelease(p);}
    else if(a.hang>0){a.hang-=dt;p.vy=0;p.p.y=a.hy;p.v.set(0,0,0);if(a.hang<=0){p.vy=-.5;p.p.y=a.hy-.01;p.anim.v=0;act(p,'reb',.5);}}
@@ -299,9 +300,10 @@ function stealTry(p){const b=S.ball,o=b.owner;if(!o||o.team===p.team)return;cons
 function loose(p,o){const b=S.ball;b.owner=null;b.shot=null;b.pass=null;b.p.set(o.p.x,.9,o.p.z);const dx=p.p.x-o.p.x,dz=p.p.z-o.p.z,d=hyp(dx,dz)||1;b.v.set(dx/d*3.5,1.5,dz/d*3.5);b.last=p;b.lastTeam=p.team;o.drib=0;o.hold=false;}
 /* ---- rim finishes ---- */
 function layupRelease(p){const a=p.act,H=hoopOf(p.team),c=contestOf(p),T=S.teams[p.team];a.rel=true;a.relT=a.t;p.anim.rel=p.anim.t;
- let q=(.44+.5*p.at.ins/100)*(1-.5*c);if(!T.human)q+=T.diff.shot;q=cl(q,.1,.95);const made=rnd()<q;const b=S.ball;
- const src=b.hp.y>1.5&&b.owner===p&&b.hpO===p?b.hp.clone():new V(p.p.x,2.25*p.h+p.p.y,p.p.z);let ox=0,oz=0;if(!made){const ang=rnd()*6.28,r=.17+rnd()*.12;ox=Math.cos(ang)*r;oz=Math.sin(ang)*r;}else{ox=(rnd()-.5)*.04;oz=(rnd()-.5)*.04;}
- tv.set(H.x+ox,C.RH+.02,oz);b.owner=null;b.p.copy(src);solve(src,tv,1.0,b.v);b.shot={by:p,team:p.team,pts:2,hoop:H,t:0,rim:false,foul:null,made,lay:true,d:dHoop(p)};b.last=p;b.lastTeam=p.team;stat(p,'fga');
+ let q=(.44+.5*p.at.ins/100)*(1-.34*c);if(!T.human)q+=T.diff.shot;const DT_=S.teams[1-p.team];if(!DT_.human)q-=(DT_.diff.con-1)*.25;q=cl(q,.1,.95);const made=rnd()<q;const b=S.ball;
+ const src=b.hp.y>1.5&&b.owner===p&&b.hpO===p?b.hp.clone():new V(p.p.x,2.25*p.h+p.p.y,p.p.z);if((src.x-H.x)*H.s>-.3)src.x=H.x-H.s*.3;{const rx=src.x-H.x,rd=hyp(rx,src.z);if(rd<.62){src.x=H.x+rx/rd*.62;src.z*=.62/rd;}}// never from behind the glass or under the ring; arc high enough to drop in
+ let ox=0,oz=0;if(!made){const ang=rnd()*6.28,r=.17+rnd()*.12;ox=Math.cos(ang)*r;oz=Math.sin(ang)*r;}else{ox=(rnd()-.5)*.04;oz=(rnd()-.5)*.04;}
+ tv.set(H.x+ox,C.RH+.02,oz);b.owner=null;b.p.copy(src);for(let g=1;g<1.5;g+=.05){solve(src,tv,g,b.v);if(src.y+b.v.y*b.v.y/(2*C.G)>C.RH+.42)break;}b.shot={by:p,team:p.team,pts:2,hoop:H,t:0,rim:false,foul:null,made,lay:true,d:dHoop(p)};b.last=p;b.lastTeam=p.team;stat(p,'fga');
  const dfd=opp(p.team).pl.find(o=>hyp(o.p.x-p.p.x,o.p.z-p.p.z)<1.1);if(dfd&&rnd()<.2*(S.teams[1-p.team].human?1:S.teams[1-p.team].diff.foul))b.shot.foul={by:dfd,n:2};
  S.fx('release',p,null,0,b.shot);}
 function slam(p){const a=p.act,H=hoopOf(p.team),b=S.ball;a.rel=true;a.relT=a.t;

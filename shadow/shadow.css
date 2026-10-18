@@ -16,6 +16,10 @@ kbd{font:.6rem var(--mono);border:1px solid #6a655c;border-radius:4px;padding:1p
 #zone em{width:8px;height:8px;border-radius:50%;background:var(--ok)}#zone.tres em{background:var(--warn)}#zone.tres{color:var(--warn)}#zone.host em{background:var(--r)}#zone.host{color:var(--r)}
 #enf{margin:6px 0 0;font-size:.58rem;letter-spacing:.2em;color:#fff;background:rgba(227,40,58,.35);padding:5px 12px;border-radius:999px;width:max-content;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.55}}
+/* first objective */
+#obj{margin:8px 0 0;width:300px;background:var(--panel);border-radius:10px;padding:8px 12px;border-left:3px solid var(--g)}#obj span{display:block;font-size:.5rem;letter-spacing:.3em;color:var(--g)}#obj b{display:block;font:400 1.1rem/1.15 var(--disp);letter-spacing:.05em}
+#obj p{margin:4px 0 0;font-size:.58rem;line-height:1.45;color:#e4ddd0}#obj em{font-style:normal;color:var(--g)}#obj i{display:block;margin-top:5px;font-style:normal;font-size:.55rem;letter-spacing:.16em;color:var(--g)}
+#hud.obj #opps{top:290px}.mk.w{font-size:.58rem;color:var(--g)}.mk.w i{animation:blink 1s infinite}
 /* clock + status */
 #top{position:absolute;left:50%;top:14px;transform:translateX(-50%);text-align:center}
 #tlabel{display:block;font-size:.5rem;letter-spacing:.32em;color:var(--mut)}#clock{display:block;font:400 2.1rem/1 var(--disp);letter-spacing:.04em}#clock.low{color:var(--r)}
@@ -106,3 +110,10 @@ body.playing a.back{display:none}
 @media (max-width:1100px){.card{display:none}#opps{display:none}}
 @media (max-height:700px){h1{font-size:4.4rem}.how{margin:8px 0 10px;font-size:.84rem}.dossier{display:none}.rating{font-size:3.4rem}#stats td{padding:3px 8px 3px 0}button.go,button.ghost{padding:12px 22px}}
 @media (max-width:700px){h1{font-size:3.6rem}.dossier{flex-direction:column}#tr{width:220px}#hint{display:none}}
+/* portrait phones: disguise + objective down the left, clock + targets down the right, feed below */
+@media (max-width:560px){#tl{left:10px;top:10px;width:calc(54vw - 10px)}#dis{gap:8px;padding:6px 10px 6px 6px}#dis i{width:30px;height:30px;font-size:1rem}#dis b{font-size:1rem}#zone{width:auto;padding:4px 8px;font-size:.5rem;letter-spacing:.12em}
+ #obj{width:auto;padding:7px 9px}#obj b{font-size:.95rem}#obj p{font-size:.55rem}
+ #top{left:auto;right:10px;top:8px;transform:none;text-align:right}#status{margin:4px 0 0 auto}#clock{font-size:1.7rem}
+ #tr{top:84px;right:10px;width:calc(44vw - 14px)}.tg{padding:6px 8px;gap:7px}.tg i{width:24px;height:24px;font-size:.75rem}.tg b{font-size:.85rem}.tg span{font-size:.48rem;letter-spacing:.08em}
+ #feed{top:auto;bottom:32%;right:10px;left:10px;width:auto;font-size:.56rem}#banner b{font-size:2.2rem}#banner span{letter-spacing:.16em}
+ #inv{right:10px;bottom:10px}#hp{bottom:10px;width:40vw}#stats{min-width:0;width:100%}.rating{font-size:3rem}}

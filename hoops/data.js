@@ -10,11 +10,11 @@ export const TEAMS=[
  {city:'Bayshore',n:'Tides',s:'BST',r:77,c1:'#ff6f61',c2:'#13324d',c3:'#ffffff',alt:{c1:'#13324d',c2:'#ff6f61'},pat:3,logo:6,arena:'TIDEPOOL ARENA'},
  {city:'Capital',n:'Sentinels',s:'CPS',r:84,c1:'#1b3fa0',c2:'#d7263d',c3:'#ffffff',alt:{c1:'#f4f4f2',c2:'#1b3fa0'},pat:2,logo:7,arena:'MONUMENT GARDEN'}];
 export const POS=['PG','SG','SF','PF','C'];
-// CPU difficulty: shot bias, reaction time (s), steal + block aggression, help defence, switching on screens, decision IQ, pace, human green window scale
+// CPU difficulty: shot bias, contest strength, reaction time (s), steal + block aggression, help defence, switching on screens, decision IQ, pace, human green window scale
 export const DIFF=[
- {n:'EASY',shot:-.1,react:.42,steal:.35,block:.4,help:.35,sw:false,iq:.55,pace:.93,win:1.35,foul:.6},
- {n:'NORMAL',shot:0,react:.26,steal:.7,block:.75,help:.75,sw:true,iq:.82,pace:1,win:1,foul:1},
- {n:'HARD',shot:.06,react:.14,steal:1,block:1,help:1,sw:true,iq:1,pace:1.04,win:.78,foul:1.15}];
+ {n:'EASY',shot:-.04,con:.85,react:.42,steal:.35,block:.4,help:.35,sw:false,iq:.55,pace:.93,win:1.35,foul:.6},
+ {n:'NORMAL',shot:0,con:1,react:.26,steal:.7,block:.75,help:.75,sw:true,iq:.82,pace:1,win:1,foul:1},
+ {n:'HARD',shot:0,con:1.3,react:.14,steal:1,block:1,help:1,sw:true,iq:1,pace:1.04,win:.78,foul:1.15}];
 const F=['Darnell','Marcus','Theo','Isaiah','Andre','Rafe','Corin','Jace','Malik','Tobias','Dorian','Quentin','Elias','Kade','Nico','Rowan','Sol','Bram','Lucan','Tariq','Ezra','Silas','Omari','Callum','Dante','Jalon','Kofi','Mateo','Reid','Zeke','Vance','Anton'];
 const A=['Var','Kel','Mor','Dax','Tor','Bel','Ruan','Sil','Ost','Pell','Quin','Mar','Lev','Cor','Fen','Hal','Jor','Nev','Riv','Tam','Vel','Zan','Ade','Oku','Bri','Cas','Dren','Ell','Gal','Ivo','Yar','Sev','Lom','Dov','Ash','Kov','Wes','Thorn'];
 const B=['ner','ridge','ston','ez','away','ow','ford','ini','ek','o','ard','ley','ick','ena','sen','ry','ado','ski','ton','well','ves','ett','ula','imo','ax','by','ens','ou','mond','field'];

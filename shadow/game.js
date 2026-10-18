@@ -81,7 +81,7 @@ function start(o={}){Object.assign(G.opt,o);const d=G.opt.diff|0;G.diff=DIFF[d];
  G.stats={kills:0,ko:0,bodiesFound:0,accidents:0,disguises:0,shots:0,spotted:0,reports:0,start:performance.now()};
  for(const c of makeCast(d,Q===0)){const n=new NPC(c);n.lookType=c.look;n.lk=look(c.look,c.seed??c.id);if(c.prop)n.lk={...n.lk,prop:c.prop};n.rig=new Rig(n.lk,cloth);scene.add(n.rig.root);n.y=L.h(n.pos.x,n.pos.z)||0;
   n.enforcerOf=n.enforcer?DISGUISE[c.look]:null;n.speed=c.speed||n.speed;if(n.kind==='guard')n.hp=100;G.npcs.push(n);G.npcById[n.id]=n;}
- G.targets=G.npcs.filter(n=>n.role==='target').map(n=>({npc:n,name:n.name,how:null}));
+ G.targets=G.npcs.filter(n=>n.role==='target').map(n=>({npc:n,name:n.name,how:null}));G.lateGuest=G.npcs.find(n=>n.name==='LATE GUEST');G.objDone=false;
  G.opps=[{id:'chand',name:'CRYSTAL FALL',steps:['Unbolt the chandelier winch (service corridor)','Release it during Vane\'s toast'],at:0},{id:'poison',name:'LAST DRAM',steps:['Rat poison: kitchen pantry','Poison the study decanter','Vane takes a nightcap'],at:0},
   {id:'rail',name:'SEA AIR',steps:['Wrench: gardener\'s shed','Loosen the pier railing','Corvo leans on it'],at:0}];
  G.decanter=false;G.winch=0;G.railLoose=false;G.railBroken=false;G.chandFall=null;G.dyn.chand.position.set(L.chand.x,L.chand.y,L.chand.z);G.dyn.chand.rotation.set(0,0,0);G.dyn.rail.position.set(55,-12,66.85);G.dyn.rail.rotation.set(0,0,0);L.railing.move=true;
@@ -90,7 +90,7 @@ function start(o={}){Object.assign(G.opt,o);const d=G.opt.diff|0;G.diff=DIFF[d];
  const sp=L.spots[G.opt.start?'start_service':'start_drive'];P.pos.set(sp.x,0,sp.z);P.y=L.h(sp.x,sp.z)||0;P.yaw=sp.yaw;G.camYaw=sp.yaw;G.camPitch=-.1;Object.assign(P,{disguise:'suit',crouch:false,hp:G.diff.hp,maxHp:G.diff.hp,mag:12,res:24,coins:3,items:{},hidden:null,drag:null,illegal:null,act:null,aimK:0,fireT:0,reloadT:0,hurtT:0});
  P.lk=look('player');P.rig.setLook(P.lk);P.rig.root.visible=true;
  hud.init();G.app='play';G.attract=0;document.body.classList.add('playing');$('menu').hidden=true;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=false;
- snd.init();snd.setVol(G.opt.vol);hud.banner('VILLA SERAFINA','THE AMBER GALA · '+G.diff.name,3000);hud.feed('Targets: <b>DARIO VANE</b> and <b>INES CORVO</b>. Hold <b>X</b> for instinct, <b>M</b> for the map.','info',7000);I.lock();}
+ snd.init();snd.setVol(G.opt.vol);hud.banner('VILLA SERAFINA','THE AMBER GALA · '+G.diff.name,3000);hud.feed('Targets: <b>DARIO VANE</b> and <b>INES CORVO</b>. Hold <b>X</b> for instinct, <b>M</b> for the map.','info',7000);hud.feed('First, get in: your suit is not on the guest list. Find the <b>LATE GUEST</b> by his car, subdue him out of sight (<b>F</b>) and take his clothes (<b>T</b>).','info',12000);I.lock();}
 
 /* ================= helpers for AI ================= */
 G.pathFor=(ax,az,bx,bz)=>{const k=Math.round(ax)+','+Math.round(az)+'>'+Math.round(bx*2)+','+Math.round(bz*2);let p=G.paths.get(k);if(p===undefined){if(G.pathQ>3&&G.app==='play')return null;G.pathQ++;p=L.path(ax,az,bx,bz);G.paths.set(k,p);}return p?p.slice():null;};
@@ -280,7 +280,8 @@ function step(dt){dt=Math.min(dt,.05);U.time.value+=dt;if(G.app==='load')return;
  if(I.edge.KeyM||I.edge.Tab){$('map').hidden=!$('map').hidden;if(!$('map').hidden)hud.drawMap();}if(I.edge.KeyO)$('opps').classList.toggle('min');
  I.flush();}
 function lightRig(r,x,z,y){const l=W.light(x,z);const dark=G.darkAt(x,z);const k=dark?.08:1;r.light(l[3]>.5?1:0,[l[0]*k,l[1]*k,l[2]*k],l[3]>.5?1:.16);}
-function attract(dt){G.attract+=dt;const a=G.attract*.05;const cx=-6+Math.cos(a)*44,cz=6+Math.sin(a)*36;cam.position.set(cx,14+Math.sin(a*1.3)*3,cz);cam.lookAt(0,1,-6);P.pos.set(cx,0,cz);P.hidden={name:''};P.rig.root.visible=false;}
+// menu camera: a slow drift high above the drive, looking over the villa roofs and gardens out to the sunset sea
+function attract(dt){G.attract+=dt;const a=G.attract*.05;const cx=-6+Math.sin(a)*26,cz=-67+Math.cos(a*.7)*5;cam.position.set(cx,27+Math.sin(a*1.3)*3,cz);cam.lookAt(2+cx*.25,0,24);P.pos.set(cx,0,cz);P.hidden={name:''};P.rig.root.visible=false;}
 
 /* ================= end + results ================= */
 function endContract(win,why){if(G.over)return;G.over=true;G.app='over';I.unlock();const S=G.stats,d=G.opt.diff|0;

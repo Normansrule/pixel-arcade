@@ -20,6 +20,7 @@ export class HUD{
   this.set('disname',DNAME[P.disguise]||'');this.set('disic',DIC[P.disguise]||'?');
   const z=L.zoneAt(P.pos.x,P.pos.z),ok=(ALLOW[P.disguise]||[0]).includes(z),host=!ok&&HOSTILE.includes(z);
   this.set('zonet',P.hidden?'HIDDEN · '+P.hidden.name:(L.rooms[L.roomAt(P.pos.x,P.pos.z)]?.name||'GROUNDS')+' · '+(ok?'ALLOWED':host?'HOSTILE AREA':'TRESPASSING'));this.set('zone',ok||P.hidden?'':host?'host':'tres','className');
+  const lg=G.lateGuest,ob=P.disguise==='suit'&&!G.objDone;if(!ob&&!G.objDone&&G.app==='play')G.objDone=true;this.set('obj',!ob,'hidden');if(ob&&lg)this.set('objd',lg.down?'LATE GUEST · DOWN — TAKE HIS CLOTHES (T)':'LATE GUEST · '+Math.round(Math.hypot(lg.pos.x-P.pos.x,lg.pos.z-P.pos.z))+' M');$('hud').classList.toggle('obj',ob);
   let enf=false;for(const n of G.npcs)if(n.enforcer&&n.enforcerOf===P.disguise&&!n.down&&P.disguise!=='suit'&&n.pos.distanceTo(P.pos)<9){enf=true;break;}$('enf').hidden=!enf;
   // clock + status
   this.set('clock',fmt(G.timeLeft));this.set('clock',G.timeLeft<60?'low':'','className');
@@ -47,6 +48,7 @@ export class HUD{
     const t=sv>=1?'!':n.say==='?'?'?':'';if(e.lastChild.textContent!==t)e.lastChild.textContent=t;}
    if(G.instinct&&d<60){if(n.role==='target'){const p=proj(n.pos.x,n.y+2.2,n.pos.z);if(p.on){const e=put(this.mpool,mi++,'mk t',p.x,p.y);e.innerHTML='<i></i>'+n.name;}}
     else if(n.enforcer&&n.enforcerOf===P.disguise&&d<40){const p=proj(n.pos.x,n.y+2.1,n.pos.z);if(p.on){const e=put(this.mpool,mi++,'mk e',p.x,p.y);e.innerHTML='<i></i>';}}}}
+  const lg=G.lateGuest;if(lg&&!G.objDone&&P.disguise==='suit'&&!lg.hidden){const d=lg.pos.distanceTo(P.pos);const p=proj(lg.pos.x,lg.y+2.3,lg.pos.z);if(p.on&&d<90&&d>1.5){const e=put(this.mpool,mi++,'mk o w',p.x,p.y);e.innerHTML='<i></i>LATE GUEST · '+Math.round(d)+' M';}}
   if(G.instinct){for(const u of G.L.uses){if(u.id==='exit'&&!G.canExit())continue;const d=Math.hypot(u.x-P.pos.x,u.z-P.pos.z);if(d>30)continue;const p=proj(u.x,u.y+.4,u.z);if(!p.on)continue;const e=put(this.mpool,mi++,'mk o',p.x,p.y);e.innerHTML='<i></i>'+(d<14?u.name:'');}
    for(const it of G.L.items){if(it.taken)continue;const d=Math.hypot(it.x-P.pos.x,it.z-P.pos.z);if(d>30)continue;const p=proj(it.x,it.y+.3,it.z);if(!p.on)continue;const e=put(this.mpool,mi++,'mk o',p.x,p.y);e.innerHTML='<i></i>'+(d<14?it.name:'');}
    for(const c of G.L.containers){const d=Math.hypot(c.x-P.pos.x,c.z-P.pos.z);if(d>16)continue;const p=proj(c.x,c.y+1,c.z);if(!p.on)continue;const e=put(this.mpool,mi++,'mk c',p.x,p.y);e.innerHTML='<i></i>'+(d<8?c.name+(c.body?' (FULL)':''):'');}}
@@ -67,6 +69,7 @@ export class HUD{
   x.lineWidth=2;for(const u of L.uses){const[a,b]=pt(u.x,u.z);if(u.id==='radio'||u.id==='fuse'){x.fillStyle='#9cc8ff';x.fillRect(a-2,b-2,4,4);continue;}x.strokeStyle='#e8c26a';x.save();x.translate(a,b);x.rotate(PI4);x.strokeRect(-4,-4,8,8);x.restore();}
   for(const it of L.items){if(it.taken)continue;const[a,b]=pt(it.x,it.z);x.fillStyle='#e8c26a';x.beginPath();x.arc(a,b,3,0,7);x.fill();}
   for(const t of G.targets){if(!t.npc.alive)continue;const[a,b]=pt(t.npc.pos.x,t.npc.pos.z);x.fillStyle='#e3283a';x.save();x.translate(a,b);x.rotate(PI4);x.fillRect(-5,-5,10,10);x.restore();x.fillStyle='#fff';x.fillText(t.name.split(' ')[1],a,b-10);}
+  const lg=G.lateGuest;if(lg&&!G.objDone&&G.player.disguise==='suit'){const[a,b]=pt(lg.pos.x,lg.pos.z);x.strokeStyle='#e8c26a';x.beginPath();x.arc(a,b,7,0,7);x.stroke();x.fillStyle='#e8c26a';x.fillText('LATE GUEST',a,b-11);}
   const[a,b]=pt(G.player.pos.x,G.player.pos.z);x.save();x.translate(a,b);x.rotate(-G.player.yaw+Math.PI);x.fillStyle='#fff';x.beginPath();x.moveTo(0,-9);x.lineTo(6,7);x.lineTo(0,3);x.lineTo(-6,7);x.closePath();x.fill();x.restore();}
 }
 const PI4=Math.PI/4;

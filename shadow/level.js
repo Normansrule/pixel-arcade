@@ -273,5 +273,5 @@ function build(L){
  L.chand={x:0,z:-12,y:6.4,r:2.8};
  // ---------- NPC anchor spots
  const P=(n,x,z,yaw=0)=>L.spot(n,x,z,yaw);
- P('start_drive',2,-66,Math.PI);P('start_service',-60,-66,Math.PI);P('drink_vane',27.5,-11.5,Math.PI/2);P('rail_corvo',55,65.6,0);P('bar_corvo',22,6.2,Math.PI);
+ P('start_drive',2,-66,0);P('start_service',-60,-66,0);P('drink_vane',27.5,-11.5,Math.PI/2);P('rail_corvo',55,65.6,0);P('bar_corvo',22,6.2,Math.PI);
 }
