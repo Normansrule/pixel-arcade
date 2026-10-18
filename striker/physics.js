@@ -9,7 +9,9 @@ const FULL={L:52.5,W:34,GW:3.66,GH:2.44,GD:2.1,BD:16.5,BW:20.16,SD:5.5,SW:9.16,S
 const SMALL={L:30,W:19,GW:2.6,GH:2.15,GD:1.6,BD:9,BW:10.5,SD:3.5,SW:5.4,SPOT:7.5,CR:5.5,size:5};
 export function setPitch(size){Object.assign(P,size===5?SMALL:FULL);}
 setPitch(11);
-const PR=.065,CD=.0125,MAG=.0042,ROLL=1.9,SUB=1/240;
+const PR=.065,CD=.0125,MAG=.0042,SUB=1/240;let ROLL=1.9,BN=.52,SK=.86;
+// a wet pitch: the ball skids on (less rolling resistance), bounces lower and keeps more pace off the bounce
+export function setWet(w){ROLL=w?1.4:1.9;BN=w?.44:.52;SK=w?.93:.86;}
 export class Ball{constructor(){this.p=new V(0,R,0);this.v=new V();this.w=new V();this.q=new THREE.Quaternion();this.owner=null;this.held=null;this.last=null;this.inNet=0;this.prev=new V();this.rot=new V();}
  reset(x=0,z=0){this.p.set(x,R,z);this.v.set(0,0,0);this.w.set(0,0,0);this.owner=null;this.held=null;this.inNet=0;this.prev.copy(this.p);}
  get ground(){return this.p.y<R+.02&&Math.abs(this.v.y)<.6;}}
@@ -24,7 +26,7 @@ export function stepBall(b,dt,cb){
   if(air){const sp=b.v.length();t1.crossVectors(b.w,b.v);b.v.x+=(-CD*sp*b.v.x+MAG*t1.x)*h;b.v.y+=(-G-CD*sp*b.v.y+MAG*t1.y)*h;b.v.z+=(-CD*sp*b.v.z+MAG*t1.z)*h;b.w.multiplyScalar(Math.exp(-.35*h));}
   else{b.p.y=R;if(b.v.y<0)b.v.y=0;const s=Math.hypot(b.v.x,b.v.z);if(s>1e-4){t1.crossVectors(b.w,b.v);const ns=Math.max(0,s-(ROLL+.012*s*s)*h)/s;b.v.x=b.v.x*ns+MAG*.35*t1.x*h;b.v.z=b.v.z*ns+MAG*.35*t1.z*h;}b.w.multiplyScalar(Math.exp(-2.5*h));}
   b.p.addScaledVector(b.v,h);
-  if(b.p.y<R){b.p.y=R;if(b.v.y<-1.1){cb&&cb('bounce',-b.v.y,b.p);b.v.y=-b.v.y*.52;b.v.x*=.86;b.v.z*=.86;b.w.multiplyScalar(.6);}else b.v.y=0;}
+  if(b.p.y<R){b.p.y=R;if(b.v.y<-1.1){cb&&cb('bounce',-b.v.y,b.p);b.v.y=-b.v.y*BN;b.v.x*=SK;b.v.z*=SK;b.w.multiplyScalar(.6);}else b.v.y=0;}
   if(Math.abs(Math.abs(b.p.z)-P.L)<1.2&&Math.abs(b.p.x)<P.GW+1)for(const s of[-1,1]){const z=s*P.L;if(Math.abs(b.p.z-z)>1.2)continue;
    seg(b,-P.GW,0,z,-P.GW,P.GH,z,cb);seg(b,P.GW,0,z,P.GW,P.GH,z,cb);seg(b,-P.GW,P.GH,z,P.GW,P.GH,z,cb);}
   net(b,cb);}
@@ -49,14 +51,14 @@ function spinVis(b,dt){// rolling: angular velocity from ground speed; airborne:
 export function predict(b,T,every,out){out.length=0;const p=b.p.clone(),v=b.v.clone(),w=b.w.clone();let t=0,acc=0;const h=1/60;out.push({x:p.x,y:p.y,z:p.z,t:0,vx:v.x,vz:v.z});
  while(t<T){const air=p.y>R+.004||v.y>.25;if(air){const sp=v.length();t1.crossVectors(w,v);v.x+=(-CD*sp*v.x+MAG*t1.x)*h;v.y+=(-G-CD*sp*v.y+MAG*t1.y)*h;v.z+=(-CD*sp*v.z+MAG*t1.z)*h;}
   else{p.y=R;if(v.y<0)v.y=0;const s=Math.hypot(v.x,v.z);if(s>1e-4){const ns=Math.max(0,s-(ROLL+.012*s*s)*h)/s;v.x*=ns;v.z*=ns;}}
-  p.addScaledVector(v,h);if(p.y<R){p.y=R;if(v.y<-1.1){v.y=-v.y*.52;v.x*=.86;v.z*=.86;}else v.y=0;}
+  p.addScaledVector(v,h);if(p.y<R){p.y=R;if(v.y<-1.1){v.y=-v.y*BN;v.x*=SK;v.z*=SK;}else v.y=0;}
   t+=h;acc+=h;if(acc>=every-1e-6){acc=0;out.push({x:p.x,y:p.y,z:p.z,t,vx:v.x,vz:v.z});}}return out;}
 // where (if) the ball crosses the goal plane z=s*L within T seconds: {x,y,t} or null
 export function crossing(b,s,T=2.2,z0=s*P.L){const p=b.p.clone(),v=b.v.clone(),w=b.w.clone();const h=1/120;let t=0;
  if((p.z-z0)*s>0)return null;
  while(t<T){const air=p.y>R+.004||v.y>.25;if(air){const sp=v.length();t1.crossVectors(w,v);v.x+=(-CD*sp*v.x+MAG*t1.x)*h;v.y+=(-G-CD*sp*v.y+MAG*t1.y)*h;v.z+=(-CD*sp*v.z+MAG*t1.z)*h;}
   else{const s2=Math.hypot(v.x,v.z);if(s2>1e-4){const ns=Math.max(0,s2-(ROLL+.012*s2*s2)*h)/s2;v.x*=ns;v.z*=ns;}if(s2<.5)return null;}
-  p.addScaledVector(v,h);if(p.y<R){p.y=R;if(v.y<-1.1){v.y=-v.y*.52;v.x*=.86;v.z*=.86;}else v.y=0;}t+=h;
+  p.addScaledVector(v,h);if(p.y<R){p.y=R;if(v.y<-1.1){v.y=-v.y*BN;v.x*=SK;v.z*=SK;}else v.y=0;}t+=h;
   if((p.z-z0)*s>=0)return{x:p.x,y:p.y,t,speed:v.length()};}return null;}
 // ground pass speed so the ball arrives at distance d with speed `end`
 export function passSpeed(d,end=5){const k=.012;return Math.sqrt(((ROLL+k*end*end)*Math.exp(2*k*d)-ROLL)/k)*1.02;}

@@ -1,6 +1,7 @@
 // STRIKER 11 — instanced articulated footballers: one draw call per body part for all 25 people on the pitch.
 // Each person has a small forward-kinematics skeleton fed by a pose vector; poses come from procedural animation.
 import * as THREE from '../vendor/three.module.min.js';
+import {sponsorAtlas,hairNormal,blobTex} from './tex.js';
 const V=THREE.Vector3,O=()=>new THREE.Object3D();
 export const X=0,Y=1,Z=2,YAW=3,PIT=4,ROL=5,HY=6,LEAN=7,TW=8,HD=9,LSX=10,LSZ=11,LEL=12,RSX=13,RSZ=14,REL=15,LHX=16,LHZ=17,LKN=18,RHX=19,RHZ=20,RKN=21,SC=22,VIS=23,LAN=24,RAN=25,NP=26;
 const HIP=.95;
@@ -23,17 +24,19 @@ const TONE={arm:'m=step(-.135-aw*.4,vL.y);sh=1.-.18*(1.-step(.012,abs(vL.y+.135)
  head:`m=0.;vec3 q=vL;float fz=step(.07,q.z),ax=abs(q.x);
    float eye=1.-smoothstep(.009,.013,length(vec2(ax-.037,(q.y-.163)*1.25)));float wh=1.-smoothstep(.014,.018,length(vec2(ax-.037,(q.y-.163)*1.6)));
    float brow=step(abs(q.y-.186+ax*.08),.0055)*step(ax,.06)*step(.016,ax);float mouth=step(abs(q.y-.108-ax*ax*3.),.0035)*step(ax,.024);
-   m=brow*fz;sh=1.-mouth*fz*.45-.12*(1.-smoothstep(.05,.11,q.y));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.92,.9,.86),wh*fz*.85);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.06,.05,.05),eye*fz);`};
+   float sock=exp(-pow(length(vec2(ax-.036,(q.y-.168)*1.15))/.026,2.));float lip=step(abs(q.y-.104-ax*ax*2.),.009)*step(ax,.03)*fz;float jaw=(1.-smoothstep(.1,.135,q.y))*smoothstep(.0,.06,q.z)*(1.-lip)*(1.-step(.142,q.y));
+   m=max(brow*fz,jaw*aw*.62);sh=(1.-mouth*fz*.5-.12*(1.-smoothstep(.05,.11,q.y)))*(1.-sock*fz*.22)*(1.-.08*smoothstep(.02,-.08,q.z));
+   diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.82,.58,.55),lip*.7);diffuseColor.rgb*=mix(vec3(1.),vec3(1.05,.96,.94),exp(-pow(length(vec2(ax-.055,q.y-.125))/.03,2.))*fz);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.92,.9,.86),wh*fz*.85);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.06,.05,.05),eye*fz);`};
 function toneMat(r,mode){const m=new THREE.MeshStandardMaterial({roughness:r,metalness:0});
  m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec4 aC2;varying vec4 vC2;varying vec3 vL;').replace('#include <begin_vertex>','#include <begin_vertex>\nvC2=aC2;vL=position;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec4 vC2;varying vec3 vL;').replace('#include <color_fragment>',`#include <color_fragment>
   {float m=0.,sh=1.,aw=vC2.w;${TONE[mode]}diffuseColor.rgb=mix(diffuseColor.rgb,vC2.rgb,m)*sh;}`);};
  m.customProgramCacheKey=()=>'tone_'+mode;return m;}
-function kitMaterial(numTex){const m=new THREE.MeshStandardMaterial({roughness:.72,metalness:0,normalMap:fabric(),normalScale:new THREE.Vector2(.55,.55)});
- m.onBeforeCompile=sh=>{sh.uniforms.uNum={value:numTex};
-  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec4 aK2;attribute vec2 aNum;varying vec4 vK2;varying vec2 vNum;varying vec3 vL;')
+function kitMaterial(numTex){const m=new THREE.MeshStandardMaterial({roughness:.68,metalness:0,normalMap:fabric(),normalScale:new THREE.Vector2(.55,.55)});
+ m.onBeforeCompile=sh=>{sh.uniforms.uNum={value:numTex};sh.uniforms.uSpn={value:sponsorAtlas()};
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec4 aK2;attribute vec3 aNum;varying vec4 vK2;varying vec3 vNum;varying vec3 vL;')
    .replace('#include <begin_vertex>','#include <begin_vertex>\nvK2=aK2;vNum=aNum;vL=position;');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D uNum;varying vec4 vK2;varying vec2 vNum;varying vec3 vL;')
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D uNum,uSpn;varying vec4 vK2;varying vec3 vNum;varying vec3 vL;')
    .replace('#include <color_fragment>',`#include <color_fragment>
    {float m=0.;int pt=int(vK2.w+.5);
     if(pt==1)m=step(.5,fract((vL.x+1.)*9.));else if(pt==2)m=step(.5,fract(vL.y*6.5+.2));else if(pt==3)m=step(0.,vL.x);
@@ -42,13 +45,25 @@ function kitMaterial(numTex){const m=new THREE.MeshStandardMaterial({roughness:.
     if(vNum.x>0.&&vL.z<-.05&&abs(vL.x)<.115&&vL.y>.16&&vL.y<.45){float n=vNum.x,u=(.115-vL.x)/.23,v=(vL.y-.16)/.29,d=n,lu=u;
      if(n>=10.){if(u<.5){d=floor(n/10.);lu=u*2.;}else{d=mod(n,10.);lu=(u-.5)*2.;}lu=clamp(lu*1.15-.075,0.,1.);}
      vec2 q=vec2((d+lu)/10.,v);float a=texture2D(uNum,q).a,o=0.;for(int i=0;i<8;i++){float an=float(i)*.785;o=max(o,texture2D(uNum,q+vec2(cos(an)*.0045,sin(an)*.04)).a);}
-     diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.-vNum.y),o*.9);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(vNum.y),a);}}`);};
+     diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.-vNum.y),o*.9);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(vNum.y),a);}}
+    if(vNum.z>-.5&&vL.z>.05&&abs(vL.x)<.125&&vL.y>.335&&vL.y<.415){float u=(vL.x+.125)/.25,v=(vL.y-.335)/.08;float a=texture2D(uSpn,vec2(u,1.-(vNum.z+1.-v)/16.)).a;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(vNum.y),a*.92);}
+    // subtle sweat/shading: darker under the arms and at the hem, a soft highlight down the chest
+    diffuseColor.rgb*=.9+.1*smoothstep(.05,.2,vL.y)-.06*smoothstep(.13,.19,abs(vL.x))*step(.3,vL.y);`);};
  m.customProgramCacheKey=()=>'kit';return m;}
 // lathed limb with a muscle profile [[y,r]...] from top to bottom; zf(z,y) bulges the front/back (calf, quads)
 function limb(pr,zf,seg=10){const g=new THREE.LatheGeometry(pr.slice().reverse().map(([y,r])=>new THREE.Vector2(r,y)),seg);if(zf){const p=g.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,p.getZ(i)*zf(p.getZ(i),p.getY(i)));}g.computeVertexNormals();return g;}
+// hair: 0 crop, 1 buzz, 2 curls, 3 long, 4 quiff — one instanced mesh, the style reshapes the cap per instance
+function hairMaterial(){const m=new THREE.MeshStandardMaterial({roughness:.5,metalness:0,normalMap:hairNormal(),normalScale:new THREE.Vector2(.9,.9)});
+ m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float aHS;').replace('#include <begin_vertex>',`#include <begin_vertex>
+  {vec3 c=vec3(0.,.168,-.012);vec3 d=transformed-c;int s=int(aHS+.5);
+   if(s==1)transformed=c+d*.955;
+   else if(s==2){float n=sin(d.x*90.)*sin(d.y*80.)*sin(d.z*85.);transformed=c+d*(1.13+n*.05)+vec3(0.,.012,0.);}
+   else if(s==3){float k=smoothstep(.21,.165,transformed.y)*smoothstep(.03,-.03,transformed.z);transformed.y-=k*.13;transformed.z-=k*.03;transformed.x*=1.+k*.12;}
+   else if(s==4){float k=smoothstep(.2,.27,transformed.y)*smoothstep(-.02,.08,transformed.z);transformed.y+=k*.035;transformed.z+=k*.02;transformed=c+(transformed-c)*1.02;}}`);};
+ m.customProgramCacheKey=()=>'hair';return m;}
 function cap(r,len,seg=8){const g=new THREE.CapsuleGeometry(r,len,3,seg);g.translate(0,-(len/2+r)+r*.6,0);return g;}
 export class Squad{
- constructor(scene,max=26){this.max=max;this.n=0;const numTex=numberAtlas();
+ constructor(scene,max=26,q=2){this.max=max;this.n=0;const numTex=numberAtlas();
   const std=(r=.75)=>new THREE.MeshStandardMaterial({roughness:r,metalness:0});
   const torsoG=new THREE.CylinderGeometry(.205,.16,.56,14,4);torsoG.scale(1,1,.62);torsoG.translate(0,.3,0);
   {const p=torsoG.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i);if(y>.5){const k=(y-.5)/.08;p.setX(i,p.getX(i)*(1-k*.18));p.setZ(i,p.getZ(i)*(1-k*.1));}}torsoG.computeVertexNormals();}
@@ -59,25 +74,29 @@ export class Squad{
   const noseG=new THREE.ConeGeometry(.017,.042,6);noseG.rotateX(Math.PI*.6);noseG.translate(0,.142,.118);
   const earG=[-1,1].map(s=>{const e=new THREE.SphereGeometry(.026,8,6);e.scale(.45,1,.75);e.translate(s*.104,.152,0);return e;});
   const neck=new THREE.CylinderGeometry(.052,.06,.12,8);neck.translate(0,.02,0);
-  const hairG=new THREE.SphereGeometry(.12,14,8,0,Math.PI*2,0,Math.PI*.52);hairG.scale(.97,1.08,1.08);hairG.translate(0,.168,-.012);
+  const hairG=q===0?new THREE.SphereGeometry(.12,14,8,0,Math.PI*2,0,Math.PI*.54):new THREE.SphereGeometry(.12,18,10,0,Math.PI*2,0,Math.PI*.54);hairG.scale(.97,1.08,1.08);hairG.translate(0,.168,-.012);
+  {const p=hairG.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i),z=p.getZ(i),k=Math.min(1,Math.max(0,(z+.01)/.09));const hl=.168+.05*k;if(y<hl)p.setY(i,hl-(hl-y)*(1-k*.85));}hairG.computeVertexNormals();}// hairline: high at the forehead, low at the nape
   const uarmG=limb([[.05,0],[.03,.056],[-.03,.064],[-.12,.057],[-.22,.047],[-.3,.043],[-.33,0]],z=>1-.12*(z>0)),farmG=limb([[.035,0],[.01,.046],[-.06,.051],[-.16,.041],[-.25,.033],[-.27,0]]);
   {const hand=new THREE.SphereGeometry(.05,8,6);hand.scale(.75,1.15,.62);hand.translate(0,-.3,.004);const th=new THREE.SphereGeometry(.02,6,4);th.scale(.8,1.4,.8);th.translate(.028,-.29,.02);farmG.copy(mergeGeo([farmG,hand,th]));}
   const thighG=limb([[.055,0],[.04,.07],[-.02,.092],[-.12,.086],[-.26,.074],[-.38,.061],[-.44,.056],[-.48,0]],(z,y)=>z>0&&y>-.36?1.08:1),shinG=limb([[.045,0],[.03,.056],[-.03,.06],[-.12,.067],[-.22,.056],[-.34,.04],[-.41,.037],[-.45,0]],(z,y)=>z<0&&y<-.02&&y>-.3?1+.3*Math.sin((y+.02)/-.28*Math.PI):1);const bootG=new THREE.CapsuleGeometry(.048,.15,3,8);bootG.rotateX(Math.PI/2);bootG.scale(1.05,.85,1);bootG.translate(0,-.035,.055);
   this.numTex=numTex;const kit=kitMaterial(numTex);
   const mk=(g,m,k)=>{if(m.customProgramCacheKey&&String(m.customProgramCacheKey()).startsWith('tone'))g.setAttribute('aC2',new THREE.InstancedBufferAttribute(new Float32Array(max*k*4),4));const im=new THREE.InstancedMesh(g,m,max*k);im.castShadow=true;im.receiveShadow=true;im.frustumCulled=false;im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);for(let i=0;i<max*k;i++){im.setMatrixAt(i,new THREE.Matrix4().makeScale(0,0,0));im.setColorAt(i,new THREE.Color(1,1,1));}scene.add(im);return im;};
-  torsoG.setAttribute('aK2',new THREE.InstancedBufferAttribute(new Float32Array(max*4),4));torsoG.setAttribute('aNum',new THREE.InstancedBufferAttribute(new Float32Array(max*2),2));
-  this.torso=mk(torsoG,kit,1);this.shorts=mk(shortsG,(()=>{const m=std(.8);m.normalMap=fabric();m.normalScale=new THREE.Vector2(.4,.4);return m;})(),1);this.head=mk(mergeGeo([headG,neck,noseG,...earG]),toneMat(.6,'head'),1);this.hair=mk(hairG,std(.9),1);
-  this.uarm=mk(uarmG,toneMat(.72,'arm'),2);this.farm=mk(farmG,toneMat(.65,'farm'),2);this.thigh=mk(thighG,toneMat(.68,'thigh'),2);this.shin=mk(shinG,toneMat(.85,'shin'),2);this.boot=mk(bootG,toneMat(.35,'boot'),2);
+  torsoG.setAttribute('aK2',new THREE.InstancedBufferAttribute(new Float32Array(max*4),4));torsoG.setAttribute('aNum',new THREE.InstancedBufferAttribute(new Float32Array(max*3),3));
+  this.torso=mk(torsoG,kit,1);this.shorts=mk(shortsG,(()=>{const m=std(.8);m.normalMap=fabric();m.normalScale=new THREE.Vector2(.4,.4);return m;})(),1);this.head=mk(mergeGeo([headG,neck,noseG,...earG]),toneMat(.6,'head'),1);hairG.setAttribute('aHS',new THREE.InstancedBufferAttribute(new Float32Array(max),1));this.hair=mk(hairG,hairMaterial(),1);
+  this.uarm=mk(uarmG,toneMat(.72,'arm'),2);this.farm=mk(farmG,toneMat(.65,'farm'),2);this.thigh=mk(thighG,toneMat(.68,'thigh'),2);this.shin=mk(shinG,(()=>{const m=toneMat(.85,'shin');m.normalMap=fabric();m.normalScale=new THREE.Vector2(.5,.5);return m;})(),2);this.boot=mk(bootG,toneMat(.35,'boot'),2);
+  // floodlight multi-shadows: four soft blobs per person, one draw (MEDIUM+ at night)
+  {const g=new THREE.PlaneGeometry(1,1);g.rotateX(Math.PI/2);g.translate(0,0,.5);this.blob=new THREE.InstancedMesh(g,new THREE.MeshBasicMaterial({color:0x000000,map:blobTex(),transparent:true,opacity:.3,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4}),max*4);
+   this.blob.frustumCulled=false;this.blob.renderOrder=2;this.blob.visible=false;this.blob.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(this.blob);this.blobMax=max*4;}
   this.rigs=[];for(let i=0;i<max;i++)this.rigs.push(makeRig());this.hidden=new THREE.Matrix4().makeScale(0,0,0);}
  // look: {c1,c2,pat,sh,so,skin,hair,boot,num,sleeve,glove,bald}
  setLook(i,L){const c=new THREE.Color();this.torso.setColorAt(i,c.set(L.c1));const k2=c.set(L.c2);this.torso.geometry.attributes.aK2.setXYZW(i,k2.r,k2.g,k2.b,L.pat);
-  const nb=new THREE.Color(L.c1),lum=nb.r*.3+nb.g*.59+nb.b*.11;this.torso.geometry.attributes.aNum.setXY(i,L.num||0,lum>.5?.05:.95);
-  this.shorts.setColorAt(i,c.set(L.sh));this.head.setColorAt(i,c.set(L.skin));this.hair.setColorAt(i,c.set(L.hair));const t2=(m,j,col,w=0)=>{c.set(col);m.geometry.attributes.aC2.setXYZW(j,c.r,c.g,c.b,w);};t2(this.head,i,L.hair);
+  const nb=new THREE.Color(L.c1),lum=nb.r*.3+nb.g*.59+nb.b*.11;this.torso.geometry.attributes.aNum.setXYZ(i,L.num||0,lum>.5?.05:.95,L.spn??0);
+  this.shorts.setColorAt(i,c.set(L.sh));this.head.setColorAt(i,c.set(L.skin));this.hair.setColorAt(i,c.set(L.hair));const t2=(m,j,col,w=0)=>{c.set(col);m.geometry.attributes.aC2.setXYZW(j,c.r,c.g,c.b,w);};t2(this.head,i,L.hair,L.beard?1:0);
   const slv=L.pat===6?L.c2:L.c1,lu=v=>{c.set(v);return c.r*.3+c.g*.59+c.b*.11;},sole=lu(L.boot)>.45?'#26272b':'#eeeeea',band=lu(L.so)>.5?L.c1===L.so?L.c2:L.c1:L.c2;
   for(let s=0;s<2;s++){const j=i*2+s;this.uarm.setColorAt(j,c.set(L.skin));t2(this.uarm,j,slv,L.glove?1:0);this.farm.setColorAt(j,c.set(L.glove||L.skin));t2(this.farm,j,L.glove?L.c1:L.skin,L.glove?1:0);
    this.thigh.setColorAt(j,c.set(L.skin));t2(this.thigh,j,L.sh);this.shin.setColorAt(j,c.set(L.so));t2(this.shin,j,band);this.boot.setColorAt(j,c.set(L.boot));t2(this.boot,j,sole);}
   for(const m of[this.head,this.uarm,this.farm,this.thigh,this.shin,this.boot])m.geometry.attributes.aC2.needsUpdate=true;
-  this.rigs[i].bald=!!L.bald;this.rigs[i].long=!!L.glove;
+  this.rigs[i].bald=!!L.bald;this.hair.geometry.attributes.aHS.setX(i,L.hs??0);this.hair.geometry.attributes.aHS.needsUpdate=true;this.rigs[i].long=!!L.glove;
   for(const m of[this.torso,this.shorts,this.head,this.hair,this.uarm,this.farm,this.thigh,this.shin,this.boot])m.instanceColor.needsUpdate=true;
   this.torso.geometry.attributes.aK2.needsUpdate=this.torso.geometry.attributes.aNum.needsUpdate=true;}
  pose(i,P){const r=this.rigs[i];if(!P[VIS]){for(const m of[this.torso,this.shorts,this.head,this.hair])m.setMatrixAt(i,this.hidden);for(const m of[this.uarm,this.farm,this.thigh,this.shin,this.boot]){m.setMatrixAt(i*2,this.hidden);m.setMatrixAt(i*2+1,this.hidden);}return;}
@@ -91,7 +110,14 @@ export class Squad{
  hand(i,k,out){return out.set(0,-.29,0).applyMatrix4(this.rigs[i].el[k].matrixWorld);}
  foot(i,k,out){return out.set(0,-.03,.1).applyMatrix4(this.rigs[i].an[k].matrixWorld);}
  headPos(i,out){return out.set(0,.16,0).applyMatrix4(this.rigs[i].neck.matrixWorld);}
+ // lamps: world positions of the floodlight banks; each blob points away from its lamp, longer for lower light
+ shadows(ents,lamps,on){const b=this.blob;b.visible=!!on&&!!lamps&&lamps.length>0;if(!b.visible)return;const m=_m,q=_q,up=_up;let n=0;
+  for(const e of ents){if(e.hidden||e.visible===false)continue;const hy=(e.pose&&e.pose[1])||0,fade=Math.max(0,1-hy*1.4);if(fade<=.05)continue;
+   for(const L of lamps){if(n>=this.blobMax)break;let dx=e.p.x-L.x,dz=e.p.z-L.z;const d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;const len=Math.min(4.2,1.85*(e.h||1)*d/L.y);
+    q.setFromAxisAngle(up,Math.atan2(dx,dz));m.compose(_p.set(e.p.x,.02,e.p.z),q,_s.set(.62*fade+.1,1,len*fade));b.setMatrixAt(n++,m);}}
+  b.count=n;b.instanceMatrix.needsUpdate=true;}
  commit(){for(const m of[this.torso,this.shorts,this.head,this.hair,this.uarm,this.farm,this.thigh,this.shin,this.boot])m.instanceMatrix.needsUpdate=true;}}
+const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_up=new V(0,1,0),_p=new V(),_s=new V();
 function makeRig(){const root=O(),spine=O(),neck=O();root.add(spine);spine.add(neck);neck.position.y=.585;
  const sh=[O(),O()],el=[O(),O()],hp=[O(),O()],kn=[O(),O()],an=[O(),O()];
  for(let k=0;k<2;k++){const s=k?-1:1;sh[k].position.set(s*.215,.5,0);spine.add(sh[k]);el[k].position.y=-.29;sh[k].add(el[k]);
