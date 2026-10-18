@@ -131,10 +131,42 @@ def cat_badges(n):
     return ' '.join(out)
 
 
+def progress_block(games, n):
+    """Progress tracker from docs/progress.json: releases plus realism-pass status per 3D world."""
+    p = json.load(open(rel('docs/progress.json'), encoding='utf-8'))
+    worlds = [g for g in games if g['href']]
+    real = {k: v for k, v in p['realism'].items() if not k.startswith('_')}
+    unknown = [k for k in real if k not in {g['id'] for g in worlds}]
+    if unknown:
+        raise SystemExit('docs/progress.json names unknown 3D worlds: ' + ', '.join(unknown))
+    done = sum(1 for g in worlds if g['id'] in real)
+    pct = round(100 * done / len(worlds))
+    bar = '█' * round(pct / 5) + '░' * (20 - round(pct / 5))
+    latest = p['releases'][0]
+    out = [f'![latest](https://img.shields.io/badge/latest-{latest["v"]}-ff4d00?style=flat-square) '
+           f'![realism](https://img.shields.io/badge/realism_pass-{done}%2F{len(worlds)}_worlds-2fe8d0?style=flat-square)', '',
+           f'**`{bar}` {done} of {len(worlds)} full-3D worlds have had the realism pass ({pct}%).**', '',
+           '| Release | Date | Branch | Games | 3D | What it added |', '|---|---|---|---|---|---|']
+    for i, r in enumerate(p['releases']):
+        tot, wl = (n['total'], n['worlds']) if i == 0 else (r['games'], r['worlds'])
+        out.append(f'| **{r["v"]}** | {r["date"]} | `{r["branch"]}` | {tot} | {wl} | {r["added"]} |')
+    order = {r['v']: i for i, r in enumerate(p['releases'])}
+    rows = sorted(worlds, key=lambda g: (order.get(real[g['id']]['v'], 99) if g['id'] in real else 999, title(g['name'])))
+    out += ['', f'<details><summary><b>Realism pass by world</b> ({done} done · {len(worlds) - done} to do)</summary>', '',
+            '| World | Style | Realism pass |', '|---|---|---|']
+    for g in rows:
+        r = real.get(g['id'])
+        st = f'✅ {r["v"]}' + (f' · {r["passes"]} passes' if r['passes'] > 1 else '') if r else '○ to do'
+        out.append(f'| [{title(g["name"])}]({link(g)}) | {g["style"]} | {st} |')
+    out += ['', '</details>']
+    return '\n'.join(out)
+
+
 def readme(games, n):
     s = open(rel('README.md'), encoding='utf-8').read()
     s = replace_block(s, 'worlds', worlds_table(games))
     s = replace_block(s, 'cats', cat_badges(n))
+    s = replace_block(s, 'progress', progress_block(games, n))
     write('README.md', s)
 
 
