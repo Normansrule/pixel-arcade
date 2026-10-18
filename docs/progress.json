@@ -2,7 +2,7 @@
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
     {"v": "v33", "date": "18 Oct 2026", "branch": "round10", "round": 10,
-     "added": "Realism and depth pass on six more 3D worlds (STRIKER 11 second pass, IRON VANGUARD, STORM ROYALE, WILD QUEST, KART GRAND PRIX, ABYSS DIVER); this progress tracker."},
+     "added": "Realism and depth pass on six more 3D worlds (STRIKER 11 second pass, IRON VANGUARD, STORM ROYALE, WILD QUEST, KART GRAND PRIX, ABYSS DIVER); the new lifeguard surfing world SWELL GUARD; this progress tracker."},
     {"v": "v32", "date": "18 Oct 2026", "branch": "round9", "round": 9, "games": 509, "worlds": 54,
      "added": "Realism and depth pass on six flagship 3D worlds: FRONTLINE OPS, SIDEWAYS, STRIKER 11, DUSTWATER, FAIRWAY LEGENDS, NEON BAY."},
     {"v": "v31", "date": "18 Oct 2026", "branch": "round8", "round": 8, "games": 509, "worlds": 54,
@@ -24,6 +24,7 @@
     "stormroyale":    {"v": "v33", "passes": 1},
     "wildquest":      {"v": "v33", "passes": 1},
     "kartgp":         {"v": "v33", "passes": 1},
-    "abyss3d":        {"v": "v33", "passes": 1}
+    "abyss3d":        {"v": "v33", "passes": 1},
+    "swellguard":     {"v": "v33", "passes": 1}
   }
 }

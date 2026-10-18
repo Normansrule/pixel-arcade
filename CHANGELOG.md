@@ -5,6 +5,7 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 ## Unreleased (on branch `round10`)
 
 - **README progress tracker:** a new 📈 Progress section shows every release from v29 on (date, branch, game counts, what it added) and which 3D worlds have had the realism pass, with a progress bar. `tools/gen_docs.py` builds it from the game registry and `docs/progress.json`, so the counts stay current.
+- **SWELL GUARD** (new 3D world, `surf/`): a surfing lifeguard on a golden-hour beach. Ride breaking waves for carve, air and barrel combos while rip, sting and shark rescues, a lost child, a seagull thief and a contest heat pull you off the waves.
 
 ## v32 update (released 18 Oct 2026 from branch `round9`)
 
