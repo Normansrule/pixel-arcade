@@ -1,6 +1,6 @@
 // NEON BAY — missions from map markers: taxi fares, package delivery, street races, time trials, photo hunts, escape the cops.
 import {THREE,cl,wrapA,rng,fmtCash} from './util.js';
-import {polyAt,BEACH,WL} from './world.js';
+import {polyAt,poly,BEACH,WL,RW} from './world.js';
 import {Vehicle,aiDrive,SPECS,trafficPaint} from './vehicles.js';
 import {Beacon} from './fx.js';
 import {randLook,newPose,animate} from './people.js';
@@ -9,6 +9,7 @@ import * as TX from './tex.js';
 export const KIND={taxi:{col:0xffc61a,icon:'T',label:'TAXI SHIFT',job:'Pick up three fares and drive them across town. Speed and air time earn tips.'},delivery:{col:0x7dff6a,icon:'D',label:'PACKAGE RUN',job:'Three drop-offs, one ticking clock. Dents cost you.'},
  race:{col:0xff4d00,icon:'R',label:'STREET RACE',job:'Three rivals, one route. Podium pays, first pays big.'},trial:{col:0x36f0ff,icon:'C',label:'TIME TRIAL',job:'Checkpoints add time. Hit them all before the clock dies.'},
  photo:{col:0xff3fa4,icon:'P',label:'PHOTO HUNT',job:'Snap the cars on the list with P. Get close, keep it in frame.'},escape:{col:0x3d8bff,icon:'!',label:'HOT PURSUIT',job:'Three stars, right now. Shake the cops before time runs out.'},
+ heist:{col:0xe8c15a,icon:'V',label:'ARMORED TAKEDOWN',job:'Ram a cash truck until the doors give, grab the bags, then shake three stars.'},boost:{col:0xc77dff,icon:'B',label:'BOOST TO ORDER',job:'A buyer wants a specific car off the curb. Steal it, keep it clean, bring it in cold.'},
  garage:{col:0x8a7cff,icon:'$',label:'GARAGE',job:'Buy new wheels.'},spray:{col:0xff8a3d,icon:'S',label:'SPRAY SHOP',job:'Respray $150: full repair and the cops lose your description.'},home:{col:0xffffff,icon:'H',label:'SAFEHOUSE',job:''},police:{col:0x3d8bff,icon:'',label:'',job:''}};
 const PHOTO_T=[{d:'A YELLOW CABBY',t:v=>v.id==='cabby',b:'cabby'},{d:'A POLICE CRUISER',t:v=>v.id==='police',b:'police'},{d:'A SKIPJACK MOTORBIKE',t:v=>v.id==='skipjack',b:'skipjack'},{d:'A RED CAR',t:v=>{const c=new THREE.Color(v.paint);return c.r>.6&&c.g<.3&&c.b<.3;}},{d:'A HAULER PICKUP',t:v=>v.id==='hauler',b:'hauler'},
  {d:'A PARCEL VAN',t:v=>v.id==='parcel',b:'parcel'},{d:'A ZEPHYR R SUPERCAR',t:v=>v.id==='zephyr',b:'zephyr'},{d:'A BRUISER MUSCLE CAR',t:v=>v.id==='bruiser',b:'bruiser'},{d:'ANY CAR ON THE FREEWAY',t:v=>v.y>9},{d:'A CAR CATCHING AIR',t:v=>!v.onG&&v.air>.25}];
@@ -24,7 +25,7 @@ export class Missions{constructor(G){this.G=G;this.R=rng(808);this.active=null;t
   if(this.active){const m=this.active;m.t+=dt;if(m.timer!=null&&m.timerOn!==false){m.timer-=dt;if(m.timer<=0){m.timer=0;this.fail(m.timeoutMsg||'OUT OF TIME');return;}}m.update(dt);}}
  // GPS target for the minimap route
  gps(){const m=this.active;if(!m)return this.G.waypoint;return m.gps?m.gps():null;}
- start(p){const G=this.G,K=KIND[p.kind];if(this.active||this.cool>0)return;const make={taxi:Taxi,delivery:Delivery,race:Race,trial:Trial,photo:Photo,escape:Escape}[p.kind];if(!make)return;
+ start(p){const G=this.G,K=KIND[p.kind];if(this.active||this.cool>0)return;const make={taxi:Taxi,delivery:Delivery,race:Race,trial:Trial,photo:Photo,escape:Escape,heist:Heist,boost:Boost}[p.kind];if(!make)return;
   const m=new make(this,p);m.kind=p.kind;m.name=p.name;m.t=0;this.active=m;G.waypoint=null;G.hud.banner(K.label,p.name,'#'+new THREE.Color(K.col).getHexString(),2.4);G.snd.play('beep',1);m.begin();}
  pass(reward,rep,sub){const G=this.G,m=this.active;if(!m)return;this.cleanup();this.done++;this.passed++;G.stats.missions++;G.addCash(reward,'MISSION');G.addRep(rep);G.hud.banner('MISSION PASSED',(sub?sub+' · ':'')+'+'+fmtCash(reward)+'  +'+rep+' REP','#ffd23f',3.2);G.snd.play('pass');this.cool=2;G.cheer();}
  fail(why,payout=0){const G=this.G;if(!this.active)return;this.cleanup();G.stats.failed++;if(payout>0)G.addCash(payout,'KEPT');G.hud.banner('MISSION FAILED',why,'#ff4d4d',3);G.snd.play('fail');this.cool=2;}
@@ -130,3 +131,61 @@ class Escape{constructor(M,p){this.M=M;this.G=M.G;this.p=p;this.timer=150;this.t
  begin(){this.G.police.set(3.2);this.G.onStars(3,'job');this.G.hud.objective('LOSE THE COPS','BREAK LINE OF SIGHT · RESPRAY WORKS TOO');}
  update(dt){if(this.G.police.stars===0){this.M.pass(1000,25,'CLEAN GETAWAY');}}
  gps(){return null;}end(){}}
+
+/* ---------------- armored takedown ---------------- */
+// a cash truck drives a fixed route across town: ram it until the doors give, grab the spilled bags, then lose the heat or reach the drop
+const _hq={},_hq2={};
+class Heist{constructor(M,p){this.M=M;this.G=M.G;this.p=p;this.timer=260;this.phase='chase';this.bags=0;this.timeoutMsg='THE TRAIL WENT COLD';}
+ begin(){const G=this.G,M=this.M;const A=M.sidewalkPoint(200,480),B=A&&M.sidewalkPoint(650,1200,A);if(!A||!B){M.fail('NO TRUCK ON THE ROAD TODAY');return;}
+  const r=G.W.route(A.rx,A.rz,B.rx,B.rz);const pts=r.pts.map(q=>({x:q.x,z:q.z,y:q.y}));if(pts.length<2){M.fail('NO TRUCK ON THE ROAD TODAY');return;}this.path=poly(pts);this.st={s:6};
+  const q=this.lane(6,{});M.clearAround(q.x,q.z,18);this.truck=M.spawnCar('vault',q.x,q.z,Math.atan2(q.tx,q.tz),{paint:0x3c4a40,y:(q.y||0)+1.5});this.truck.mode='race';this.truck.racer={s:0,heist:1};this.truck.driver='npc';
+  this.hp0=this.truck.dmg;this.want=[12,13.5,15][G.opt.cops];this.obj();}
+ lane(s,o){const P=this.path;polyAt(P,cl(s,0,P.len),o);o.x+=-o.tz*3.5;o.z+=o.tx*3.5;return o;}
+ armor(){return 1-Math.min(1,(this.truck.dmg-this.hp0)/(this.truck.hp*.45));}
+ obj(){const G=this.G;if(this.phase==='chase')G.hud.objective('RAM THE ARMORED TRUCK','ARMOR '+Math.round(this.armor()*100)+'% · STOP IT BEFORE IT REACHES THE VAULT');
+  else if(this.phase==='loot')G.hud.objective(`GRAB THE CASH BAGS · ${this.bags}/3`,'ON FOOT OR DRIVE OVER THEM');else G.hud.objective('GET AWAY WITH '+fmtCash(this.pay()),'LOSE THE COPS OR REACH THE DROP');}
+ pay(){return Math.round(this.bags*[750,850,1000][this.G.opt.cops]);}
+ gps(){if(this.phase==='chase')return{x:this.truck.x,z:this.truck.z};if(this.phase==='loot'){const b=this.bagList.find(b=>!b.got);return b?{x:b.x,z:b.z}:null;}return this.drop;}
+ update(dt){const G=this.G,M=this.M,T=this.truck,P=G.player;
+  if(this.phase==='chase'){const s=this.prog();
+   if(s>=this.path.len-10){M.fail('THE TRUCK MADE IT TO THE VAULT');return;}
+   if(!this.hit&&T.dmg>this.hp0+4){this.hit=true;this.want*=1.45;G.police.crime('heist',T.x,T.z,1.2,true);G.hud.toast('THE GUARDS RADIO IT IN · THE TRUCK IS RUNNING');}
+   if(T.dmg>=this.hp0+T.hp*.45||T.wrecked||P.veh===T){this.spill();return;}
+   const look=Math.max(10,T.speed*.8);const q=this.lane(s+look,_hq),q2=this.lane(s+look+24,_hq2);const bend=Math.abs(wrapA(Math.atan2(q2.x-q.x,q2.z-q.z)-Math.atan2(q.x-T.x,q.z-T.z)));
+   if(T.speed<1.2&&this.t>3)T.stuck=(T.stuck||0)+dt;else T.stuck=Math.max(0,(T.stuck||0)-dt);if(T.stuck>3&&Math.hypot(P.x-T.x,P.z-T.z)>40){const p=this.lane(s+6,{});T.place(p.x,p.z,Math.atan2(p.tx,p.tz),G.W,(p.y||0)+1.5);T.stuck=0;}
+   aiDrive(T,q.x,q.z,this.want*(bend>1.1?.45:bend>.6?.65:1),{dt,nohb:true});this.M.pool[0].set(T.x,T.y+1,T.z);if((this.ot=(this.ot||0)-dt)<=0){this.ot=.25;this.obj();}return;}
+  if(this.phase==='loot'){for(const b of this.bagList){if(b.got)continue;b.m.rotation.y+=dt*1.5;if(Math.hypot(P.x-b.x,P.z-b.z)<(P.veh?3.2:1.8)){b.got=true;b.m.visible=false;this.bags++;G.snd.play('cash');G.hud.toast('BAG GRABBED · '+fmtCash(this.pay()));this.obj();}}
+   if(this.bags>=3||(this.bags>0&&Math.hypot(P.x-T.x,P.z-T.z)>90)){this.getaway();}return;}
+  if(G.police.stars===0){M.pass(this.pay(),30,'CLEAN GETAWAY · '+this.bags+' BAGS');return;}
+  if(Math.hypot(P.x-this.drop.x,P.z-this.drop.z)<11&&(!P.veh||P.veh.speed<5)){M.pass(this.pay(),30,'MONEY DROPPED · '+this.bags+' BAGS');}}
+ prog(){const P=this.path,T=this.truck,st=this.st;let best=st.s,bd=1e9;for(let s=st.s-15;s<st.s+60;s+=2){const q=polyAt(P,cl(s,0,P.len),_q);const d=Math.hypot(q.x-T.x,q.z-T.z);if(d<bd){bd=d;best=cl(s,0,P.len);}}st.s=best;return best;}
+ spill(){const G=this.G,T=this.truck;this.phase='loot';T.mode='parked';T.ctrl.thr=0;T.ctrl.hb=true;this.M.pool[0].hide();G.snd.play('crash',18);
+  G.police.set(Math.max(G.police.heat,3.2));G.onStars(3,'heist');G.hud.banner('THE DOORS GAVE','GRAB THE BAGS','#e8c15a',2);
+  const geo=new THREE.CapsuleGeometry(.24,.5,3,8);geo.rotateZ(Math.PI/2);const mat=new THREE.MeshStandardMaterial({color:0x2c4a2a,roughness:.85,emissive:0x6a5410,emissiveIntensity:.25});
+  const sa=Math.sin(T.a),ca=Math.cos(T.a);this.bagList=[-1.6,0,1.6].map((lat,i)=>{const back=T.len/2+1.6+i*.9;const x=T.x-sa*back+ca*lat,z=T.z-ca*back-sa*lat;const y=G.W.groundAt(x,z,T.y+1)+.26;const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;G.scene.add(m);
+   G.glow.burst({x,y:y+.3,z},14,4,[new THREE.Color(2,1.6,.5)],.18,.6,{grav:6});return{x,z,m,got:false};});this.obj();}
+ getaway(){const G=this.G;this.phase='run';const d=this.M.sidewalkPoint(320,700);this.drop=d||{x:this.p.x,z:this.p.z,y:G.W.groundBase(this.p.x,this.p.z)};this.M.pool[1].set(this.drop.x,this.drop.y??0,this.drop.z);this.M.pool[1].bm.uniforms.uC.value.set(0xe8c15a);this.timer=Math.max(this.timer,150);this.obj();}
+ end(){for(const b of this.bagList||[])b.m.parent&&b.m.parent.remove(b.m);if(this.truck){this.truck.keep=false;this.truck.racer=null;if(this.truck.mode==='race'){this.truck.mode='parked';this.truck.ctrl.thr=0;}}}}
+
+/* ---------------- boost to order ---------------- */
+// a buyer at the docks wants one specific parked car: steal it (the alarm draws heat), keep it clean, and deliver it with no stars
+const BOOST_WANT=[['marlin','A MARLIN SEDAN'],['bruiser','A BRUISER MUSCLE CAR'],['hauler','A HAULER PICKUP'],['cabby','AN OFF-DUTY CABBY']];
+class Boost{constructor(M,p){this.M=M;this.G=M.G;this.p=p;this.timer=300;this.phase='find';this.timeoutMsg='THE BUYER WALKED';}
+ begin(){const G=this.G,M=this.M,P=G.player;const R=M.R;const order=BOOST_WANT[R()*BOOST_WANT.length|0];let best=null,bd=1e9;
+  for(const c of G.city.parked){if(c.dead)continue;const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<220||d>800)continue;const sc=(c.id===order[0]?0:500)+Math.abs(d-420)+R()*60;if(sc<bd){bd=sc;best=c;}}
+  if(!best){M.fail('NO ORDERS TODAY');return;}this.want=best.id===order[0]?order[1]:'THE CAR ON YOUR GPS';const v=G.convertParked(best);if(!v){M.fail('NO ORDERS TODAY');return;}
+  v.setPaint([0xd8c8a0,0x0f5e57,0x7a1020,0x1e3fa8][R()*4|0]);v.keep=true;v.ctrl.hb=true;this.car=v;const ne=G.W.nearestEdge(this.p.x,this.p.z,40);const q=ne?polyAt(ne.e.pts,ne.s,{}):{x:this.p.x,z:this.p.z};
+  this.drop={x:(q.x+this.p.x)/2,z:(q.z+this.p.z)/2};this.drop.y=G.W.groundBase(this.drop.x,this.drop.z);this.obj();}
+ obj(){const G=this.G;if(this.phase==='find')G.hud.objective('STEAL '+this.want,'IT IS PARKED AT THE MARKER · ALARMS DRAW HEAT');
+  else G.hud.objective(G.police.stars?'LOSE THE HEAT · THE BUYER WANTS IT COLD':'DELIVER THE CAR TO THE DOCKS','CONDITION '+Math.round(this.cond()*100)+'% · PAY '+fmtCash(this.pay()));}
+ cond(){const v=this.car;return Math.max(0,1-(v.dmg)/(v.hp*.9));}
+ pay(){return Math.round((700+1500*this.cond())*[.9,1,1.2][this.G.opt.cops]);}
+ gps(){return this.phase==='find'?{x:this.car.x,z:this.car.z}:this.drop;}
+ update(dt){const G=this.G,M=this.M,v=this.car,P=G.player;if(v.wrecked){M.fail('THE CAR IS SCRAP');return;}
+  if(this.phase==='find'){M.pool[0].set(v.x,v.y,v.z);M.pool[0].bm.uniforms.uC.value.set(0xc77dff);if(P.veh===v){this.phase='drive';M.pool[0].hide();G.police.crime('alarm',v.x,v.z,1,true);G.snd.play('beep',1);
+    M.pool[1].set(this.drop.x,this.drop.y,this.drop.z);M.pool[1].bm.uniforms.uC.value.set(0xc77dff);this.obj();}return;}
+  if(P.veh!==v){this.away=(this.away||0)+dt;if(this.away>20){M.fail('YOU DITCHED THE ORDER');return;}G.hud.objective('GET BACK IN THE CAR',Math.ceil(20-this.away)+'s');return;}this.away=0;
+  if((this.ot=(this.ot||0)-dt)<=0){this.ot=.25;this.obj();}
+  if(Math.hypot(v.x-this.drop.x,v.z-this.drop.z)<11&&v.speed<4){if(G.police.stars>0){if(!this.warned){this.warned=1;G.hud.toast('THE BUYER WON\'T TOUCH A HOT CAR');}return;}
+   const pay=this.pay();this.car.keep=false;M.pass(pay,20,'DELIVERED · '+Math.round(this.cond()*100)+'% CONDITION');}}
+ end(){if(this.car&&this.G.player.veh!==this.car)this.car.keep=false;}}

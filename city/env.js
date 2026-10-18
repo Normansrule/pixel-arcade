@@ -6,6 +6,25 @@ const C=h=>new THREE.Color(h);
 const PAL=[[0,'#03050e','#141a34','#7f93ff',0.198,0.225,'#0e1226',1.159],[4.8,'#060a20','#2a2448','#8090ff',0.186,0.225,'#1c1a34',1.14],[6,'#24346c','#ff9070','#ffa060',0.558,0.413,'#b08080',0.997],[7.4,'#3f78cc','#ffd2a6','#ffd2a0',1.488,0.637,'#c4c8d2',0.874],
  [10,'#2a68d4','#a6d0ff','#fff1de',1.922,0.75,'#b4cce6',0.817],[15.5,'#2b66cc','#b0d2f6','#fff0dc',1.86,0.75,'#b8cce0',0.817],[17.6,'#3462b8','#ffc890','#ffc488',1.55,0.637,'#e2bea0',0.855],[18.6,'#383685','#ff6c52','#ff7440',0.93,0.465,'#cc7c6e',0.931],
  [19.35,'#251c58','#ff4a86','#ff5a5c',0.341,0.338,'#80487a',1.026],[20.4,'#0b0d2c','#3e2464','#8a8cff',0.198,0.24,'#241c44',1.14],[24,'#03050e','#141a34','#7f93ff',0.198,0.225,'#0e1226',1.159]];
+// atmospheric perspective for every built-in material: exponential distance fog that thins with altitude and
+// picks up warm in-scattering toward the sun (lit materials read the sun from the first directional light)
+THREE.ShaderChunk.fog_pars_vertex='#ifdef USE_FOG\nvarying float vFogDepth;varying vec3 vFogW;\n#endif';
+THREE.ShaderChunk.fog_vertex='#ifdef USE_FOG\nvFogDepth=-mvPosition.z;vFogW=cameraPosition+transpose(mat3(viewMatrix))*mvPosition.xyz;\n#endif';
+THREE.ShaderChunk.fog_pars_fragment='#ifdef USE_FOG\nuniform vec3 fogColor;varying float vFogDepth;varying vec3 vFogW;\n#ifdef FOG_EXP2\nuniform float fogDensity;\n#else\nuniform float fogNear;uniform float fogFar;\n#endif\n#endif';
+THREE.ShaderChunk.fog_fragment=`#ifdef USE_FOG
+{vec3 fd=vFogW-cameraPosition;float fdist=length(fd);
+#ifdef FOG_EXP2
+float fogFactor=1.-exp(-fogDensity*fogDensity*fdist*fdist);
+#else
+float fogFactor=1.-exp(-pow(max(fdist-fogNear*.3,0.)/fogFar*2.3,1.3));
+#endif
+float fh=max(0.,(min(vFogW.y,cameraPosition.y)+max(vFogW.y,cameraPosition.y))*.5);fogFactor*=mix(.42,1.,exp(-fh*.009));
+vec3 fcol=fogColor;
+#if defined(STANDARD) && NUM_DIR_LIGHTS > 0
+{vec3 vd=normalize((viewMatrix*vec4(fd,0.)).xyz);float sc=max(dot(vd,directionalLights[0].direction),0.);fcol+=directionalLights[0].color*(pow(sc,10.)*.07+pow(sc,2.)*.02);}
+#endif
+gl_FragColor.rgb=mix(gl_FragColor.rgb,fcol,clamp(fogFactor,0.,1.));}
+#endif`;
 const cache={};function col(hex){return cache[hex]||(cache[hex]=C(hex));}
 export function palette(hour,rain){let a=PAL[0],b=PAL[1];for(let i=1;i<PAL.length;i++){if(hour<=PAL[i][0]){a=PAL[i-1];b=PAL[i];break;}}const f=(hour-a[0])/(b[0]-a[0]||1);
  const mixC=(i)=>col(a[i]).clone().lerp(col(b[i]),f);const p={top:mixC(1),hor:mixC(2),sun:mixC(3),sunI:lerp(a[4],b[4],f),hemi:lerp(a[5],b[5],f),fog:mixC(6),exp:lerp(a[7],b[7],f)};
@@ -44,12 +63,20 @@ export class Env{
   this.sun=new THREE.DirectionalLight(0xffffff,3);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);const sc=this.sun.shadow.camera;sc.left=-95;sc.right=95;sc.top=95;sc.bottom=-95;sc.near=10;sc.far=520;this.sun.shadow.bias=-.0004;this.sun.shadow.normalBias=.06;scene.add(this.sun,this.sun.target);
   scene.fog=new THREE.Fog(0x9ab0c8,260,1300);
   this.buildWater();this.buildRain();this.pmrem=new THREE.PMREMGenerator(R);this.envScene=this.makeEnvScene();this.envKey='';this.envRT=null;}
- makeEnvScene(){const s=new THREE.Scene();this.EU={uTop:{value:new THREE.Color()},uHor:{value:new THREE.Color()},uSunDir:{value:new THREE.Vector3()},uSunCol:{value:new THREE.Color()},uNight:{value:0}};
-  s.add(new THREE.Mesh(new THREE.SphereGeometry(40,32,16),new THREE.ShaderMaterial({uniforms:this.EU,side:THREE.BackSide,vertexShader:'varying vec3 vD;void main(){vD=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-   fragmentShader:`uniform vec3 uTop,uHor,uSunDir,uSunCol;uniform float uNight;varying vec3 vD;void main(){vec3 d=normalize(vD);float h=d.y;vec3 c=mix(uHor,uTop,pow(clamp(h,0.,1.),.5));if(h<0.)c=mix(uHor*.5,vec3(.06,.055,.05),clamp(-h*3.,0.,1.));
-    c+=uSunCol*pow(max(dot(d,uSunDir),0.),24.)*3.*(1.-uNight);
-    float band=smoothstep(.0,.04,h)*smoothstep(.22,.05,h);float stripes=.5+.5*sin(atan(d.z,d.x)*5.);c+=mix(vec3(1.,.35,.75),vec3(.25,.9,1.),stripes)*band*uNight*1.4;gl_FragColor=vec4(c,1.);}`})));return s;}
- updateEnv(force){const key=Math.round(this.hour*3)+'_'+Math.round(this.rain*4);if(!force&&key===this.envKey)return;this.envKey=key;const p=this.pal;this.EU.uTop.value.copy(p.top);this.EU.uHor.value.copy(p.hor);this.EU.uSunDir.value.copy(this.sunV);this.EU.uSunCol.value.copy(p.sun).multiplyScalar(Math.min(1.5,p.sunI*.5));this.EU.uNight.value=this.U.uNight.value;
+ makeEnvScene(){const s=new THREE.Scene();this.EU={uTop:{value:new THREE.Color()},uHor:{value:new THREE.Color()},uSunDir:{value:new THREE.Vector3()},uSunCol:{value:new THREE.Color()},uNight:{value:0},uFog:{value:new THREE.Color()}};
+  // what metals, paint and glass reflect: the sky, a hazy ring of city skyline with lit windows at night, and dark wet ground
+  s.add(new THREE.Mesh(new THREE.SphereGeometry(40,64,32),new THREE.ShaderMaterial({uniforms:this.EU,side:THREE.BackSide,vertexShader:'varying vec3 vD;void main(){vD=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+   fragmentShader:`uniform vec3 uTop,uHor,uSunDir,uSunCol,uFog;uniform float uNight;varying vec3 vD;float hs(float n){return fract(sin(n*91.7)*43758.5453);}
+   void main(){vec3 d=normalize(vD);float h=d.y;vec3 c=mix(uHor,uTop,pow(clamp(h,0.,1.),.5));
+    float sd=max(dot(d,uSunDir),0.);c+=uSunCol*(pow(sd,24.)*3.+pow(sd,4.)*.25)*(1.-uNight);
+    float az=atan(d.z,d.x)/6.2832+.5;float bin=floor(az*90.);float bh=.025+.11*pow(hs(bin),2.2)+.05*hs(floor(az*23.)+7.);
+    vec3 bc=mix(uFog*.55,uHor*.3,.5)*(1.-uNight*.7)+vec3(.01,.012,.02);
+    float win=step(.55,hs(floor(az*900.)+floor(h*160.)*13.1))*step(.4,fract(az*900.))*step(.35,fract(h*160.));bc+=vec3(1.,.75,.45)*win*uNight*.9;
+    float band=smoothstep(.02,.07,h)*smoothstep(.2,.06,h);float stripes=.5+.5*sin(az*6.2832*5.);bc+=mix(vec3(1.,.35,.75),vec3(.25,.9,1.),stripes)*band*uNight*.25;
+    if(h<bh&&h>-.01)c=mix(c,bc,smoothstep(-.01,.0,h));
+    if(h<-.01){c=mix(uHor*.32,vec3(.045,.043,.04),clamp(-h*4.,0.,1.));c+=vec3(1.,.7,.4)*uNight*.04;}
+    gl_FragColor=vec4(c,1.);}`})));return s;}
+ updateEnv(force){const key=Math.round(this.hour*3)+'_'+Math.round(this.rain*4);if(!force&&key===this.envKey)return;this.envKey=key;const p=this.pal;this.EU.uTop.value.copy(p.top);this.EU.uHor.value.copy(p.hor);this.EU.uSunDir.value.copy(this.sunV);this.EU.uSunCol.value.copy(p.sun).multiplyScalar(Math.min(1.5,p.sunI*.5));this.EU.uNight.value=this.U.uNight.value;this.EU.uFog.value.copy(p.fog);
   const rt=this.pmrem.fromScene(this.envScene,.02);if(this.envRT)this.envRT.dispose();this.envRT=rt;this.scene.environment=rt.texture;}
  buildWater(){const w=this.w;// terrain height texture for depth/foam
   const X0=-900,Z0=-860,X1=1100,Z1=1100,N=256,data=new Uint8Array(N*N*4);for(let j=0;j<N;j++)for(let i=0;i<N;i++){const x=X0+(X1-X0)*i/(N-1),z=Z0+(Z1-Z0)*j/(N-1);const h=w.terrainH(x,z);const v=cl((h+12)/16,0,1)*255|0;data[(j*N+i)*4]=v;data[(j*N+i)*4+3]=255;}
@@ -88,11 +115,11 @@ export class Env{
   sunDir(hour,this.sunV);moonDir(hour,this.moonV);const SU=this.SU;SU.uTop.value.copy(p.top);SU.uHor.value.copy(p.hor);SU.uSunDir.value.copy(this.sunV);SU.uSunCol.value.copy(p.sun);SU.uMoonDir.value.copy(this.moonV);SU.uCloud.value=cl(.3+rain*.7,0,1);
   this.sky.position.copy(cam.position);
   const sunUp=this.sunV.y>-.04;const L=sunUp?this.sunV:this.moonV;const fade=sunUp?sstep(-.04,.08,this.sunV.y):1;
-  this.sun.color.copy(sunUp?p.sun:new THREE.Color(.55,.62,1));this.sun.intensity=sunUp?p.sunI*fade:.38*(1-rain*.6);
+  this.sun.color.copy(sunUp?p.sun:new THREE.Color(.55,.62,1));this.sun.intensity=sunUp?p.sunI*fade*1.45:.42*(1-rain*.6);
   this.sun.position.set(focus.x+L.x*260,focus.y+L.y*260,focus.z+L.z*260);this.sun.target.position.copy(focus);
   // stabilise shadow map against shimmering: snap to texel grid
   const sc=this.sun.shadow.camera,tex=(sc.right-sc.left)/this.sun.shadow.mapSize.x;this.sun.target.updateMatrixWorld();
-  this.hemiL.color.copy(p.top).lerp(p.hor,.5).lerp(new THREE.Color(1,1,1),.35);this.hemiL.groundColor.set(0x6a5a48).multiplyScalar(.5+.5*(1-U.uNight.value));this.hemiL.intensity=p.hemi*1.05;
+  this.hemiL.color.copy(p.top).lerp(p.hor,.5).lerp(new THREE.Color(1,1,1),.35);this.hemiL.groundColor.set(0x6a5a48).multiplyScalar(.5+.5*(1-U.uNight.value));this.hemiL.intensity=p.hemi*.42;
   const f=this.scene.fog;f.color.copy(p.fog);const near=lerp(260,90,rain),far=lerp(1300,520,rain)*(1-U.uNight.value*.18);f.near=near;f.far=far;
   this.WU.uFog.value.copy(p.fog);this.WU.uFogN.value=near;this.WU.uFogF.value=far;
   this.rainM.visible=rain>.02;this.RU.uCam.value.copy(cam.position);

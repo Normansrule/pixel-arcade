@@ -1,5 +1,5 @@
 // NEON BAY — traffic signals, lane-following traffic AI, police heat (witnesses, pursuit, box-ins, roadblocks, busting).
-import {THREE,cl,lerp,wrapA,rng,hash2} from './util.js';
+import {THREE,cl,lerp,wrapA,rng,hash2,M,merge} from './util.js';
 import {RW,polyAt,FWY_Y} from './world.js';
 import {Vehicle,aiDrive,trafficPaint} from './vehicles.js';
 
@@ -7,7 +7,7 @@ import {Vehicle,aiDrive,trafficPaint} from './vehicles.js';
 // per junction a 24 s cycle; N-S ('z' axis) then E-W ('x' axis)
 export function lightState(node,axis,t){const c=((t+hash2(node.id,7)*24)%24+24)%24;if(axis==='z')return c<9?0:c<11?1:2;return c<12?2:c<21?0:c<23?1:2;}
 
-const TYPES=[['pip',22],['cabby',13],['parcel',9],['hauler',13],['bruiser',7],['zephyr',4],['skipjack',7],['police',6]];
+const TYPES=[['pip',20],['cabby',13],['parcel',8],['hauler',12],['marlin',8],['bruiser',6],['zephyr',4],['skipjack',6],['dune',2],['police',6]];
 function pickType(R,bias){const list=TYPES.map(([k,w])=>[k,w*(bias&&bias[k]?bias[k]:1)]);const tot=list.reduce((s,[,w])=>s+w,0);let r=R()*tot;for(const[k,w]of list){if((r-=w)<=0)return k;}return'pip';}
 
 export class Traffic{constructor(G){this.G=G;this.W=G.W;this.R=rng(4242);this.cars=[];this.t=0;this.lt=0;this.bias=null;}
@@ -27,19 +27,27 @@ export class Traffic{constructor(G){this.G=G;this.W=G.W;this.R=rng(4242);this.ca
   const live=this.cars.filter(c=>!c.keep&&c.mode==='lane').length;let n=0;while(live+n<want&&n<3){if(!this.spawnOne(px,pz,this.cars.length<want*.4?70:150,280))break;n++;}
   for(const v of this.cars)if(v.mode==='lane')this.drive(v,dt);
   if((this.lt-=dt)<=0){this.lt=.25;this.paintLights();}}
- remove(v){const i=this.cars.indexOf(v);if(i>=0)this.cars.splice(i,1);const j=this.G.vehicles.indexOf(v);if(j>=0)this.G.vehicles.splice(j,1);v.detach();}
+ remove(v){if(v.slot&&!v.wrecked&&Math.hypot(v.x-v.slot.x,v.z-v.slot.z)<1.2&&v.driver!=='player'){const c=v.slot;c.dead=false;c.solid.y1=1.45;this.G.city.refreshParked(c.id);}const i=this.cars.indexOf(v);if(i>=0)this.cars.splice(i,1);const j=this.G.vehicles.indexOf(v);if(j>=0)this.G.vehicles.splice(j,1);v.detach();}
  // lane-follow one car
  drive(v,dt){const W=this.W,L=v.lane,o=_o;let want=L.want;if(this.G.weatherRain>.3)want*=.85;
   // car ahead (any vehicle, plus the on-foot player)
   const sa=Math.sin(v.a),ca=Math.cos(v.a);let gap=1e9;for(const u of this.G.vehicles){if(u===v)continue;const dx=u.x-v.x,dz=u.z-v.z;const f=dx*sa+dz*ca;if(f<0||f>34)continue;if(Math.abs(u.y-v.y)>3)continue;const lat=Math.abs(dx*ca-dz*sa);if(lat>2.4)continue;gap=Math.min(gap,f-u.len/2-v.len/2);}
   const P=this.G.player;if(!P.veh){const dx=P.w.x-v.x,dz=P.w.z-v.z;const f=dx*sa+dz*ca;if(f>0&&f<20&&Math.abs(dx*ca-dz*sa)<2&&Math.abs(P.w.y-v.y)<2)gap=Math.min(gap,f-v.len/2-.5);}
   for(const c of this.G.peds.list){if(c.state==='walk'||c.state==='idle'||c.custom)continue;const dx=c.x-v.x,dz=c.z-v.z,f=dx*sa+dz*ca;if(f>0&&f<16&&Math.abs(dx*ca-dz*sa)<2.2)gap=Math.min(gap,f-v.len/2-1);}
+  // a siren closing from behind: slow down and pull toward the curb
+  let sir=0;for(const u of this.G.vehicles){if(!u.siren||u===v||u.mode==='lane'||u.speed<4)continue;const dx=u.x-v.x,dz=u.z-v.z,f=dx*sa+dz*ca;if(f>-2||f<-50||Math.abs(u.y-v.y)>3)continue;if(Math.abs(dx*ca-dz*sa)>7)continue;sir=1;break;}
+  L.pull=(L.pull||0)+(sir-(L.pull||0))*Math.min(1,dt*(sir?1.6:.8));if(L.pull>.05)want=Math.min(want,want*(1-L.pull)+3.5*L.pull);
+  // freeway: change lanes around a slower car when the other lane is clear
+  if(L.e.kind==='fwy'&&!L.turn){if(L.offT==null)L.offT=L.off;if(gap<24&&Math.abs(L.off-L.offT)<.01&&(L.lc=(L.lc||0)-dt)<=0){const other=L.off<5?8:3;let clear=true;
+    for(const u of this.G.vehicles){if(u===v)continue;const dx=u.x-v.x,dz=u.z-v.z,f=dx*sa+dz*ca;if(f<-16||f>20||Math.abs(u.y-v.y)>3)continue;const lat=-(dx*ca-dz*sa);if(Math.abs(lat-(other-L.off))<2.6){clear=false;break;}}
+    if(clear){L.offT=other;L.lc=4;}else L.lc=.8;}
+   if(L.off!==L.offT){L.off+=Math.max(-2.2*dt,Math.min(2.2*dt,L.offT-L.off));if(Math.abs(L.off-L.offT)<.02)L.off=L.offT;}}
   if(gap<1e8){want=Math.min(want,Math.max(0,(gap-3)*1.1));if(gap<3)want=0;}
   if(!L.turn){const end=this.endNode(L),stop=L.e.len-this.trim(end);
    if(end.light){const tx=o.tx;this.lanePoint(L.e,L.dir,Math.min(stop,L.e.len),L.off,o);const axis=Math.abs(o.tx)>Math.abs(o.tz)?'x':'z';const st=lightState(end,axis,this.t);const dist=stop-L.s-1;
     if(st===2&&dist>-.5||st===1&&dist>5){want=Math.min(want,dist<.3?0:Math.sqrt(2*7*Math.max(0,dist)));}}
    const cur=v.lspd??0;const acc=want>cur?4.5:12;v.lspd=cur+cl(want-cur,-acc*dt,acc*dt);L.s+=v.lspd*dt;
-   if(L.s>=stop){this.planTurn(v,end);}else this.lanePoint(L.e,L.dir,L.s,L.off,o);}
+   if(L.s>=stop){L.offT=null;this.planTurn(v,end);}else this.lanePoint(L.e,L.dir,L.s,L.off+(L.pull||0)*1.5,o);}
   if(L.turn){const T=L.turn;const cur=v.lspd??0;const tw=Math.min(want,T.tight?9:want);v.lspd=cur+cl(tw-cur,-12*dt,4.5*dt);T.u+=v.lspd*dt/T.len;if(T.u>=1){L.e=T.ne;L.dir=T.nd;L.s=T.s0;L.off=T.off;L.turn=null;L.want=L.e.speed*(.82+this.R()*.3);this.lanePoint(L.e,L.dir,L.s,L.off,o);}
    else{const u=T.u,a=T.p0,b=T.p1,c=T.p2;o.x=(1-u)*(1-u)*a.x+2*(1-u)*u*b.x+u*u*c.x;o.z=(1-u)*(1-u)*a.z+2*(1-u)*u*b.z+u*u*c.z;o.tx=2*(1-u)*(b.x-a.x)+2*u*(c.x-b.x);o.tz=2*(1-u)*(b.z-a.z)+2*u*(c.z-b.z);}}
   const ox=v.x,oz=v.z,oy=v.y;v.x=o.x;v.z=o.z;const ref=L.e.kind==='fwy'||(L.turn&&L.turn.fwy)?FWY_Y:v.y;v.y=W.groundAt(v.x,v.z,ref+1.3);
@@ -51,7 +59,7 @@ export class Traffic{constructor(G){this.G=G;this.W=G.W;this.R=rng(4242);this.ca
   let ne,nd;if(!opts.length){ne=L.e;nd=-L.dir;}else{// prefer straight-ish, avoid repeated sharp turns
    const o0=this.lanePoint(L.e,L.dir,L.e.len-.5,0,{});const w=opts.map(e=>{const d=e.a===node.id?1:-1;const p=this.lanePoint(e,d,.5,0,{});const dot=o0.tx*p.tx+o0.tz*p.tz;return dot>.7?3:dot>-.3?1.2:.2;});
    let tot=w.reduce((a,b)=>a+b,0),r=R()*tot,k=0;for(;k<opts.length-1;k++){if((r-=w[k])<=0)break;}ne=opts[k];nd=ne.a===node.id?1:-1;}
-  const off=ne.lanes.includes(L.off)?L.off:ne.lanes[R()*ne.lanes.length|0];const s0=ne===L.e?this.trim(node):this.trim(node);
+  const off=ne.lanes.reduce((a,b)=>Math.abs(b-L.off)<Math.abs(a-L.off)?b:a,ne.lanes[0]);const s0=ne===L.e?this.trim(node):this.trim(node);
   const p0=this.lanePoint(L.e,L.dir,L.s,L.off,{}),p2=this.lanePoint(ne,nd,s0,off,{});
   // control point: intersection of the incoming and outgoing lane lines
   const d0x=p0.tx,d0z=p0.tz,d2x=p2.tx,d2z=p2.tz;const den=d0x*d2z-d0z*d2x;let p1;if(Math.abs(den)<.15){p1={x:(p0.x+p2.x)/2,z:(p0.z+p2.z)/2};if(ne===L.e){p1={x:node.x+(p0.x+p2.x-2*node.x)*.5+d0x*8,z:node.z+(p0.z+p2.z-2*node.z)*.5+d0z*8};}}
@@ -64,23 +72,65 @@ export class Traffic{constructor(G){this.G=G;this.W=G.W;this.R=rng(4242);this.ca
   const cp=this.G.cam.position;for(const s of sets)s.refresh(cp.x,cp.z,true);}}
 const _o={};
 
+/* ================= police helicopter: tracks the player from above, searchlight at night ================= */
+class Heli{constructor(G){this.G=G;this.on=false;this.x=0;this.z=0;this.y=60;this.a=0;this.bx=0;this.bz=0;this.t=0;
+  const C=h=>new THREE.Color(h),body=C(0x1a2a4a),wht=C(0xe8e8ec),dk=C(0x111214),gl=C(0x0a1018);const parts=[];
+  const cap=new THREE.SphereGeometry(1,16,12);cap.scale(1.15,1.05,2.1);parts.push([cap,M(0,0,.4),body]);const can=new THREE.SphereGeometry(1,14,10,0,Math.PI*2,0,Math.PI*.5);can.scale(1.02,.8,1.4);parts.push([can,M(0,.15,1.25,-.25,0,0),gl]);
+  const boom=new THREE.CylinderGeometry(.18,.4,5.2,10);boom.rotateX(Math.PI/2);parts.push([boom,M(0,.35,-3.6),body]);parts.push([new THREE.BoxGeometry(.08,1.3,.9),M(0,.9,-6),body]);parts.push([new THREE.BoxGeometry(2.1,.06,.5),M(0,.4,-5.6),wht]);
+  for(const sx of[-1,1]){parts.push([new THREE.CylinderGeometry(.05,.05,3.4,6),M(sx*.9,-1.35,.3,Math.PI/2,0,0),dk]);for(const z of[-.5,1.1])parts.push([new THREE.BoxGeometry(.05,.6,.05),M(sx*.8,-1.05,z,0,0,sx*.3),dk]);}
+  parts.push([new THREE.BoxGeometry(2.3,.5,.04),M(0,-.1,.4),wht]);parts.push([new THREE.CylinderGeometry(.18,.25,.5,10),M(0,1.15,.3),dk]);
+  this.g=new THREE.Group();this.body=new THREE.Mesh(merge(parts),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.4,metalness:.4}));this.body.castShadow=true;this.g.add(this.body);
+  const rg=new THREE.BoxGeometry(11,.05,.32);this.rotor=new THREE.Mesh(merge([[rg],[rg.clone(),M(0,0,0,0,Math.PI/2,0)]]),new THREE.MeshStandardMaterial({color:0x101010,roughness:.6,transparent:true,opacity:.55,depthWrite:false}));this.rotor.position.y=1.45;this.g.add(this.rotor);
+  this.tail=new THREE.Mesh(new THREE.BoxGeometry(.05,1.6,.14),this.rotor.material);this.tail.position.set(.12,.9,-6.1);this.g.add(this.tail);
+  this.nav=new THREE.Mesh(new THREE.SphereGeometry(.12,6,4),new THREE.MeshBasicMaterial({color:new THREE.Color(4,.3,.3)}));this.nav.position.set(0,-.7,-3);this.g.add(this.nav);
+  // searchlight: additive beam cone + ground pool
+  const cone=new THREE.CylinderGeometry(.3,7,1,24,1,true);cone.translate(0,-.5,0);this.beamU={uA:{value:0}};
+  this.beam=new THREE.Mesh(cone,new THREE.ShaderMaterial({uniforms:this.beamU,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,vertexShader:'varying float vY;void main(){vY=-position.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform float uA;varying float vY;void main(){gl_FragColor=vec4(vec3(.85,.9,1.)*uA*.16*(1.-vY*.85),1.);}'}));this.beam.frustumCulled=false;
+  const pool=new THREE.CircleGeometry(7,32);pool.rotateX(-Math.PI/2);this.pool=new THREE.Mesh(pool,new THREE.MeshBasicMaterial({map:G.city.tex.glow,color:new THREE.Color(1.4,1.5,1.7),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-6}));
+  G.scene.add(this.g,this.beam,this.pool);this.g.visible=this.beam.visible=this.pool.visible=false;}
+ start(px,pz){if(this.on)return;this.on=true;const a=Math.random()*6.28;this.x=px+Math.cos(a)*260;this.z=pz+Math.sin(a)*260;this.bx=px;this.bz=pz;this.g.visible=true;this.G.hud.toast('POLICE CHOPPER INBOUND');}
+ stop(){this.on=false;this.G.snd.chopper&&this.G.snd.chopper(0);this.g.visible=this.beam.visible=this.pool.visible=false;this.seen=false;}
+ update(dt,P,diff,night){if(!this.on)return;this.t+=dt;const G=this.G;const sp=[17,21,25][diff];
+  // the searchlight chases the player at a capped speed: outrun it, or hide in the tunnel / under the freeway
+  const hide=G.W.inTunnel(P.x,P.z)||this.covered(P);const dx=P.x-this.bx,dz=P.z-this.bz,d=Math.hypot(dx,dz);if(!hide&&d>1e-3){const k=Math.min(d,sp*dt)/d;this.bx+=dx*k;this.bz+=dz*k;}
+  this.seen=!hide&&Math.hypot(P.x-this.bx,P.z-this.bz)<14;
+  const orb=this.t*.25,tx=this.bx+Math.cos(orb)*28,tz=this.bz+Math.sin(orb)*28,ty=Math.max(48,G.W.terrainH(tx,tz)+42);const hx=tx-this.x,hz=tz-this.z,hd=Math.hypot(hx,hz);const v=Math.min(hd,(sp+8)*dt);
+  if(hd>1e-3){this.x+=hx/hd*v;this.z+=hz/hd*v;this.a+=wrapA(Math.atan2(hx,hz)-this.a)*Math.min(1,dt*1.5);}this.y+=(ty-this.y)*Math.min(1,dt*.8);
+  this.g.position.set(this.x,this.y+Math.sin(this.t*1.3)*.4,this.z);this.g.rotation.set(Math.min(.25,v/dt*.008),this.a,Math.sin(this.t*.7)*.06,'YXZ');this.rotor.rotation.y+=dt*38;this.tail.rotation.x+=dt*50;this.nav.visible=(this.t*1.2%1)<.15;
+  const by=G.W.groundAt(this.bx,this.bz,P.y+2);const bdx=this.bx-this.x,bdy=by-(this.y-1),bdz=this.bz-this.z,bl=Math.hypot(bdx,bdy,bdz);
+  this.beam.visible=this.pool.visible=night>.15;if(this.beam.visible){this.beam.position.set(this.x,this.y-1,this.z);this.beam.scale.set(1,bl,1);this.beam.quaternion.setFromUnitVectors(_dn,_bv.set(bdx,bdy,bdz).normalize());this.beamU.uA.value=night;
+   this.pool.position.set(this.bx,by+.12,this.bz);this.pool.material.opacity=night;}
+  const hd2=Math.hypot(this.x-P.x,this.z-P.z);this.G.snd.chopper&&this.G.snd.chopper(Math.max(0,1-hd2/220));}
+ covered(P){for(const d of this.G.W.dHash.at(P.x,P.z)){if(d.kind!=='fwy'&&d.kind!=='ramp')continue;const qx=P.x-d.ax,qz=P.z-d.az,u=qx*d.dx+qz*d.dz;if(u<0||u>d.len)continue;if(Math.abs(qx*d.dz-qz*d.dx)<d.hw&&d.ay+(d.by-d.ay)*u/d.len>P.y+3)return true;}return false;}}
+const _dn=new THREE.Vector3(0,-1,0),_bv=new THREE.Vector3();
+// spike strip dropped in the gap of a roadblock: pops the tyres of anything that drives over it
+class Spikes{constructor(G){this.G=G;this.list=[];const g=merge([[new THREE.BoxGeometry(1,.05,.42),M(0,.03,0),new THREE.Color(.08,.08,.09)],...Array.from({length:14},(_,i)=>[new THREE.ConeGeometry(.03,.12,4),M(-.47+i*.072,.1,(i%2?.1:-.1)),new THREE.Color(.75,.75,.78)])]);
+  this.mesh=new THREE.InstancedMesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.4,metalness:.7}),8);this.mesh.count=0;this.mesh.frustumCulled=false;G.scene.add(this.mesh);this.m=new THREE.Matrix4();}
+ add(x,y,z,a,len){if(this.list.length>=8)this.list.shift();this.list.push({x,y,z,a,len});this.sync();}
+ clear(){this.list.length=0;this.sync();}
+ sync(){this.list.forEach((s,i)=>{this.m.compose(_sv.set(s.x,s.y,s.z),_sq.setFromAxisAngle(_up,s.a),_ss.set(s.len,1,1));this.mesh.setMatrixAt(i,this.m);});this.mesh.count=this.list.length;this.mesh.instanceMatrix.needsUpdate=true;}
+ update(){for(const v of this.G.vehicles){if(v.flat)continue;if(v.mode==='lane'||v.cop)continue;for(const s of this.list){const dx=v.x-s.x,dz=v.z-s.z;const ca=Math.cos(s.a),sa=Math.sin(s.a);const u=dx*ca-dz*sa,w=dx*sa+dz*ca;if(Math.abs(u)<s.len/2+.4&&Math.abs(w)<v.len/2&&Math.abs(v.y-s.y)<1.5){v.flat=1;this.G.onFlat&&this.G.onFlat(v);break;}}}}}
+const _sv=new THREE.Vector3(),_sq=new THREE.Quaternion(),_ss=new THREE.Vector3(),_up=new THREE.Vector3(0,1,0);
+
 /* ================= police / heat ================= */
 export const ESCAPE=[0,7,9,12,15,18];
-export class Police{constructor(G){this.G=G;this.heat=0;this.lostT=0;this.bustT=0;this.cops=[];this.blocks=[];this.rbT=20;this.seen=false;this.maxStars=0;this.flash=0;this.spawnT=0;this.R=rng(911);this.foot=[];}
+export class Police{constructor(G){this.G=G;this.heli=new Heli(G);this.spikes=new Spikes(G);this.heat=0;this.lostT=0;this.bustT=0;this.cops=[];this.blocks=[];this.rbT=20;this.seen=false;this.maxStars=0;this.flash=0;this.spawnT=0;this.R=rng(911);this.foot=[];}
  get stars(){return Math.min(5,Math.floor(this.heat+1e-6));}
  witness(x,z){for(const v of this.G.vehicles){if(!v.cop||v.wrecked)continue;const d=Math.hypot(v.x-x,v.z-z);if(d<26||(d<80&&this.G.W.los(v.x,v.z,x,z,2)))return v;}return null;}
  crime(kind,x,z,amt,force){if(this.G.app!=='play')return false;const w=force?true:this.witness(x,z);if(!w)return false;const before=this.stars;this.heat=cl(Math.max(this.heat+amt,1),0,5.2);this.lostT=0;
   if(this.stars>before){this.G.onStars(this.stars,kind);}this.maxStars=Math.max(this.maxStars,this.stars);if(w.cop&&w.cop.patrol)this.enlist(w);return true;}
  set(n){this.heat=n;this.lostT=0;if(n>0)this.maxStars=Math.max(this.maxStars,this.stars);}
- clear(){this.heat=0;this.lostT=0;this.bustT=0;for(const c of this.cops){c.cop.chase=false;c.siren=false;c.cop.leave=true;}this.cops=[];for(const b of this.blocks)b.forEach(v=>{v.keep=false;});this.blocks=[];for(const o of this.foot)this.standDown(o);this.foot=[];}
- enlist(v){if(v.cop.chase)return;v.cop.chase=true;v.cop.patrol=false;v.mode='chase';v.siren=true;v.keep=true;v.cop.role=this.cops.length%3;v.cop.rt=0;v.stuck=0;this.cops.push(v);}
- spawnCop(){const G=this.G,P=G.player;const px=P.x,pz=P.z;for(let k=0;k<14;k++){const a=this.R()*Math.PI*2,d=130+this.R()*80;const tx=px+Math.cos(a)*d,tz=pz+Math.sin(a)*d;const ne=G.W.nearestEdge(tx,tz,60);if(!ne)continue;const p=polyAt(ne.e.pts,ne.s,{});
+ clear(){this.heat=0;this.lostT=0;this.bustT=0;for(const c of this.cops){c.cop.chase=false;c.siren=false;c.cop.leave=true;}this.cops=[];for(const b of this.blocks)b.forEach(v=>{v.keep=false;});this.blocks=[];for(const o of this.foot)this.standDown(o);this.foot=[];this.heli.stop();this.spikes.clear();}
+ enlist(v){if(v.cop.chase)return;v.cop.chase=true;v.cop.patrol=false;v.mode='chase';v.siren=true;v.keep=true;v.cop.role=v.enforcer?2:this.cops.length%3;v.cop.rt=0;v.stuck=0;this.cops.push(v);}
+ spawnCop(kind='police'){const G=this.G,P=G.player;const px=P.x,pz=P.z;for(let k=0;k<14;k++){const a=this.R()*Math.PI*2,d=130+this.R()*80;const tx=px+Math.cos(a)*d,tz=pz+Math.sin(a)*d;const ne=G.W.nearestEdge(tx,tz,60);if(!ne)continue;const p=polyAt(ne.e.pts,ne.s,{});
    if(G.vehicles.some(v=>Math.hypot(v.x-p.x,v.z-p.z)<10))continue;if(G.W.los(p.x,p.z,px,pz,2)&&d<170)continue;
-   const v=new Vehicle('police',{mode:'chase',driver:'npc'});v.attach(G.scene,G.U);v.x=p.x;v.z=p.z;v.y=G.W.groundAt(p.x,p.z,(p.y||0)+2);v.a=Math.atan2(px-p.x,pz-p.z);v.cop={patrol:false};v.traffic=true;G.traffic.cars.push(v);G.vehicles.push(v);this.enlist(v);return v;}return null;}
+   const v=new Vehicle(kind,{mode:'chase',driver:'npc',paint:kind==='vault'?0x111316:undefined});v.attach(G.scene,G.U);if(kind==='vault'){v.siren=true;v.enforcer=true;}v.x=p.x;v.z=p.z;v.y=G.W.groundAt(p.x,p.z,(p.y||0)+2);v.a=Math.atan2(px-p.x,pz-p.z);v.cop={patrol:false};v.traffic=true;G.traffic.cars.push(v);G.vehicles.push(v);this.enlist(v);return v;}return null;}
  roadblock(){const G=this.G,P=G.player,W=G.W;const v=P.veh;if(!v||v.speed<8)return;const sa=Math.sin(v.a),ca=Math.cos(v.a);const ahead=W.nearestEdge(P.x+sa*130,P.z+ca*130,50);if(!ahead)return;
   const p=polyAt(ahead.e.pts,ahead.s,{});if(Math.hypot(p.x-P.x,p.z-P.z)<80||W.los(p.x,p.z,P.x,P.z,2)&&Math.hypot(p.x-P.x,p.z-P.z)<100)return;const a=Math.atan2(p.tx,p.tz);const cars=[];
   for(const[off,rot]of[[-3.2,1.2],[3.2,-1.2]]){const x=p.x-p.tz*off,z=p.z+p.tx*off;const c=new Vehicle('police',{mode:'parked',driver:'npc'});c.attach(G.scene,G.U);c.place(x,z,a+rot,W,(p.y||0)+1);c.cop={block:true};c.siren=true;c.keep=true;c.traffic=true;G.traffic.cars.push(c);G.vehicles.push(c);cars.push(c);}
-  this.blocks.push(cars);G.hud.toast('ROADBLOCK AHEAD');}
+  // spikes across the gap between the cruisers from three stars up (two on RELENTLESS)
+  if(this.stars>=(G.opt.cops===2?2:3)&&G.opt.cops>0)this.spikes.add(p.x,(cars[0].y+cars[1].y)/2+.02,p.z,a+Math.PI/2,5.5);
+  this.blocks.push(cars);G.hud.toast(this.spikes.list.length?'ROADBLOCK + SPIKE STRIP AHEAD':'ROADBLOCK AHEAD');}
  // officers get out of a stopped cruiser and chase an on-foot player
  footOut(car){const G=this.G,o=G.peds.spawn(car.x,car.z,0,1e9);if(!o)return;const sa=Math.sin(car.a),ca=Math.cos(car.a);o.x=car.x+ca*(car.wid/2+.7);o.z=car.z-sa*(car.wid/2+.7);o.y=G.W.groundAt(o.x,o.z,car.y+1);
   o.look={skin:o.look.skin,hair:0x141a2a,shirt:0x1b2a4a,pants:0x141a2a,sc:1.02,cap:true};o.keep=true;o.officer={car,hitT:0};o.custom=this.footAI;o.police=this;
@@ -108,9 +158,11 @@ export class Police{constructor(G){this.G=G;this.heat=0;this.lostT=0;this.bustT=
   for(const v of G.vehicles){if(!v.cop)continue;if(v.cop.leave&&Math.hypot(v.x-P.x,v.z-P.z)>140&&!v.keep){G.traffic.remove(v);}}
   if(st===0){if(this.cops.length)this.clear();this.bustT=Math.max(0,this.bustT-dt);return;}
   this.cops=this.cops.filter(c=>G.vehicles.includes(c)&&!c.wrecked);
-  const want=[0,1,2,3,5,6][st]+(diff===2?1:0)-(diff===0&&st>1?1:0);if((this.spawnT-=dt)<=0&&this.cops.length<want){this.spawnT=diff===2?2.5:4.5;this.spawnCop();}
+  const want=[0,1,2,3,5,6][st]+(diff===2?1:0)-(diff===0&&st>1?1:0);if((this.spawnT-=dt)<=0&&this.cops.length<want){this.spawnT=diff===2?2.5:4.5;this.spawnCop(st>=5||(st>=4&&diff===2)?(this.cops.filter(c=>c.id==='vault').length<(diff===2?2:1)?'vault':'police'):'police');}
+  // chopper from four stars (three on RELENTLESS, never on CHILL)
+  const hs=diff===2?3:4;if(st>=hs&&diff>0)this.heli.start(P.x,P.z);else if(this.heli.on&&st<hs-1)this.heli.stop();this.heli.update(dt,P,diff,this.G.U.uNight.value);this.spikes.update();
   // sight
-  this.seen=false;this.footUpdate(dt,st);for(const c of this.cops.concat(...this.blocks,this.foot)){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<30||(d<125&&G.W.los(c.x,c.z,P.x,P.z,2.2))){this.seen=true;break;}}
+  this.seen=!!this.heli.seen;this.footUpdate(dt,st);for(const c of this.cops.concat(...this.blocks,this.foot)){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<30||(d<125&&G.W.los(c.x,c.z,P.x,P.z,2.2))){this.seen=true;break;}}
   if(this.seen)this.lostT=0;else{this.lostT+=dt;if(this.lostT>ESCAPE[st]*(diff===2?1.25:diff===0?.75:1)){G.onEscape(st);this.clear();return;}}
   // busted
   const pv=P.veh;const slow=pv?pv.speed<2.8:P.w.spd<2.5||P.w.state==='prone';let near=false;for(const c of this.cops.concat(...this.blocks)){if(Math.hypot(c.x-P.x,c.z-P.z)<(pv?7.5:6.5)&&c.speed<10)near=true;}
