@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAIRWAY LEGENDS · Pixel Arcade</title>
+<meta name="description" content="FAIRWAY LEGENDS: full 3D links golf in the browser. Nine coastal holes, swing meter or tempo swing, wind, spin, putting grid, CPU rivals and hot-seat play.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="links.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="hole"><div class="hn"><span>HOLE</span><b id="hno">1</b></div><div class="hi"><b id="hname">HARBOUR GATE</b><span id="hpar">PAR 4 · 410 YDS</span></div></div>
+  <div id="board"></div>
+  <div id="wind"><canvas id="wc" width="120" height="120"></canvas><div><b id="wmph">0</b><span>MPH</span></div></div>
+  <div id="clock"><span>ROUND CLOCK</span><b id="clk">10:00</b></div>
+  <div id="pl"><div class="nm"><i id="pdot"></i><b id="pname">YOU</b><span id="ptp">E</span></div>
+    <div class="row3"><div><span>SHOT</span><b id="pshot">1</b></div><div><span>TO PIN</span><b id="pdist">0</b></div><div><span>LIE</span><b id="plie">TEE</b></div></div>
+    <div class="elev" id="pelev"></div></div>
+  <div id="clubs"><button class="l" id="cprev" aria-label="previous club">◀</button><div><b id="cname">DRIVER</b><span id="ccarry">290 YDS</span></div><button class="r" id="cnext" aria-label="next club">▶</button>
+    <div class="shape"><span id="sh">STRAIGHT</span><span id="sp">SPIN · MID</span></div></div>
+  <canvas id="meter" width="520" height="92"></canvas>
+  <canvas id="map" width="150" height="330"></canvas>
+  <div id="labels"></div>
+  <div id="banner"><b id="bt"></b><span id="bs"></span></div>
+  <div id="toast"></div>
+  <div id="help"></div>
+  <div id="fly" hidden><b id="flyh"></b><span id="flys"></span><i>SPACE · CLICK · A TO SKIP</i></div>
+</div>
+<div id="card" hidden></div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · GOLF</p>
+  <h1>FAIRWAY<br>LEGENDS<em>.</em></h1>
+  <p class="how">Gullhaven Links: nine holes of sea wind, pot bunkers and cliff-top greens. Pick a club, shape it, read the wind and swing. Stroke play against CPU rivals or pass the keyboard round in hot-seat.</p>
+  <div class="opts">
+    <label>ROUND</label><div class="seg" id="o-mode"><button data-v="0">FULL 9 HOLES</button><button data-v="1">QUICK 3</button></div>
+    <label>GOLFERS</label><div class="seg" id="o-hum"><button data-v="1">1 PLAYER</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4 HOT-SEAT</button></div>
+    <label>CPU RIVALS</label><div class="seg" id="o-cpu"><button data-v="0">NONE</button><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div>
+    <label>CPU SKILL</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>ROUND CLOCK</label><div class="seg" id="o-clock"><button data-v="0">TIGHT</button><button data-v="1">STANDARD</button><button data-v="2">RELAXED</button></div>
+    <label>ASSISTS</label><div class="seg" id="o-assist"><button data-v="1">SHOT ARC + PUTT LINE</button><button data-v="0">PRO (ARC ONLY)</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">TEE OFF</button><span class="best" id="mbest"></span></div>
+</div>
+<div class="kcard" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Aim</td><td><kbd>A</kbd><kbd>D</kbd> / <kbd>←</kbd><kbd>→</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Club</td><td><kbd>W</kbd><kbd>S</kbd> / <kbd>↑</kbd><kbd>↓</kbd> <span class="pad">D-pad</span></td></tr>
+    <tr><td>Draw · fade</td><td><kbd>Q</kbd><kbd>E</kbd> <span class="pad">LB RB</span></td></tr>
+    <tr><td>Spin less · more</td><td><kbd>Z</kbd><kbd>X</kbd> <span class="pad">LT RT</span></td></tr>
+    <tr><td>Swing meter: start · power · strike</td><td><kbd>Space</kbd> ×3 <span class="pad">A</span></td></tr>
+    <tr><td>Tempo swing: pull back, push through</td><td>Mouse drag ↓ then ↑ <span class="pad">R-stick</span></td></tr>
+    <tr><td>Target cam · green read</td><td><kbd>V</kbd> <kbd>C</kbd> <span class="pad">Y X</span></td></tr>
+    <tr><td>Scorecard · sound · pause</td><td><kbd>Tab</kbd> <kbd>M</kbd> <kbd>Esc</kbd> <span class="pad">Back Start</span></td></tr>
+    <tr><td>Fast-forward CPU / flight</td><td>hold <kbd>F</kbd> <span class="pad">B</span></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p>Meter: the marker runs right to set power (past the line overswings), then back left: strike it in the white notch. Early hooks, late slices. On the green the meter is in feet; the grid's arrows flow downhill.</p>
+</div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>TIME<br>OUT<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">ROUND COMPLETE</p>
+  <p class="res" id="ores">CHAMPION</p>
+  <div id="olb"></div>
+  <div id="osc"></div>
+  <div id="ostat"></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">PLAY AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>
