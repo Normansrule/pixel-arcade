@@ -4,12 +4,12 @@ import {Sky} from '../vendor/jsm/objects/Sky.js';
 import {ShaderPass} from '../vendor/jsm/postprocessing/ShaderPass.js';
 import {Pass} from '../vendor/jsm/postprocessing/Pass.js';
 import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
-import {cl,lerp,sm,$,mmss} from './util.js';
-import {U,installWaterFog,makeDome,makeSurface,makeRays,makeSnow,makePlankton,makeBubbles,LensShader} from './water.js';
+import {cl,lerp,sm,$,mmss,merge,paint} from './util.js';
+import {U,installWaterFog,makeDome,makeSurface,makeRays,makeSnow,makePlankton,makeBubbles,LensShader,makeEnv,wmat,SUN_DIR} from './water.js';
 import {buildWorld,heightAt,region,weights,RES,WRECK,RIBS,WORLD} from './world.js';
 import {Life} from './life.js';
-import {buildPod,buildSub,buildCockpit,buildViewmodel,buildRocket} from './gear.js';
-import {ITEMS,RECIPES,SPECIES,DIFFS,DIVE,CARRY} from './data.js';
+import {buildPod,buildSub,buildCockpit,buildViewmodel,buildRocket,buildDiver,buildHabitat} from './gear.js';
+import {ITEMS,RECIPES,SPECIES,DIFFS,DIVE,CARRY,LOGS} from './data.js';
 import {Sound} from './sound.js';
 import {HUD,invHTML} from './hud.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
@@ -24,18 +24,38 @@ installWaterFog();
 const canvas=$('c');const RR=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});RR.setPixelRatio(Math.min(devicePixelRatio,1.25));
 const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(72,1,.05,700);cam.rotation.order='YXZ';scene.add(cam);
 scene.fog=new THREE.Fog(0x1a8aa8,.018,1);
-const sun=new THREE.DirectionalLight(0xd8f4ff,2.4);sun.position.set(30,100,22);scene.add(sun,sun.target);const hemi=new THREE.HemisphereLight(0x8adcff,0x0c2a36,1);scene.add(hemi);
+RR.shadowMap.enabled=true;RR.shadowMap.type=THREE.PCFSoftShadowMap;
+const sun=new THREE.DirectionalLight(0xfff4e0,2.6);sun.position.copy(SUN_DIR).multiplyScalar(120);scene.add(sun,sun.target);const hemi=new THREE.HemisphereLight(0x8adcff,0x0c2a36,.5);scene.add(hemi);
+{const sc=sun.shadow.camera;sc.left=sc.bottom=-42;sc.right=sc.top=42;sc.near=1;sc.far=260;sun.shadow.bias=-.0006;sun.shadow.normalBias=.04;sun.shadow.radius=3;}
+scene.environment=makeEnv(RR);
 const lamp=new THREE.SpotLight(0xeaf6ff,0,75,.46,.55,1.1);lamp.position.set(.1,.05,-1.1);cam.add(lamp,lamp.target);lamp.target.position.set(0,-.4,-10);
 const flareL=new THREE.PointLight(0xff7040,0,45,1.4);scene.add(flareL);const ventL=[0,1].map(()=>{const l=new THREE.PointLight(0xff7a30,0,40,1.6);scene.add(l);return l;});
 const sky=new Sky();sky.scale.setScalar(600);sky.visible=false;scene.add(sky);{const u=sky.material.uniforms;u.turbidity.value=4;u.rayleigh.value=1.6;u.mieCoefficient.value=.004;u.sunPosition.value.set(.35,.6,.25);}
 const dome=makeDome();scene.add(dome);const surf=makeSurface();scene.add(surf);const rays=makeRays(40);scene.add(rays);
 const snow=makeSnow();scene.add(snow);const plankton=makePlankton();scene.add(plankton);const bub=makeBubbles();scene.add(bub.pts);
-const world=buildWorld(scene);
+const world=buildWorld(scene);const lowOff=[...(world.meshes.grass||[]),...world.decor];
 const G={app:'menu',ui:null,diff:DIFFS[1],opt:{diff:1,vol:.8,sens:1},time:0,safe:true,hurtT:0,shake:0,loc:'SUNLIT SHOALS',compassMarks:[],obj:null,tip:'',scanP:0,scanning:false,scanLab:'',noLoop:false,god:false};
 const saveOpt=stored('abyss_opt',G.opt);G.diff=DIFFS[G.opt.diff]||DIFFS[1];
 const life=new Life(scene,G.diff);
 const pod=buildPod();scene.add(pod);const subMesh=buildSub();subMesh.visible=false;scene.add(subMesh);const cockpit=buildCockpit();cam.add(cockpit);const vm=buildViewmodel();vm.scale.setScalar(.72);vm.position.set(.05,-.035,0);cam.add(vm);const rocket=buildRocket();scene.add(rocket);
+const diver=buildDiver();diver.visible=false;scene.add(diver);
+const base=buildHabitat();scene.add(base);const BASE={on:false,pos:new V(),scanT:0,growT:0,anim:{}};
+/* story: ECHO data pods, each marked by a pillar of light the diver can follow */
+const beamMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false,uniforms:{uTime:U.uTime,col:{value:new THREE.Color(1,.8,.32)}},
+ vertexShader:'varying float vY;varying vec3 vN,vV;void main(){vY=position.y/90.;vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+ fragmentShader:'uniform float uTime;uniform vec3 col;varying float vY;varying vec3 vN,vV;void main(){float e=pow(abs(dot(vN,vV)),1.6);float p=.65+.35*sin(uTime*2.5-vY*40.);float a=pow(1.-vY,1.5)*smoothstep(0.,.02,vY)*e*p*.3;gl_FragColor=vec4(col*a,1.);}'});
+const beamGeo=new THREE.CylinderGeometry(.3,.7,90,18,1,true);beamGeo.translate(0,45,0);
+const LOGP=[[WRECK.x+8,WRECK.z-7],[-112,4],[6,150],[-122,-138],[RIBS.x+12,RIBS.z+9]];
+const podGeo=(()=>{const b=new THREE.CapsuleGeometry(.32,.55,6,16);b.rotateZ(Math.PI/2);paint(b,0xd8dce2);const f=new THREE.BoxGeometry(.9,.04,.5);f.translate(0,.3,0);paint(f,0xe8641e);const a=new THREE.CylinderGeometry(.02,.02,.7,5);a.translate(.3,.6,0);paint(a,0x40444c);const bd=new THREE.TorusGeometry(.34,.05,8,24);bd.rotateY(Math.PI/2);paint(bd,new THREE.Color(1,.8,.3));return merge([b,f,a,bd]);})();
+const podM=wmat(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.35,metalness:.55}),{caus:.6,key:'logpod',emis:'totalEmissiveRadiance+=vec3(1.,.72,.25)*step(.95,vColor.r)*step(.7,vColor.g)*step(vColor.b,.4)*(2.2+1.6*sin(uTime*4.));'});
+const logPods=LOGS.map((L,i)=>{const g=new THREE.Group();const[x,z]=LOGP[i];g.position.set(x,heightAt(x,z)+.55,z);
+ const body=new THREE.Mesh(podGeo,podM);body.castShadow=true;g.add(body);
+ const beam=new THREE.Mesh(beamGeo,beamMat);g.add(beam);g.rotation.y=i*1.3;scene.add(g);return{g,beam,L,pos:g.position};});
 const snd=new Sound();snd.setVol(G.opt.vol);const hud=new HUD();
+/* every lit surface goes through the water lighting model (absorption, caustics); opaque ones also receive the sun's shadow */
+function waterize(root){root.traverse(o=>{if(!o.isMesh)return;const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(m&&m.isMeshStandardMaterial&&!m.userData.w)wmat(m,{caus:m.fog===false?0:.5,key:'auto'});}
+ if(ms[0]&&ms[0].isMeshStandardMaterial&&!ms[0].transparent)o.receiveShadow=true;});}
+waterize(scene);
 const DOCK=new V(0,-8.6,0),HATCH=new V(0,-3.2,0);
 const pingMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false,uniforms:{uA:{value:0},col:{value:new THREE.Color(.35,.95,1)}},
  vertexShader:'varying vec3 vN,vV;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
@@ -55,7 +75,18 @@ function reset(){Object.assign(P,{yaw:-.9,pitch:-.08,o2:45,o2max:45,hp:100,food:
  for(const pk of world.pickups)if(!pk.alive)world.show(pk);for(const k of world.kelp)k.cd=0;
  const m=life.maw;m.pos.set(200,-170,-60);m.state='roam';m.cd=20;m.trail.forEach((p,i)=>p.set(200,-170,-60-i*.6));
  for(const c of life.creatures)if(c.kind==='razorjaw'){c.pos.copy(c.home);c.state='patrol';c.scare=0;c.cd=0;}
- rocket.visible=false;}
+ rocket.visible=false;P.logs=new Set();resetBase();for(const l of logPods)l.g.visible=true;}
+function resetBase(){BASE.on=false;BASE.anim={};base.visible=false;for(const k in base.userData.mods)base.userData.mods[k].visible=false;base.userData.light.intensity=0;}
+function showModule(k){const m=base.userData.mods[k];if(!m||m.visible)return;m.visible=true;m.scale.setScalar(.01);BASE.anim[k]=0;}
+function deployBase(){if(G.app!=='play'||G.ui||P.inSub)return;if(!P.tools.habitat){hint('Print a HABITAT CORE at the lifepod first.');snd.deny();return;}
+ if(BASE.on){hint('The outpost is already deployed. Its marker is on your compass.');snd.deny();return;}
+ const fy=heightAt(P.pos.x,P.pos.z);if(P.pos.y-fy>6){hint('Get within a few metres of the seabed to deploy the HABITAT CORE (H).');snd.deny();return;}
+ if(-fy>220){hint('Too deep: the habitat core is rated to 220 m.');snd.deny();return;}if(Math.hypot(P.pos.x,P.pos.z)<25){hint('Deploy the outpost at least 25 m from the lifepod.');snd.deny();return;}
+ BASE.on=true;BASE.pos.set(P.pos.x,fy,P.pos.z);base.position.copy(BASE.pos);base.rotation.y=P.yaw;base.visible=true;base.userData.light.intensity=18;for(const k of['core','scanner','grow','power'])if(P.tools[k==='core'?'habitat':k])showModule(k==='scanner'?'scan':k);
+ P.score+=150;snd.craft();snd.pulse();hud.banner('OUTPOST DEPLOYED',`${Math.round(-fy)} m · air, printer and locker at the moonpool`,3.6,'#56e8ff');for(let i=0;i<30;i++)bub.emit(BASE.pos.x+(Math.random()-.5)*4,BASE.pos.y+1,BASE.pos.z+(Math.random()-.5)*4,1,.4,1.4);objT=0;}
+const nearBase=()=>BASE.on&&!P.inSub&&P.pos.distanceTo(_t2.set(BASE.pos.x,BASE.pos.y+1.2,BASE.pos.z))<4.6;
+function collectLog(l){const L=l.L;P.logs.add(L.id);l.g.visible=false;P.score+=250;snd.scanDone();snd.pick();
+ for(const[k,n]of Object.entries(L.reward)){give(k,n);}hud.banner(L.t,L.x,9,'#ffd24a');hud.feed(`ECHO LOG ${L.id}/5 · BLUEPRINT: ${L.unlock}`,'#ffd24a','◉');objT=0;}
 const cargoN=()=>Object.values(P.inv).reduce((a,b)=>a+b,0);
 const have=k=>(P.inv[k]||0)+(P.locker[k]||0);
 function give(k,n=1){P.inv[k]=(P.inv[k]||0)+n;}
@@ -68,7 +99,7 @@ const I=controls(canvas,{canLock:()=>G.app==='play'&&!G.ui,look:()=>I.locked&&G.
  if(G.ui==='pod'){if(e.code==='KeyE'||e.code==='Escape')closePod();else if(/^Digit[1-9]$/.test(e.code)){const r=RECIPES[+e.code.slice(5)-1];if(r)craft(r.id);}return;}
  if(G.ui==='tablet'&&(e.code==='Tab'||e.code==='Escape')){closeTablet();return;}
  if(G.app!=='play')return;
- switch(e.code){case 'KeyE':use();break;case 'KeyF':doFlare();break;case 'KeyR':sonar();break;case 'KeyL':P.light=!P.light;P.lightAuto=true;snd.tone(P.light?900:600,.08,{vol:.05,wet:0});break;case 'KeyB':dropBeacon();break;case 'Tab':openTablet();break;
+ switch(e.code){case 'KeyE':use();break;case 'KeyF':doFlare();break;case 'KeyR':sonar();break;case 'KeyL':P.light=!P.light;P.lightAuto=true;snd.tone(P.light?900:600,.08,{vol:.05,wet:0});break;case 'KeyB':dropBeacon();break;case 'KeyH':deployBase();break;case 'KeyV':G.view3p=!G.view3p;hud.feed(G.view3p?'THIRD-PERSON VIEW · V':'HELMET VIEW · V','#9af4ff','◐');break;case 'Tab':openTablet();break;
   case 'Digit1':eat();break;case 'Digit2':drink();break;case 'Digit3':medkit();break;}}});
 const {keys,mouse,lock,unlock}=I;let padPrev={};
 function mouseLook(){const k=.0021*G.opt.sens;if(!G.ui){if(P.inSub){S.yaw-=mouse.dx*k*.8;S.pitch=cl(S.pitch-mouse.dy*k*.8,-1.1,1.1);}else{P.yaw-=mouse.dx*k;P.pitch=cl(P.pitch-mouse.dy*k,-1.52,1.52);}}mouse.dx=mouse.dy=0;}
@@ -86,12 +117,14 @@ G.hurt=(n,src,from,big)=>{if(G.app!=='play'||G.god||G.ui==='pod')return;P.lastHu
  if(P.inSub&&src!=='O2'&&src!=='CRUSH'){S.hull-=n;G.hurtT=.5;hud.feed(`HULL DAMAGE −${Math.round(n)}`,'#ff6a5a','⬢');if(S.hull<=0){S.hull=0;subLost();}return;}
  P.hp-=n;G.hurtT=Math.min(1,G.hurtT+.35+n/80);if(P.hp<=0){P.hp=0;P.deathBy=src;end('dead');}};
 G.alert=(name)=>{if(G.time-lastAlert<6)return;lastAlert=G.time;hud.alert('PREDATOR CLOSING',name+' · FLARES OR KNIFE DRIVE IT OFF',2.4);snd.warn();};
+G.territory=(c)=>{if(G.time-lastAlert<4)return;lastAlert=G.time;hud.alert('TERRITORY','A RAZORJAW IS WARNING YOU OFF · BACK AWAY OR DRAW THE KNIFE',2.6);snd.warn();};
+G.curious=(c)=>{if(!P.scanned.has('shellback'))hud.feed('A SHELLBACK SWIMS OVER TO INSPECT YOU · HOLD Q TO SCAN','#9af4ff','◎');};
 G.roar=(pos,close)=>{const d=pos.distanceTo(P.pos);snd.roar(close||d<60?1:0);if(!close){hud.alert('LEVIATHAN-CLASS SIGNAL',`HOLLOWMAW · ${Math.round(d)} M · LEAVE THE DROP OR LIGHT A FLARE`,4.5);G.shake=Math.max(G.shake,.25);}else hud.alert('IT IS CHARGING','FLARE (F) OR SHOCK PULSE NOW',2.5);};
 function subLost(){hud.banner('MINNOW DESTROYED','The hull gave way. You are back in the water.',4,'#ff7a5a');exitSub(true);S.built=false;delete P.tools.sub;subMesh.visible=false;objT=0;}
 
 /* ================= actions ================= */
 function use(){if(G.app!=='play'||G.ui)return;const c=G.cand;if(!c){if(P.inSub){exitSub();return;}snd.deny();return;}
- if(c.t==='pod'){openPod();return;}if(c.t==='sub'){enterSub();return;}if(c.t==='exit'){exitSub();return;}
+ if(c.t==='pod'||c.t==='base'){openPod(c.t==='base');return;}if(c.t==='log'){collectLog(c.l);return;}if(c.t==='sub'){enterSub();return;}if(c.t==='exit'){exitSub();return;}
  if(c.t==='beacon'){scene.remove(c.b.g);beaconList.splice(beaconList.indexOf(c.b),1);snd.pick();hud.feed('BEACON RECOVERED','#ffd24a','◆');return;}
  if(cargoN()>=CARRY&&c.t!=='beacon'){hud.banner('CARGO FULL','Store materials in the lifepod locker',2.4,'#ffb04a');snd.deny();return;}
  if(c.t==='res'){const pk=c.pk,r=RES[pk.k],k=r.as||pk.k;world.hide(pk);const n=r.give;give(k,n);P.stats.gathered+=n;P.score+=10*n;feedItem(k,n);snd.pick();
@@ -109,11 +142,12 @@ function doFlare(){if(G.app!=='play'||G.ui)return;if(P.inSub){if(S.pulseCD>0||S.
 function sonar(){if(G.app!=='play'||G.ui)return;if(sonarCD>0){snd.deny();return;}sonarCD=P.inSub?4:6;pingT=0;pingMat.uniforms.col.value.setRGB(.35,.95,1);pingMesh.position.copy(P.pos);snd.ping();pings.length=0;const R=P.inSub?160:95;
  for(const pk of world.pickups){if(!pk.alive)continue;const d=pk.pos.distanceTo(P.pos);if(d<R)pings.push({p:pk.pos,l:RES[pk.k].label,c:'#'+new THREE.Color(RES[pk.k].col).getHexString(),delay:d/50,res:1});}
  for(const c of life.creatures){const p=c.pos||c.g.position;const d=p.distanceTo(P.pos);if(d<R*1.4&&c.kind!=='jelly'&&c.kind!=='crab'||d<40)pings.push({p,l:P.scanned.has(c.kind)?SPECIES[c.kind].n:'UNKNOWN LIFEFORM',c:SPECIES[c.kind].danger?'#ff5a4a':'#e8fbff',delay:d/50,danger:SPECIES[c.kind].danger});}
+ for(const l of logPods){if(P.logs.has(l.L.id))continue;const d=l.pos.distanceTo(P.pos);if(d<R*2.5)pings.push({p:l.pos,l:'ECHO LOG '+l.L.id,c:'#ffd24a',delay:d/50});}
  pings.forEach(p=>p.t=8+p.delay);if(pings.length>40){pings.sort((a,b)=>a.delay-b.delay);pings.length=40;}hud.feed(`SONAR · ${pings.filter(p=>p.res).length} DEPOSITS · ${pings.filter(p=>p.danger).length} HOSTILE`,'#56e8ff','◎');}
 function dropBeacon(){if(G.app!=='play'||G.ui)return;if(beaconList.length>=4){hud.feed('ALL BEACONS PLACED · E TO PICK ONE UP','#ffd24a','◆');return;}const col=BCOL[beaconList.length%BCOL.length],g=new THREE.Group();
  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.14,1.4,8),new THREE.MeshStandardMaterial({color:0x2a3a44,roughness:.4,metalness:.6}));pole.position.y=.7;g.add(pole);
  const l=new THREE.Mesh(new THREE.SphereGeometry(.22,14,10),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:4}));l.position.y=1.5;g.add(l);
- const y=Math.max(heightAt(P.pos.x,P.pos.z),P.pos.y-1.6);g.position.set(P.pos.x,y,P.pos.z);scene.add(g);const b={g,lamp:l,c:col,n:'BEACON '+(beaconList.length+1),d:Math.round(P.depth)};beaconList.push(b);snd.pick();hud.feed(`${b.n} · ${b.d} M`,col,'◆');}
+ const y=Math.max(heightAt(P.pos.x,P.pos.z),P.pos.y-1.6);g.position.set(P.pos.x,y,P.pos.z);waterize(g);scene.add(g);const b={g,lamp:l,c:col,n:'BEACON '+(beaconList.length+1),d:Math.round(P.depth)};beaconList.push(b);snd.pick();hud.feed(`${b.n} · ${b.d} M`,col,'◆');}
 function eat(){if(G.app!=='play')return;const k=P.inv.cookedfish>0?'cookedfish':P.inv.rawfish>0?'rawfish':null;if(!k){hud.feed('NO FOOD · CATCH FISH WITH E','#ffc04a','◗');snd.deny();return;}P.inv[k]--;const it=ITEMS[k];P.food=Math.min(100,P.food+it.food);P.water=cl(P.water+(it.water||0),0,100);P.stats.eaten++;snd.eat();hud.feed(`ATE ${it.n} +${it.food}`,'#ffc04a','◗');}
 function drink(){if(G.app!=='play')return;const k=P.inv.flask>0?'flask':P.inv.bulb>0?'bulb':null;if(!k){hud.feed('NO WATER · BRINE BULBS OR THE POD STILL','#4ab0ff','●');snd.deny();return;}P.inv[k]--;const it=ITEMS[k];P.water=Math.min(100,P.water+it.water);P.food=Math.min(100,P.food+(it.food||0));snd.eat();hud.feed(`DRANK ${it.n} +${it.water}`,'#4ab0ff','●');}
 function medkit(){if(G.app!=='play')return;if(!(P.inv.medkit>0)){hud.feed('NO MEDKIT','#ff6a6a','✚');snd.deny();return;}if(P.hp>=100){snd.deny();return;}P.inv.medkit--;P.hp=Math.min(100,P.hp+ITEMS.medkit.heal);snd.craft();hud.feed('MEDKIT +55','#ff6a6a','✚');}
@@ -121,19 +155,21 @@ function enterSub(){if(!S.built)return;P.inSub=true;S.yaw=P.yaw;S.pitch=cl(P.pit
 function exitSub(forced){if(!P.inSub)return;P.inSub=false;P.yaw=S.yaw;P.pitch=S.pitch*.5;P.pos.copy(S.pos).add(new V(0,2.4,0));P.vel.set(0,1,0);if(!forced)snd.tone(500,.3,{type:'triangle',vol:.06,slide:.5});}
 
 /* ================= lifepod printer ================= */
-function canCraft(r){if(P.tools[r.id]&&!r.repeat)return false;if(r.needs&&!P.tools[r.needs])return false;for(const[k,n]of Object.entries(r.cost))if(have(k)<n)return false;return true;}
+function canCraft(r){if(P.tools[r.id]&&!r.repeat)return false;if(r.needs&&!P.tools[r.needs])return false;if(r.log&&!P.logs.has(r.log))return false;for(const[k,n]of Object.entries(r.cost))if(have(k)<n)return false;return true;}
 function craft(id){const r=RECIPES.find(x=>x.id===id);if(!r||G.ui!=='pod'||!canCraft(r)){snd.deny();return false;}for(const[k,n]of Object.entries(r.cost))take(k,n);P.stats.crafted++;snd.craft();
  if(r.repeat){if(id==='medkit')give('medkit');if(id==='flare')give('flare',3);P.score+=30;}
- else{P.tools[id]=true;P.score+=150;if(id==='tank')P.o2max=90*G.diff.o2;if(id==='tank2')P.o2max=150*G.diff.o2;if(id==='suit')P.rating=250;if(id==='jet')P.bat=100;
+ else{P.tools[id]=true;P.score+=150;if(id==='tank')P.o2max=90*G.diff.o2;if(id==='tank2')P.o2max=150*G.diff.o2;if(id==='suit')P.rating=Math.max(P.rating,250);if(id==='abyss')P.rating=450;if(id==='jet')P.bat=100;
+  if(id==='habitat')hud.banner('HABITAT CORE PRINTED','Swim to a spot on the seabed and press H to deploy your outpost',4.5,'#56e8ff');
+  if(['scanner','grow','power'].includes(id)&&BASE.on)showModule(id==='scanner'?'scan':id);
   if(id==='sub'){S.built=true;S.pos.copy(DOCK);S.vel.set(0,0,0);S.hull=100;S.power=100;S.yaw=0;subMesh.visible=true;hud.banner('MINNOW PRINTED','Docked under the lifepod. Swim down and press E to board.',4);}
   if(id==='beacon'){closePod();startWin();return true;}}
  P.o2=P.o2max;hud.feed(`PRINTED ${r.n}`,'#56e8ff','▣');objT=0;renderPod();return true;}
-function openPod(){if(G.app!=='play')return;G.ui='pod';G.noPause=true;unlock();setTimeout(()=>G.noPause=false,200);$('pod').hidden=false;P.vel.set(0,0,0);snd.tone(420,.3,{type:'triangle',vol:.06,slide:1.5});
+function openPod(atBase){if(G.app!=='play')return;G.ui='pod';G.atBase=!!atBase;$('podk').textContent=atBase?'SEABED OUTPOST · MATTER PRINTER':'HALCYON LIFEPOD · MATTER PRINTER';G.noPause=true;unlock();setTimeout(()=>G.noPause=false,200);$('pod').hidden=false;P.vel.set(0,0,0);snd.tone(420,.3,{type:'triangle',vol:.06,slide:1.5});
  renderPod();}
 function closePod(){if(G.ui!=='pod')return;G.ui=null;$('pod').hidden=true;if(G.app==='play')lock();}
 function renderPod(){if(G.ui!=='pod')return;const tier=P.tools.sub?3:P.tools.suit||P.tools.jet?2:1;
  $('recipes').innerHTML=RECIPES.map((r,i)=>{const done=P.tools[r.id]&&!r.repeat;const ok=canCraft(r);const cost=Object.entries(r.cost).map(([k,n])=>`<span class="${have(k)>=n?'ok':''}">${ITEMS[k].n} ${Math.min(have(k),n)}/${n}</span>`).join('');
-  return `<div class="rc ${done?'done':''} ${r.id==='beacon'?'win':''}"><b>${i+1} · ${r.n}</b><p>${r.d}${r.needs&&!P.tools[r.needs]?' <span style="color:#ffb04a">Needs '+RECIPES.find(x=>x.id===r.needs).n+'.</span>':''}</p><div class="cost">${cost}</div><button data-id="${r.id}" ${ok?'':'disabled'}>${done?'PRINTED ✓':ok?'PRINT':'MISSING'}</button></div>`;}).join('');
+  return `<div class="rc ${done?'done':''} ${r.id==='beacon'?'win':''} ${r.log&&!P.logs.has(r.log)?'lock':''}"><b>${i+1} · ${r.n}</b><p>${r.d}${r.needs&&!P.tools[r.needs]?' <span style="color:#ffb04a">Needs '+RECIPES.find(x=>x.id===r.needs).n+'.</span>':''}${r.log&&!P.logs.has(r.log)?' <span style="color:#ffd24a">◉ Blueprint in ECHO LOG '+r.log+' · '+LOGS[r.log-1].where+'.</span>':''}</p><div class="cost">${cost}</div><button data-id="${r.id}" ${ok?'':'disabled'}>${done?'PRINTED ✓':r.log&&!P.logs.has(r.log)?'LOCKED':ok?'PRINT':'MISSING'}</button></div>`;}).join('');
  $('recipes').querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>craft(b.dataset.id));
  $('supplies').innerHTML=`<button id="pw">▮ TAKE FRESH WATER (${P.flasks} IN STILL)</button><button id="pc">◗ COOK ALL RAW FISH (${P.inv.rawfish||0})</button><button id="ps">⇩ STORE MATERIALS IN LOCKER</button><button id="pe">EAT / DRINK NOW (1 / 2)</button>`;
  $('pw').disabled=!P.flasks;$('pc').disabled=!P.inv.rawfish;$('pw').onclick=()=>{if(cargoN()>=CARRY){snd.deny();return;}give('flask',P.flasks);P.flasks=0;snd.pick();renderPod();};$('pc').onclick=()=>{give('cookedfish',P.inv.rawfish);P.inv.rawfish=0;snd.craft();renderPod();};
@@ -142,7 +178,8 @@ function renderPod(){if(G.ui!=='pod')return;const tier=P.tools.sub?3:P.tools.sui
 function openTablet(){if(G.ui)return;G.ui='tablet';$('tablet').hidden=false;const kinds=Object.keys(SPECIES);
  const sp=kinds.map(k=>P.scanned.has(k)?`<div class="s ${SPECIES[k].danger?'dg':''}"><b>${SPECIES[k].n}</b>${SPECIES[k].info}</div>`:`<div class="s no"><b>UNSCANNED</b>Hold Q / RMB on an unknown lifeform to scan it.</div>`).join('');
  const tl=Object.entries(P.tools).map(([k])=>RECIPES.find(r=>r.id===k).n).join(' · ')||'NONE YET';
- $('tabbody').innerHTML=`<div><p class="k">SPECIES ${P.scanned.size}/${kinds.length}</p><div class="sp">${sp}</div></div><div class="side"><p class="k">OBJECTIVE</p><div class="it">${G.obj?G.obj.title:''}</div><p class="k">GEAR</p><div class="it">${tl}</div><p class="k">CARGO ${cargoN()}/${CARRY}</p>${invHTML(P.inv)}<p class="k">LOCKER</p>${invHTML(P.locker)}<p class="k">DEEPEST</p><div class="it">${Math.round(P.maxD)} M</div></div>`;}
+ $('tabbody').innerHTML=`<div><p class="k">SPECIES ${P.scanned.size}/${kinds.length}</p><div class="sp">${sp}</div></div><div class="side"><p class="k">OBJECTIVE</p><div class="it">${G.obj?G.obj.title:''}</div><p class="k">GEAR</p><div class="it">${tl}</div><p class="k">CARGO ${cargoN()}/${CARRY}</p>${invHTML(P.inv)}<p class="k">LOCKER</p>${invHTML(P.locker)}<p class="k">DEEPEST</p><div class="it">${Math.round(P.maxD)} M</div><p class="k">OUTPOST</p><div class="it">${BASE.on?Math.round(-BASE.pos.y)+' M · '+['scan','grow','power'].filter(k=>base.userData.mods[k].visible).length+' MODULES':P.tools.habitat?'READY · PRESS H':'NOT BUILT'}</div></div>
+ <div style="grid-column:1/-1"><p class="k">ECHO LOGS ${P.logs.size}/5</p><div class="sp">${LOGS.map(L=>P.logs.has(L.id)?`<div class="s"><b>${L.t}</b>${L.x}</div>`:`<div class="s no"><b>ECHO LOG ${L.id} · ${L.where}</b>Follow the gold light pillar. Unlocks ${L.unlock}.</div>`).join('')}</div></div>`;}
 function closeTablet(){G.ui=null;$('tablet').hidden=true;}
 $('podx').onclick=closePod;$('tabx').onclick=closeTablet;
 
@@ -154,13 +191,17 @@ function objective(){const T=P.tools;const chip=(k,n)=>({t:`${ITEMS[k].n} ${Math
   if(ready)return{key:id+'r',n,title:`Return to the lifepod and print the ${r.n}`,chips,target:{p:SPOTS.pod,l:'LIFEPOD',c:'#ff7a2a'}};
   const miss=Object.entries(r.cost).find(([k,c])=>have(k)<c)[0];let tgt=null;const w=where[miss];if(w)tgt={p:w,l:ITEMS[miss].n,c:ITEMS[miss].c};else{const pk=nearestRes(miss);if(pk&&pk.pos.distanceTo(P.pos)<140)tgt={p:pk.pos,l:ITEMS[miss].n,c:ITEMS[miss].c};}
   return{key:id+miss+chips.map(c=>c.t).join(),n,title,chips,target:tgt};};
- if(!T.knife)return step('knife','1/6','Gather TITANIUM from metal outcrops near the pod',{});
- if(!T.tank)return step('tank','2/6','Find QUARTZ crystals and print an O2 TANK',{});
- if(!T.suit)return step('suit','3/6','Cut KELP FIBER (west) and dig LITHIUM below 70 m (south)',{fiber:SPOTS.kelp,lithium:SPOTS.plat});
- if(!T.sub)return step('sub','4/6','Harvest LUMEN GEL in the glowing Lumen Hollow (north-west)',{gel:SPOTS.pit});
- return step('beacon',T.sub?'5/6':'5/6','Pilot the MINNOW down the Drop (east) for EMBERSTONE',{ember:SPOTS.drop});}
+ const logStep=(id,n,title)=>({key:'log'+id,n,title,chips:[{t:'ECHO LOG '+id+' · '+LOGS[id-1].where,ok:false}],target:{p:logPods[id-1].pos,l:LOGS[id-1].n,c:'#ffd24a'}});
+ if(!T.knife)return step('knife','1/7','Gather TITANIUM from metal outcrops near the pod',{});
+ if(!T.tank)return step('tank','2/7','Find QUARTZ crystals and print an O2 TANK',{});
+ if(!P.logs.has(1))return logStep(1,'3/7','Follow the gold light to the HALCYON wreck (north-west) and recover its FLIGHT RECORDER');
+ if(!T.suit)return step('suit','4/7','Cut KELP FIBER (west) and dig LITHIUM below 70 m (south)',{fiber:SPOTS.kelp,lithium:SPOTS.plat});
+ if(!T.sub)return step('sub','5/7','Harvest LUMEN GEL in the glowing Lumen Hollow (north-west)',{gel:SPOTS.pit});
+ if(!P.logs.has(5))return logStep(5,'6/7','Dive the MINNOW down the Drop (east): find the SCIENCE LOG at the bone field');
+ return step('beacon','7/7','Collect EMBERSTONE in the Drop and print the DISTRESS BEACON',{ember:SPOTS.drop});}
 function tips(){const t=[];if(P.food<30)t.push('HUNGRY · catch fish with E, cook them at the pod');if(P.water<30)t.push('THIRSTY · pick brine bulbs or take water from the pod still');if(P.hp<40&&P.inv.medkit)t.push('Press 3 to use a medkit');if(cargoN()>=CARRY-2)t.push('Cargo almost full · store materials in the pod locker');
- if(!P.tools.jet&&P.tools.tank&&have('copper')<1&&!P.tools.sub)t.push('Tip: the HYDROJET (copper) makes long swims much faster');return G.tipT>0?G.tipMsg:t[0]||'';}
+ if(!P.tools.jet&&P.tools.tank&&have('copper')<1&&!P.tools.sub)t.push('Tip: the HYDROJET (copper) makes long swims much faster');
+ if(P.tools.habitat&&!BASE.on)t.push('Press H near the seabed to deploy your HABITAT CORE');if(P.tools.tank&&!P.tools.habitat&&P.logs.has(1))t.push('Tip: a HABITAT CORE gives you air and the printer far from the pod');return G.tipT>0?G.tipMsg:t[0]||'';}
 
 /* ================= scanning ================= */
 function stepScan(dt){G.scanning=keys.KeyQ||mouse.r||(G.pad&&G.pad.scan);G.scanLab='';let tgt=null;const dir=lookDir(_t);
@@ -197,7 +238,7 @@ function step(dt){G.time+=dt;U.uTime.value=G.time;if(G.hurtT>0)G.hurtT=Math.max(
  if(P.under&&!P.inSub&&G.ui!=='pod'){breathT-=dt;if(breathT<=0){breathT=2.8+Math.random();const f=lookDir(_t);bub.emit(P.pos.x+f.x*.55,P.pos.y-.32,P.pos.z+f.z*.55,6,.1,.32);snd.breath();}}
  bub.step(dt);
  objT-=dt;if(objT<=0){objT=.5;G.obj=objective();G.tip=tips();G.loc=region(P.pos.x,P.pos.z,P.depth);
-  G.compassMarks=[{x:0,z:0,c:'#ff7a2a',l:'▼POD'}];if(S.built&&!P.inSub)G.compassMarks.push({x:S.pos.x,z:S.pos.z,c:'#56e8ff',l:'▼SUB'});for(const b of beaconList)G.compassMarks.push({x:b.g.position.x,z:b.g.position.z,c:b.c,l:'◆'});if(G.obj&&G.obj.target&&G.obj.target.l!=='LIFEPOD')G.compassMarks.push({x:G.obj.target.p.x,z:G.obj.target.p.z,c:G.obj.target.c,l:'◇'});}
+  G.compassMarks=[{x:0,z:0,c:'#ff7a2a',l:'▼POD'}];if(S.built&&!P.inSub)G.compassMarks.push({x:S.pos.x,z:S.pos.z,c:'#56e8ff',l:'▼SUB'});for(const b of beaconList)G.compassMarks.push({x:b.g.position.x,z:b.g.position.z,c:b.c,l:'◆'});if(BASE.on)G.compassMarks.push({x:BASE.pos.x,z:BASE.pos.z,c:'#56e8ff',l:'⌂'});for(const l of logPods)if(!P.logs.has(l.L.id))G.compassMarks.push({x:l.pos.x,z:l.pos.z,c:'#ffd24a',l:'◉'});if(G.obj&&G.obj.target&&G.obj.target.l!=='LIFEPOD')G.compassMarks.push({x:G.obj.target.p.x,z:G.obj.target.p.z,c:G.obj.target.c,l:'◇'});}
  // auto light when it gets dark
  if(P.depth>55&&!P.light&&!P.lightAuto){P.light=true;P.lightAuto=true;hud.feed('HEADLAMP ON · L TO TOGGLE','#eaf6ff','☀');}
  snd.jet(G.jetOn?(P.inSub?2:1):0);}
@@ -226,8 +267,12 @@ function survival(dt){const D=G.diff,inPod=G.ui==='pod';
  const docked=S.built&&S.pos.distanceTo(DOCK)<9;if(docked){S.power=Math.min(100,S.power+dt*6);S.hull=Math.min(100,S.hull+dt*3);}
  const surfaced=P.pos.y>-.45;
  if(inPod||P.inSub||surfaced){P.o2=Math.min(P.o2max,P.o2+dt*(inPod?60:28));lowO2T=0;}
- else{P.o2-=dt*(G.sprint?1.6*(P.tools.fins?.75:1):1);if(P.o2<=0){P.o2=0;G.hurt(9*dt,'O2');}}
+ else if(nearBase()){P.o2=Math.min(P.o2max,P.o2+dt*40);lowO2T=0;}
+ else{P.o2-=dt*(G.sprint?1.6*(P.tools.fins?.75:1):1)*(P.tools.rebreather?.65:1);if(P.o2<=0){P.o2=0;G.hurt(9*dt,'O2');}}
  if(inPod){P.bat=Math.min(100,P.bat+dt*12);P.hp=Math.min(100,P.hp+dt*3);}
+ if(BASE.on){const bd=P.pos.distanceTo(BASE.pos);if(base.userData.mods.power.visible&&bd<16){P.bat=Math.min(100,P.bat+dt*8);if(P.inSub)S.power=Math.min(100,S.power+dt*5);}
+  if(base.userData.mods.grow.visible){BASE.growT+=dt;if(BASE.growT>50){BASE.growT=0;P.locker.cookedfish=(P.locker.cookedfish||0)+1;P.locker.flask=(P.locker.flask||0)+1;hud.feed('GROW BED HARVEST · FOOD + WATER IN LOCKER','#60ff90','✿');}}
+  if(base.userData.mods.scan.visible&&bd<220){BASE.scanT+=dt;if(BASE.scanT>25){BASE.scanT=0;let n=0;for(const pk of world.pickups){if(!pk.alive)continue;const d=pk.pos.distanceTo(BASE.pos);if(d<140){pings.push({p:pk.pos,l:RES[pk.k].label,c:'#'+new THREE.Color(RES[pk.k].col).getHexString(),delay:d/60,res:1,t:9+d/60});n++;}}if(pings.length>60)pings.splice(0,pings.length-60);if(n)hud.feed(`OUTPOST SCAN · ${n} DEPOSITS`,'#56e8ff','◎');}}}
  const o2p=P.o2/P.o2max;if(!surfaced&&!P.inSub&&!inPod&&o2p<.25){lowO2T-=dt;if(lowO2T<=0){lowO2T=1.2;snd.heart();if(o2p<.25&&o2p>.2)hud.banner('OXYGEN LOW','Surface or reach the lifepod',2.2,'#ff8a6a');}}
  const rate=P.inSub?500:P.rating;if(P.depth>rate){const ex=(P.depth-rate)/40;if(P.inSub){S.hull-=dt*4*(1+ex);if(S.hull<=0){S.hull=0;subLost();}}else G.hurt(dt*7*(1+ex),'CRUSH');crushWarn-=dt;if(crushWarn<=0){crushWarn=2;snd.warn();hud.alert('CRUSH DEPTH',(P.inSub?'HULL':'SUIT')+' RATED '+rate+' M · ASCEND',2);}}
  if(P.food<=0)G.hurt(dt*.7,'STARVATION');if(P.water<=0)G.hurt(dt*.9,'DEHYDRATION');
@@ -237,6 +282,8 @@ function candidates(){G.cand=null;let txt='';if(G.ui)return hud.prompt('');const
  const dSub=S.built?P.pos.distanceTo(S.pos):1e9,dPod=P.pos.distanceTo(HATCH);
  if(dSub<4.8&&dSub<dPod){G.cand={t:'sub'};return hud.prompt('<b>E</b>BOARD THE MINNOW');}
  if(dPod<6||(P.pos.y>-1.2&&Math.hypot(P.pos.x,P.pos.z)<5.5)){G.cand={t:'pod'};return hud.prompt('<b>E</b>ENTER LIFEPOD · PRINT · REFILL');}
+ if(nearBase()){G.cand={t:'base'};return hud.prompt('<b>E</b>ENTER OUTPOST · PRINT · REFILL');}
+ for(const l of logPods){if(!P.logs.has(l.L.id)&&l.pos.distanceTo(P.pos)<3.4){G.cand={t:'log',l};return hud.prompt('<b>E</b>DOWNLOAD ECHO LOG '+l.L.id+' · '+l.L.n);}}
  const bn=beaconList.find(b=>b.g.position.distanceTo(P.pos)<3);if(bn){G.cand={t:'beacon',b:bn};return hud.prompt('<b>E</b>PICK UP '+bn.n);}
  let best=null,bd=9;for(const pk of world.pickups){if(!pk.alive)continue;const v=_t2.copy(pk.pos).sub(P.pos);const d2=v.lengthSq();if(d2>12)continue;const d=Math.sqrt(d2);const dot=v.normalize().dot(dir);const sc=d*(1.6-dot);if((dot>.35||d<1.7)&&sc<bd){bd=sc;best=pk;}}
  if(best){G.cand={t:'res',pk:best};return hud.prompt(`<b>E</b>${RES[best.k].label}${RES[best.k].as?' · TITANIUM':''}`);}
@@ -260,7 +307,7 @@ function end(reason){if(G.app!=='play'&&G.app!=='win')return;const won=reason===
  $('oeye').textContent=`DIVE LOG · ${G.diff.n} · 15-MINUTE WINDOW`;$('ores').textContent=won?'RESCUED':reason==='time'?'STRANDED':'LOST AT SEA';$('ores').style.color=won?'#ffb050':reason==='time'?'#9af4ff':'#ff6a5a';
  $('ocause').textContent=won?`Beacon launched with ${mmss(P.diveT)} to spare · +${3000+timeBonus} rescue bonus`:reason==='time'?'The rescue window closed before a beacon was launched.':`Killed by ${({O2:'drowning',CRUSH:'crush depth',STARVATION:'starvation',DEHYDRATION:'dehydration'})[P.deathBy]||P.deathBy.toLowerCase()} at ${Math.round(P.depth)} m.`;
  $('ofs').textContent=score.toLocaleString()+' PTS';const st=P.stats;
- const cells=[['DEEPEST',Math.round(P.maxD)+' M'],['SPECIES',P.scanned.size+'/'+Object.keys(SPECIES).length],['GEAR PRINTED',Object.keys(P.tools).length+'/8'],['GATHERED',st.gathered],['FISH CAUGHT',st.fish],['TIME',mmss(DIVE-P.diveT)]];
+ const cells=[['DEEPEST',Math.round(P.maxD)+' M'],['SPECIES',P.scanned.size+'/'+Object.keys(SPECIES).length],['GEAR PRINTED',Object.keys(P.tools).length+'/'+RECIPES.filter(r=>!r.repeat).length],['ECHO LOGS',P.logs.size+'/5'],['GATHERED',st.gathered],['FISH CAUGHT',st.fish],['TIME',mmss(DIVE-P.diveT)]];
  $('mystats').innerHTML=cells.map(c=>`<div><b>${c[1]}</b><span>${c[0]}</span></div>`).join('');const tok=awardTokens(score,won);$('otok').textContent=`+${tok} TOKENS · BEST ${best().toLocaleString()} PTS`;$('over').hidden=false;}
 function awardTokens(pts,won){lastAward={pts,won,depth:Math.round(P.maxD),species:P.scanned.size,diff:G.diff.n,reason:G.result.reason};const tok=5+Math.min(60,pts/150|0);
  addRound(tok,won);saveBest('abyss3d',pts);return tok;}
@@ -278,18 +325,29 @@ function placeCamera(dt){if(G.app==='menu'){menuA+=dt*.03;const a=menuA+2.2;cons
  if(G.app==='win'){const t=G.winT;cam.position.set(16,1.8,22);cam.lookAt(0,Math.max(4,rocket.position.y*.85),0);return;}
  const sh=G.shake*G.shake*.15;
  if(P.inSub){const f=lookDir(_t);cam.position.copy(S.pos).addScaledVector(f,1.2);cam.position.y+=.25;cam.rotation.set(S.pitch+(Math.random()-.5)*sh,S.yaw+(Math.random()-.5)*sh,S.roll);return;}
+ if(G.view3p&&G.ui!=='pod'){const f=lookDir(_t);const want=_t2.copy(P.pos).addScaledVector(f,-3.4);want.y+=.85;const fy=heightAt(want.x,want.z)+.7;if(want.y<fy)want.y=fy;if(P.under&&want.y>-.3)want.y=-.3;
+  if(cam.position.distanceTo(want)>8)cam.position.copy(want);else cam.position.lerp(want,1-Math.exp(-dt*9));cam.rotation.set(P.pitch-.1+(Math.random()-.5)*sh,P.yaw+(Math.random()-.5)*sh,(Math.random()-.5)*sh*.5);return;}
  const sp=P.vel.length();const bob=Math.sin(G.time*2.2)*.05*(P.under?1:2);cam.position.copy(P.pos);cam.position.y+=bob;cam.rotation.set(P.pitch+(Math.random()-.5)*sh,P.yaw+(Math.random()-.5)*sh,Math.sin(G.time*.9)*.012+(Math.random()-.5)*sh*.5);}
-function visuals(dt){placeCamera(dt);world.cull(cam,cam.position.y<-60?115:140);(world.meshes.grass||[]).forEach(g=>{if(g.userData.off)g.visible=false;});const cy=cam.position.y,d=-cy,under=cy<-.05;U.uCamY.value=cy;
+function poseDiver(dt){const app=G.app;let on=false;
+ if(app==='play'&&G.view3p&&!P.inSub&&G.ui!=='pod'){on=true;const f=lookDir(_t);const sp=P.vel.length();const prone=sm(.4,2.6,sp);diver.position.copy(P.pos).addScaledVector(f,-.3*prone);diver.position.y-=.3+(1-prone)*.35;
+  diver.rotation.set(-Math.PI/2*(.3+.7*prone)+P.pitch*prone,P.yaw,0,'YXZ');diver.userData.animate(dt,sp,0);}
+ else if(app==='menu'&&gfx>=1){on=true;const a=menuA+2.2;const tx=-Math.sin(a),tz=Math.cos(a);_t.set(0,0,-1).applyQuaternion(cam.quaternion);diver.position.copy(cam.position).addScaledVector(_t,5.5);diver.position.x+=tx*1.2;diver.position.z+=tz*1.2;diver.position.y-=.9+Math.sin(G.time*.7)*.2;
+  diver.rotation.set(-Math.PI/2+.15,Math.atan2(-tx,-tz),Math.sin(G.time*.5)*.08,'YXZ');diver.userData.animate(dt,2.4,0);}
+ else if(app==='over'&&!(G.result&&G.result.won)){on=true;diver.position.copy(P.pos);diver.rotation.set(-.5,P.yaw,0,'YXZ');diver.userData.animate(dt*.4,.3,0);}
+ diver.visible=on;}
+function visuals(dt){placeCamera(dt);poseDiver(dt);world.cull(cam,cam.position.y<-60?115:140);lowOff.forEach(g=>{if(g.userData.off)g.visible=false;});const cy=cam.position.y,d=-cy,under=cy<-.05;U.uCamY.value=cy;
  const w=weights(cam.position.x,cam.position.z);fogAt(d,fc);fc.lerp(c2.copy(KELPC).multiplyScalar(fc.g/.42),w.kelp*sm(5,60,d)*.35);fc.lerp(c2.copy(PITC),w.pit*sm(60,160,d)*.5);
  if(under){scene.fog.color.copy(fc);scene.fog.near=lerp(.0155,.024,sm(0,160,d));scene.fog.far=1;}else{scene.fog.color.copy(SKYC);scene.fog.near=.0028;scene.fog.far=0;}
  dome.visible=under;sky.visible=!under;dome.material.uniforms.fc.value.copy(fc);dome.position.copy(cam.position);RR.setClearColor(under?fc:SKYC);
  surf.material.uniforms.fc.value.copy(fogAt(Math.max(0,d),c2));surf.material.uniforms.dens.value=scene.fog.near;surf.position.set(Math.round(cam.position.x/10)*10,0,Math.round(cam.position.z/10)*10);
- const sunI=under?Math.exp(-d/62):1;U.uSun.value=under?sunI:1;sun.intensity=1.7*sunI+.02;hemi.intensity=.22+.56*sunI;hemi.color.setRGB(.55+.3*sunI,.85,1);hemi.groundColor.copy(fc).multiplyScalar(.9).lerp(c2.setRGB(.02,.12,.14),sm(150,350,d)*.6);
+ const sunI=under?Math.exp(-d/62):1;U.uSun.value=under?sunI:1;sun.intensity=under?4.2:3.4;hemi.intensity=under?.22:.9;hemi.color.setRGB(.62,.86,1);hemi.groundColor.setRGB(.06,.16,.18);
+ U.uAmb.value.copy(fc).multiplyScalar(under?2.8*sm(30,200,d):0);
+ if(sun.castShadow){const t=sun.target.position;const ts=84/sun.shadow.mapSize.x;_t.set(0,0,-18).applyQuaternion(cam.quaternion);t.set(Math.round((cam.position.x+_t.x)/ts)*ts,Math.round(Math.min(cam.position.y,-2)/ts)*ts,Math.round((cam.position.z+_t.z)/ts)*ts);sun.position.copy(t).addScaledVector(SUN_DIR,140);RR.shadowMap.autoUpdate=!under||d<170;}
  rays.userData.update(cam);rays.userData.mat.uniforms.uI.value=under?Math.exp(-d/34):0;rays.visible=under&&d<160;
  snow.material.uniforms.uCam.value.copy(cam.position);snow.material.uniforms.uCol.value.copy(fc).multiplyScalar(1+sunI);snow.material.uniforms.uLamp.value=lamp.intensity>0?1:0;snow.visible=under;
- const pu=plankton.userData.u;pu.uCam.value.copy(cam.position);const spd=P.inSub?S.vel.length():P.vel.length();pu.uStir.value+=((G.app==='play'?Math.min(1,spd/6):.3)-pu.uStir.value)*Math.min(1,dt*3);pu.uDeep.value=under?cl((d-40)/60,0,1):0;
+ const pu=plankton.userData.u;pu.uCam.value.copy(cam.position);const spd=P.inSub?S.vel.length():P.vel.length();pu.uStir.value+=((G.app==='play'?Math.min(1,spd/6):.3)-pu.uStir.value)*Math.min(1,dt*3);pu.uDeep.value=under?cl((d-40)/60,0,1):0;plankton.visible=pu.uDeep.value>0;
  // lights
- const lampOn=G.app==='play'&&under&&(P.light||P.inSub&&d>30)&&G.ui!=='pod';lamp.intensity=lampOn?(P.inSub?22:14):0;lamp.angle=P.inSub?.6:.46;lamp.distance=P.inSub?90:65;lamp.decay=P.inSub?1.25:1.1;
+ const lampOn=G.app==='play'&&under&&(P.light||P.inSub&&d>30)&&G.ui!=='pod';const halo=P.tools.halo&&!P.inSub;lamp.intensity=lampOn?(P.inSub?70:halo?80:42):0;lamp.angle=P.inSub?.6:halo?.72:.46;lamp.distance=P.inSub?90:halo?120:65;lamp.decay=P.inSub?1.25:1.1;lamp.color.setHex(halo?0xfff0d8:0xeaf6ff);
  flareL.intensity=flare?70*Math.min(1,flare.t/3):0;if(flare)flareL.position.copy(flare.pos);
  const vs=world.vents.map(v=>[v,v.distanceToSquared(cam.position)]).sort((a,b)=>a[1]-b[1]);ventL.forEach((l,i)=>{const v=vs[i];if(v&&v[1]<90*90){l.position.copy(v[0]);l.position.y+=1.5;l.intensity=26*(.85+.15*Math.sin(G.time*7+i*3));}else l.intensity=0;});
  if(Math.random()<dt*30){for(const v of vs.slice(0,3))if(v[1]<120*120)bub.emit(v[0].x+(Math.random()-.5),v[0].y,v[0].z+(Math.random()-.5),1,.6,1.3);}
@@ -299,11 +357,15 @@ function visuals(dt){placeCamera(dt);world.cull(cam,cam.position.y<-60?115:140);
   if(!P.inSub&&S.pos.distanceTo(DOCK)<9){S.pos.lerp(DOCK,dt*.5);S.yaw=lerp(S.yaw,0,dt*.5);}}
  cockpit.visible=!!(P.inSub&&G.app==="play");
  // viewmodel
- const showVM=G.app==='play'&&!P.inSub&&G.ui!=='pod';vm.visible=showVM;if(showVM){const u=vm.userData;const t=G.time,mv=Math.min(1,P.vel.length()/5);u.R.position.set(.26+Math.sin(t*2.2)*.008*mv,-.24+Math.sin(t*4.4)*.006*mv+(G.scanning?.04:0),-.48+(G.scanning?-.05:0));u.R.rotation.set(G.scanning?.12:0,0,0);
+ const showVM=G.app==='play'&&!P.inSub&&G.ui!=='pod'&&!G.view3p;vm.visible=showVM;if(showVM){const u=vm.userData;const t=G.time,mv=Math.min(1,P.vel.length()/5);u.R.position.set(.26+Math.sin(t*2.2)*.008*mv,-.24+Math.sin(t*4.4)*.006*mv+(G.scanning?.04:0),-.48+(G.scanning?-.05:0));u.R.rotation.set(G.scanning?.12:0,0,0);
   u.scr.material.emissiveIntensity=G.scanning?2.6+Math.sin(t*20):1.4;u.beam.material.opacity=.08+.05*Math.sin(t*30);
   const sw=swingT>0?1-swingT/.36:0;u.L.visible=!!P.tools.knife&&swingT>0;if(u.L.visible){u.L.position.set(-.3+Math.sin(sw*Math.PI)*.42,-.28+Math.sin(sw*Math.PI)*.12,-.5-Math.sin(sw*Math.PI)*.18);u.L.rotation.set(-.3,Math.sin(sw*Math.PI)*.8-.4,-Math.sin(sw*Math.PI)*1.1);}
   u.jet.visible=!!G.jetOn;G.scanShow=G.scanning?Math.min(1,(G.scanShow||0)+dt*5):Math.max(0,(G.scanShow||0)-dt*4);u.R.visible=!G.jetOn&&G.scanShow>0;u.R.position.y-=(1-G.scanShow)*.25;if(G.jetOn)u.prop.rotation.z+=dt*40;}
- // markers + ping
+ // sub propellers, outpost modules, story pods
+ if(S.built)subMesh.userData.props.forEach((p,i)=>p.rotation.z+=dt*(P.inSub&&G.jetOn?28:2.5)*(i?1:-1));
+ if(BASE.on){for(const k in BASE.anim){BASE.anim[k]+=dt/1.6;const m=base.userData.mods[k];const t=Math.min(1,BASE.anim[k]);m.scale.setScalar(.01+.99*(1-Math.pow(1-t,3)));if(t>=1)delete BASE.anim[k];else if(Math.random()<dt*20)bub.emit(BASE.pos.x+m.position.x+(Math.random()-.5)*2,BASE.pos.y+1,BASE.pos.z+m.position.z+(Math.random()-.5)*2,1,.3,1.2);}
+  base.userData.mods.scan.userData.dish.rotation.y+=dt*.6;base.userData.light.intensity=16+2*Math.sin(G.time*1.3);}
+ for(const l of logPods){if(!l.g.visible)continue;l.beam.visible=under;}
  drawMarks(dt);
  for(const b of beaconList)b.lamp.material.emissiveIntensity=2.5+2*Math.sin(G.time*4);
  snd.update(dt,Math.max(0,d),under,G.app==='play');}
@@ -319,7 +381,7 @@ function drawMarks(dt){if(pingT>=0){pingT+=dt;const r=pingT*50;pingMesh.visible=
 
 /* ================= rendering ================= */
 let gfx=quality(),fxStack=null,fxSize='',lens=null;
-function applyQuality(q){gfx=q;RR.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.1:.8));fxStack=null;fxSize='';(world.meshes.grass||[]).forEach(g=>g.userData.off=q<1);snow.material.uniforms.uA.value=q>=1?1:.7;}
+function applyQuality(q){gfx=q;sun.castShadow=q>=1;const ms=q>=2?2048:1024;if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}RR.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.1:.8));fxStack=null;fxSize='';lowOff.forEach(g=>g.userData.off=q<1);world.setLOD(q<1);life.setLOD(q<1);U.uBump.value=q>=1?1:.6;snow.material.uniforms.uA.value=q>=1?1:.7;}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(RR.domElement.width!==Math.floor(w*RR.getPixelRatio())||RR.domElement.height!==Math.floor(h*RR.getPixelRatio()))RR.setSize(w,h,false);
  cam.aspect=w/h;cam.fov=w/h<1?84:72;cam.updateProjectionMatrix();const sc=h*RR.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));snow.material.uniforms.uScale.value=sc;bub.mat.uniforms.uScale.value=sc;
@@ -352,4 +414,4 @@ window.ABYSS={get state(){return G.app;},get app(){return G.app;},get ui(){retur
  bank(){openPod();P.o2=P.o2max;closePod();},emitBubbles(n=5,s=.12){bub.emit(P.pos.x,P.pos.y-.2,P.pos.z,n,s,1);},stepBubbles:dt=>bub.step(dt),drawMarks,
  give(k,n=1){give(k,n);},tool(id){P.tools[id]=true;if(id==='tank')P.o2max=90;if(id==='suit')P.rating=250;if(id==='sub'){S.built=true;S.pos.copy(DOCK);subMesh.visible=true;}},
  teleport(x,y,z){P.pos.set(x,y,z);P.vel.set(0,0,0);if(P.inSub)S.pos.set(x,y,z);},look(yaw,pitch){P.yaw=yaw;P.pitch=pitch;S.yaw=yaw;S.pitch=pitch;},setClock(s){P.diveT=s;},god(v=true){G.god=v;},setQuality:applyQuality,get gfx(){return gfx;},
- get objective(){return G.obj;},get cand(){return G.cand;},scan(kind){P.scanned.add(kind);}};
+ get objective(){return G.obj;},log(id){const l=logPods[id-1];if(l&&!P.logs.has(id))collectLog(l);},deployBase,get base(){return BASE;},diver,logPods,view3p(v=true){G.view3p=v;},get cand(){return G.cand;},scan(kind){P.scanned.add(kind);}};

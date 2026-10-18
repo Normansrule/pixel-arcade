@@ -35,7 +35,7 @@
   <div id="subhud" hidden><p class="k">MINNOW</p><div class="bar hl"><i>⬢</i><div class="tr"><em id="hullb"></em></div><b id="hullt">100</b></div><div class="bar pw"><i>⚡</i><div class="tr"><em id="pwb"></em></div><b id="pwt">100</b></div><p class="sk">E EXIT · F SHOCK PULSE · R SONAR</p></div>
 </div>
 <div id="pod" hidden><div class="box">
-  <div class="hd"><div><p class="k">HALCYON LIFEPOD · MATTER PRINTER</p><h2>FABRICATE<em>.</em></h2></div><button id="podx" class="ghost">CLOSE · E</button></div>
+  <div class="hd"><div><p class="k" id="podk">HALCYON LIFEPOD · MATTER PRINTER</p><h2>FABRICATE<em>.</em></h2></div><button id="podx" class="ghost">CLOSE · E</button></div>
   <div class="cols"><div id="recipes"></div>
    <div class="side"><p class="k">SUPPLIES</p><div id="supplies"></div><p class="k">CARGO <span id="cargoN"></span></p><div id="cargo"></div><p class="k">LOCKER</p><div id="locker"></div></div></div>
   <p class="foot">Inside the pod you are safe: oxygen, the hydrojet and the sub recharge. The clock keeps running.</p>
@@ -44,7 +44,7 @@
 <div id="menu" class="scr">
   <p class="eye">[ PIXEL ARCADE ] FULL 3D · OCEAN SURVIVAL</p>
   <h1>ABYSS<br>DIVER<em>.</em></h1>
-  <p class="how">Your ship went down over an alien sea. Dive from sunlit shoals to glowing abyssal gardens, scan the wildlife, gather and print gear, build a mini-sub and launch a distress beacon before the clock runs out. Something very large hunts the Drop.</p>
+  <p class="how">Your ship went down over an alien sea. Dive from sunlit shoals to glowing abyssal gardens, follow the crew's echo logs, scan the wildlife, print gear, raise a seabed outpost and build a mini-sub, then launch a distress beacon before the clock runs out. Something very large hunts the Drop.</p>
   <div class="opts">
     <label>MODE</label><div class="seg" id="o-diff"><button data-v="0">CALM</button><button data-v="1">SURVIVAL</button><button data-v="2">HARDCORE</button></div>
     <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
@@ -64,8 +64,9 @@
     <tr><td>Knife · flare · sonar · light</td><td><kbd>LMB</kbd> <kbd>F</kbd> <kbd>R</kbd> <kbd>L</kbd></td></tr>
     <tr><td>Eat · drink · medkit</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td></tr>
     <tr><td>Field log · pause · graphics</td><td><kbd>Tab</kbd> <kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+    <tr><td>Third-person view · deploy outpost</td><td><kbd>V</kbd> <kbd>H</kbd></td></tr>
   </table>
-  <p>Surface or return to the lifepod for air. Print gear at the pod from what you gather; the objective card always shows the next step. Gamepad: sticks swim/look, <kbd>A</kbd>/<kbd>B</kbd> up/down, <kbd>X</kbd> grab, <kbd>RB</kbd> scan, <kbd>LB</kbd> boost, <kbd>RT</kbd> knife.</p>
+  <p>Surface or return to the lifepod for air. Print gear at the pod from what you gather; follow the gold light pillars to the crew's ECHO LOGS for blueprints, and deploy a seabed outpost for air far from home. Gamepad: sticks swim/look, <kbd>A</kbd>/<kbd>B</kbd> up/down, <kbd>X</kbd> grab, <kbd>RB</kbd> scan, <kbd>LB</kbd> boost, <kbd>RT</kbd> knife.</p>
 </div>
 <div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>HOLD<br>BREATH<em>.</em></h1><p class="how">The sea is frozen. Click resume to lock the mouse again.</p>
   <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
