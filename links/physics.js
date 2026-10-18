@@ -22,6 +22,8 @@ export const LIES={
  sand:{n:'BUNKER',e:.05,fr:.93,r:2.2,grab:.2,pw:.74,sm:.75,err:.35},
  water:{n:'WATER',e:0,fr:1,r:9,grab:0,pw:0,sm:0,err:0},ob:{n:'OUT OF BOUNDS',e:0,fr:1,r:9,grab:0,pw:0,sm:0,err:0}};
 const cl=(v,a,b)=>v<a?a:v>b?b:v;
+/** course conditions set by the weather: carry (heavy, wet air), roll (softer turf) and green speed multipliers */
+export const COND={carry:1,roll:1,green:1};
 /** New ball at rest at p. */
 export function ball(x,y,z){return{p:{x,y,z},v:{x:0,y:0,z:0},w:0,ax:{x:1,y:0,z:0},st:'rest',t:0,bn:0,air:0,land:null,apex:0,carry:0,start:{x,y,z},tc:0,lip:0};}
 /** Launch a full shot. o: {club, pw 0..1.12 (fraction of the club's full distance), yaw (0 = +z), shape -1 draw..+1 fade, err -1..1 (hook..slice),
@@ -30,12 +32,12 @@ export function launch(b,o){const c=CLUBS[o.club],L=LIES[o.lie]||LIES.fairway;b.
  if(c.putt){const d=Math.max(0,o.pw)*o.range;// putter: rolling start speed for distance d on a flat green
   const a=G*LIES.green.r*(o.lie==='green'?1:L.r/LIES.green.r*.75+.25),s=Math.sqrt(2*a*d)*1.0;b.v.x=Math.sin(o.yaw)*s;b.v.z=Math.cos(o.yaw)*s;b.v.y=0;b.w=0;b.st='roll';return b;}
  const pw=cl(o.pw,.05,1.15),sf=speedFor(o.club,pw),lieP=o.lie==='sand'&&o.club>=10?.93:L.pw;
- const spd=c.v*sf*Math.sqrt(lieP),la=(c.la+(o.lie==='sand'?3:0)+(o.loft||0))*Math.PI/180*(1+(1-pw)*.25);
+ const spd=c.v*sf*Math.sqrt(lieP)*(o.boost||1)*COND.carry,la=(c.la+(o.lie==='sand'?3:0)+(o.loft||0))*Math.PI/180*(1+(1-pw)*.25);
  const err=o.err||0,shape=o.shape||0;
  // start line: a draw starts right and curves left; mishits push/pull with the curve
  const off=(-shape*2.2+err*2.4)*Math.PI/180,yaw=o.yaw+off*(-1);// yaw rotates towards +x; "right" is -x when looking down +z
  const ch=Math.cos(la);b.v.x=Math.sin(yaw)*ch*spd;b.v.z=Math.cos(yaw)*ch*spd;b.v.y=Math.sin(la)*spd;
- b.w=c.sp*Math.PI/30*sf*(L.sm)*(1+(o.spin||0)*.35);
+ b.w=c.sp*Math.PI/30*sf*(L.sm)*(1+(o.spin||0)*.35)*(o.spinB||1);
  const tilt=cl(shape*.14+err*.3,-.6,.6);// + tilts the spin axis so the lift pushes right (fade/slice)
  // spin axis = cos(tilt)·right − sin(tilt)·up, right = cross(forward, up) = (−cos yaw, 0, sin yaw)
  b.ax.x=-Math.cos(yaw)*Math.cos(tilt);b.ax.y=-Math.sin(tilt);b.ax.z=Math.sin(yaw)*Math.cos(tilt);
@@ -82,7 +84,7 @@ function sub(b,T,wind,dt){if(b.st==='rest'||b.st==='holed'||b.st==='water'||b.st
  const lie=T.surf(p.x,p.z);if(lie==='water'||T.wet(p.x,p.z,T.h(p.x,p.z))){b.st='water';b.land=b.land||{x:p.x,z:p.z};return'water';}
  const L=LIES[lie]||LIES.rough;T.n(p.x,p.z,N);
  // gravity along the slope (rolling sphere: 5/7 g sinθ)
- const gx=-G*N.y*N.x*5/7,gz=-G*N.y*N.z*5/7;let sp=Math.hypot(v.x,v.z);const rr=G*L.r;
+ const gx=-G*N.y*N.x*5/7,gz=-G*N.y*N.z*5/7;let sp=Math.hypot(v.x,v.z);const rr=G*L.r*(lie==='green'?COND.green:COND.roll);
  if(sp<.04){const gs=Math.hypot(gx,gz);if(gs<rr*1.15||lie==='sand'){v.x=v.z=v.y=0;b.st='rest';p.y=T.h(p.x,p.z);return'rest';}}
  v.x+=gx*dt;v.z+=gz*dt;sp=Math.hypot(v.x,v.z);if(sp>1e-6){const d=Math.min(sp,rr*dt);v.x-=v.x/sp*d;v.z-=v.z/sp*d;}
  p.x+=v.x*dt;p.z+=v.z*dt;const ny=T.h(p.x,p.z);
