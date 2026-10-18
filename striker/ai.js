@@ -12,9 +12,11 @@ export function lane(ax,az,bx,bz,opp,end=8){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*
  for(const o of opp){if(!active(o)||o.stun>0)continue;const t=cl(((o.p.x-ax)*dx+(o.p.z-az)*dz)/l2,0,1),px=ax+dx*t,pz=az+dz*t;const tb=t*len/va;
   const to=.22+Math.max(0,hyp(o.p.x-px,o.p.z-pz)-.75)/7.4;const mg=to-tb;if(mg<m)m=mg;}return m;}
 function nearestOpp(x,z,opp){let m=99,who=null;for(const o of opp){if(!active(o))continue;const d=hyp(o.p.x-x,o.p.z-z);if(d<m){m=d;who=o;}}return[m,who];}
-export function homeSpot(p,T,att,bx,bz){const s=p.slot,dir=T.dir;let uz=s.z+(att?.15:0)+(bz-.5)*(att?.55:.62);
- if(p.role==='DF')uz=cl(uz,.06,att?.58:.44);else if(p.role==='MF')uz=cl(uz,.14,att?.8:.6);else uz=cl(uz,.28,att?.9:.68);
- const wf=att?.92:.6;const wx=-s.x*dir*P.W*wf+bx*(att?.16:.36);return{x:cl(wx,-P.W+1.2,P.W-1.2),z:dir*(-P.L+2*P.L*uz)};}
+export function homeSpot(p,T,att,bx,bz){const s=p.slot,dir=T.dir,D=T.diff||{line:.5,compact:.5};let uz=s.z+(att?.15:0)+(bz-.5)*(att?.55:.62);
+ // difficulty shapes the block: a high, compact line for the best sides, a deep and stretched one for amateurs
+ const hl=(D.line-.5)*.07,cp=D.compact;if(!att){if(p.role==='DF')uz+=hl+(T.trapT>0?.045:0);else uz+=hl*.6-(p.role==='FW'?cp*.04:0)+(p.role==='MF'?cp*.015:0);}
+ if(p.role==='DF')uz=cl(uz,.06,att?.58:.44+hl);else if(p.role==='MF')uz=cl(uz,.14,att?.8:.6);else uz=cl(uz,.28,att?.9:.68);
+ const wf=att?.92:.66-cp*.14;const wx=-s.x*dir*P.W*wf+bx*(att?.16:.36);return{x:cl(wx,-P.W+1.2,P.W-1.2),z:dir*(-P.L+2*P.L*uz)};}
 export function teamThink(M,t){const T=M.teams[t],O=M.teams[1-t],b=M.ball,dir=T.dir,D=T.diff;
  const mine=T.pl.filter(p=>active(p)&&p.role!=='GK'),opp=O.pl.filter(active);
  const owner=b.owner||b.held,own=owner&&owner.team===t,theirs=owner&&owner.team!==t,loose=!owner;
@@ -22,8 +24,10 @@ export function teamThink(M,t){const T=M.teams[t],O=M.teams[1-t],b=M.ball,dir=T.
  const us=opp.map(o=>o.p.z*dir).sort((a,c)=>c-a);const offLine=Math.max(us[1]??0,0,b.p.z*dir);T.offLine=offLine;
  for(const p of mine){const sp=topSpeed(p,D);p.ai.ic=intercept(p,M.pred,D.react*.6,2.0,sp);}
  const byT=mine.slice().sort((a,c)=>a.ai.ic.t-c.ai.ic.t);
+ // offside trap: when their carrier lines up a forward ball, a well-drilled back line steps up together
+ T.trapT=Math.max(0,(T.trapT||0)-.1);if(theirs&&D.trap>0&&T.trapT<=0&&owner.p.z*dir>-P.L*.05&&owner.p.z*dir<P.L*.2&&rnd()<D.trap*.06)T.trapT=1.1;
  let chaser=null,presser=null,presser2=null;
- if(loose){chaser=byT[0];if(M.passTo&&M.passTo.team===t&&active(M.passTo)&&M.passTo.ai.ic.t<chaser.ai.ic.t+.6)chaser=M.passTo;
+ if(loose){chaser=byT[0];if(M.passTo&&M.passTo.team===t&&active(M.passTo)&&M.passTo.ai.ic&&M.passTo.role!=="GK"&&M.passTo.ai.ic.t<chaser.ai.ic.t+.6)chaser=M.passTo;
   if(chaser&&chaser.ctl>=0){/* human chases on his own */}}
  if(theirs){const c=owner;let best=99;for(const p of mine){const d=hyp(p.p.x-c.p.x,p.p.z-c.p.z)/topSpeed(p,D)+(p.role==='FW'&&c.p.z*dir<-P.L*.3?1.5:0);p.ai.pd=d;if(d<best){best=d;presser=p;}}
   if(T.press2||D.press>.95||(D.press>.7&&c.p.z*dir<-P.L*.4)){let b2=99;for(const p of mine){if(p===presser)continue;if(p.ai.pd<b2){b2=p.ai.pd;presser2=p;}}}}
@@ -31,7 +35,7 @@ export function teamThink(M,t){const T=M.teams[t],O=M.teams[1-t],b=M.ball,dir=T.
  const marks=new Map();if(!att){const threats=opp.filter(o=>o.role!=='GK'&&o!==owner).sort((a,c)=>a.p.z*dir-c.p.z*dir);const free=mine.filter(p=>p!==presser&&p!==presser2&&p!==chaser&&p.role!=='FW');
   for(const o of threats){let best=null,bd=17;for(const p of free){if(marks.has(p))continue;const h=homeSpot(p,T,false,b.p.x,bz);const d=hyp(h.x-o.p.x,h.z-o.p.z);if(d<bd){bd=d;best=p;}}if(best)marks.set(best,o);}}
  const carrierMates=own?mine.filter(p=>p!==owner).sort((a,c)=>hyp(a.p.x-owner.p.x,a.p.z-owner.p.z)-hyp(c.p.x-owner.p.x,c.p.z-owner.p.z)).slice(0,2):[];
- for(const p of mine){if(p.ctl>=0&&!p.assist)continue;const ai=p.ai;ai.sprint=false;ai.mode='shape';ai.look=null;ai.runT=Math.max(0,(ai.runT||0)-.1);
+ for(const p of mine){if(p.ctl>=0&&!p.assist)continue;const ai=p.ai;if(D.lag&&!att&&p!==chaser&&p!==presser&&rnd()<D.lag)continue;ai.sprint=false;ai.mode='shape';ai.look=null;ai.runT=Math.max(0,(ai.runT||0)-.1);
   let h=homeSpot(p,T,att,b.p.x,bz);let tx=h.x,tz=h.z;
   if(p===owner){ai.mode='carry';continue;}
   if(p===chaser&&loose){ai.mode='chase';tx=ai.ic.x;tz=ai.ic.z;ai.sprint=hyp(tx-p.p.x,tz-p.p.z)>3;}
@@ -46,7 +50,7 @@ export function teamThink(M,t){const T=M.teams[t],O=M.teams[1-t],b=M.ball,dir=T.
   else if(att){// attacking shape: runs in behind, support angles, stay onside
    if(own&&carrierMates.includes(p)&&p.role!=='DF'){const c=owner,side=(p.p.x-c.p.x)>=0?1:-1;const sx=c.p.x+side*9,sz=c.p.z+dir*(p.role==='FW'?8:2);let bx=sx,bzz=sz,bo=-1;
     for(const o of[[sx,sz],[sx,sz+dir*6],[c.p.x+side*14,c.p.z-dir*3],[h.x,h.z]]){const[d]=nearestOpp(o[0],o[1],opp);if(d>bo){bo=d;bx=o[0];bzz=o[1];}}tx=bx*.7+h.x*.3;tz=bzz*.7+h.z*.3;ai.mode='support';}
-   if((p.role==='FW'||p.role==='MF'&&Math.abs(p.slot.x)>.6)&&own&&owner.p.z*dir>-P.L*.5&&ai.runT<=0&&p.p.z*dir<=offLine+.3&&rnd()<.06*(p.role==='FW'?1.5:1)){ai.runT=2.4;ai.runX=cl(p.p.x*.6,-P.BW,P.BW);}
+   if((p.role==='FW'||p.role==='MF'&&Math.abs(p.slot.x)>.6)&&own&&owner.p.z*dir>-P.L*.5&&ai.runT<=0&&p.p.z*dir<=offLine+.3&&rnd()<.06*(p.role==='FW'?1.5:1)*(D.runs||1)){ai.runT=2.4;ai.runX=cl(p.p.x*.6,-P.BW,P.BW);}
    if(ai.runT>0){tx=ai.runX;tz=dir*Math.min(P.L-P.SD,offLine+9);ai.sprint=true;ai.mode='run';}
    else if(M.offsideOn&&tz*dir>offLine-.6)tz=dir*(offLine-.8);}
   tx=cl(tx,-P.W+.6,P.W-.6);tz=cl(tz,-P.L+.6,P.L-.6);ai.tx=tx;ai.tz=tz;}}
@@ -85,6 +89,7 @@ function dribbleMove(p,opp,dir,front){const ai=p.ai,gz=dir*P.L;let dx=-p.p.x*.35
 /* ---------- goalkeeper ---------- */
 export function gkThink(M,g,dt){const T=M.teams[g.team],O=M.teams[1-g.team],D=T.diff,b=M.ball,dir=T.dir,gl=-dir*P.L,ai=g.ai;ai.sprint=false;g.anim.set=false;
  if(g.dive>0||g.stun>0)return;
+ if(b.owner===g&&g.ctl<0){ai.mode='feet';ai.ownT=(ai.ownT||0)+dt;ai.tx=g.p.x;ai.tz=g.p.z;if(ai.ownT>.4+rnd()*.05){ai.ownT=0;gkRelease(M,g);}return;}ai.ownT=0;
  if(b.held===g){ai.mode='hold';ai.holdT=(ai.holdT||0)+dt;ai.tx=g.p.x;ai.tz=g.p.z;if(g.ctl<0&&ai.holdT>1.3+rnd()*.03)gkRelease(M,g);return;}
  ai.holdT=0;
  // shot incoming?
@@ -94,7 +99,10 @@ export function gkThink(M,g,dt){const T=M.teams[g.team],O=M.teams[1-g.team],D=T.
  // claim loose balls in the box
  const inBox=(x,z)=>Math.abs(x)<P.BW&&(z*dir)<-P.L+P.BD;
  if(!b.owner&&!b.held){const ic=intercept(g,M.pred,D.react*.5,2.5,topSpeed(g));const oppT=Math.min(...O.pl.filter(active).map(o=>o.ai.ic?o.ai.ic.t:9));
-  if(inBox(ic.x,ic.z)&&hyp(ic.x,ic.z-gl)<(P.size===5?7:12)&&ic.t<oppT-.25){ai.mode='claim';ai.tx=ic.x;ai.tz=ic.z;ai.sprint=true;return;}}
+  if(inBox(ic.x,ic.z)&&hyp(ic.x,ic.z-gl)<(P.size===5?7:12)&&ic.t<oppT-.25){ai.mode='claim';ai.tx=ic.x;ai.tz=ic.z;ai.sprint=true;return;}
+  // sweeper-keeper: race out for a ball played in behind the defence (range grows with difficulty)
+  const sr=(P.size===5?8:13)+(D.sweep||0)*(P.size===5?5:11),lastDef=T.pl.filter(p=>active(p)&&p!==g).every(p=>(p.p.z-ic.z)*dir>-1);
+  if(hyp(ic.x,ic.z-gl)<sr&&ic.t<oppT-.35&&lastDef&&(M.lastTeam!==g.team)){ai.mode='sweep';ai.tx=ic.x;ai.tz=ic.z;ai.sprint=true;return;}}
  const c=b.owner;if(c&&c.team!==g.team){const d=hyp(c.p.x-g.p.x,c.p.z-g.p.z),dg=hyp(c.p.x,c.p.z-gl);const def=T.pl.filter(p=>active(p)&&p!==g&&(p.p.z-c.p.z)*dir<0&&hyp(p.p.x-c.p.x,p.p.z-c.p.z)<6).length;
   if((inBox(c.p.x,c.p.z)&&dg<P.BD*.8&&def===0)||T.gkRush){ai.mode='rush';ai.tx=c.p.x+(0-c.p.x)*.15;ai.tz=c.p.z-dir*.6;ai.sprint=true;if(d<1.6&&g.tackleCD<=0&&rnd()<.25)M.act.tackle(g);return;}}
  // position on the arc between ball and goal centre

@@ -29,10 +29,13 @@ export const FORMS5={'4-4-2':[['GK',0,.03],['DF',-.5,.24],['DF',.5,.24],['FW',-.
 export const FORM_NAMES=Object.keys(FORMS);
 
 // CPU difficulty: reaction delay, tackle skill, shot accuracy multiplier (error), keeper save factor, pass error, pressing, pace
+// shape: line = how high the back line holds (0 deep .. 1 high), compact = how narrow/short the block is, runs = off-ball run rate,
+// trap = chance the line steps up together to catch runners offside, lag = chance a defender's shape updates late (ball-watching),
+// sweep = how far the keeper comes off his line for balls in behind
 export const DIFF=[
- {n:'AMATEUR',react:.42,tackle:.3,shotErr:1.6,save:.56,passErr:1.6,press:.55,pace:.93,decide:1.25,r:-6},
- {n:'PRO',react:.25,tackle:.5,shotErr:1.05,save:.77,passErr:1,press:.8,pace:1,decide:1,r:0},
- {n:'WORLD CLASS',react:.13,tackle:.68,shotErr:.72,save:.88,passErr:.65,press:1,pace:1.04,decide:.8,r:5}];
+ {n:'AMATEUR',react:.42,tackle:.3,shotErr:1.6,save:.56,passErr:1.6,press:.55,pace:.93,decide:1.25,r:-6,line:.15,compact:.1,runs:.7,trap:0,lag:.45,sweep:.4},
+ {n:'PRO',react:.25,tackle:.5,shotErr:1.05,save:.77,passErr:1,press:.8,pace:1,decide:1,r:0,line:.5,compact:.55,runs:1,trap:.25,lag:.15,sweep:.75},
+ {n:'WORLD CLASS',react:.13,tackle:.68,shotErr:.72,save:.88,passErr:.65,press:1,pace:1.04,decide:.8,r:5,line:.85,compact:1,runs:1.35,trap:.55,lag:0,sweep:1}];
 
 // deterministic per-club squads (original invented names)
 const A=['Var','Kel','Mor','Dax','Tor','Bel','Ruan','Sil','Ost','Pell','Quin','Mar','Lev','Cor','Fen','Hal','Jor','Nev','Riv','Tam','Vel','Zan','Ade','Oku','Bri','Cas','Dren','Eli','Gal','Ivo','Yar','Sev','Lom','Dov','Ari','Kov'];
@@ -65,3 +68,8 @@ export function crest(x,ci,s){const c=CLUBS[ci],k=c.home;x.save();x.scale(s/64,s
  x.fillStyle=k.c1;x.fill();x.save();x.clip();x.fillStyle=k.c2;const p=c.crest>>2;if(p===0)for(let i=0;i<4;i++)x.fillRect(10+i*13,0,6,64);else{x.beginPath();x.moveTo(0,64);x.lineTo(64,10);x.lineTo(64,26);x.lineTo(0,80);x.fill();}x.restore();
  x.lineWidth=4;x.strokeStyle='#0b0d12';x.stroke();x.lineWidth=1.5;x.strokeStyle=k.c2;x.stroke();
  x.fillStyle='#fff';x.strokeStyle='#0b0d12';x.lineWidth=3;x.font='700 17px "JetBrains Mono",monospace';x.textAlign='center';x.textBaseline='middle';x.strokeText(c.s,32,33);x.fillText(c.s,32,33);x.restore();}
+// substitutes' bench: deterministic per club, outfield only (keepers play the full match)
+export function bench(ci,size=11){const c=CLUBS[ci],rr=rng(ci*104729+977),roles=size===5?['MF','FW']:['DF','MF','MF','FW','FW'];
+ return roles.map((role,i)=>{const nm=I[rr()*I.length|0]+'. '+A[rr()*A.length|0]+B[rr()*B.length|0];const v=()=>Math.round((rr()-.5)*10),r=c.r-2;
+  const at={pace:r+v()+(role==='FW'?5:0),shot:r+v()+(role==='FW'?6:role==='MF'?0:-10),pass:r+v()+(role==='MF'?5:0),drib:r+v()+(role==='FW'?4:role==='MF'?2:-6),def:r+v()+(role==='DF'?7:role==='MF'?0:-16),gk:30,head:r+v()};
+  for(const k in at)at[k]=Math.max(25,Math.min(97,at[k]));return{name:nm,num:[13,14,16,17,18,19,20,21,22][(i*3+ci)%9]+(i>4?10:0),role,at,skin:rr(),hair:rr(),boot:rr()*5|0,h:.95+rr()*.1};});}

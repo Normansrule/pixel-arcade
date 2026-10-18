@@ -26,6 +26,8 @@ export class Sound{
   this.tire.g.gain.setTargetAtTime(v.onG&&sp>3&&v.surf==='road'?v.slip*.16:0,t,.05);this.tire.f.frequency.setTargetAtTime(v.surf==='road'?1700:500,t,.1);this.wind.g.gain.setTargetAtTime(Math.min(.16,sp*sp*.00006),t,.2);this.wind.f.frequency.setTargetAtTime(300+sp*18,t,.2);}
  env(rain,siren,sirenPh,inCar,amb){if(!this.ac)return;const t=this.ac.currentTime;this.rainL.g.gain.setTargetAtTime(rain*(inCar?.05:.11),t,.3);this.amb.g.gain.setTargetAtTime(.012+amb*.03,t,.4);
   this.sir.g.gain.setTargetAtTime(siren*.05,t,.1);this.sir.o.frequency.setTargetAtTime(siren>0?(sirenPh%2<1?650+Math.sin(sirenPh*Math.PI)*0:0)+(Math.sin(sirenPh*3)*.5+.5)*600+600:600,t,.05);}
+ chopper(v){if(!this.ac)return;const ac=this.ac,t=ac.currentTime;if(!this.chop){if(v<=0)return;const s=ac.createBufferSource();s.buffer=this.noise;s.loop=true;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=380;const am=ac.createGain();am.gain.value=.5;const lfo=ac.createOscillator();lfo.type='sawtooth';lfo.frequency.value=13;const lg=ac.createGain();lg.gain.value=.5;lfo.connect(lg);lg.connect(am.gain);const g=gain(ac,0,this.sfx);s.connect(f);f.connect(am);am.connect(g);s.start();lfo.start();this.chop={g,lfo};}
+  this.chop.g.gain.setTargetAtTime(Math.min(1,v)*v*.22,t,.3);this.chop.lfo.frequency.setTargetAtTime(12+v*3,t,.5);}
  hornOn(on){if(!this.ac)return;this.horn.g.gain.setTargetAtTime(on?.09:0,this.ac.currentTime,.02);}
  // ---- one-shots ----
  _n(dur,f0,f1,q,vol,type='lowpass',dest,delay=0){return hiss(this.ac,this.noise,dest||this.sfx,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,0,20);}
@@ -44,6 +46,7 @@ export class Sound{
   case'pass':[523,659,784,1046,784,1046].forEach((f,i)=>this._o('square',f,f,.24,.05,i*.11));this._o('sawtooth',131,131,1.1,.05,.1);break;
   case'fail':[392,311,262].forEach((f,i)=>this._o('sawtooth',f,f*.97,.38,.06,i*.22));break;
   case'busted':[466,440,415,392].forEach((f,i)=>this._o('square',f,f*.98,.3,.06,i*.2));this._n(.7,1800,300,1,.12,'bandpass',null,.8);break;
+  case'pop':this._n(.18,3500,600,1,.35);this._n(.6,900,200,2,.08,'bandpass');break;
   case'star':this._o('square',740,740,.09,.05);this._o('square',988,988,.12,.05,.1);break;
   case'lost':[659,784,988].forEach((f,i)=>this._o('triangle',f,f,.25,.07,i*.1));break;
   case'shutter':this._n(.06,6000,3000,1,.25,'highpass');this._n(.09,3000,1200,1,.18,'bandpass',null,.07);break;

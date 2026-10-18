@@ -8,6 +8,10 @@ export class Sound{
   const bed=(f,q,g)=>{const s=ac.createBufferSource();s.buffer=b;s.loop=true;s.playbackRate.value=.7+Math.random()*.2;const bf=ac.createBiquadFilter();bf.type='bandpass';bf.frequency.value=f;bf.Q.value=q;const gg=gain(ac,g,this.out);s.connect(bf);bf.connect(gg);s.start();return{gg,bf};};
   this.bedA=bed(520,.7,.05);this.bedB=bed(1400,.9,.025);
   const lfo=ac.createOscillator();lfo.frequency.value=.13;const lg=gain(ac,.018,this.bedA.gg.gain);lfo.connect(lg);lfo.start();});}
+ // rain on the stands: a soft high hiss plus a lower patter, faded in and out
+ rain(on){if(!this.ac)return;const ac=this.ac,t=ac.currentTime;if(!this.rn){const src=ac.createBufferSource();src.buffer=this.noise;src.loop=true;src.playbackRate.value=1.3;const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=2400;
+   const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=9000;const g=gain(ac,0,this.out);src.connect(hp);hp.connect(lp);lp.connect(g);src.start();this.rn=g;}
+  this.rn.gain.setTargetAtTime(on?.05:0,t,.8);}
  hype(v){if(!this.ac)return;const t=this.ac.currentTime;this.bedA.gg.gain.setTargetAtTime(.05+v*.3,t,.3);this.bedB.gg.gain.setTargetAtTime(.025+v*.16,t,.3);this.bedA.bf.frequency.setTargetAtTime(520+v*260,t,.4);}
  _n(dur,f0,f1,q,vol,type='bandpass',delay=0,att=.01){hiss(this.ac,this.noise,this.out,this.ac.currentTime+delay,dur,f0,f1,q,vol,type,att,20);}
  _o(type,f0,f1,dur,vol,delay=0,att=.008){tone(this.ac,this.out,this.ac.currentTime+delay,type,f0,f1,dur,vol,att);}

@@ -1,11 +1,12 @@
-// FAIRWAY LEGENDS — synthesized audio (no files): sea-breeze bed with gusts, surf swell, gull cries, swing whoosh,
+// FAIRWAY LEGENDS — synthesized audio (no files): sea-breeze bed with gusts, rain hiss, surf swell, gull cries, swing whoosh,
 // club strikes (driver ping, iron click, putter tock), landings, cup rattle, splashes and gallery applause.
 import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
 export class Sound{
  constructor(){this.ac=null;this.on=true;this.gT=0;this.seaV=0;}
  init(){boot(this,ac=>{this.out=master(ac,.8,-18,6);this.noise=noiseBuf(ac,3);
   this.wind=bed(ac,this.noise,'bandpass',420,.6,this.out,.03);this.surf=bed(ac,this.noise,'lowpass',260,null,this.out,0,1.1);
-  this.amb=gain(ac,1,this.out);});}
+  this.amb=gain(ac,1,this.out);this.rainB=bed(ac,this.noise,'highpass',1800,.4,this.out,0,.6);if(this.rainV)this.setRain(this.rainV);});}
+ setRain(v){this.rainV=v;if(!this.ac||!this.rainB)return;this.rainB.g.gain.setTargetAtTime(v*.05,this.ac.currentTime,.8);}
  setWind(mph){if(!this.ac)return;const t=this.ac.currentTime;this.wind.g.gain.setTargetAtTime(.012+mph*.0028,t,.6);this.wind.f.frequency.setTargetAtTime(300+mph*18,t,.6);}
  setSea(v){this.seaV=v;}
  tick(dt){if(!this.ac||!this.on)return;const t=this.ac.currentTime;this.gT-=dt;
@@ -36,4 +37,6 @@ export class Sound{
   case'tick':this._o('square',1200,1200,.03,.03);break;
   case'set':this._o('sine',880,880,.05,.07);break;
   case'ui':this._o('sine',a?990:660,a?990:660,.07,.06);break;
+  case'replay':this._n(.6,400,3000,.7,.06,'bandpass',0,.3);this._o('sine',440,880,.4,.04);break;
+  case'divot':this._n(.12,1200,300,.8,.12,'lowpass');break;
   case'bell':[660,990,1320].forEach((f,i)=>this._o('sine',f,f,1.2,.06/(i+1),i*.01,.005));break;}}catch(e){}}}

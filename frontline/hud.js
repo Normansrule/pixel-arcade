@@ -25,7 +25,7 @@ function buildSub(G){const o=G.opt,el=$('o-sub');let items;
  el.innerHTML=items.map(([v,n,t,c])=>`<button data-v="${v}"><b>${n}</b><small>${t}</small><i style="background:${c}"></i></button>`).join('');const upd=()=>el.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===cur()));
  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(o.mode==='campaign')o.mission=+b.dataset.v;else o.map=b.dataset.v;upd();G.saveOpt();menuDesc(G);G.snd.play('ui');G.menuMap&&G.menuMap();};upd();menuDesc(G);}
 function menuDesc(G){const o=G.opt;let d;if(o.mode==='campaign'){const m=R.MISSIONS[o.mission||0];d=`<b>${m.name}</b> — ${m.desc} ${mmss(m.time)} clock, 3 lives, checkpoints.`;}
- else d=`<b>${{tdm:'TEAM DEATHMATCH',dom:'DOMINATION',survival:'SURVIVAL'}[o.mode]}</b> — ${MODE_INFO[o.mode]}`;$('mdesc').innerHTML=d;}
+ else d=`<b>${{tdm:'TEAM DEATHMATCH',dom:'DOMINATION',hp:'HARDPOINT',survival:'SURVIVAL'}[o.mode]}</b> — ${MODE_INFO[o.mode]}`;$('mdesc').innerHTML=d;}
 function rankUI(G){const xp=G.prog.xp,r=R.rankOf(xp),a=R.rankXP(r),b=R.rankXP(r+1);$('rname').textContent=`${r+1} · ${R.RANKS[r]}`;$('rxp').textContent=r>=R.RANKS.length-1?`${xp} XP · MAX RANK`:`${xp-a} / ${b-a} XP TO NEXT RANK`;$('rbar').style.width=(r>=R.RANKS.length-1?100:100*(xp-a)/(b-a))+'%';}
 export function showMenu(G){document.body.classList.remove('results');$('hud').style.visibility='';$('menu').hidden=false;$('keys').hidden=false;$('hud').hidden=true;$('over').hidden=true;$('pause').hidden=true;$('load').hidden=true;$('scope').hidden=true;$('cine').hidden=true;$('hurt').style.opacity=0;$('lowhp').style.opacity=0;rankUI(G);st.updMode&&st.updMode();buildSub(G);}
 export function startMatch(G){document.body.classList.remove('results');$('hud').style.visibility='';for(const id of['menu','keys','over','pause','load'])$(id).hidden=true;$('hud').hidden=false;for(const id of['feed','radio','xp','dmg','kc'])$(id).innerHTML='';
@@ -35,10 +35,15 @@ function showLoadout(G,on){$('load').hidden=!on;$('menu').hidden=on;$('keys').hi
 function buildLoadout(G){const L=G.load,W=R.WEAPONS,rank=R.rankOf(G.prog.xp)+1;
  $('lweap').innerHTML=R.PRIMARIES.map(id=>`<button data-w="${id}" class="${L.primary===id?'on':''}">${W[id].name}<small>${W[id].cls}</small></button>`).join('')+`<div class="sec">SECONDARY <b>${W.pistol.name}</b><br>LETHAL <b>FRAG ×2</b> · TACTICAL <b>SMOKE ×1</b><br>RANK <b>${rank} · ${R.RANKS[rank-1]}</b></div>`;
  $('lweap').onclick=e=>{const b=e.target.closest('button');if(!b)return;L.primary=b.dataset.w;G.snd.play('ui');buildLoadout(G);G.previewGun&&G.previewGun();};
- const w=W[L.primary],att=L.att[L.primary]=L.att[L.primary]||{};const bar=(n,v)=>`<div class="stat">${n}<div><i style="width:${Math.round(cl(v,.04,1)*100)}%"></i></div></div>`;
- $('ldetail').innerHTML=`<h4>${w.name}</h4><p class="cls">${w.cls} · ${w.mag} ROUNDS · ${w.rpm} RPM</p>${bar('DAMAGE',(w.dmg[0]*(w.pellets||1)*.6)/110)}${bar('FIRE RATE',w.rpm/950)}${bar('RANGE',w.range[1]/140)}${bar('MOBILITY',(w.speed-.85)/.25)}${bar('CONTROL',1-w.recoil[0]/3.6)}
-  <div class="atts">${w.att.map(k=>{const a=R.ATT[k],lock=rank<a.rank;return`<button data-a="${k}" class="${att[k]&&!lock?'on':''} ${lock?'lock':''}">${a.name}<small>${lock?'UNLOCKS AT RANK '+a.rank:a.desc}</small></button>`;}).join('')}</div>`;
- $('ldetail').onclick=e=>{const b=e.target.closest('button');if(!b||b.classList.contains('lock'))return;const k=b.dataset.a;att[k]=att[k]?0:1;G.snd.play('ui');buildLoadout(G);};}
+ const w=W[L.primary],att=L.att[L.primary]=L.att[L.primary]||{};for(const k in att)if(att[k]&&(!w.att.includes(k)||rank<R.ATT[k].rank))att[k]=0;
+ const hb=R.handling(w,{}),h=R.handling(w,att);
+ // stat bars: base value, with the attachment delta drawn on top (green better, red worse)
+ const bar=(n,v0,v1)=>{v0=cl(v0,.04,1);v1=cl(v1,.04,1);const lo=Math.min(v0,v1),hi=Math.max(v0,v1);return`<div class="stat">${n}<div><i style="width:${Math.round(lo*100)}%"></i>${hi>lo+.005?`<u class="${v1>v0?'up':'dn'}" style="left:${Math.round(lo*100)}%;width:${Math.round((hi-lo)*100)}%"></u>`:''}</div></div>`;};
+ const rng=x=>w.range[1]*x.range/140,ctl=x=>1-w.recoil[0]*x.rec*x.recV/3.6,hand=x=>1-(w.ads*x.ads-.12)/.36,acc=x=>1-w.hip*x.hip/8;
+ const groups=R.SLOTS.map(sl=>[sl,w.att.filter(k=>R.ATT[k].slot===sl)]).filter(g=>g[1].length);
+ $('ldetail').innerHTML=`<h4>${w.name}</h4><p class="cls">${w.cls} · ${Math.round(w.mag*(att.ext?1.5:1))} ROUNDS · ${w.rpm} RPM${h.zoom>1.6&&!w.scope?' · '+h.zoom.toFixed(1)+'X':''}</p>${bar('DAMAGE',(w.dmg[0]*(w.pellets||1)*.6)/110,(w.dmg[0]*(w.pellets||1)*.6)/110)}${bar('FIRE RATE',w.rpm/950,w.rpm/950)}${bar('RANGE',rng(hb),rng(h))}${bar('CONTROL',ctl(hb),ctl(h))}${bar('HANDLING',hand(hb),hand(h))}${bar('HIP FIRE',acc(hb),acc(h))}${bar('MOBILITY',(w.speed-.85)/.25,(w.speed-.85)/.25)}
+  <div class="atts">${groups.map(([sl,ks])=>`<p class="slot">${sl}</p>`+ks.map(k=>{const a=R.ATT[k],lock=rank<a.rank;return`<button data-a="${k}" class="${att[k]&&!lock?'on':''} ${lock?'lock':''}">${a.name}<small>${lock?'UNLOCKS AT RANK '+a.rank:a.desc}</small></button>`;}).join('')).join('')}</div>`;
+ $('ldetail').onclick=e=>{const b=e.target.closest('button');if(!b||b.classList.contains('lock'))return;const k=b.dataset.a,on=!att[k];for(const o of w.att)if(R.ATT[o].slot===R.ATT[k].slot)att[o]=0;att[k]=on?1:0;G.snd.play('ui');buildLoadout(G);};}
 
 /* ================= cinematic title card ================= */
 export function cine(G,on,lines,t){const el=$('cine');el.hidden=!on;$('hud').style.visibility=on?'hidden':'';if(!on||!lines)return;txt($('cop'),lines[0],'cop');txt($('cwh'),lines[1],'cwh');
@@ -74,6 +79,8 @@ export function banner(G,t,s,col,dur){$('bt').textContent=t;$('bt').style.color=
 export function ann(G,t,dur){$('ann').textContent=t;$('ann').classList.add('on');st.annT=dur||2;}
 export function xp(G,n,label){if(G.xpGain)G.xpGain(n);toast($('xp'),`+${n}<small>${label}</small>`,900,3,false);}
 export function hitmark(head,kill){const h=$('hit');h.className=kill?'kill':head?'head':'';st.hitT=kill?.5:.24;h.style.transform=`scale(${kill?1.25:1})`;}
+export function medal(G,names){const d=toast($('kc'),names.map(n=>`<em>${n}</em>`).join(''),1900,3);d.className='md';}
+const killMarks=[];export function killMark(G,p){killMarks.push({p:p.clone(),t:1.3});if(killMarks.length>4)killMarks.shift();}
 export function killConfirm(G,v,head,kind){const d=toast($('kc'),`<b>${head?'HEADSHOT':kind==='knife'?'MELEE':kind==='frag'?'GRENADE':'ELIMINATED'}</b><span>${v.name}</span>`,1500,2);if(head)d.className='hs';}
 export function hurt(G,att,dm){st.hurtT=Math.min(.7,.25+dm/80);const P=G.player;if(!P||!att||!att.pos)return;const a=Math.atan2(att.pos.x-P.pos.x,att.pos.z-P.pos.z);const el=document.createElement('div');$('dmg').appendChild(el);st.dmg.push({a,t:1.6,el});if(st.dmg.length>6){const o=st.dmg.shift();o.el.remove();}}
 export function dead(G,on,att,w){$('dead').hidden=!on;if(on){$('deadby').textContent=att&&att!==G.player&&att.name?`KILLED BY ${att.name}${w?' · '+w:''}`:'YOU DIED';}}
@@ -99,7 +106,7 @@ export function update(G,dt){if(st.banT>0){st.banT-=dt;if(st.banT<=0)$('banner')
  const ks=P.ks||{},sk=[['uav',3,'UAV',3],['air',5,'AIRSTRIKE',4],['drone',7,'DRONE',5]];html($('streaks'),sk.map(([k,n,nm,key])=>{const v=ks[k];const on=(k==='uav'&&G.streak.uav>0)||(k==='drone'&&G.streak.drone)||(k==='air'&&(G.streak.air||G.streak.designate));
   return`<div class="${v===1?'rdy':on?'on':''}"><kbd>${key}</kbd>${nm}<em><i style="width:${v===1||on?100:Math.round(100*Math.min(P.streak,n)/n)}%"></i></em></div>`;}).join(''),'sk');
  // crosshair spread
- const moving=Math.min(1,Math.hypot(P.vel.x,P.vel.z)/5);const spread=(w.hip*(1+moving*w.move*.35+(P.onGround?0:.8))*(P.crouchV>.5?.75:1)+P.bloom);const px=Math.tan(spread*Math.PI/180)/Math.tan(cam.fov*Math.PI/360)*innerHeight/2;
+ const moving=Math.min(1,Math.hypot(P.vel.x,P.vel.z)/5);const spread=(w.hip*(s.h?s.h.hip:1)*(1+moving*w.move*.35+(P.onGround?0:.8))*(P.crouchV>.5?.75:1)+P.bloom);const px=Math.tan(spread*Math.PI/180)/Math.tan(cam.fov*Math.PI/360)*innerHeight/2;
  const gap=Math.round(5+px),cr=$('cross');cr.style.opacity=P.alive&&!G.streak.designate&&P.adsV<.35&&!(w.scope&&P.adsV>.1)?(P.sprint?0:1-P.adsV*2.5):0;if(st.c.gap!==gap){st.c.gap=gap;cr.children[0].style.top=(-gap-9)+'px';cr.children[1].style.top=gap+'px';cr.children[2].style.left=(-gap-9)+'px';cr.children[3].style.left=gap+'px';}
  st.hitT=Math.max(0,st.hitT-dt);$('hit').style.opacity=st.hitT>0?Math.min(1,st.hitT*6):0;
  for(let i=st.dmg.length-1;i>=0;i--){const d=st.dmg[i];d.t-=dt;if(d.t<=0){d.el.remove();st.dmg.splice(i,1);continue;}const rel=ang(d.a-P.yaw);d.el.style.transform=`rotate(${-rel}rad)`;d.el.style.opacity=Math.min(1,d.t);}
@@ -114,6 +121,8 @@ export function update(G,dt){if(st.banT>0){st.banT-=dt;if(st.banT<=0)$('banner')
   const mg=.9;if(behind||Math.abs(x)>mg||Math.abs(y)>mg){const k=mg/Math.max(Math.abs(x),Math.abs(y),1e-3);x*=k;y*=k;if(behind&&y>-.6)y=-.85;}
   const el=pool(markEls,$('marks'),mi++);el.className=m.cls||'';el.style.display='';el.style.left=((x+1)/2*innerWidth)+'px';el.style.top=((1-y)/2*innerHeight)+'px';const d=Math.round(Math.hypot(m.p.x-P.pos.x,m.p.z-P.pos.z));
   html(el,m.flag?`<i></i><b>${m.label}</b>${d}m`:`<i></i>${m.label} ${d}m`,'mk'+mi+m.cls+m.label+d);}
+ for(const k of killMarks){k.t-=dt;if(k.t<=0)continue;pv.set(k.p.x,k.p.y+1.6+(1.3-k.t)*.5,k.p.z).project(cam);if(pv.z>1)continue;const el=pool(markEls,$('marks'),mi++);el.className='kx';el.style.display='';el.style.left=((pv.x+1)/2*innerWidth)+'px';el.style.top=((1-pv.y)/2*innerHeight)+'px';el.style.opacity=Math.min(1,k.t*2);html(el,'<i></i>','mkx'+mi);}
+ for(let i=killMarks.length-1;i>=0;i--)if(killMarks[i].t<=0)killMarks.splice(i,1);
  for(let i=mi;i<markEls.length;i++)markEls[i].style.display='none';
  // ally name tags (cached LOS)
  st.tagT-=dt;const reLOS=st.tagT<=0;if(reLOS)st.tagT=.3;let ti=0;for(const a of G.actors){if(!a.alive||a.team!==0||a.isPlayer)continue;const d=a.pos.distanceTo(P.pos);if(d>40)continue;

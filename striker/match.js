@@ -2,32 +2,34 @@
 // set pieces (kick-off, throw-in, corner, goal kick, free kick, penalty), clock + periods, extra time and shootouts.
 import * as THREE from '../vendor/three.module.min.js';
 import {P,R,Ball,setPitch,stepBall,predict,crossing,passSpeed,loftVel} from './physics.js';
-import {CLUBS,squad,SKIN,HAIR,BOOTS,kitsFor} from './data.js';
+import {CLUBS,squad,bench,SKIN,HAIR,BOOTS,kitsFor} from './data.js';
 import {newAnim,act,NP} from './rig.js';
 import {teamThink,carrierThink,gkThink,gkRelease,topSpeed,active,lane,homeSpot} from './ai.js';
 const V=THREE.Vector3,hyp=Math.hypot,cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=Math.random;
 const gauss=()=>{let u=0;for(let i=0;i<4;i++)u+=rnd();return(u-2)/.577;};
 export const S={phase:'idle',teams:[],plist:[],ents:[],ball:new Ball(),pred:[],cross:[null,null],score:[0,0],period:1,clock:0,per:180,events:[],humans:[],sp:null,pend:null,time:0,
  lastTeam:-1,passTo:null,passLive:false,passFrom:null,pendPass:null,offsideOn:true,offTeam:-1,act:{},fx:()=>{},cup:false,attract:false,deadT:0,goalT:0,breakT:0,endT:0,shoot:null,goal:null,
- stoppage:0,kickoffFirst:0,ref:null,lines:[],thinkT:0,cardInfo:null,penLive:false,lastToucher:null,prevToucher:null,prevT:0,idle:[false,false],breakKind:''};
+ stoppage:0,kickoffFirst:0,ref:null,gone:[],lines:[],thinkT:0,cardInfo:null,penLive:false,lastToucher:null,prevToucher:null,prevT:0,idle:[false,false],breakKind:''};
 export const fwdOf=p=>({x:Math.sin(p.face),z:Math.cos(p.face)});
 function mkEnt(o){return Object.assign({p:new V(),v:new V(),face:0,h:1,anim:newAnim(),pose:new Float32Array(NP),tp:new Float32Array(NP),visible:true,
- ai:{tx:0,tz:0,sprint:false,mode:'',dT:0,ic:null,runT:0,look:null,save:null},mv:{x:0,z:0},sprint:false,ctl:-1,assist:false,stamina:1,stun:0,slideT:0,dive:0,diveV:0,tackling:0,
+ ai:{tx:0,tz:0,sprint:false,mode:'',dT:0,ic:null,runT:0,look:null,save:null},mv:{x:0,z:0},sprint:false,ctl:-1,assist:false,stamina:1,cond:1,stun:0,slideT:0,dive:0,diveV:0,tackling:0,
  kickCD:0,tackleCD:0,skillT:0,skillCD:0,headCD:0,yellow:0,off:false,hidden:false,offside:false,frozen:false,charging:0,team:-1,role:'',at:{pace:62},
  st:{goals:0,assists:0,shots:0,sot:0,passes:0,passOK:0,tackles:0,saves:0,fouls:0,yel:0,red:0}},o);}
+export const hairStyle=s=>{const f=(s.hair*7.31+s.skin*3.17)%1;return s.skin>.6?(f<.45?2:f<.75?1:0):f<.3?0:f<.5?1:f<.65?3:f<.85?4:2;};
 const dark=(h,k=.45)=>{const c=new THREE.Color(h).multiplyScalar(k);return'#'+c.getHexString();};
 /* ================= setup ================= */
 export function setupMatch(c){setPitch(c.size);
  Object.assign(S,{score:[0,0],period:1,clock:0,per:c.per,events:[],sp:null,pend:null,shoot:null,goal:null,offsideOn:!!c.offside,cup:!!c.cup,attract:!!c.attract,lastTeam:-1,passTo:null,passLive:false,
-  pendPass:null,stoppage:0,time:0,cardInfo:null,penLive:false,lastToucher:null,prevToucher:null,offTeam:-1,idle:[false,false],thinkT:0,breakKind:''});
+  pendPass:null,stoppage:0,time:0,gone:[],cardInfo:null,penLive:false,lastToucher:null,prevToucher:null,offTeam:-1,idle:[false,false],thinkT:0,breakKind:''});
  S.ball.reset();const kits=kitsFor(c.home,c.away);S.ents=[];S.plist=[];
  S.teams=[0,1].map(t=>{const ci=t?c.away:c.home,club=CLUBS[ci];const T={idx:t,ci,club,kit:kits[t],dir:t?-1:1,form:c.form[t],diff:c.diff[t],pl:[],gk:null,press2:false,gkRush:false,offLine:0,
-   stats:{shots:0,sot:0,passes:0,passOK:0,fouls:0,yel:0,red:0,corners:0,offsides:0,poss:0,tackles:0,saves:0}};
+   stats:{shots:0,sot:0,passes:0,passOK:0,fouls:0,yel:0,red:0,corners:0,offsides:0,poss:0,tackles:0,saves:0},bench:[],subs:c.size===5?2:3,subT:0,trapT:0};
   squad(ci,c.form[t],c.size).forEach(s=>{const at={...s.at};const bo=(c.boost&&c.boost[t])||0;for(const k in at)at[k]=cl(at[k]+bo,25,99);
    const k=T.kit,gk=s.role==='GK';const look=gk?{c1:club.gk,c2:dark(club.gk),pat:0,sh:dark(club.gk,.3),so:club.gk,glove:'#f4f4f4'}:{c1:k.c1,c2:k.c2,pat:k.pat,sh:k.sh,so:k.so};
-   Object.assign(look,{skin:SKIN[s.skin*SKIN.length|0],hair:HAIR[s.hair*HAIR.length|0],boot:BOOTS[s.boot],num:s.num,bald:s.hair>.93});
-   const p=mkEnt({team:t,name:s.name,num:s.num,role:s.role,slot:{x:s.x,z:s.z},at,ovr:s.ovr,h:s.h,look,idx:S.ents.length});if(gk)T.gk=p;T.pl.push(p);S.plist.push(p);S.ents.push(p);});return T;});
- const offLook=(c2)=>({c1:'#16171b',c2,pat:5,sh:'#16171b',so:'#16171b',skin:SKIN[2],hair:HAIR[0],boot:'#111111',num:0});
+   Object.assign(look,{skin:SKIN[s.skin*SKIN.length|0],hair:HAIR[s.hair*HAIR.length|0],boot:BOOTS[s.boot],num:s.num,bald:s.hair>.93,hs:hairStyle(s),spn:ci,beard:!gk&&(s.hair*13.7)%1<.28});
+   const p=mkEnt({team:t,name:s.name,num:s.num,role:s.role,slot:{x:s.x,z:s.z},at,ovr:s.ovr,h:s.h,look,idx:S.ents.length});if(gk)T.gk=p;T.pl.push(p);S.plist.push(p);S.ents.push(p);});
+  const taken=new Set(T.pl.map(p=>p.num));let nn=12;T.bench=bench(ci,c.size).map(b=>{while(taken.has(nn))nn++;taken.add(nn);const at={...b.at};const bo=(c.boost&&c.boost[t])||0;for(const k in at)at[k]=cl(at[k]+bo,25,99);return{...b,num:nn,at};});return T;});
+ const offLook=(c2)=>({c1:'#16171b',c2,pat:5,sh:'#16171b',so:'#16171b',skin:SKIN[2],hair:HAIR[0],boot:'#111111',num:0,hs:1,spn:-1});
  S.ref=mkEnt({role:'REF',name:'REFEREE',look:offLook('#f5d000'),idx:S.ents.length,h:1});S.ents.push(S.ref);
  S.lines=[1,-1].map(s=>{const l=mkEnt({role:'LINE',name:'ASSISTANT',side:s,look:offLook('#f5d000'),idx:S.ents.length,h:.98});S.ents.push(l);return l;});
  S.humans=[];for(let i=0;i<(c.humans||0);i++)S.humans.push({i,team:i,pl:null,prev:{},inp:{},charge:0,buf:null,swT:0,aim:{x:0,z:0}});
@@ -64,6 +66,8 @@ function control(p){const b=S.ball,h=S.humans.find(h=>h.pl===p);
 function firstTime(p,bf,h){if(bf.k==='shoot')shoot(p,{ax:aimX(p,h.inp),pow:bf.pow||.6,first:true});else humanPass(p,h.inp,bf.k);}
 function gkCollect(g){const b=S.ball;
  if(S.lastToucher&&S.lastToucher.team===g.team&&S.lastToucher!==g&&S.pendPass){control(g);return;}// back-pass: feet only
+ if(b.p.y>1.7){let od=9;for(const o of S.plist)if(o.team!==g.team&&active(o))od=Math.min(od,hyp(o.p.x-b.p.x,o.p.z-b.p.z));
+  if(od<1.9&&rnd()<.7){const d=S.teams[g.team].dir;b.owner=null;b.held=null;b.v.set((b.p.x>=0?1:-1)*(3+rnd()*5),5+rnd()*2.5,d*(9+rnd()*6));b.w.set(0,0,0);act(g,'throw',.4);g.kickCD=.5;touchBy(g,false);S.fx('punch',g);return;}}
  if(b.v.length()>27&&rnd()<.45){parry(g);g.st.saves++;S.teams[g.team].stats.saves++;S.fx('save',g,false);return;}
  b.held=g;b.owner=null;b.v.set(0,0,0);b.w.set(0,0,0);if(touchBy(g,false))return;act(g,'catch',99);g.ai.holdT=0;S.fx('catch',g);
  const h=S.humans.find(h=>h.team===g.team);if(h)setCtl(h,g);}
@@ -86,7 +90,7 @@ function release(p,v,spin,kind){const b=S.ball;const wasHeld=b.held===p,wasOwn=b
 function kickTo(p,tgt,type,mate,o={}){const b=S.ball;const sp=S.sp;if(!(b.owner===p||b.held===p||(sp&&sp.taker===p&&!sp.done)))return false;
  if(sp&&sp.taker===p&&!sp.done)takeSP();
  const T=S.teams[p.team],D=T.diff,human=p.ctl>=0;let dx=tgt.x-b.p.x,dz=tgt.z-b.p.z,d=hyp(dx,dz)||1;
- const err=(1.32-p.at.pass/100)*(human?.75:D.passErr)*(type==='lob'||type==='cross'?1.5:1)*(pressure(p)<1.4?1.35:1);
+ const err=(1.32-p.at.pass/100)*(1+(1-p.cond)*.5)*(human?.75:D.passErr)*(type==='lob'||type==='cross'?1.5:1)*(pressure(p)<1.4?1.35:1);
  const ang=gauss()*err*.06,lm=1+gauss()*err*.05,ca=Math.cos(ang),sa=Math.sin(ang);[dx,dz]=[dx*ca-dz*sa,dx*sa+dz*ca];dx*=lm;dz*=lm;d*=lm;
  let v;const spin=new V();
  if(type==='pass'||type==='through'){const s=Math.min(30,passSpeed(d,type==='through'?4.5:8));v=new V(dx/d*s,0,dz/d*s);b.p.y=Math.max(R,b.held===p?R:b.p.y);if(b.held===p)b.p.y=R+.02;}
@@ -103,7 +107,7 @@ function aimVel(from,tx,ty,tz,speed,spin){const tb=new Ball();let dx=tx-from.x,d
 export function shoot(p,o){const b=S.ball;const sp=S.sp;if(!(b.owner===p||o.first||(sp&&sp.taker===p&&!sp.done)))return false;if(sp&&sp.taker===p&&!sp.done)takeSP();
  const T=S.teams[p.team],D=T.diff,human=p.ctl>=0,dir=T.dir,gz=dir*P.L;const pow=cl(o.pow,0,1);
  let tx=cl(o.ax,-1,1)*(P.GW-.3),ty=o.ay!=null?.15+o.ay*(P.GH-.4):.18+pow*1.05+(pow>.86?(pow-.86)*10:0);
- const dist=hyp(tx-b.p.x,gz-b.p.z);const sig=(1.32-p.at.shot/100)*(.3+dist*.03)*(human?.8:D.shotErr)*(pressure(p)<1.3?1.3:1)*(o.header?1.5:1)*(pow>.93?1.35:1)*(o.pen?.55:1);
+ const dist=hyp(tx-b.p.x,gz-b.p.z);const sig=(1.32-p.at.shot/100)*(1+(1-p.cond)*.5)*(.3+dist*.03)*(human?.8:D.shotErr)*(pressure(p)<1.3?1.3:1)*(o.header?1.5:1)*(pow>.93?1.35:1)*(o.pen?.55:1);
  tx+=gauss()*sig;ty=Math.max(.12,ty+gauss()*sig*.55);
  const speed=(o.header?9+pow*7:14+pow*17)*(.82+p.at.shot/430);const spin=new V(0,(o.curl??gauss()*.35)*13,0);if(!o.header&&pow>.6)spin.x=Math.sign(gz-b.p.z)*pow*9;
  if(b.p.y<R)b.p.y=R;const v=aimVel(b.p,tx,ty,gz,speed,spin);release(p,v,spin,o.header?'header':'shot');if(S.phase!=='play'&&!S.shoot)return true;
@@ -138,9 +142,23 @@ export function foul(off,vic,sev){if(S.phase!=='play')return;const T=S.teams[off
  const dogso=dg<25&&cover===0&&(S.ball.owner===vic||hyp(S.ball.p.x-vic.p.x,S.ball.p.z-vic.p.z)<3)&&u>0;
  let card=null;const r=rnd();if(dogso&&rnd()<.7||r<sev*.035)card='red';else if(r<sev*.6||dogso)card='yellow';
  if(card==='yellow'){off.yellow++;off.st.yel++;T.stats.yel++;if(off.yellow>=2)card='red2';}if(card&&card!=='yellow'){off.st.red++;T.stats.red++;off.sentOff=true;}
- const inBox=Math.abs(x)<P.BW&&u>P.L-P.BD;S.pend=inBox?{type:'pen',team:vic.team}:{type:'free',team:vic.team,x:cl(x,-P.W+.5,P.W-.5),z:cl(z,-P.L+1,P.L-1)};
+ const inBox=Math.abs(x)<P.BW&&u>P.L-P.BD;
+ // advantage: the fouled side still has the ball going forward, so the referee lets play run and books the offender on the fly
+ const own=S.ball.owner;if(!inBox&&card!=='red'&&card!=='red2'&&own&&own.team===vic.team&&own.p.z*dir>-P.L*.15&&own.stun<=0){S.fx('advantage',off,vic,card);if(card)S.fx('card',off,card);act(S.ref,'flag',1.2);return;}
+ S.pend=inBox?{type:'pen',team:vic.team}:{type:'free',team:vic.team,x:cl(x,-P.W+.5,P.W-.5),z:cl(z,-P.L+1,P.L-1)};
  S.cardInfo=card?{p:off,card,t:0}:null;S.fx('foul',off,vic,card,inBox);toDead(card?2.8:1.4);}
 function skill(p,side){if(p.skillCD>0||S.ball.owner!==p)return;p.skillCD=1.1;p.skillT=.5;act(p,'skill',.5,{side});const f=fwdOf(p);p.v.x+=-f.z*side*3.2;p.v.z+=f.x*side*3.2;S.fx('skill',p);}
+/* ================= substitutions ================= */
+// the replacement takes over the same shirt slot (position + role); the player going off keeps his stats for the ratings
+export function substitute(t,out,bi){const T=S.teams[t];if(!T||T.subs<=0||!T.bench.length||!out||out.role==='GK'||out.off||out.sentOff||out.team!==t)return null;
+ let k=bi??T.bench.findIndex(b=>b.role===out.role);if(k<0)k=0;const b=T.bench.splice(k,1)[0];T.subs--;T.subT=S.time;
+ S.gone.push({name:out.name,num:out.num,team:t,role:out.role,st:{...out.st},gone:true});const was=out.name;
+ Object.assign(out,{name:b.name,num:b.num,at:{...b.at},h:b.h,stamina:1,cond:1,yellow:0,st:{goals:0,assists:0,shots:0,sot:0,passes:0,passOK:0,tackles:0,saves:0,fouls:0,yel:0,red:0}});
+ out.look={...out.look,skin:SKIN[b.skin*SKIN.length|0],hair:HAIR[b.hair*HAIR.length|0],boot:BOOTS[b.boot],num:b.num,bald:b.hair>.93,hs:hairStyle(b),beard:(b.hair*13.7)%1<.28};
+ S.fx('sub',out,was,t);return out;}
+export const tiredest=T=>T.pl.filter(p=>active(p)&&p.role!=='GK'&&!p.sentOff).sort((a,b)=>a.cond-b.cond)[0];
+function cpuSubs(ht){if(S.attract||S.shoot)return;for(const T of S.teams){if(S.humans.some(h=>h.team===T.idx))continue;if(T.subs<=0||!T.bench.length)continue;
+  const late=S.period>=2||ht;if(!late)continue;if(!ht&&S.time-T.subT<8)continue;const p=tiredest(T);if(p&&p.cond<(ht?.76:.7))substitute(T.idx,p);}}
 S.act={pass:(p,t,type,m)=>kickTo(p,t,type,m),shoot:(p,o)=>shoot(p,o),tackle,slide,skill,dive:(g,side,h)=>{act(g,'dive',1.25,{side,h});g.dive=1.25;S.fx('dive',g);}};
 /* ================= GK saves ================= */
 function resolveSaves(dt){const b=S.ball;for(const T of S.teams){const g=T.gk;if(!g||!active(g)||!g.ai.save)continue;const sv=g.ai.save,s=-T.dir;sv.t-=dt;
@@ -177,7 +195,7 @@ export function beginSP(sp,instant){S.sp=sp;S.phase='setpiece';Object.assign(sp,
   if(instant&&e.spT){e.p.set(e.spT.x,0,e.spT.z);e.v.set(0,0,0);e.face=e.spT.f;}}
  if(sp.type==='throw')b.held=sp.taker;
  for(const h of S.humans){h.buf=null;h.charge=0;if(h.team===sp.team)setCtl(h,sp.taker);else if(!h.pl||!active(h.pl)||h.pl.role==='GK')setCtl(h,nearestMate(S.teams[h.team],sp.x,sp.z,null));}
- sp.aiDelay=sp.type==='pen'?1.2:.7+rnd()*.7;S.fx('setpiece',sp);}
+ sp.aiDelay=sp.type==='pen'?1.2:.7+rnd()*.7;if(!instant&&sp.type!=='pen'&&sp.type!=='kick')cpuSubs(false);S.fx('setpiece',sp);}
 function spTargets(sp){const b=S.ball,bx=sp.x,bz=sp.z,ka=S.teams[sp.team];
  const put=(p,x,z,f)=>{p.spT={x:cl(x,-P.W-1.5,P.W+1.5),z:cl(z,-P.L-1.5,P.L+1.5),f:f??Math.atan2(bx-x,bz-z)};};
  for(const T of S.teams){const att=T.idx===sp.team,bzN=(bz*T.dir+P.L)/(2*P.L);for(const p of T.pl){if(!active(p)){p.spT=null;continue;}
@@ -273,12 +291,14 @@ function move(e,dt){if(e.hidden||e.off)return;
  if(e.frozen||S.idle[e.team]&&!hum&&S.phase==='play'&&e.role!=='GK'){mx=mz=0;}
  const ml=hyp(mx,mz);if(ml>1){mx/=ml;mz/=ml;}const has=S.ball.owner===e,T=S.teams[e.team];
  const top=topSpeed(e,T&&T.diff)*(e.role==='REF'||e.role==='LINE'?.86:1);const run=spr&&e.stamina>.05&&ml>.3;
- const spd=top*(run?1:.74)*(has?(run?.9:.93):1)*(e.stamina<.25?.88:1)*(e.charging>0?.55:1)*(S.phase==='goal'&&e.anim.act==='dejected'?.35:1);
+ const spd=top*(run?1:.74)*(has?(run?.9:.93):1)*(e.stamina<.25?.88:1)*(.86+.14*e.cond)*(e.charging>0?.55:1)*(S.phase==='goal'&&e.anim.act==='dejected'?.35:1);
  const acc=(has?11:15)*dt;let dvx=mx*spd-e.v.x,dvz=mz*spd-e.v.z;const dl=hyp(dvx,dvz);if(dl>acc){dvx*=acc/dl;dvz*=acc/dl;}e.v.x+=dvx;e.v.z+=dvz;e.v.y=0;
  e.p.x=cl(e.p.x+e.v.x*dt,-P.W-5,P.W+5);e.p.z=cl(e.p.z+e.v.z*dt,-P.L-4,P.L+4);
  const sp=hyp(e.v.x,e.v.z);let want=null;if(sp>.7&&!(look&&sp<2.6))want=Math.atan2(e.v.x,e.v.z);else if(look)want=Math.atan2(look.p.x-e.p.x,look.p.z-e.p.z);else if(e.faceT!=null&&S.phase==='setpiece')want=e.faceT;
  if(e.frozen&&e.spT)want=e.spT.f;if(want!=null){let d=want-e.face;d=Math.atan2(Math.sin(d),Math.cos(d));const tr=(has?7.5:11)*dt;e.face+=cl(d,-tr,tr);}
- if(run&&sp>5)e.stamina=Math.max(0,e.stamina-dt*.055*(1.4-e.at.pace/200));else e.stamina=Math.min(1,e.stamina+dt*(sp<3?.06:.025));}
+ if(run&&sp>5)e.stamina=Math.max(0,e.stamina-dt*.055*(1.4-e.at.pace/200));else e.stamina=Math.min(e.cond,e.stamina+dt*(sp<3?.06:.025));
+ // match fitness: drains slowly all game, faster while sprinting; caps stamina, so tired legs stay tired until a substitution
+ if(e.team>=0&&S.phase==='play'&&!S.attract){const k=180/Math.max(60,S.per);e.cond=Math.max(.3,e.cond-dt*k*(.0008+(run&&sp>5?.005:0))*(1.25-e.at.pace/400));if(e.stamina>e.cond)e.stamina=e.cond;}}
 function separate(){const L=S.ents;for(let i=0;i<L.length;i++){const a=L[i];if(a.hidden||a.off)continue;for(let j=i+1;j<L.length;j++){const b=L[j];if(b.hidden||b.off)continue;const dx=b.p.x-a.p.x,dz=b.p.z-a.p.z,d2=dx*dx+dz*dz;if(d2>.34||d2<1e-6)continue;
  const d=Math.sqrt(d2),o=(.58-d)/d*.5;if(o<=0)continue;const fa=a.frozen||a.dive>0?0:b.frozen||b.dive>0?2:1,fb=2-fa;a.p.x-=dx*o*fa;a.p.z-=dz*o*fa;b.p.x+=dx*o*fb;b.p.z+=dz*o*fb;}}}
 /* ================= officials ================= */
@@ -310,7 +330,7 @@ function celebrate(dt){const g=S.goal,c=g.cel;for(const p of S.plist){if(!active
 export function afterGoal(){if(checkPeriodEnd(true))return;const g=S.goal;beginSP({type:'kick',team:1-g.team},true);}
 function lim(){return S.period<=2?S.per:S.per/3;}
 function checkPeriodEnd(force){if(S.clock<lim())return false;if(S.attract){S.clock=0;return false;}
- if(!force&&S.phase==='play'){const own=S.ball.owner;const danger=(own&&own.p.z*S.teams[own.team].dir>P.L-30)||(Math.abs(S.ball.p.z)>P.L-P.BD&&Math.abs(S.ball.p.x)<P.BW);if(danger&&S.stoppage<6)return false;}
+ if(!force&&S.phase==='play'){const own=S.ball.owner;const danger=(own&&own.p.z*S.teams[own.team].dir>P.L-30)||(Math.abs(S.ball.p.z)>P.L-P.BD&&Math.abs(S.ball.p.x)<P.BW);if(danger&&S.clock-lim()<6*lim()/180)return false;}// a live attack may run into added time, capped
  if(!force&&S.phase==='setpiece'&&S.sp&&S.sp.type==='pen')return false;
  endPeriod();return true;}
 function endPeriod(){const draw=S.score[0]===S.score[1];S.sp=null;S.pend=null;for(const e of S.ents){e.ai.tx=e.p.x;e.ai.tz=e.p.z;e.charging=0;e.ai.save=null;}
@@ -321,7 +341,7 @@ function endPeriod(){const draw=S.score[0]===S.score[1];S.sp=null;S.pend=null;fo
 function fullTime(){S.phase='end';S.endT=0;const w=S.score[0]>S.score[1]?0:S.score[1]>S.score[0]?1:-1;S.winner=w;
  let k=0;for(const p of S.plist){if(!active(p))continue;const a=k++*.57+rnd()*.2,r=(p.team===w||w<0?3.5:9)+rnd()*4;p.ai.tx=Math.cos(a)*r;p.ai.tz=Math.sin(a)*r;p.ai.sprint=false;p.ai.look=null;if(w<0)continue;act(p,p.team===w?'cele':'dejected',99,{v:p.team===w?[2,3,0][k%3]:0});}S.fx('fulltime',w);}
 function nextPeriod(){if(S.breakKind==='PENALTIES'){startShootout();return;}S.period++;S.clock=0;S.stoppage=0;if(S.period===2||S.period===4)for(const T of S.teams)T.dir*=-1;
- const ko=S.period===2||S.period===4?1-S.kickoffFirst:S.kickoffFirst;for(const p of S.plist)p.stamina=Math.min(1,p.stamina+.5);beginSP({type:'kick',team:ko},true);S.fx('kickoffPeriod',S.period);}
+ const ko=S.period===2||S.period===4?1-S.kickoffFirst:S.kickoffFirst;for(const p of S.plist){p.cond=Math.min(1,p.cond+.1);p.stamina=Math.min(p.cond,p.stamina+.5);}cpuSubs(true);beginSP({type:'kick',team:ko},true);S.fx('kickoffPeriod',S.period);}
 /* ================= shootout ================= */
 function startShootout(){S.shoot={kicks:[[],[]],turn:rnd()<.5?0:1,res:null,t:0,stage:'next',order:S.teams.map(T=>T.pl.filter(p=>active(p)&&p.role!=='GK').sort((a,b)=>b.at.shot-a.at.shot)),n:[0,0],winner:-1};
  S.period=5;for(const T of S.teams)T.dir=1;S.fx('shootout');shootNext();}

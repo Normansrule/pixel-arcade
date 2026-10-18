@@ -3,12 +3,21 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {V,cl} from './util.js';
 
+// soft fbm smoke puff (alpha) with a shading term in R; built once, 128px
+let _puff=null;function puffTex(){if(_puff)return _puff;const n=128,d=new Uint8Array(n*n*4);const h=(x,y,s)=>{const v=Math.sin(x*127.1+y*311.7+s*74.7)*43758.5453;return v-Math.floor(v);};
+ const vn=(x,y,s)=>{const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);return(h(ix,iy,s)*(1-ux)+h(ix+1,iy,s)*ux)*(1-uy)+(h(ix,iy+1,s)*(1-ux)+h(ix+1,iy+1,s)*ux)*uy;};
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++){const u=x/n-.5,v=y/n-.5,r=Math.hypot(u,v)*2;let f=0,a=.5,fr=4;for(let o=0;o<5;o++){f+=vn(u*fr+9,v*fr+9,o)*a;a*=.5;fr*=2;}
+  const body=Math.max(0,1-r*r*(1.25-.55*f))*Math.max(0,Math.min(1,(1-r)/.3));const al=Math.max(0,Math.min(1,(body*(.55+f*.9)-.1)*1.5));const i=(y*n+x)*4;d[i]=Math.min(255,f*255*1.2);d[i+1]=d[i+2]=128;d[i+3]=al*255;}
+ const t=new THREE.DataTexture(d,n,n,THREE.RGBAFormat);t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.needsUpdate=true;return _puff=t;}
 export class Particles{
  constructor(scene,n=4000,additive=true){this.n=n;this.p=new Float32Array(n*3);this.v=new Float32Array(n*3);this.c=new Float32Array(n*4);this.oc=new Float32Array(n*3);this.s=new Float32Array(n);this.os=new Float32Array(n);this.life=new Float32Array(n);this.max=new Float32Array(n);this.g=new Float32Array(n);this.drag=new Float32Array(n);this.grow=new Float32Array(n);this.i=0;this.add=additive;
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(this.p,3).setUsage(THREE.DynamicDrawUsage));geo.setAttribute('col',new THREE.BufferAttribute(this.c,4).setUsage(THREE.DynamicDrawUsage));geo.setAttribute('size',new THREE.BufferAttribute(this.s,1).setUsage(THREE.DynamicDrawUsage));
-  this.U={uScale:{value:500}};this.pts=new THREE.Points(geo,new THREE.ShaderMaterial({uniforms:this.U,transparent:true,depthWrite:false,blending:additive?THREE.AdditiveBlending:THREE.NormalBlending,
-   vertexShader:'attribute float size;attribute vec4 col;uniform float uScale;varying vec4 vC;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vC=col;vC.a*=smoothstep(.4,2.6,-mv.z);gl_PointSize=size*uScale/max(.1,-mv.z);gl_Position=projectionMatrix*mv;}',
-   fragmentShader:additive?'varying vec4 vC;void main(){float d=length(gl_PointCoord-.5);float a=smoothstep(.5,.05,d);gl_FragColor=vec4(vC.rgb*a*vC.a,1.);}':'varying vec4 vC;void main(){float d=length(gl_PointCoord-.5);float a=smoothstep(.5,.15,d)*vC.a;gl_FragColor=vec4(vC.rgb,a);}'}));
+  const sd=new Float32Array(n);for(let i=0;i<n;i++)sd[i]=Math.random();geo.setAttribute('seed',new THREE.BufferAttribute(sd,1));
+  this.U={uScale:{value:500},uPuff:{value:additive?null:puffTex()}};this.pts=new THREE.Points(geo,new THREE.ShaderMaterial({uniforms:this.U,transparent:true,depthWrite:false,blending:additive?THREE.AdditiveBlending:THREE.NormalBlending,
+   vertexShader:'attribute float size;attribute vec4 col;attribute float seed;uniform float uScale;varying vec4 vC;varying float vS;void main(){vS=seed;vec4 mv=modelViewMatrix*vec4(position,1.);vC=col;vC.a*=smoothstep(.4,2.6,-mv.z);gl_PointSize=size*uScale/max(.1,-mv.z);gl_Position=projectionMatrix*mv;}',
+   fragmentShader:additive?'varying vec4 vC;void main(){float d=length(gl_PointCoord-.5);float a=smoothstep(.5,.05,d);gl_FragColor=vec4(vC.rgb*a*vC.a,1.);}':
+   // billowing puff: rotated fbm sprite (per-particle seed), self-shadowed underside, brighter rim toward the sky
+   'uniform sampler2D uPuff;varying vec4 vC;varying float vS;void main(){vec2 q=gl_PointCoord-.5;float an=vS*6.283;q=mat2(cos(an),-sin(an),sin(an),cos(an))*q;vec4 P=texture2D(uPuff,q+.5);float a=P.a*vC.a*smoothstep(.5,.36,length(q));if(a<.004)discard;float sh=mix(1.12,.62,gl_PointCoord.y)*(.78+.3*P.r);gl_FragColor=vec4(vC.rgb*sh,a);}'}));
   this.pts.frustumCulled=false;this.pts.renderOrder=3;scene.add(this.pts);this.geo=geo;}
  emit(x,y,z,vx,vy,vz,r,g,b,size,life,grav=0,drag=0,grow=0){const i=this.i;this.i=(i+1)%this.n;this.p[i*3]=x;this.p[i*3+1]=y;this.p[i*3+2]=z;this.v[i*3]=vx;this.v[i*3+1]=vy;this.v[i*3+2]=vz;this.oc[i*3]=r;this.oc[i*3+1]=g;this.oc[i*3+2]=b;this.os[i]=size;this.life[i]=this.max[i]=life;this.g[i]=grav;this.drag[i]=drag;this.grow[i]=grow;}
  burst(p,n,speed,col,size,life,o={}){for(let k=0;k<n;k++){let dx=Math.random()*2-1,dy=Math.random()*2-1,dz=Math.random()*2-1;const l=Math.hypot(dx,dy,dz)||1;dx/=l;dy/=l;dz/=l;if(o.dir){const sp=o.spread??.6;dx=dx*sp+o.dir.x;dy=dy*sp+o.dir.y;dz=dz*sp+o.dir.z;}if(o.up)dy=Math.abs(dy);const s=speed*(.3+Math.random()*.7);

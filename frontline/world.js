@@ -1,6 +1,7 @@
 // FRONTLINE OPS — level geometry (collision boxes, hitscan raycasts, nav grid + A*, cover points) and scene construction
 // (merged architecture with trims/windows/roofs, instanced props + vehicles + trees, terrain, water, sky).
 import * as THREE from '../vendor/three.module.min.js';
+import {buildDressing,contactMap,withContact} from './dress.js';
 
 export const STEP=.5,MANTLE=1.3;
 const V=THREE.Vector3,PI=Math.PI;
@@ -124,7 +125,7 @@ const BX=(w,h,d)=>new THREE.BoxGeometry(w,h,d),CY=(rt,rb,h,s=12,open=false)=>new
 // side profile (u = forward z, v = up y) extruded across x with a soft bevel
 export function prof(pts,width,bevel=.04,curve=4){const s=new THREE.Shape();pts.forEach(([u,v],i)=>i?s.lineTo(u,v):s.moveTo(u,v));const g=new THREE.ExtrudeGeometry(s,{depth:width-bevel*2,bevelEnabled:bevel>0,bevelThickness:bevel,bevelSize:bevel,bevelSegments:curve>1?2:1,curveSegments:curve});
  g.translate(0,0,-(width-bevel*2)/2);g.rotateY(-PI/2);g.computeVertexNormals();return g;}
-const MAT_UV={concrete:4,plaster:3.2,stone:3.6,brick:2.6,metal:3,sandbag:1.2,hesco:2.2,roof:3,tile:2.4,wood:1.6,trim:2,cobble:3,slab:5,snowcap:4};
+const MAT_UV={concrete:4,plaster:3.2,stone:3.6,brick:3.4,metal:3,sandbag:1.2,hesco:2.2,roof:3,tile:2.4,wood:1.6,trim:2,cobble:3,slab:5,snowcap:4};
 
 function boxGeoAppend(A,b,uvs,rnd){const{x0,y0,z0,x1,y1,z1}=b,c=b.col!=null?new THREE.Color(b.col):new THREE.Color(1,1,1);const tint=.94+rnd()*.1;c.multiplyScalar(tint);
  const faces=[[[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1],[1,0,0],'zy'],[[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0],[-1,0,0],'zy'],
@@ -196,11 +197,27 @@ export function makeSky(look){const U={uTop:{value:new THREE.Color(look.sky.top)
   uCloudC:{value:new THREE.Color(look.sky.cloud??0xffffff)},uCloud:{value:look.sky.clouds??.5},uT:{value:0},uSunSize:{value:look.sky.sunSize??.0008}};
  const m=new THREE.Mesh(new THREE.SphereGeometry(900,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,depthTest:true,fog:false,uniforms:U,vertexShader:SKY_V,fragmentShader:SKY_F}));m.renderOrder=-10;m.frustumCulled=false;m.userData.U=U;return m;}
 
+/* ================= weathering: macro tint drift, rising damp / kick-up grime at the base, run-off streaks ================= */
+const WX_NOISE=`float wxh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float wxn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(wxh(i),wxh(i+vec2(1,0)),f.x),mix(wxh(i+vec2(0,1)),wxh(i+vec2(1,1)),f.x),f.y);}
+float wxf(vec2 p){return wxn(p)*.55+wxn(p*2.1+3.7)*.3+wxn(p*4.3+9.1)*.15;}`;
+function weather(m,k,L){const dirt=new THREE.Color(L.look.grime??0x5a4c3c);m.onBeforeCompile=s=>{s.uniforms.uWxK={value:k};s.uniforms.uWxC={value:dirt};
+ s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWxP;varying vec3 vWxN;').replace('#include <begin_vertex>','#include <begin_vertex>\nvWxP=(modelMatrix*vec4(transformed,1.)).xyz;vWxN=normalize(mat3(modelMatrix)*objectNormal);');
+ s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWxP;varying vec3 vWxN;uniform float uWxK;uniform vec3 uWxC;'+WX_NOISE)
+  .replace('#include <map_fragment>',`#include <map_fragment>
+ float wxAlong=dot(vWxP.xz,vec2(abs(vWxN.z),abs(vWxN.x)));float wxMac=wxf(vec2(wxAlong*.09,vWxP.y*.07)+vWxP.xz*.013);
+ float wxBase=(1.-smoothstep(0.,.55+wxMac*1.3,vWxP.y))*step(abs(vWxN.y),.5);
+ float wxSt=smoothstep(.64,.92,wxf(vec2(wxAlong*2.3,vWxP.y*.11)))*smoothstep(.2,1.4,vWxP.y)*step(abs(vWxN.y),.5);
+ float wxTop=step(.5,vWxN.y)*smoothstep(.45,.85,wxMac)*.5;
+ diffuseColor.rgb*=mix(1.,.82+.3*wxMac,uWxK);vec3 wxG=mix(vec3(dot(uWxC,vec3(.33))),uWxC,.55)*1.6;diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*wxG,clamp((wxBase*.7+wxSt*.2+wxTop)*uWxK,0.,.8));`)
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n roughnessFactor=clamp(roughnessFactor+(wxBase*.08-wxSt*.12)*uWxK,.04,1.);')
+  .replace('#include <aomap_fragment>','#include <aomap_fragment>\n {float wa=mix(1.,mix(.42,1.,smoothstep(0.,1.6,vWxP.y)),step(abs(vWxN.y),.5));reflectedLight.indirectDiffuse*=wa;reflectedLight.directDiffuse*=mix(1.,wa,.3);reflectedLight.indirectSpecular*=wa;}');};
+ m.customProgramCacheKey=()=>'wx'+k;}
+
 /* ================= scene construction ================= */
 export function buildScene(L,TX,q){const look=L.look;L.timeU=L.timeU||{value:0};const G=new THREE.Group();const dusk=!!look.lampsOn;const std=o=>new THREE.MeshStandardMaterial(o);
- const W=(t,o={})=>std({map:t.map,normalMap:t.normalMap,normalScale:new THREE.Vector2(o.ns??.9,o.ns??.9),roughness:o.r??.9,metalness:o.m??0,vertexColors:true,...(o.x||{})});
- const mats={concrete:W(TX.concrete,{r:.92}),plaster:W(TX.plaster,{r:.95}),stone:W(TX.stone,{r:.9}),brick:W(TX.brick,{r:.9}),metal:W(TX.metal,{r:.55,m:.25,ns:.7}),wood:W(TX.wood,{r:.85}),
-  sandbag:W(TX.sandbag,{r:1}),hesco:W(TX.hesco,{r:1}),roof:W(TX.roof,{r:.92}),tile:W(TX.slab,{r:.75,ns:.4}),trim:std({color:0xffffff,roughness:.7,metalness:.05,vertexColors:true}),cobble:W(TX.cobble,{r:.85}),slab:W(TX.slab,{r:.85}),snowcap:W(TX.snow,{r:.8,ns:.3})};
+ const W=(t,o={})=>{const m=std({map:t.map,normalMap:t.normalMap,roughnessMap:t.roughnessMap||null,normalScale:new THREE.Vector2(o.ns??.9,o.ns??.9),roughness:t.roughnessMap?(o.rk??1):(o.r??.9),metalness:o.m??0,vertexColors:true,...(o.x||{})});if(o.wx&&q>0)weather(m,o.wx,L);return m;};
+ const mats={concrete:W(TX.concrete,{r:.92,ns:1.1,wx:1}),plaster:W(TX.plaster,{r:.95,ns:1.1,wx:1}),stone:W(TX.stone,{r:.9,wx:1}),brick:W(TX.brick,{r:.9,ns:1.2,wx:1}),metal:W(TX.metal,{r:.55,m:.35,ns:.8,wx:.6}),wood:W(TX.wood,{r:.85}),
+  sandbag:W(TX.sandbag,{r:1}),hesco:W(TX.hesco,{r:1}),roof:W(TX.roof,{r:.92}),tile:W(TX.slab,{r:.75,ns:.4}),trim:std({color:0xffffff,roughness:.9,metalness:.05,vertexColors:true,normalMap:TX.concrete.normalMap,normalScale:new THREE.Vector2(.5,.5),roughnessMap:TX.concrete.roughnessMap}),cobble:W(TX.cobble,{r:.85}),slab:W(TX.slab,{r:.85}),snowcap:W(TX.snow,{r:.8,ns:.3})};
  // ----- merged static boxes
  const acc={};const rnd=()=>L.rnd();for(const b of L.boxes){if(!b.vis)continue;const m=mats[b.mat]?b.mat:'concrete';(acc[m]=acc[m]||{p:[],n:[],u:[],c:[],i:[]});boxGeoAppend(acc[m],b,b.uvs||MAT_UV[m]||3,rnd);}
  // pitched roofs: gables in wall material, slopes in tile material
@@ -221,8 +238,9 @@ export function buildScene(L,TX,q){const look=L.look;L.timeU=L.timeU||{value:0};
  // ----- terrain: flat play area + sculpted surroundings
  const T=L.terrain,ext=L.half*2+520,seg=q>=2?160:110;const gg=new THREE.PlaneGeometry(ext,ext,seg,seg);gg.rotateX(-PI/2);const gp=gg.attributes.position,guv=gg.attributes.uv,gcol=new Float32Array(gp.count*3);
  const hn=(x,z)=>Math.sin(x*.031+1.3)*Math.cos(z*.027)*.5+Math.sin(x*.071+z*.053)*.3+Math.sin(x*.13-z*.11+2)*.15+.5;
- for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);const e=Math.max(Math.abs(x),Math.abs(z))-L.half-4;let y=0;
-  if(e>0&&!(T.seaSide&&T.seaSide(x,z))){const k=Math.min(1,e/(T.ramp||60));y=k*k*(T.height||20)*(.45+hn(x,z)*.9)+(T.dunes?Math.sin(x*.09+z*.04)*Math.min(1,e/20)*2.5:0);}
+ L.tY=(x,z)=>{const e=Math.max(Math.abs(x),Math.abs(z))-L.half-4;if(e<=0||(T.seaSide&&T.seaSide(x,z)))return 0;const k=Math.min(1,e/(T.ramp||60));return k*k*(T.height||20)*(.45+hn(x,z)*.9)+(T.dunes?Math.sin(x*.09+z*.04)*Math.min(1,e/20)*2.5:0);};
+ for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);let y=0;
+  y=L.tY(x,z);
   if(T.seaSide&&T.seaSide(x,z))y=-2.2;gp.setY(i,y);guv.setXY(i,x/7,-z/7);const v=.86+hn(x*3,z*3)*.22;gcol[i*3]=gcol[i*3+1]=gcol[i*3+2]=v;}
  gg.setAttribute('color',new THREE.Float32BufferAttribute(gcol,3));gg.computeVertexNormals();
  const base=TX[T.base],alt=TX[T.alt||T.base],pathT=TX[T.path||'dirt'];const splat=L.splatTex;
@@ -237,13 +255,14 @@ float th(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float t
  vec2 su=(vWP.xz+uHalf)/(2.*uHalf);vec4 sp=texture2D(uSplat,vec2(su.x,1.-su.y));float inb=step(0.,su.x)*step(su.x,1.)*step(0.,su.y)*step(su.y,1.);
  float pm=smoothstep(.15,.6,sp.r+(tn(vWP.xz*.6)-.5)*.35)*inb;col=mix(col,tc,pm);col=mix(col,tb,sp.g*inb);
  col.rgb*=.86+.28*tn(vWP.xz*.012);diffuseColor*=col;`);};
+ const ct=q>0?contactMap(L):null;if(ct){withContact(gm,ct);withContact(mats.tile,ct,.7);}
  const ground=new THREE.Mesh(gg,gm);ground.receiveShadow=true;G.add(ground);
  // water
  L.water=null;if(T.water){const wm=std({color:T.water.c,roughness:.06,metalness:.2,normalMap:TX.waterN,normalScale:new THREE.Vector2(.35,.35),transparent:true,opacity:.92});wm.normalMap=TX.waterN.clone();wm.normalMap.needsUpdate=true;wm.normalMap.repeat.set(80,80);
   const w=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),wm);w.rotation.x=-PI/2;w.position.y=T.water.y;G.add(w);L.water=wm;}
  // ----- roads + pads + painted lines
  for(const r of L.roads){const len=r.len,w=r.w,t=TX[r.kind]||TX.asphalt;const m=std({map:t.map.clone(),normalMap:t.normalMap.clone(),roughness:.85,polygonOffset:true,polygonOffsetFactor:-2,color:r.col??0xffffff});m.map.needsUpdate=m.normalMap.needsUpdate=true;
-  m.map.repeat.set(w/6,len/6);m.normalMap.repeat.set(w/6,len/6);const me=new THREE.Mesh(new THREE.PlaneGeometry(w,len),m);me.rotation.set(-PI/2,0,r.rot||0);me.position.set(r.x,.02,r.z);me.receiveShadow=true;G.add(me);
+  m.map.repeat.set(w/6,len/6);m.normalMap.repeat.set(w/6,len/6);if(ct)withContact(m,ct);const me=new THREE.Mesh(new THREE.PlaneGeometry(w,len),m);me.rotation.set(-PI/2,0,r.rot||0);me.position.set(r.x,.02,r.z);me.receiveShadow=true;G.add(me);
   if(r.lines){const lm=new THREE.MeshStandardMaterial({color:r.lines,roughness:.7,polygonOffset:true,polygonOffsetFactor:-4});const parts=[];for(let s=-len/2+2;s<len/2-2;s+=6)parts.push({geo:new THREE.PlaneGeometry(.18,3),m:M4(0,0,s+1.5)});if(parts.length){const lg=merge(parts);lg.rotateX(-PI/2);const lme=new THREE.Mesh(lg,lm);lme.rotation.y=r.rot||0;lme.position.set(r.x,.03,r.z);lme.receiveShadow=true;G.add(lme);}}}
  for(const p of L.pads){const m=std({map:TX.pad,roughness:.8,polygonOffset:true,polygonOffsetFactor:-3});const me=new THREE.Mesh(new THREE.PlaneGeometry(p.r*2,p.r*2),m);me.rotation.x=-PI/2;me.position.set(p.x,(p.y||0)+.03,p.z);me.receiveShadow=true;G.add(me);}
  for(const p of L.paint){const m=std({color:p.c,roughness:.7,polygonOffset:true,polygonOffsetFactor:-4,map:p.map||null,transparent:!!p.map});const me=new THREE.Mesh(new THREE.PlaneGeometry(p.w,p.d),m);me.rotation.set(-PI/2,0,p.rot||0);me.position.set(p.x,.035,p.z);me.receiveShadow=true;G.add(me);}
@@ -343,4 +362,52 @@ float th(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float t
  // distant silhouettes (skyline / ridges) beyond the terrain
  if(T.far){const geo=new THREE.CylinderGeometry(420,420,1,96,1,true);const p=geo.attributes.position;for(let i=0;i<p.count;i++){if(p.getY(i)>0){const a=Math.atan2(p.getZ(i),p.getX(i));p.setY(i,T.far.h*(.5+.3*Math.sin(a*3+1)+.2*Math.sin(a*11)+.08*Math.sin(a*37)));}else p.setY(i,-5);}geo.computeVertexNormals();
   G.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:T.far.c,side:THREE.BackSide,fog:true})));}
+ // ----- decals (grime, posters, tags, stains, cracks, oil, drains, rubble): one instanced draw, MEDIUM and up
+ if(q>0&&TX.decals)G.add(buildDecals(L,TX,q));
+ // ----- sun shafts through the dusty air + drifting motes: HIGH only
+ if(q>=2)G.add(buildShafts(L,look));
+ // ----- street dressing, window surrounds, skyline, haze: MEDIUM and up
+ if(q>0)G.add(buildDressing(L,TX,q,look));
  return{group:G,lights};}
+
+/* ================= decals ================= */
+function buildDecals(L,TX,q){const list=[],hit={t:0,i:-1,n:new V()},rnd=()=>L.rnd();const add=(p,n,w,h,cell,rot=0,tint=1)=>list.push({p,n,w,h,cell,rot,tint});
+ const wallAt=(x,y,z,nx,nz)=>{const ox=x+nx*.8,oz=z+nz*.8;const t=L.ray(ox,y,oz,-nx,0,-nz,1.6,hit);if(t===Infinity||Math.abs(t-.8)>.25||hit.n.x!==nx||hit.n.z!==nz)return null;return new V(ox-nx*t,y,oz-nz*t);};
+ for(const b of L.blds){const sides=[[b.x0,b.z0,b.x1,b.z0,0,-1],[b.x0,b.z1,b.x1,b.z1,0,1],[b.x0,b.z0,b.x0,b.z1,-1,0],[b.x1,b.z0,b.x1,b.z1,1,0]];
+  for(const[ax,az,bx,bz,nx,nz]of sides){const len=Math.hypot(bx-ax,bz-az),nd=Math.max(1,Math.round(len/5*(q>=2?1.4:1)));
+   for(let i=0;i<nd;i++){const t=rnd(),x=ax+(bx-ax)*t+nx*.15,z=az+(bz-az)*t+nz*.15,r=rnd();
+    let cell,y,w,h;if(r<.16){cell=0;y=1.3+rnd()*.5;w=1.1;h=1.1;}else if(r<.3){cell=1;y=.9+rnd()*.6;w=1.8+rnd();h=w*.8;}else if(r<.55){cell=2;y=Math.max(1.4,b.h-1.4-rnd()*.6);w=1.6+rnd()*2;h=2.4+rnd()*1.6;}else if(r<.72){cell=3;y=.6+rnd()*(b.h-1.2);w=h=.8+rnd()*1.2;}else if(r<.85){cell=4;y=.3+rnd()*1.2;w=h=1.6+rnd()*1.6;}else{cell=7;y=.25;w=h=1.4+rnd();}
+    const p=wallAt(x,y,z,nx,nz);if(!p)continue;if(cell===7){add(new V(p.x+nx*.6,.02,p.z+nz*.6),new V(0,1,0),w*1.3,h,7,rnd()*6.28,.9);continue;}add(p,new V(nx,0,nz),w,h,cell,cell===3?rnd()*6.28:(rnd()-.5)*.08,.85+rnd()*.25);}}}
+ // ground: oil stains and drains on roads, scattered grit
+ for(const r of L.roads){const n=Math.round(r.len/9);for(let i=0;i<n;i++){const a=r.rot||0,u=(rnd()-.5)*r.len,v=(rnd()-.5)*r.w*.8;const x=r.x+Math.sin(a)*u+Math.cos(a)*v,z=r.z+Math.cos(a)*u-Math.sin(a)*v;
+  if(rnd()<.75)add(new V(x,.045,z),new V(0,1,0),1.2+rnd()*2,1.2+rnd()*1.6,5,rnd()*6.28,1);else add(new V(r.x+Math.sin(a)*u+Math.cos(a)*(r.w/2-.5),.045,r.z+Math.cos(a)*u-Math.sin(a)*(r.w/2-.5)),new V(0,1,0),.8,.8,6,a,1);}}
+ for(let i=0;i<(q>=2?40:24);i++){const x=(rnd()*2-1)*L.half*.95,z=(rnd()*2-1)*L.half*.95;if(!L.free(x,z))continue;add(new V(x,.04,z),new V(0,1,0),1+rnd()*2,1+rnd()*2,rnd()<.5?7:5,rnd()*6.28,.9);}
+ const geo=new THREE.PlaneGeometry(1,1),cellA=new Float32Array(list.length);const mat=new THREE.MeshStandardMaterial({map:TX.decals,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3,roughness:.92,metalness:0});
+ mat.onBeforeCompile=s=>{s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nattribute float aCell;').replace('#include <uv_vertex>','#include <uv_vertex>\nvMapUv=vMapUv*vec2(.25,.5)+vec2(mod(aCell,4.)*.25,(1.-floor(aCell/4.))*.5);');};
+ const im=new THREE.InstancedMesh(geo,mat,list.length),m=new THREE.Matrix4(),qq=new THREE.Quaternion(),q2=new THREE.Quaternion(),Z=new V(0,0,1),c=new THREE.Color();
+ list.forEach((d,i)=>{qq.setFromUnitVectors(Z,d.n);q2.setFromAxisAngle(Z,d.rot);qq.multiply(q2);m.compose(d.p.clone().addScaledVector(d.n,.02),qq,new V(d.w,d.h,1));im.setMatrixAt(i,m);cellA[i]=d.cell;im.setColorAt(i,c.setScalar(d.tint));});
+ geo.setAttribute('aCell',new THREE.InstancedBufferAttribute(cellA,1));im.receiveShadow=true;im.renderOrder=1;return im;}
+
+/* ================= god rays: additive sun shafts in open air + drifting dust motes (HIGH) ================= */
+function buildShafts(L,look){const g=new THREE.Group(),sd=new V(...look.sun.dir).normalize(),sc=new THREE.Color(look.sun.c),hit={t:0,i:-1,n:new V()};const dk=look.lampsOn?.55:look.dust??1;
+ const U={uT:L.timeU,uSun:{value:sd},uC:{value:sc.clone().multiplyScalar(.055*dk)}};
+ const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,uniforms:U,fog:false,
+  vertexShader:'varying vec3 vN,vW;varying float vH;\n#include <common>\nvoid main(){vH=uv.y;vec4 w=instanceMatrix*vec4(position,1.);vW=(modelMatrix*w).xyz;vN=normalize(mat3(modelMatrix)*mat3(instanceMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*modelMatrix*w;}',
+  fragmentShader:`uniform vec3 uC,uSun;uniform float uT;varying vec3 vN,vW;varying float vH;
+  float h1(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float n1(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h1(i),h1(i+vec2(1,0)),f.x),mix(h1(i+vec2(0,1)),h1(i+vec2(1,1)),f.x),f.y);}
+  void main(){vec3 V=normalize(cameraPosition-vW);float edge=pow(abs(dot(normalize(vN),V)),2.2);float ends=smoothstep(0.,.18,vH)*smoothstep(1.,.55,vH);
+   float phase=.35+2.4*pow(max(0.,dot(-V,uSun)),5.);float dust=.55+.6*n1(vW.xz*.35+vec2(uT*.07,vW.y*.25-uT*.11));float d=length(cameraPosition-vW);float near=smoothstep(.8,4.,d)*(1.-smoothstep(60.,110.,d));
+   gl_FragColor=vec4(uC*edge*ends*phase*dust*near,1.);}`});
+ const pts=[];const tries=L.hot.concat(L.flags.map(f=>[f.x,f.z]));for(let i=0;i<260&&pts.length<16;i++){const base=tries[i%tries.length],x=base[0]+(L.rnd()-.5)*30,z=base[1]+(L.rnd()-.5)*30;if(!L.free(x,z))continue;
+  // open sky toward the sun here, but a wall within a few metres sideways casting the neighbouring shadow
+  if(L.ray(x,.4,z,sd.x,sd.y,sd.z,90,hit)!==Infinity)continue;let edge=false;for(const[ox,oz]of[[2.4,0],[-2.4,0],[0,2.4],[0,-2.4]])if(L.ray(x+ox,.4,z+oz,sd.x,sd.y,sd.z,60,hit)!==Infinity){edge=true;break;}if(!edge)continue;
+  if(pts.some(p=>Math.hypot(p[0]-x,p[1]-z)<7))continue;pts.push([x,z,1.2+L.rnd()*2.2]);}
+ if(pts.length){const geo=new THREE.CylinderGeometry(1,1,1,14,1,true);geo.translate(0,.5,0);const im=new THREE.InstancedMesh(geo,mat,pts.length),m=new THREE.Matrix4(),qq=new THREE.Quaternion().setFromUnitVectors(new V(0,1,0),sd);
+  pts.forEach(([x,z,r],i)=>{const len=Math.min(38,14/Math.max(.15,sd.y));m.compose(new V(x,0,z),qq,new V(r,len,r*.55));im.setMatrixAt(i,m);});im.frustumCulled=false;im.renderOrder=4;g.add(im);}
+ // motes: positions wrap around the camera in a 14 m box, lit by the sun colour
+ const N=700,P=new Float32Array(N*3),S=new Float32Array(N);for(let i=0;i<N;i++){P[i*3]=Math.random()*14;P[i*3+1]=Math.random()*6;P[i*3+2]=Math.random()*14;S[i]=.5+Math.random();}
+ const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(P,3));pg.setAttribute('sz',new THREE.BufferAttribute(S,1));
+ const pm=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uT:L.timeU,uC:{value:sc.clone().lerp(new THREE.Color(1,1,1),.4).multiplyScalar(.9*dk)}},
+  vertexShader:'attribute float sz;uniform float uT;varying float vA;void main(){vec3 p=position+vec3(sin(uT*.3+position.y)*.6+uT*.25,sin(uT*.2+position.x)*.3,cos(uT*.25+position.z)*.5+uT*.12);vec3 c=cameraPosition;p=mod(p-c+vec3(7.,2.,7.),vec3(14.,6.,14.))+c-vec3(7.,2.,7.);vec4 mv=viewMatrix*vec4(p,1.);float d=-mv.z;vA=smoothstep(.4,1.5,d)*(1.-smoothstep(4.,7.,d))*(.5+.5*sin(uT*1.7+position.x*9.));gl_PointSize=max(1.,sz*5./max(.5,d));gl_Position=projectionMatrix*mv;}',
+  fragmentShader:'uniform vec3 uC;varying float vA;void main(){float d=length(gl_PointCoord-.5);gl_FragColor=vec4(uC*vA*smoothstep(.5,0.,d),1.);}'});
+ const motes=new THREE.Points(pg,pm);motes.frustumCulled=false;motes.renderOrder=4;g.add(motes);return g;}

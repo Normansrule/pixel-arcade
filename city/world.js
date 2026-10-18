@@ -10,7 +10,7 @@ export const BOUND={x0:-640,x1:760,z0:-760,z1:640};
 const STEP=1.25;
 
 /* ---------------- polylines ---------------- */
-function poly(pts){let s=0;pts[0].s=0;for(let i=1;i<pts.length;i++){s+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].z-pts[i-1].z);pts[i].s=s;}pts.len=s;return pts;}
+export function poly(pts){let s=0;pts[0].s=0;for(let i=1;i<pts.length;i++){s+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].z-pts[i-1].z);pts[i].s=s;}pts.len=s;return pts;}
 function lineSamples(a,b,step){const L=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(L/step)),o=[];for(let i=0;i<=n;i++)o.push({x:lerp(a.x,b.x,i/n),z:lerp(a.z,b.z,i/n)});return o;}
 function catmull(cp,step){const out=[];for(let i=0;i<cp.length-1;i++){const p0=cp[Math.max(0,i-1)],p1=cp[i],p2=cp[i+1],p3=cp[Math.min(cp.length-1,i+2)];const L=Math.hypot(p2.x-p1.x,p2.z-p1.z),n=Math.max(2,Math.ceil(L/step));
   for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t;const f=(a,b,c,d)=>.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);out.push({x:f(p0.x,p1.x,p2.x,p3.x),z:f(p0.z,p1.z,p2.z,p3.z)});}}
@@ -106,6 +106,8 @@ export class World{
   add('taxi2','taxi','CABBY DEPOT · WESTSIDE',-355,319.5,{car:[-355,315.5,Math.PI/2],sign:'TAXI'});
   add('deliv1','delivery','SALT DOCK COURIERS',519.5,60,{car:[515.5,60,Math.PI]});
   add('deliv2','delivery','PALMWOOD PARCELS',-455,99.5,{car:[-455,95.5,Math.PI/2]});
+  add('heist1','heist','BRINKLINE DEPOT',85,-230.5,{});
+  add('boost1','boost','DOCK 9 EXPORTS',519.5,-150,{});
   add('race1','race','DOWNTOWN DASH',30,-150,{});
   add('race2','race','PORT SALT SPRINT',400,40,{});
   add('race3','race','LOOP FURY',472,-5,{});
@@ -292,7 +294,7 @@ export class World{
  los(ax,az,bx,bz,h=2){const d=Math.hypot(bx-ax,bz-az),n=Math.ceil(d/8);for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of this.sHash.at(x,z)){if(s.kind!=='bld'&&s.kind!=='cont')continue;if(s.y1<h)continue;if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}if(this.terrainH(x,z)>h+4)return false;}return true;}
  // camera ray: fraction of the segment that is free
  rayFree(ax,ay,az,bx,by,bz){const d=Math.hypot(bx-ax,by-ay,bz-az),n=Math.max(2,Math.ceil(d/.5));for(let i=1;i<=n;i++){const t=i/n,x=ax+(bx-ax)*t,y=ay+(by-ay)*t,z=az+(bz-az)*t;
-   if(y<this.terrainH(x,z)+.3&&!this.inTunnel(x,z))return(i-1)/n;for(const s of this.sHash.at(x,z)){if(s.kind==='pole'||s.kind==='palm'||s.kind==='rail')continue;if(x>s.x0-.2&&x<s.x1+.2&&z>s.z0-.2&&z<s.z1+.2&&y>s.y0&&y<s.y1+.2)return(i-1)/n;}}return 1;}
+   if(y<this.terrainH(x,z)+.3&&!this.inTunnel(x,z))return(i-1)/n;for(const s of this.sHash.at(x,z)){if(s.kind==='pole'||s.kind==='palm'||s.kind==='rail'||s.kind==='parked'||s.kind==='prop')continue;if(x>s.x0-.2&&x<s.x1+.2&&z>s.z0-.2&&z<s.z1+.2&&y>s.y0&&y<s.y1+.2)return(i-1)/n;}}return 1;}
  zone(x,z,y){if(z>BEACH+2)return this.terrainH(x,z)<WL?'sea':'sand';if(y>FWY_Y-2&&this.fwyDist(x,z).d<FWY_HW+1)return'freeway';if(x>QUAY)return'sea';if(z<-360||x<-530)return'hills';const b=this.blockAt(x,z);
   if(b){if(b.walk)return'beach';return b.d==='boardwalk'?'beach':b.d;}if(x>CANAL[0]&&x<CANAL[1])return'canal';return this.district(x,z);}}
 function pick2(R,a){return a[R()*a.length|0];}

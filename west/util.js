@@ -43,3 +43,26 @@ export function tnoise(n,cells,seed,oct=4){const out=new Float32Array(n*n);let a
 export function rbox(w,h,d,r=.03,seg=3){r=Math.min(r,w/2-.001,h/2-.001,d/2-.001);const g=new THREE.BoxGeometry(w,h,d,seg,seg,seg),p=g.attributes.position,n=g.attributes.normal,v=new V(),c=new V(),hw=w/2-r,hh=h/2-r,hd=d/2-r;
  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);c.set(cl(v.x,-hw,hw),cl(v.y,-hh,hh),cl(v.z,-hd,hd));v.sub(c);if(v.lengthSq()<1e-10)v.fromBufferAttribute(n,i);v.normalize();n.setXYZ(i,v.x,v.y,v.z);p.setXYZ(i,c.x+v.x*r,c.y+v.y*r,c.z+v.z*r);}return g;}
 export const cap=(r,len,rs=10)=>{const g=new THREE.CapsuleGeometry(r,Math.max(.001,len),3,rs);g.translate(0,-len/2-r,0);return g;};
+// loft: a smooth tube through cross-sections S=[{c:[x,y,z],rx,ry,dn?,sq?,ox?,oy?}] (rx across, ry 'up' of the section frame,
+// dn scales the lower half, sq = superellipse exponent for boxy sections). up = reference axis for the frame. Closed ends unless o.open.
+const crs=(a,b,c,d,t)=>{const t2=t*t,t3=t2*t;return .5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);};
+// resample sections along a Catmull-Rom spline so the surface has no creases at the stations
+function subSec(S,k){if(k<=1||S.length<3)return S;const out=[],n=S.length,keys=['rx','ry','dn','bk','ox','oy','sq'];
+ for(let i=0;i<n-1;i++)for(let j=0;j<k;j++){const t=j/k,a=S[Math.max(0,i-1)],b=S[i],c=S[i+1],d=S[Math.min(n-1,i+2)],q={c:[0,1,2].map(m=>crs(a.c[m],b.c[m],c.c[m],d.c[m],t))};
+  for(const key of keys){if(b[key]==null&&c[key]==null)continue;const f=(s,dv)=>s[key]??dv;const dv=key==='dn'||key==='bk'?1:key==='sq'?2:0;q[key]=Math.max(key==='rx'||key==='ry'?.001:-9,crs(f(a,dv),f(b,dv),f(c,dv),f(d,dv),t));}out.push(q);}
+ out.push(S[n-1]);return out;}
+export function loft(S,seg=12,o={}){S=subSec(S,o.sub??3);const n=S.length,C=S.map(s=>new V(...s.c)),pos=[],uv=[],idx=[];let L=0;const vv=[0];for(let i=1;i<n;i++){L+=C[i].distanceTo(C[i-1]);vv.push(L);}
+ const ref=new V(...(o.up||[0,1,0])),a0=o.arc?o.arc[0]:0,a1=o.arc?o.arc[1]:Math.PI*2,full=!o.arc,ns=full?seg:seg+1;
+ for(let i=0;i<n;i++){const t=new V().subVectors(C[Math.min(n-1,i+1)],C[Math.max(0,i-1)]).normalize(),r=ref.clone();if(Math.abs(r.dot(t))>.97)r.set(0,0,1);const s=new V().crossVectors(r,t).normalize(),u=new V().crossVectors(t,s),q=S[i];
+  for(let j=0;j<ns;j++){const a=a0+(a1-a0)*j/seg,ca=Math.cos(a),sa=Math.sin(a);let k=1;if(q.sq){const e=q.sq;k=Math.pow(Math.pow(Math.abs(ca),e)+Math.pow(Math.abs(sa),e),-1/e);}
+   const rx=q.rx*k*(ca<0&&q.bk!=null?q.bk:1),ry=q.ry*k*(sa<0&&q.dn!=null?q.dn:1);const p=C[i].clone().addScaledVector(s,ca*rx+(q.ox||0)).addScaledVector(u,sa*ry+(q.oy||0));pos.push(p.x,p.y,p.z);uv.push(j/seg,vv[i]);}}
+ for(let i=0;i<n-1;i++)for(let j=0;j<(full?seg:seg);j++){const j1=full?(j+1)%seg:j+1,a=i*ns+j,b=i*ns+j1,c=(i+1)*ns+j,d=(i+1)*ns+j1;idx.push(a,c,b,b,c,d);}
+ if(full&&!o.open){for(const[e,dir]of[[0,-1],[n-1,1]]){const ci=pos.length/3,c=C[e],t=new V().subVectors(C[Math.min(n-1,e+1)],C[Math.max(0,e-1)]).normalize().multiplyScalar(dir*(o.capOut||0));pos.push(c.x+t.x,c.y+t.y,c.z+t.z);uv.push(.5,vv[e]);for(let j=0;j<seg;j++){const j1=(j+1)%seg;if(dir<0)idx.push(ci,e*ns+j,e*ns+j1);else idx.push(ci,e*ns+j1,e*ns+j);}}}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
+ // orientation check: first ring normal should point away from its centre
+ const nr=g.attributes.normal,p0=new V().fromBufferAttribute(g.attributes.position,Math.min(1,ns-1));if(new V().fromBufferAttribute(nr,Math.min(1,ns-1)).dot(p0.sub(C[0]))<0){for(let i=0;i<idx.length;i+=3){const s=idx[i+1];idx[i+1]=idx[i+2];idx[i+2]=s;}g.setIndex(idx);g.computeVertexNormals();}
+ if(o.double){}return g;}
+// darken vertex colours toward the ground (cheap baked AO / grime) between y0 and y1
+export function vgrime(g,y0,y1,lo=.55){const p=g.attributes.position,c=g.attributes.color;for(let i=0;i<p.count;i++){const k=lerp(lo,1,smooth(y0,y1,p.getY(i)));c.setXYZ(i,c.getX(i)*k,c.getY(i)*k,c.getZ(i)*k);}c.needsUpdate=true;return g;}
+// cheap per-vertex colour noise (breaks up flat colour on merged props)
+export function vnoise(g,amt=.12,f=.7,seed=3){const p=g.attributes.position,c=g.attributes.color,r=rng(seed);const ph=[r()*9,r()*9,r()*9];for(let i=0;i<p.count;i++){const x=p.getX(i)*f,y=p.getY(i)*f,z=p.getZ(i)*f,k=1+amt*(Math.sin(x*1.7+ph[0]+Math.sin(z*1.3))*.5+Math.sin(y*2.3+ph[1]+x)*.3+Math.sin(z*3.1+ph[2])*.2);c.setXYZ(i,c.getX(i)*k,c.getY(i)*k,c.getZ(i)*k);}c.needsUpdate=true;return g;}

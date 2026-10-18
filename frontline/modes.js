@@ -9,8 +9,9 @@ export const MISSIONS=[
  {id:'deadcalm',name:'DEAD CALM',map:'harbor',time:480,tag:'RECON · DEFEND',when:'18:55 · HARBOR 9 CONTAINER TERMINAL',desc:'Golden hour at a smuggling port. Inspect three flagged containers, upload the manifest from the warehouse and hold until it is sent.'},
  {id:'highnoon',name:'HIGH NOON',map:'sandgate',time:480,tag:'ESCORT',when:'12:10 · SANDGATE MARKET TOWN',desc:'Pull a defector out of a walled desert town at midday, through the market ambush and up the main street to the north gate.'}];
 export const MODE_INFO={campaign:'Three short story missions with objectives, checkpoints and a squad at your side.',tdm:'You and five squadmates against six enemy operators. First to 75 kills or most kills when the clock hits zero.',
- dom:'Capture and hold three flags. Each flag you own ticks points. First to 150, or the leader at the buzzer.',survival:'Hold out alone against 10 escalating waves. Each wave has its own timer. Ammo restocks between waves.'};
-export function makeMode(G,opt){if(opt.mode==='tdm')return tdm(G,opt);if(opt.mode==='dom')return dom(G,opt);if(opt.mode==='survival')return survival(G,opt);return campaign(G,opt);}
+ dom:'Capture and hold three flags. Each flag you own ticks points. First to 150, or the leader at the buzzer.',
+ hp:'One hardpoint at a time, and it moves every minute. Hold it alone to score a point a second. First to 200 wins.',survival:'Hold out alone against 10 escalating waves. Each wave has its own timer. Ammo restocks between waves.'};
+export function makeMode(G,opt){if(opt.mode==='tdm')return tdm(G,opt);if(opt.mode==='dom')return dom(G,opt);if(opt.mode==='hp')return hardpoint(G,opt);if(opt.mode==='survival')return survival(G,opt);return campaign(G,opt);}
 const yawTo=(x,z,tx=0,tz=0)=>Math.atan2(tx-x,tz-z);
 const mmss=t=>{t=Math.max(0,Math.ceil(t));return(t/60|0)+':'+String(t%60).padStart(2,'0');};
 // fill both sides with squads (player squad = 0/1, enemies = 2/3)
@@ -39,7 +40,7 @@ function tdm(G,opt){const M={kind:'tdm',map:opt.map||'sandgate',clock:480,limit:
 function dom(G,opt){const M={kind:'dom',map:opt.map||'sandgate',clock:480,limit:150,score:[0,0],label:'DOMINATION',corpse:6,pT:0,warned:false,tick:0,flags:[],
  init(){const L=G.level;M.flags=L.flags.map(f=>({id:f.id,x:f.x,z:f.z,r:5,own:-1,prog:0,cap:-1,n:[0,0]}));
   // home flags start owned
-  M.flags[0].own=0;M.flags[0].prog=1;M.flags[2].own=1;M.flags[2].prog=1;teams(G,'dom');G.pickFlag=M.pickFlag;
+  M.flags[0].own=0;M.flags[0].prog=1;M.flags[2].own=1;M.flags[2].prog=1;teams(G,'dom');G.pickFlag=M.pickFlag;M.fx=M.flags.map(f=>zoneFx(G,f.x,f.z,f.r));
   HUD.banner(G,'DOMINATION',`CAPTURE AND HOLD · ${L.name}`,'#ff4d00',2.6);HUD.radio(G,'HQ','Take B and hold two flags. That wins it.',true);},
  pickFlag(a){const t=a.team,F=M.flags,sq=a.ai.squad,odd=sq===1||sq===3;const B=F[1],home=F[t===0?0:2],away=F[t===0?2:0];
   // main squads fight for B; flank squads raid the enemy's home flag or defend their own when it is threatened
@@ -54,6 +55,7 @@ function dom(G,opt){const M={kind:'dom',map:opt.map||'sandgate',clock:480,limit:
       G.snd.play(side===0?'capture':'lost');HUD.ann(G,side===0?`FLAG ${f.id} SECURED`:`ENEMY TOOK ${f.id}`,2);if(side===0&&P&&P.alive&&Math.hypot(P.pos.x-f.x,P.pos.z-f.z)<f.r){P.stats.score+=200;HUD.xp(G,200,'FLAG CAPTURED');}
       for(const b of G.actors)if(b.ai&&b.ai.flag===f&&b.team===side)b.ai.flagT=-99;}}}}
    else if(!f.contested&&f.own===-1&&f.prog>0&&f.n[0]+f.n[1]===0)f.prog=Math.max(0,f.prog-dt/12);}
+  if(M.fx)M.flags.forEach((f,i)=>M.fx[i].set(f.contested?'con':f.own===0?'own':f.own===1?'foe':'neu',G.time));
   M.tick+=dt;if(M.tick>=2){M.tick-=2;for(const f of M.flags)if(f.own>=0)M.score[f.own]++;if(M.score[0]>=M.limit||M.score[1]>=M.limit)M.end();}},
  onKill(v,k){if(G.over||!k||k===v||k.team===v.team)return;for(const f of M.flags){if(Math.hypot(v.pos.x-f.x,v.pos.z-f.z)<f.r+3&&k.isPlayer){k.stats.score+=50;HUD.xp(G,50,f.own===k.team?'DEFENDED':'ATTACKED');break;}}},
  onPlayerDeath(){M.pT=3.2;},
@@ -62,7 +64,42 @@ function dom(G,opt){const M={kind:'dom',map:opt.map||'sandgate',clock:480,limit:
  top(){return{f:M.score[0],e:M.score[1],clock:M.clock,lbl:`FIRST TO ${M.limit}`,flags:M.flags};},
  objText(){const own=M.flags.filter(f=>f.own===0).length;return['DOMINATION',`You hold ${own} of 3 flags. Capture and defend.`];},
  marks(){return M.flags.map(f=>({p:new V(f.x,0,f.z),label:f.id,cls:'flag '+(f.own===0?'own':f.own===1?'foe':'neu')+(f.contested?' con':''),h:2.2,flag:f}));},
- respawnLeft(){return M.pT;},skip(){for(const f of M.flags){f.own=0;f.prog=1;}}};return M;}
+ respawnLeft(){return M.pT;},skip(){for(const f of M.flags){f.own=0;f.prog=1;}},dispose(){if(M.fx)M.fx.forEach(z=>z.dispose());}};return M;}
+
+/* ================= objective zones in the world: ground ring, faint fill, light column (column MEDIUM+) ================= */
+const ZC={own:0x4aa8ff,foe:0xff3b30,neu:0xeae4d6,con:0xffd23f};
+function zoneFx(G,x,z,r){const T=G.THREE,g=new T.Group();g.position.set(x,0,z);
+ const ringM=new T.MeshBasicMaterial({color:ZC.neu,transparent:true,opacity:.8,depthWrite:false,side:T.DoubleSide,fog:false}),ring=new T.Mesh(new T.RingGeometry(r-.22,r,72),ringM);ring.rotation.x=-PI/2;ring.position.y=.07;g.add(ring);
+ const fillM=new T.MeshBasicMaterial({color:ZC.neu,transparent:true,opacity:.07,depthWrite:false,fog:false}),fill=new T.Mesh(new T.CircleGeometry(r-.22,48),fillM);fill.rotation.x=-PI/2;fill.position.y=.065;g.add(fill);
+ let colU=null;if((G.gfx??1)>0){colU={value:new T.Color(ZC.neu)};const bm=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide,uniforms:{uC:colU,uT:{value:0}},
+  vertexShader:'varying float vY;varying vec3 vN,vV;void main(){vY=uv.y;vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+  fragmentShader:'uniform vec3 uC;varying float vY;varying vec3 vN,vV;void main(){float e=1.-abs(dot(vN,vV));gl_FragColor=vec4(uC*(1.-vY)*(1.-vY)*(.12+e*.25),1.);}'});
+  const beam=new T.Mesh(new T.CylinderGeometry(r,r,7,48,1,true),bm);beam.position.y=3.5;g.add(beam);}
+ G.scene.add(g);return{g,set(k,t){const c=ZC[k];ringM.color.setHex(c);fillM.color.setHex(c);ringM.opacity=k==='con'?.55+.35*Math.sin(t*10):.8;if(colU)colU.value.setHex(c);},dispose(){G.scene.remove(g);}};}
+
+/* ================= HARDPOINT ================= */
+function hardpoint(G,opt){const M={kind:'hp',map:opt.map||'sandgate',clock:480,limit:200,score:[0,0],label:'HARDPOINT',corpse:6,skirm:1,resp:4,fwd:44,pT:0,warned:false,zi:-1,zt:0,ZT:60,zones:[],z:null,acc:[0,0],mine:0,fx:null,
+ init(){const L=G.level,cand=[L.flags[1],L.flags[0],L.flags[2]].map(f=>[f.x,f.z]).concat(L.hot);const pts=[];for(const p of cand){if(pts.some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<22))continue;if(Math.abs(p[1])>44)continue;pts.push(p);if(pts.length>=5)break;}
+  M.zones=pts.map((p,i)=>({id:'P'+(i+1),x:p[0],z:p[1],r:6,own:-1,contested:false,n:[0,0]}));teams(G,'dom');G.pickFlag=()=>M.z;M.next(true);
+  HUD.banner(G,'HARDPOINT',`HOLD THE ZONE · ${L.name}`,'#ff4d00',2.6);HUD.radio(G,'HQ','Hardpoint is live. Get in the zone and stay there.',true);},
+ next(first){if(M.fx)M.fx.dispose();M.zi=(M.zi+1)%M.zones.length;M.z=M.zones[M.zi];M.z.own=-1;M.zt=M.ZT;M.fx=zoneFx(G,M.z.x,M.z.z,M.z.r);for(const b of G.actors)if(b.ai){b.ai.flagT=-99;b.ai.flag=M.z;}
+  if(!first){HUD.ann(G,'HARDPOINT MOVED',2.2);G.snd.play('beep',1);}},
+ update(dt){M.clock-=dt*G.clockScale;if(M.clock<=60&&!M.warned){M.warned=true;HUD.ann(G,'ONE MINUTE REMAINING',3);G.snd.play('beep',1);}if(M.clock<=0){M.clock=0;M.end();return;}respawnLoop(G,M,dt);
+  M.zt-=dt;if(M.zt<=0){M.next();return;}const z=M.z,P=G.player;z.n[0]=z.n[1]=0;for(const a of G.actors){if(!a.alive||a.vip)continue;if(Math.hypot(a.pos.x-z.x,a.pos.z-z.z)<z.r)z.n[a.team]++;}
+  const side=z.n[0]&&!z.n[1]?0:z.n[1]&&!z.n[0]?1:-1;z.contested=!!(z.n[0]&&z.n[1]);if(side!==z.own&&side>=0){HUD.ann(G,side===0?'HARDPOINT SECURED':'ENEMY HOLDS THE HARDPOINT',1.6);G.snd.play(side===0?'capture':'lost');}z.own=side;
+  if(M.fx)M.fx.set(z.contested?'con':side===0?'own':side===1?'foe':'neu',G.time);
+  if(side>=0){M.acc[side]+=dt;while(M.acc[side]>=1){M.acc[side]-=1;M.score[side]++;}}
+  if(P&&P.alive&&side===0&&Math.hypot(P.pos.x-z.x,P.pos.z-z.z)<z.r){M.mine+=dt;if(M.mine>=5){M.mine-=5;P.stats.score+=50;HUD.xp(G,50,'HARDPOINT');}}
+  if(M.score[0]>=M.limit||M.score[1]>=M.limit)M.end();},
+ onKill(v,k){if(G.over||!k||k===v||k.team===v.team||!k.isPlayer)return;const z=M.z;const dv=Math.hypot(v.pos.x-z.x,v.pos.z-z.z),dk=Math.hypot(k.pos.x-z.x,k.pos.z-z.z);if(dk<z.r){k.stats.score+=50;HUD.xp(G,50,'ZONE DEFENCE');}else if(dv<z.r+2){k.stats.score+=50;HUD.xp(G,50,'ZONE ATTACK');}},
+ onPlayerDeath(){M.pT=3.2;},
+ end(){const s=M.score,res=s[0]>s[1]?'win':s[0]<s[1]?'lose':'draw';G.endMatch(res,res==='win'?'VICTORY':res==='lose'?'DEFEAT':'DRAW',`${s[0]} — ${s[1]}`);},
+ points(){const P=G.player;return P.stats.score+M.score[0]*3+(G.over&&G.over.res==='win'?1000:G.over&&G.over.res==='draw'?300:0);},
+ top(){return{f:M.score[0],e:M.score[1],clock:M.clock,lbl:`ZONE ${M.zi+1} · MOVES ${mmss(M.zt)}`,flags:[{id:'HP',own:M.z.own,contested:M.z.contested}]};},
+ objText(){const z=M.z;return['HARDPOINT',z.contested?'Zone contested. Clear it out.':z.own===0?'Your team holds the zone. Keep it.':z.own===1?'Enemy holds the zone. Push in.':'Zone is empty. Get on it.'];},
+ marks(){const z=M.z,out=[{p:new V(z.x,0,z.z),label:'HP',cls:'flag '+(z.own===0?'own':z.own===1?'foe':'neu')+(z.contested?' con':''),h:2.2,flag:{id:'HP',own:z.own}}];
+  if(M.zt<12){const n=M.zones[(M.zi+1)%M.zones.length];out.push({p:new V(n.x,0,n.z),label:'NEXT',cls:'',h:1.4});}return out;},
+ respawnLeft(){return M.pT;},skip(){M.score[0]=M.limit-1;},dispose(){if(M.fx)M.fx.dispose();}};return M;}
 
 /* ================= SURVIVAL ================= */
 function survival(G,opt){const M={kind:'survival',map:opt.map||'northwatch',wave:0,phase:'inter',clock:8,toSpawn:0,spawnT:0,label:'SURVIVAL',corpse:6,maxWave:10,

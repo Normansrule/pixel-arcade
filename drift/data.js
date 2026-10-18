@@ -39,14 +39,31 @@ export const LIVERIES=['CLEAN','TWIN STRIPE','SIDE SLASH','TWO-TONE','NUMBER','H
 
 export const MEDALS=[{n:'BRONZE',c:'#d08a4a',ppm:12000},{n:'SILVER',c:'#cfd6e0',ppm:30000},{n:'GOLD',c:'#ffcf3f',ppm:60000},{n:'PLATINUM',c:'#9ef0ff',ppm:100000}];
 export function medalFor(pts,mins){let m=-1;MEDALS.forEach((x,i)=>{if(pts>=x.ppm*mins)m=i;});return m;}
-export const DIFFS=[{n:'EASY',pace:.8,angle:.8,gap:16},{n:'NORMAL',pace:.93,angle:1,gap:11},{n:'HARD',pace:1.04,angle:1.15,gap:8}];
+// CPU lead: pace (speed), angle (drift angle), gap (rubber band), line (share of the half-width the line uses),
+// err (mistakes per minute: a straightened, scrappy corner), judge (how clean the judges score its runs)
+export const DIFFS=[{n:'EASY',pace:.8,angle:.8,gap:16,line:.18,err:4,judge:.55},{n:'NORMAL',pace:.93,angle:1,gap:11,line:.42,err:1.6,judge:.78},{n:'HARD',pace:1.04,angle:1.15,gap:8,line:.66,err:.35,judge:.97}];
+
+// career: an event ladder. goal types: score (total points), combo (best single combo), clips (clipping zones hit),
+// tandem (seconds in tandem), battle (beat the CPU lead's judged score: 1 star for a win, more for the margin)
+export const EVENTS=[
+ {id:'e1',name:'AFTER HOURS',track:'lot',tod:'night',time:2,mode:0,diff:0,goal:'score',stars:[20000,45000,80000],cash:1500,blurb:'An empty car park and a stopwatch. Link donuts and pillar clips into one long score.'},
+ {id:'e2',name:'CLIP HUNT',track:'ring',tod:'sunset',time:2,mode:0,diff:0,goal:'clips',stars:[4,9,15],cash:2200,blurb:'The judges only care about the orange zones. Hit them sideways, outer and inner.'},
+ {id:'e3',name:'MORNING TOUGE',track:'pass',tod:'day',time:2,mode:0,diff:0,goal:'score',stars:[30000,70000,120000],cash:3000,blurb:'Serpent Pass in daylight. Guardrails close, switchbacks tight, no excuses.'},
+ {id:'e4',name:'FIRST BATTLE',track:'ring',tod:'day',time:2,mode:1,diff:0,goal:'battle',stars:[0,.25,.6],cash:4000,blurb:'Tandem against an EASY lead. Outscore it while staying on its door.'},
+ {id:'e5',name:'WET COMBO',track:'docks',tod:'rain',time:2,mode:0,diff:1,goal:'combo',stars:[12000,30000,60000],cash:5000,blurb:'Slick concrete, one combo. Bank the biggest single chain you can.'},
+ {id:'e6',name:'SHADOW THE LEAD',track:'pass',tod:'night',time:2,mode:1,diff:1,goal:'tandem',stars:[18,40,65],cash:6500,blurb:'Stay glued to a NORMAL lead down the mountain. Seconds in tandem are all that count.'},
+ {id:'e7',name:'HARBOUR DUEL',track:'docks',tod:'sunset',time:2,mode:1,diff:1,goal:'battle',stars:[0,.25,.6],cash:9000,blurb:'Battle a NORMAL lead between the containers at golden hour.'},
+ {id:'e8',name:'KING OF THE PASS',track:'pass',tod:'night',time:4,mode:1,diff:2,goal:'battle',stars:[0,.2,.5],cash:16000,blurb:'The final: four minutes against the HARD lead on its home mountain.'}];
+export const GOAL_TXT={score:v=>`${Math.round(v).toLocaleString('en-US')} PTS`,combo:v=>`${Math.round(v).toLocaleString('en-US')} COMBO`,clips:v=>`${v} CLIPS`,tandem:v=>`${v}s TANDEM`,battle:v=>v<=0?'WIN':`WIN BY ${Math.round(v*100)}%`};
+// tuning presets for the TUNE tab (camber, pressures, stiffness)
+export const PRESETS={GRIP:{camF:4.5,camR:0,psiF:30,psiR:28,stiff:.4},BALANCED:{camF:3,camR:.5,psiF:30,psiR:32,stiff:.55},LOOSE:{camF:6,camR:2.5,psiF:28,psiR:40,stiff:.85}};
 
 export function defaultOwn(spec){return{up:{engine:0,turbo:0,angle:0,susp:0,tires:0,weight:0},
  tune:{steer:42,camF:3,camR:.5,psiF:30,psiR:32,stiff:.55,final:spec.final},look:{paint:spec.paint,rims:'#c9ccd2',rim:0,livery:0,liv:'#111114'}};}
 
 const KEY='pxd_sideways_save';
 export function loadSave(){let s=null;try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){}
- if(!s||!s.owned)s={money:2500,owned:{},sel:'sparrow',best:{},runs:0};
+ if(!s||!s.owned)s={money:2500,owned:{},sel:'sparrow',best:{},runs:0};s.career=s.career||{};
  if(!s.owned.sparrow)s.owned.sparrow=defaultOwn(CARS[0]);
  for(const id in s.owned){const sp=CARS.find(c=>c.id===id);if(!sp){delete s.owned[id];continue;}const d=defaultOwn(sp),o=s.owned[id];o.up={...d.up,...o.up};o.tune={...d.tune,...o.tune};o.look={...d.look,...o.look};}
  if(!s.owned[s.sel])s.sel='sparrow';s.best=s.best||{};return s;}

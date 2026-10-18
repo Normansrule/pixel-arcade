@@ -27,7 +27,7 @@ export class Tracers{constructor(scene,n=90){this.n=n;this.list=[];const g=new T
  fire(a,b,speed=420,len=3.2,w=1,col){if(this.list.length>=this.n)this.list.shift();const d=new V().subVectors(b,a),dist=d.length();if(dist<1)return;d.divideScalar(dist);this.list.push({a:a.clone(),d,dist,t:0,speed,len:Math.min(len,dist),w,col:col||[6,4.2,2]});}
  update(dt){let k=0;for(let i=this.list.length-1;i>=0;i--){const t=this.list[i];t.t+=dt*t.speed;if(t.t-t.len>t.dist){this.list.splice(i,1);continue;}}
   for(const t of this.list){const head=Math.min(t.dist,t.t),tail=Math.max(0,t.t-t.len),L=head-tail;if(L<=.01)continue;this.q.setFromUnitVectors(this.z,t.d);this.m.compose(new V().copy(t.a).addScaledVector(t.d,tail),this.q,new V(t.w,t.w,L));this.mesh.setMatrixAt(k,this.m);this.mesh.setColorAt(k,this.col.setRGB(t.col[0],t.col[1],t.col[2]));k++;}
-  this.mesh.count=k;this.mesh.instanceMatrix.needsUpdate=true;if(this.mesh.instanceColor)this.mesh.instanceColor.needsUpdate=true;}
+  this.mesh.count=k;this.mesh.visible=k>0;this.mesh.instanceMatrix.needsUpdate=true;if(this.mesh.instanceColor)this.mesh.instanceColor.needsUpdate=true;}
  clear(){this.list.length=0;this.mesh.count=0;}}
 
 export class Decals{constructor(scene,tex,n=240,size=.13,o={}){this.n=n;this.i=0;const m=new THREE.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,roughness:.9,color:o.color||0xffffff});
@@ -54,16 +54,31 @@ export class Shock{constructor(scene,n=5){this.list=[];const geo=new THREE.Spher
 export class Debris{constructor(scene,n=60){this.n=n;this.list=[];const g=new THREE.BoxGeometry(.12,.08,.1);this.mesh=new THREE.InstancedMesh(g,new THREE.MeshStandardMaterial({color:0x5a5450,roughness:.9}),n);this.mesh.count=0;this.mesh.castShadow=true;this.mesh.frustumCulled=false;scene.add(this.mesh);this.m=new THREE.Matrix4();this.q=new THREE.Quaternion();this.e=new THREE.Euler();this.c=new THREE.Color();this.mesh.setColorAt(0,this.c.set(0xffffff));}
  burst(p,n,speed,col){for(let i=0;i<n;i++){if(this.list.length>=this.n)this.list.shift();const a=Math.random()*6.28,u=.4+Math.random()*.8,s=speed*(.4+Math.random()*.6);this.list.push({p:p.clone(),v:new V(Math.cos(a)*s*.7,u*s,Math.sin(a)*s*.7),r:new V(Math.random()*6,Math.random()*6,0),w:new V((Math.random()-.5)*20,(Math.random()-.5)*20,0),t:0,s:.5+Math.random()*1.4,col:new THREE.Color(col).multiplyScalar(.7+Math.random()*.4)});}}
  update(dt){let k=0;for(let i=this.list.length-1;i>=0;i--){const d=this.list[i];d.t+=dt;if(d.t>5){this.list.splice(i,1);continue;}d.v.y-=14*dt;d.p.addScaledVector(d.v,dt);if(d.p.y<.04){d.p.y=.04;d.v.y*=-.3;d.v.x*=.5;d.v.z*=.5;d.w.multiplyScalar(.5);}d.r.addScaledVector(d.w,dt);}
-  for(const d of this.list){const s=d.s*(d.t>4?5-d.t:1);this.m.compose(d.p,this.q.setFromEuler(this.e.set(d.r.x,d.r.y,0)),new V(s,s,s));this.mesh.setMatrixAt(k,this.m);this.mesh.setColorAt(k,d.col);k++;}this.mesh.count=k;this.mesh.instanceMatrix.needsUpdate=true;if(this.mesh.instanceColor)this.mesh.instanceColor.needsUpdate=true;}
+  for(const d of this.list){const s=d.s*(d.t>4?5-d.t:1);this.m.compose(d.p,this.q.setFromEuler(this.e.set(d.r.x,d.r.y,0)),new V(s,s,s));this.mesh.setMatrixAt(k,this.m);this.mesh.setColorAt(k,d.col);k++;}this.mesh.count=k;this.mesh.visible=k>0;this.mesh.instanceMatrix.needsUpdate=true;if(this.mesh.instanceColor)this.mesh.instanceColor.needsUpdate=true;}
  clear(){this.list.length=0;this.mesh.count=0;}}
+
+// world-space brass and dropped magazines: tumble, bounce with a tinkle, rest, then fade out
+export class Brass{constructor(scene,n=48){this.n=n;this.list=[];const g=new THREE.CylinderGeometry(.0045,.0045,.024,7);g.rotateX(Math.PI/2);
+  this.mesh=new THREE.InstancedMesh(g,new THREE.MeshStandardMaterial({color:0xd8a848,roughness:.3,metalness:1}),n);this.mesh.count=0;this.mesh.frustumCulled=false;scene.add(this.mesh);
+  const mg=new THREE.BoxGeometry(.03,.16,.07);mg.translate(0,-.06,0);this.mags=new THREE.InstancedMesh(mg,new THREE.MeshStandardMaterial({color:0x2c2e32,roughness:.55,metalness:.4}),8);this.mags.count=0;this.mags.castShadow=true;this.mags.frustumCulled=false;scene.add(this.mags);this.ml=[];
+  this.m=new THREE.Matrix4();this.q=new THREE.Quaternion();this.e=new THREE.Euler();this.one=new V(1,1,1);this.onBounce=null;this.floor=null;}
+ eject(p,v){if(this.list.length>=this.n)this.list.shift();this.list.push({p:p.clone(),v:v.clone(),r:new V(Math.random()*6,Math.random()*6,0),w:new V((Math.random()-.5)*30,(Math.random()-.5)*30,0),t:0,b:0});}
+ drop(p,v,r){if(this.ml.length>=8)this.ml.shift();this.ml.push({p:p.clone(),v:v.clone(),r:r.clone(),w:new V((Math.random()-.5)*6,(Math.random()-.5)*3,(Math.random()-.5)*6),t:0,b:0});}
+ step(list,dt,life,rest){for(let i=list.length-1;i>=0;i--){const c=list[i];c.t+=dt;if(c.t>life){list.splice(i,1);continue;}if(c.rest)continue;c.v.y-=9.8*dt;c.p.addScaledVector(c.v,dt);c.r.addScaledVector(c.w,dt);
+   const fl=(this.floor?this.floor(c.p.x,c.p.z,c.p.y):0)+rest;if(c.p.y<fl){c.p.y=fl;if(c.v.y<-.6&&c.b<3&&this.onBounce)this.onBounce(c.p,list===this.list);c.b++;c.v.y*=-.35;c.v.x*=.5;c.v.z*=.5;c.w.multiplyScalar(.5);if(Math.abs(c.v.y)<.3){c.rest=true;c.r.x=list===this.list?Math.PI/2*0:Math.PI/2;}}}}
+ update(dt){this.step(this.list,dt,6,.005);this.step(this.ml,dt,10,.035);let k=0;for(const c of this.list){const s=c.t>5?(6-c.t):1;this.m.compose(c.p,this.q.setFromEuler(this.e.set(c.r.x,c.r.y,c.r.z)),this.one.set(s,s,s));this.mesh.setMatrixAt(k++,this.m);}this.mesh.count=k;this.mesh.visible=k>0;this.mesh.instanceMatrix.needsUpdate=true;
+  k=0;for(const c of this.ml){const s=c.t>9?(10-c.t):1;this.m.compose(c.p,this.q.setFromEuler(this.e.set(c.r.x,c.r.y,c.r.z)),this.one.set(s,s,s));this.mags.setMatrixAt(k++,this.m);}this.mags.count=k;this.mags.visible=k>0;this.mags.instanceMatrix.needsUpdate=true;}
+ clear(){this.list.length=0;this.ml.length=0;this.mesh.count=0;this.mags.count=0;this.mesh.visible=this.mags.visible=false;}}
 
 const SURF={metal:{spark:12,dust:[.42,.42,.44],deb:0},ground:{spark:2,dust:[.62,.55,.44],deb:0},sand:{spark:0,dust:[.78,.68,.52],deb:0},snow:{spark:0,dust:[1.05,1.08,1.12],deb:0},wood:{spark:1,dust:[.55,.42,.3],deb:0x8a6a44},
  concrete:{spark:4,dust:[.66,.64,.6],deb:0x8a8680},plaster:{spark:2,dust:[.8,.76,.68],deb:0xd8d0c0},stone:{spark:4,dust:[.74,.66,.54],deb:0xc8b08a},brick:{spark:3,dust:[.7,.48,.4],deb:0x9a5a44},sandbag:{spark:0,dust:[.68,.6,.46],deb:0},hesco:{spark:0,dust:[.68,.6,.46],deb:0},glass:{spark:6,dust:[.8,.85,.9],deb:0}};
 export class FX{constructor(scene,TX){this.sparks=new Particles(scene,3500,true);this.smoke=new Particles(scene,1600,false,TX.puff);this.tracers=new Tracers(scene);this.holes=new Decals(scene,TX.hole,280,.12);this.scorch=new Decals(scene,TX.scorch,24,3.6,{color:0x888888});
-  this.lights=new LightPool(scene,4);this.shock=new Shock(scene);this.debris=new Debris(scene);this.clouds=[];this.dustK=1;this.ground='ground';}
- impact(p,n,surf){if(surf==='ground')surf=this.ground;const S=SURF[surf]||SURF.concrete;
+  this.lights=new LightPool(scene,4);this.shock=new Shock(scene);this.debris=new Debris(scene);this.brass=new Brass(scene);this.clouds=[];this.dustK=1;this.ground='ground';}
+ impact(p,n,surf){if(surf==='ground')surf=this.ground;const S=SURF[surf]||SURF.concrete;const k=this.dustK;
   if(S.spark)this.sparks.burst(p,S.spark,surf==='metal'?7:4,[C(4,3,1.6),C(3,2,.8)],.045,.3,{dir:n,spread:.9,grav:9.8,drag:2});
-  const k=this.dustK;this.smoke.burst(p,3,1.6,C(S.dust[0]*k,S.dust[1]*k,S.dust[2]*k),.32,.8,{dir:n,spread:.45,drag:3.2,grow:1.1});
+  if(surf==='metal'){this.sparks.burst(p,1,.2,C(8,6,3.5),.22,.06,{dir:n,spread:.1,drag:9});if(Math.random()<.35)this.lights.flash(p.clone().addScaledVector(n,.2),0xffc080,3,4,.05);}
+  if(surf==='sand'||surf==='snow'||surf==='ground'){const d2=S.dust;this.smoke.burst(p,2,2.6,C(d2[0]*k,d2[1]*k,d2[2]*k),.22,1.1,{dir:new V(n.x*.3,1,n.z*.3),spread:.35,drag:2.6,grow:.8});this.sparks.burst(p,4,3,C(d2[0]*.5,d2[1]*.5,d2[2]*.5),.03,.5,{dir:n,spread:.7,grav:9.8,drag:1.5});}
+  this.smoke.burst(p,3,1.6,C(S.dust[0]*k,S.dust[1]*k,S.dust[2]*k),.32,.8,{dir:n,spread:.45,drag:3.2,grow:1.1});
   this.smoke.burst(p,1,3.2,C(S.dust[0]*k*.9,S.dust[1]*k*.9,S.dust[2]*k*.9),.12,.5,{dir:n,spread:.15,drag:5,grow:1.8});
   if(S.deb&&Math.random()<.35)this.debris.burst(p.clone().addScaledVector(n,.05),1,2.5,S.deb);if(surf!=='snow'&&surf!=='sand')this.holes.add(p,n,.8+Math.random()*.5);}
  blood(p,d){this.smoke.burst(p,2,1.8,C(.3,.02,.02),.15,.32,{dir:d,spread:.5,drag:5,grow:.9});this.sparks.burst(p,2,2.2,C(.5,.02,.02),.04,.22,{dir:d,spread:.6,grav:9.8});}
@@ -78,6 +93,6 @@ export class FX{constructor(scene,TX){this.sparks=new Particles(scene,3500,true)
  smokeCloud(p,dur=13){this.clouds.push({p:p.clone(),t:0,dur,r:0});}
  update(dt,smokeCol){for(let i=this.clouds.length-1;i>=0;i--){const c=this.clouds[i];c.t+=dt;c.r=Math.min(4.6,c.t*2.2)*(c.t>c.dur-2?Math.max(0,(c.dur-c.t)/2):1);if(c.t>c.dur){this.clouds.splice(i,1);continue;}
    if(c.t<c.dur-2.5&&Math.random()<dt*30){const a=Math.random()*6.28,rr=Math.random()*Math.min(3.6,c.t*2);const v=.8+Math.random()*.3;this.smoke.emit(c.p.x+Math.cos(a)*rr,.4+Math.random()*1.6,c.p.z+Math.sin(a)*rr,Math.cos(a)*.6,.2+Math.random()*.3,Math.sin(a)*.6,smokeCol.r*v,smokeCol.g*v,smokeCol.b*v,2.6+Math.random()*1.8,3.6+Math.random()*1.4,0,.5,.6);}}
-  this.sparks.update(dt);this.smoke.update(dt);this.tracers.update(dt);this.lights.update(dt);this.shock.update(dt);this.debris.update(dt);}
+  this.sparks.update(dt);this.smoke.update(dt);this.tracers.update(dt);this.lights.update(dt);this.shock.update(dt);this.debris.update(dt);this.brass.update(dt);}
  smokeBlocks(a,b){for(const c of this.clouds){if(c.r<1.2)continue;const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z,l2=dx*dx+dy*dy+dz*dz;let t=((c.p.x-a.x)*dx+(1.4-a.y)*dy+(c.p.z-a.z)*dz)/l2;t=Math.max(0,Math.min(1,t));const x=a.x+dx*t-c.p.x,y=a.y+dy*t-1.4,z=a.z+dz*t-c.p.z;if(x*x+y*y*1.6+z*z<c.r*c.r)return true;}return false;}
- clear(){this.sparks.clear();this.smoke.clear();this.tracers.clear();this.holes.clear();this.scorch.clear();this.lights.clear();this.debris.clear();this.clouds.length=0;}}
+ clear(){this.sparks.clear();this.smoke.clear();this.tracers.clear();this.holes.clear();this.scorch.clear();this.lights.clear();this.debris.clear();this.brass.clear();this.clouds.length=0;}}
