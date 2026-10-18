@@ -69,7 +69,7 @@ export function updatePlayer(G,dt,inp){const P=G.P,phys=G.phys;const rig=P.rig;
    moveCollide(G,dt);}}
  else{// ground / air
   const onG=P.mode==='ground';const sprinting=inp.sprint&&!P.ex&&wl>.1&&onG&&!P.block&&!P.aim&&!P.atk;P.sprinting=sprinting;if(sprinting)useStam(P,dt*20);
-  let sp=(sprinting?SPRINT:WALK*(inp.walk?.45:1))*speedBuff*im;if(P.block)sp*=.45;if(P.aim)sp*=.5;if(P.atk&&!P.flurry)sp*=.15;if(P.stun>0)sp=0;if(P.ex)sp=Math.min(sp,3.2);
+  let sp=(sprinting?SPRINT:WALK*(inp.walk?.45:1))*speedBuff*im;if(P.block)sp*=.45;if(P.aim)sp*=.5;if(P.atk&&!P.flurry)sp*=.15;if(P.stun>0)sp=0;if(P.ex)sp=Math.min(sp,3.2);if(P.wade>.3)sp*=.72;
   if(!P.roll){if(P.atk&&P.atk.lunge>0){P.v.x+=(Math.sin(P.yaw)*P.atk.lunge-P.v.x)*Math.min(1,dt*12);P.v.z+=(Math.cos(P.yaw)*P.atk.lunge-P.v.z)*Math.min(1,dt*12);}
    else{const acc=onG?(wl>.1?14:18):3.2;P.v.x+=(wx*sp-P.v.x)*Math.min(1,dt*acc);P.v.z+=(wz*sp-P.v.z)*Math.min(1,dt*acc);}}
   // facing

@@ -120,3 +120,6 @@ body.playing a.back{display:none}
 #skip{position:fixed;right:24px;bottom:20px;font-size:.62rem;letter-spacing:.2em;color:var(--mut);background:rgba(8,10,16,.6);padding:6px 12px;border-radius:999px}
 .uw{position:absolute;inset:0;opacity:0;transition:opacity .35s;background:radial-gradient(ellipse at 50% 0%,rgba(120,220,255,.25),transparent 60%),linear-gradient(rgba(10,110,150,.38),rgba(0,40,90,.5));mix-blend-mode:normal}
 .uw.on{opacity:1;animation:sway 3s ease-in-out infinite}@keyframes sway{50%{filter:brightness(1.15)}}
+
+.ttbox .md{font-size:.62rem;padding:1px 10px}.ttbox .md b{font-size:.9rem}
+.cup span.tro{font-size:.62rem;letter-spacing:.12em;opacity:.9;margin-top:4px}.cup span.tro::before{content:none}

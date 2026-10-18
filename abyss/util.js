@@ -29,3 +29,13 @@ export function canvasTex(w,h,fn,{rep=1,srgb=true,aniso=4}={}){const c=document.
 export function normalTex(w,h,H,str=2){return canvasTex(w,h,(x)=>{const im=x.createImageData(w,h);for(let j=0;j<h;j++)for(let i=0;i<w;i++){const l=H[j*w+(i-1+w)%w],r=H[j*w+(i+1)%w],u=H[((j-1+h)%h)*w+i],d=H[((j+1)%h)*w+i];let nx=(l-r)*str,ny=(u-d)*str,nz=1;const k=1/Math.hypot(nx,ny,nz);const o=(j*w+i)*4;im.data[o]=(nx*k*.5+.5)*255;im.data[o+1]=(ny*k*.5+.5)*255;im.data[o+2]=(nz*k*.5+.5)*255;im.data[o+3]=255;}x.putImageData(im,0,0);},{srgb:false});}
 /* tileable fbm height field */
 export function fbmField(w,h,oct,seed,fn){const H=new Float32Array(w*h);for(let j=0;j<h;j++)for(let i=0;i<w;i++){const a=i/w*Math.PI*2,b=j/h*Math.PI*2;let s=0,amp=1,f=1,tot=0;for(let o=0;o<oct;o++){s+=NZ.noise4d(Math.cos(a)*f+seed,Math.sin(a)*f,Math.cos(b)*f,Math.sin(b)*f+seed)*amp;tot+=amp;amp*=.5;f*=2;}H[j*w+i]=fn?fn(s/tot,i,j):s/tot;}return H;}
+
+/* collapse a static group into one mesh per material (transforms baked), to cut draw calls */
+export function mergeByMaterial(root){root.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(root.matrixWorld).invert();const by=new Map();const m=new THREE.Matrix4();const keep=[];
+ root.traverse(o=>{if(!o.isMesh||o===root)return;if(o.isInstancedMesh||o.material.transparent||o.userData.keep){keep.push(o);return;}const g=o.geometry.clone();m.multiplyMatrices(inv,o.matrixWorld);g.applyMatrix4(m);
+  if(m.determinant()<0){const ix=g.index;if(ix){const a=ix.array;for(let i=0;i<a.length;i+=3){const t=a[i];a[i]=a[i+2];a[i+2]=t;}}}
+  if(!by.has(o.material))by.set(o.material,{list:[],cast:false});const e=by.get(o.material);e.list.push(g);e.cast=e.cast||o.castShadow;});
+ const out=new THREE.Group();out.position.copy(root.position);out.quaternion.copy(root.quaternion);out.scale.copy(root.scale);
+ for(const[mat,e]of by){const mesh=new THREE.Mesh(merge(e.list),mat);mesh.castShadow=e.cast;out.add(mesh);}
+ for(const o of keep){const c=o;c.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv,o.parent.matrixWorld));out.add(c);}
+ return out;}

@@ -44,7 +44,7 @@ const TX=makeTextures();const KIT=makeKit(TX);
 const fx=new FX(scene,TX);const snd=new Sound();const VM=buildViewmodel(TX);vmCam.add(VM.root);vmScene.add(vmCam);
 const W=new World(7);
 fx.sparks.gfn=fx.smoke.gfn=fx.debris.gfn=(x,z)=>W.height(x,z);fx.nfn=(x,z)=>W.normal(x,z,new V());
-fx.smoke.U.uFog&&fx.smoke.U.uFog.value.set(look.fog.c);if(fx.smoke.U.uFogD)fx.smoke.U.uFogD.value=look.fog.d;if(fx.smoke.U.uLight)fx.smoke.U.uLight.value.set(look.hemi.s).lerp(new THREE.Color(look.sun.c),.5);
+fx.smoke.U.uFog&&fx.smoke.U.uFog.value.set(look.fog.c);if(fx.smoke.U.uFogD)fx.smoke.U.uFogD.value=look.fog.d;if(fx.smoke.U.uLight)fx.smoke.U.uLight.value.set(look.hemi.s).lerp(new THREE.Color(look.sun.c),.5);fx.smoke.U.uAmb.value.set(look.hemi.s).multiplyScalar(look.hemi.i*.85);fx.smoke.U.uSunC.value.set(look.sun.c).multiplyScalar(look.sun.i*.36);
 const treeBox=[];W.boxes.forEach(b=>{if(b.tree>=0)treeBox[b.tree]=b;});
 const nadeGeo=new THREE.SphereGeometry(.06,10,8),nadeMat=new THREE.MeshStandardMaterial({color:0x4a5034,roughness:.6});
 const projGeo=new THREE.CylinderGeometry(.07,.07,.9,6);projGeo.rotateX(PI/2);const projMat=new THREE.MeshBasicMaterial({color:new THREE.Color(5,3.2,1.6)});
@@ -58,7 +58,7 @@ const imp=new THREE.InstancedMesh(impGeo,new THREE.MeshStandardMaterial({color:0
 const busts=[0,1].map(t=>{const m=new THREE.InstancedMesh(makeBust(t?'enemy':'ally'),t?KIT.mats.B:KIT.mats.A,24);m.count=0;m.frustumCulled=false;m.visible=false;m.name='crewBust';scene.add(m);return m;}),bustM=new THREE.Matrix4(),bustS=new V(1,1,1),bustP=new V(),bustQ=new THREE.Quaternion();
 
 /* ================= shared context ================= */
-const G={THREE,scene,cam,fx,snd,TX,W,actors:[],vehicles:[],points:[],player:null,time:0,diff:DIFF[1],diffI:1,noises:[],pathBudget:4,app:'menu',over:null,nades:[],proj:[],kits:[],tmpC:[],objLoad:[[0,0,0,0,0],[0,0,0,0,0]],
+const G={orders:[null,null],orderT:[0,0],THREE,scene,cam,fx,snd,TX,W,actors:[],vehicles:[],points:[],player:null,time:0,diff:DIFF[1],diffI:1,noises:[],pathBudget:4,app:'menu',over:null,nades:[],proj:[],kits:[],tmpC:[],objLoad:[[0,0,0,0,0],[0,0,0,0,0]],
  tickets:[300,300],maxTickets:300,clock:720,bleed:[0,0],deploy:false,spawnSel:'hq',viewPos:new V(),viewYaw:0,aimPt:new V(),reticle:{pt:new V(),sq:false},capPoint:null,oobT:0,stats:{kills:[0,0],dmg:[0,0],caps:0,vkills:0}};
 window.__G=G;
 const opt={diff:1,len:1,sens:1,vol:.8,cls:'assault',wsel:{}};G.saveOpt=stored('pxd_warfront_opt',opt);if(!CLASSES[opt.cls])opt.cls='assault';
@@ -139,10 +139,14 @@ G.damage=damage;
 // a soldier goes down: kill credit + ticket now, revivable for a while
 function account(v,att,info){v.stats.deaths++;G.tickets[v.team]=Math.max(0,G.tickets[v.team]-1);const head=info.part==='head';
  if(att&&att!==v&&att.team!==v.team){att.stats.kills++;G.stats.kills[att.team]++;if(head)att.stats.heads++;award(att,100+(head?50:0),head?'HEADSHOT':'KILL');if(att.isPlayer){HUD.killConfirm(G,v,head?'HEADSHOT':'ELIMINATED');snd.play('killc');}
+  {const o=G.orders[att.team],ap=att.veh?att.veh.p:att.pos;if(o&&Math.hypot(ap.x-o.x,ap.z-o.z)<o.r*1.2)award(att,25,o.own===att.team?'OBJECTIVE DEFENCE':'OBJECTIVE ATTACK');}
+  if(att.isPlayer){att.mkN=G.time-(att.mkT??-99)<4.5?(att.mkN||1)+1:1;att.mkT=G.time;att.streak=(att.streak||0)+1;att.stats.streak=Math.max(att.stats.streak||0,att.streak);
+   if(att.mkN>=2){const lab=['DOUBLE KILL','TRIPLE KILL','QUAD KILL'][att.mkN-2]||'MULTI KILL';award(att,30*att.mkN,lab);HUD.banner(G,lab,'',att.mkN>2?'#ffb03a':'#ffd86a',1.3);}
+   else if(att.streak%5===0){award(att,50*att.streak/5,'KILL STREAK');HUD.banner(G,`${att.streak} KILL STREAK`,'UNSTOPPABLE','#ffd86a',1.6);}}
   if(v.spotT>G.time)for(const b of G.actors)if(b.isPlayer&&b.team===att.team&&b.lastSpot===v.id&&b!==att)award(b,25,'SPOT ASSIST');}
  for(const[id,d]of v.dmgBy){if(att&&id===att.id||d<25)continue;const b=G.actors.find(x=>x.id===id);if(b&&b.team!==v.team){b.stats.assists++;award(b,40,'ASSIST');}}
  HUD.feed(G,att,v,info.wname||'',head);}
-function down(v,att,info){if(v.veh)exitVehicle(v,true);v.downed=true;v.hp=0;v.downT=v.isPlayer?14:11;v.reviver=null;v.reloadT=0;account(v,att,info);if(v.rig){const f=tv.set(Math.sin(v.yaw),0,Math.cos(v.yaw));v.rig.dieDir=info.dir&&f.dot(info.dir)>0?-1:1;v.rig.flash.visible=false;}
+function down(v,att,info){if(v.isPlayer)v.streak=0;if(v.veh)exitVehicle(v,true);v.downed=true;v.hp=0;v.downT=v.isPlayer?14:11;v.reviver=null;v.reloadT=0;account(v,att,info);if(v.rig){const f=tv.set(Math.sin(v.yaw),0,Math.cos(v.yaw));v.rig.dieDir=info.dir&&f.dot(info.dir)>0?-1:1;v.rig.flash.visible=false;}
  if(v.isPlayer){P.cook=-1;P.adsV=0;P.attackerPos=att&&att.pos?att.pos.clone():null;HUD.dead(G,'down',att,info.wname);}}
 function die(v,att,info,fresh){if(!v.alive)return;if(!v.downed)account(v,att,info);v.downed=false;v.alive=false;v.hp=0;v.deadT=0;v.respawnT=rr(7.5,10.5);v.reviver=null;if(v.veh)exitVehicle(v,true);
  if(v.rig&&fresh!==undefined){const f=tv.set(Math.sin(v.yaw),0,Math.cos(v.yaw));if(!v.rig.die)v.rig.dieDir=info.dir&&f.dot(info.dir)>0?-1:1;v.rig.flash.visible=false;}
@@ -153,11 +157,21 @@ G.revive=(m,b)=>{if(!b.downed)return;b.downed=false;b.hp=b.maxHp*.65;b.prot=G.ti
 // vehicles take damage by kind: bullet (armour-scaled), blast, ap (direct rocket / shell hit, rear armour weaker)
 function vehDamage(v,dm,att,kind,dir){if(!v.alive||!(G.app==='play'||G.app==='menu'))return;let m=kind==='bullet'?v.S.armor.bullet:kind==='blast'?v.S.armor.blast:1;
  if(kind==='ap'&&v.kind==='tank'&&dir){const f=v.fwd(tv3);if(f.x*dir.x+f.z*dir.z>.45)m*=1.45;}dm*=m;if(dm<=0)return;if(v.god)return;
- v.hp-=dm;v.lastHitBy=att;v.lastHitT=G.time;v.burn=1;if(att)G.stats.dmg[att.team]+=dm;
+ v.hp-=dm;v.lastHitBy=att;v.lastHitT=G.time;v.burn=1;zoneHit(v,dm,att,kind,dir);if(att)G.stats.dmg[att.team]+=dm;
  for(const s of v.seats)if(s){if(s.ai&&att&&att.team!==v.team){s.ai.lastAttacker=att;s.ai.hurtT=G.time;}if(s.isPlayer){HUD.hurt(G,att?(att.veh?att.veh.p:att.pos):null,dm*.5);P.shake=Math.max(P.shake,Math.min(1,dm/120));if(kind!=='bullet')snd.play('hurt');}}
  if(att&&att.isPlayer){HUD.hitmark(false,v.hp<=0);snd.play('hit');}
  if(v.hp<=0)destroyVehicle(v,att);}
-function destroyVehicle(v,att){const crew=v.seats.filter(Boolean);v.wreck();const p=tv.copy(v.p);p.y+=1.4;fx.explode(p.clone(),1.6,true);fx.smokeCloud(v.p.clone(),10);
+// damage zones (tank + jeep): heavy hits from the rear wreck the engine, flank hits break tracks/wheels, others jam the turret.
+// Each zone degrades the vehicle (speed, steering, traverse) until an engineer repairs it.
+const ZN={mob:['TRACKS','WHEELS'],eng:['ENGINE','ENGINE'],tur:['TURRET RING','GUN MOUNT']};
+function zoneHit(v,dm,att,kind,dir){if(kind==='bullet'||!v.sys||v.kind==='heli'||v.kind==='jet')return;const f=v.fwd(tv3),l=dir?Math.hypot(dir.x,dir.z)||1:1,d=dir?(f.x*dir.x+f.z*dir.z)/l:0;
+ let z=d>.45?'eng':d<-.6?(Math.random()<.55?'tur':'mob'):(Math.random()<.65?'mob':'tur');if(kind==='blast'&&Math.random()<.5)z='mob';
+ const b=v.sys[z];v.sys[z]=Math.max(0,b-dm/(v.S.hp*(v.kind==='tank'?.32:.4)));if(!(b>0&&v.sys[z]===0))return;const nm=ZN[z][v.kind==='tank'?0:1]+(z==='eng'?' DAMAGED':z==='mob'?' DISABLED':' JAMMED');
+ if(z==='eng')fx.column(tv.copy(v.p).setY(v.p.y+1.5),14,.6,false);
+ if(att&&att.isPlayer&&att.team!==v.team){HUD.ann(G,'CRITICAL HIT · '+nm,1.8);award(att,40,'DISABLED '+ZN[z][v.kind==='tank'?0:1]);}
+ for(const s of v.seats)if(s&&s.isPlayer){HUD.ann(G,nm+' · GET AN ENGINEER',2.6);snd.play('lost');}}
+G.vehBroken=v=>!!v.sys&&(v.sys.mob<1||v.sys.eng<1||v.sys.tur<1);
+function destroyVehicle(v,att){const crew=v.seats.filter(Boolean);v.wreck();const p=tv.copy(v.p);p.y+=1.4;fx.explode(p.clone(),1.6,true);fx.smokeCloud(v.p.clone(),10,.32);fx.column(tv.copy(v.p).setY(v.p.y+(v.kind==='tank'?1.6:.9)),30,v.kind==='tank'?1.3:1);
  if(att&&att.team!==v.team){att.stats.vkills++;G.stats.vkills++;award(att,200,'VEHICLE DESTROYED');if(att.isPlayer)HUD.killConfirm(G,VSPEC[v.kind].name,'DESTROYED');}
  HUD.feed(G,att,{name:VSPEC[v.kind].name,team:v.team},att&&att.veh?VSPEC[att.veh.kind].name:'',false);
  for(const a of crew)die(a,att,{wname:VSPEC[v.kind].name},true);explode(p.clone(),att,'wreck',null,v);v.vel.multiplyScalar(.3);}
@@ -195,7 +209,7 @@ G.spot=(a,b)=>{b.spotT=G.time+8;};
 G.near=()=>G.actors;
 G.dropKit=(a,kind)=>{const old=G.kits.findIndex(k=>k.owner===a);if(old>=0){scene.remove(G.kits[old].m);G.kits.splice(old,1);}const m=new THREE.Mesh(kitGeo,kitMats[kind]);if(kind==='med'){const c=kitCross.clone();c.position.y=.16;m.add(c);const c2=c.clone();c2.rotation.y=PI/2;m.add(c2);}
  const x=a.pos.x+Math.sin(a.yaw)*.9,z=a.pos.z+Math.cos(a.yaw)*.9;m.position.set(x,W.ground(x,z,a.pos.y+.5,.2)+.15,z);m.rotation.y=a.yaw;m.castShadow=true;scene.add(m);G.kits.push({kind,owner:a,team:a.team,p:m.position,m,t:16,tick:0,given:new Map()});if(a.rig)a.rig.throwAnim();};
-G.repair=(a,v,dt)=>{if(!v.alive||v.hp>=v.S.hp)return;v.hp=Math.min(v.S.hp,v.hp+60*dt);a.repAcc=(a.repAcc||0)+60*dt;if(a.repAcc>120){a.repAcc=0;award(a,20,'REPAIR');}
+G.repair=(a,v,dt)=>{if(!v.alive||v.hp>=v.S.hp&&!G.vehBroken(v))return;v.hp=Math.min(v.S.hp,v.hp+60*dt);if(v.sys)for(const k in v.sys){const was=v.sys[k];v.sys[k]=Math.min(1,was+dt*.22);if(was<1&&v.sys[k]>=1&&a.isPlayer)HUD.ann(G,ZN[k][v.kind==='tank'?0:1]+' REPAIRED',1.4);}a.repAcc=(a.repAcc||0)+60*dt;if(a.repAcc>120){a.repAcc=0;award(a,20,'REPAIR');}
  if(Math.random()<dt*14){const p=tv.copy(v.p);p.y+=1.2;p.x+=rr(-1,1);p.z+=rr(-1,1);fx.sparks.burst(p,4,3,[new THREE.Color(4,3,1.6)],.04,.3,{grav:9.8,drag:2});}if(a.isPlayer&&Math.random()<dt*10)snd.play('repair');};
 
 /* ================= projectiles ================= */
@@ -286,7 +300,7 @@ function updateVehicles(dt){for(const v of G.vehicles){
   if(v.alive&&v.hp<v.S.hp*.35&&Math.random()<dt*14){const p=tv.copy(v.p);p.y+=v.kind==='tank'?2.6:1.6;fx.smoke.emit(p.x,p.y,p.z,rr(-.3,.3),rr(1.5,2.5),rr(-.3,.3),.18,.17,.16,1.4,2.6,0,.4,.8);if(v.hp<v.S.hp*.18&&Math.random()<.4)fx.sparks.burst(p,2,2,[new THREE.Color(4,1.8,.4)],.4,.4,{up:true,grav:-2});}
   if(v.kind!=='jet'&&v.idleT>90&&Math.hypot(v.p.x-v.home.x,v.p.z-v.home.z)>25){v.restore();}
   if(!isFinite(v.p.x+v.p.y+v.p.z))v.restore();}
- else{v.step(dt,G);if(v.wreckT<12&&Math.random()<dt*10){fx.smoke.emit(v.p.x+rr(-1,1),v.p.y+1.8,v.p.z+rr(-1,1),rr(-.3,.3),rr(2,3),rr(-.3,.3),.1,.1,.1,2,3.4,0,.4,.8);}
+ else{v.step(dt,G);
   if(v.respawnT<=0&&v.wreckT>14&&!G.vehicles.some(u=>u!==v&&u.alive&&Math.hypot(u.p.x-v.home.x,u.p.z-v.home.z)<6)){v.restore();}}
  v.sync(dt,G.time);}}
 
@@ -302,6 +316,7 @@ function updateConquest(dt){let c0=0,c1=0;G.capPoint=null;const live=G.app==='pl
   if(p.own===0)c0++;else if(p.own===1)c1++;
   const f=p.flag.userData;const col=p.own===0?0x3a86e8:p.own===1?0xd8382c:0xe8e4dc;if(f._c!==col){f._c=col;f.mat.color.set(col);f.ring.material.color.set(p.own===0?0x4aa8ff:p.own===1?0xff3b30:0xffffff);}
   if(f.cloth.visible&&p.flag.position.distanceTo(cam.position)<300)waveFlag(p.flag,G.time+p.i,Math.max(.12,Math.abs(p.prog)));}
+ updateOrders();
  const df=c0-c1,b=Math.abs(df)>0?.07+.065*Math.abs(df)+(df>0&&!c1||df<0&&!c0?.12:0):0;G.bleed=[df<0?b:0,df>0?b:0];
  for(let t=0;t<2;t++)G.tickets[t]=Math.max(0,G.tickets[t]-G.bleed[t]*dt*G.bleedK);
  if(G.app==='menu'){for(let t=0;t<2;t++)if(G.tickets[t]<40)G.tickets[t]=G.maxTickets;return;}
@@ -309,10 +324,18 @@ function updateConquest(dt){let c0=0,c1=0;G.capPoint=null;const live=G.app==='pl
  if(G.tickets[0]<=0||G.tickets[1]<=0){const w=G.tickets[0]>0;endMatch(w?'win':'lose',w?'VICTORY':'DEFEAT',w?'KORVAN BLOC RAN OUT OF TICKETS':'OUR ARMY RAN OUT OF TICKETS');}
  else if(G.clock<=0){const a=Math.ceil(G.tickets[0]),b2=Math.ceil(G.tickets[1]);endMatch(a>b2?'win':a<b2?'lose':'draw',a>b2?'VICTORY':a<b2?'DEFEAT':'STALEMATE','TIME LIMIT REACHED');}
  if(!G.warned&&Math.min(...G.tickets)<G.maxTickets*.2){G.warned=1;const low=G.tickets[0]<G.tickets[1]?0:1;HUD.radio(G,'HQ',low?'Korvan tickets are almost gone. Push them out!':'We are almost out of reinforcements. Take those flags!',true);snd.play('radio');}}
-function event(p,kind,team,by){const mine=team===0;
- if(kind==='cap'){for(const a of G.actors)if(a.team===team&&a.alive&&!a.downed&&Math.hypot((a.veh?a.veh.p:a.pos).x-p.x,(a.veh?a.veh.p:a.pos).z-p.z)<p.r){a.stats.caps++;award(a,150,'FLAG CAPTURED');}
+// squad orders: each side's commander names one flag (the nearest one it does not hold to its own front line, or the
+// most threatened one when it holds them all). Bots lean towards it; capturing / neutralising it or fighting on it pays a bonus.
+function updateOrders(){for(let t=0;t<2;t++){if(G.time<G.orderT[t])continue;G.orderT[t]=G.time+40;const own=G.points.filter(p=>p.own===t);let fx0=0,fz0=0;
+  if(own.length){for(const p of own){fx0+=p.x;fz0+=p.z;}fx0/=own.length;fz0/=own.length;}else{fx0=HQ[t].x;fz0=HQ[t].z;}
+  let best=null,bs=1e9,cs=1e9;const cur=G.orders[t];for(const p of G.points){let s;if(p.own!==t)s=Math.hypot(p.x-fx0,p.z-fz0)-(p.own===-1?70:0)-(p.contest?25:0);else s=own.length===G.points.length?Math.hypot(p.x-HQ[1-t].x,p.z-HQ[1-t].z)-(p.contest?400:0)+2000:1e8;if(p===cur)cs=s;if(s<bs){bs=s;best=p;}}
+  // keep the standing order unless it is done (taken and quiet) or something clearly better came up
+  if(cur&&!(cur.own===t&&!cur.contest&&best&&best.own!==t)&&bs>cs-60)best=cur;
+  if(best&&best!==G.orders[t]){G.orders[t]=best;if(t===0&&G.app==='play'&&!G.over){const atk=best.own!==0;HUD.radio(G,'SQUAD LEAD',`${atk?'New orders: take':'Hold'} ${best.id} · ${best.name}. Bonus for the squad on the objective.`,false);snd.play('radio');}}}}
+function event(p,kind,team,by){const mine=team===0;G.orderT[0]=Math.min(G.orderT[0],G.time+3);G.orderT[1]=Math.min(G.orderT[1],G.time+3);
+ if(kind==='cap'){for(const a of G.actors)if(a.team===team&&a.alive&&!a.downed&&Math.hypot((a.veh?a.veh.p:a.pos).x-p.x,(a.veh?a.veh.p:a.pos).z-p.z)<p.r){a.stats.caps++;award(a,150,'FLAG CAPTURED');if(G.orders[team]===p)award(a,100,'ORDER BONUS');}
   if(G.app==='play'){HUD.banner(G,mine?`${p.id} CAPTURED`:`${p.id} LOST`,p.name,mine?'#7cc0ff':'#ff6a5e',2.2);snd.play(mine?'capture':'lost');HUD.radio(G,'HQ',mine?`${p.name} is ours. Hold it.`:`Korvan have taken ${p.name}.`,true);}}
- else if(kind==='neutral'){for(const a of G.actors)if(a.team===by&&a.alive&&!a.downed&&Math.hypot((a.veh?a.veh.p:a.pos).x-p.x,(a.veh?a.veh.p:a.pos).z-p.z)<p.r)award(a,75,'FLAG NEUTRALIZED');
+ else if(kind==='neutral'){for(const a of G.actors)if(a.team===by&&a.alive&&!a.downed&&Math.hypot((a.veh?a.veh.p:a.pos).x-p.x,(a.veh?a.veh.p:a.pos).z-p.z)<p.r){award(a,75,'FLAG NEUTRALIZED');if(G.orders[by]===p)award(a,50,'ORDER BONUS');}
   if(G.app==='play'&&team===0)HUD.ann(G,`WE ARE LOSING ${p.id} · ${p.name}`,2.4);}}
 
 /* ================= input ================= */
@@ -558,16 +581,21 @@ const AT={t:0,tgt:null,a:0,r:20,h:6};
 function pickAttract(){const c=[];for(const v of G.vehicles)if(v.alive&&v.occupied())c.push({v,w:v.kind==='heli'||v.kind==='tank'?3:2});for(const a of G.actors)if(a.alive&&!a.veh&&!a.downed&&a.ai&&a.ai.seen)c.push({a,w:1});for(const p of G.points)if(p.contest)c.push({p,w:2});
  if(!c.length){AT.tgt={p:G.points[2]};}else{let s=c.reduce((q,x)=>q+x.w,0)*Math.random();for(const x of c){s-=x.w;if(s<=0){AT.tgt=x;break;}}AT.tgt=AT.tgt||c[0];}
  AT.t=AT.tgt.p?11:8;AT.a=Math.random()*PI*2;AT.r=AT.tgt.p?rr(34,48):AT.tgt.v?(AT.tgt.v.kind==='jet'?30:rr(16,22)):rr(7,10);AT.h=AT.tgt.p?rr(12,20):AT.tgt.v?rr(4,8):rr(1.6,3);}
-function attractCam(dt){AT.t-=dt;const T=AT.tgt;if(AT.t<=0||!T||T.v&&!T.v.alive||T.a&&(!T.a.alive||T.a.veh))pickAttract();const t=AT.tgt;AT.a+=dt*(t.p?.05:.12);
- const q=t.v?t.v.p:t.a?t.a.pos:new V(t.p.x,t.p.y,t.p.z);let x,z,y;if(t.v&&t.v.kind==='jet'){t.v.fwd(tv);x=q.x-tv.x*AT.r+Math.cos(AT.a)*6;z=q.z-tv.z*AT.r+Math.sin(AT.a)*6;y=q.y-tv.y*AT.r+5;}else{x=q.x+Math.cos(AT.a)*AT.r;z=q.z+Math.sin(AT.a)*AT.r;y=q.y+AT.h;}
- y=Math.max(y,W.height(x,z)+1.6);cam.position.lerp(tv2.set(x,y,z),G.camSnap?1:Math.min(1,dt*2.5));G.camSnap=false;cam.fov=55;cam.updateProjectionMatrix();cam.lookAt(q.x,q.y+(t.p?3:1.4),q.z);G.viewPos.copy(cam.position);G.viewYaw=cam.rotation.y+PI;}
+// menu backdrop: slow cinematic dollies over open ground (bridge crossing, river valley, village, farmland), golden light behind;
+// a lens-clearance pass lifts the camera over any tree it would pass through so no trunk or foliage card fills the frame
+const VISTAS=[{a:[-46,15,62],b:[38,13,64],l:[0,4,10.9]},{a:[170,62,140],b:[120,58,196],l:[0,6,0]},{a:[-236,24,232],b:[-150,22,252],l:[-178,6,182]},{a:[60,20,-60],b:[-20,26,-92],l:[0,4,10.9]},{a:[150,16,214],b:[214,18,206],l:[186,6,168]}];
+function lensClear(x,y,z){let lift=0;for(const t of W.trees){if(!t.alive)continue;const d=Math.hypot(t.x-x,t.z-z);if(d<14){const top=t.y+9.5*t.s+2+(14-d)*.15;if(y<top)lift=Math.max(lift,top-y);}}return y+lift;}
+function attractCam(dt){AT.t-=dt;if(AT.t<=0||!AT.vista){AT.vi=((AT.vi??-1)+1)%VISTAS.length;AT.vista=VISTAS[AT.vi];AT.t=AT.dur=14;G.camSnap=true;}
+ const v=AT.vista,k=1-AT.t/AT.dur,e=k*k*(3-2*k);const x=v.a[0]+(v.b[0]-v.a[0])*e,z=v.a[2]+(v.b[2]-v.a[2])*e,h=v.a[1]+(v.b[1]-v.a[1])*e;
+ const y=lensClear(x,Math.max(W.height(x,z),WL)+h,z);cam.position.lerp(tv2.set(x,y,z),G.camSnap?1:Math.min(1,dt*2.5));G.camSnap=false;cam.fov=50;cam.updateProjectionMatrix();
+ cam.lookAt(v.l[0],W.height(v.l[0],v.l[2])+v.l[1],v.l[2]);G.viewPos.copy(cam.position);G.viewYaw=cam.rotation.y+PI;}
 function deployCam(dt){const o=G.spawnOptions().find(q=>q.id===G.spawnSel)||{x:HQ[0].x,z:HQ[0].z};AT.a+=dt*.06;const x=o.x+Math.cos(AT.a)*60,z=o.z+Math.sin(AT.a)*60,y=W.height(o.x,o.z)+38;cam.position.lerp(tv.set(x,Math.max(y,W.height(x,z)+10),z),Math.min(1,dt*1.5));cam.fov=55;cam.updateProjectionMatrix();cam.lookAt(o.x,W.height(o.x,o.z),o.z);}
 function updateShadow(){const c=cam.position,fwd=tv.set(0,0,-1).applyQuaternion(cam.quaternion);fwd.y=0;if(fwd.lengthSq()>1e-4)fwd.normalize();const ext=P&&P.veh?90:gfx>=2?48:60;
  const tx=Math.round((c.x+fwd.x*ext*.5)*2)/2,tz=Math.round((c.z+fwd.z*ext*.5)*2)/2,ty=W.height(tx,tz);sun.target.position.set(tx,ty,tz);sun.position.set(tx,ty,tz).addScaledVector(sunDir,200);
  const sc=sun.shadow.camera;if(sc.right!==ext){Object.assign(sc,{left:-ext,right:ext,top:ext,bottom:-ext,near:1,far:420});sc.updateProjectionMatrix();}sky.position.copy(c);}
 
 /* ================= match flow ================= */
-function resetMatchState(len){G.time=0;G.over=null;G.deploy=false;G.warned=0;G.oobT=0;fx.clear();for(const n of G.nades)scene.remove(n.m);G.nades=[];for(let i=G.proj.length-1;i>=0;i--)remProj(i);for(const k of G.kits)scene.remove(k.m);G.kits=[];G.noises=[];
+function resetMatchState(len){G.time=0;G.orders=[null,null];G.orderT=[0,0];G.over=null;G.deploy=false;G.warned=0;G.oobT=0;fx.clear();if(gfx>0)for(const c of (W.craters||[]).filter(c=>Math.abs(c.z)<130&&Math.abs(c.x)>40).sort((a,b)=>Math.abs(a.z)-Math.abs(b.z)).slice(0,3))fx.column(new V(c.x,W.height(c.x,c.z)+.2,c.z),1e9,1.5);for(const n of G.nades)scene.remove(n.m);G.nades=[];for(let i=G.proj.length-1;i>=0;i--)remProj(i);for(const k of G.kits)scene.remove(k.m);G.kits=[];G.noises=[];
  for(const p of G.points){p.own=-1;p.prog=0;p.contest=false;p.flag.userData._c=null;}for(const v of G.vehicles){v.restore();v.claim=null;v.idleT=0;v.spotT=0;}
  G.maxTickets=len.k;G.tickets=[len.k,len.k];G.clock=len.t;G.bleedK=len.k/300*(720/len.t);G.stats={kills:[0,0],dmg:[0,0],caps:0,vkills:0};resetWorld();}
 function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();for(const k of['diff','len','sens','vol'])if(o[k]!==undefined)opt[k]=o[k];if(o.cls)G.setClass(o.cls);G.saveOpt();snd.init();snd.setVol(opt.vol);
@@ -606,11 +634,13 @@ const render={vis(dt){updateViewmodel(dt);updateCamera(dt);updateShadow();}};
 class VMPass extends Pass{constructor(){super();this.needsSwap=false;}render(r,wb,rb){if(!VM.root.visible)return;const ac=r.autoClear;r.autoClear=false;r.setRenderTarget(this.renderToScreen?null:rb);r.clearDepth();r.render(vmScene,vmCam);r.autoClear=ac;}}
 const POST={bloom:.34,bloomThreshold:.95,bloomRadius:.42,vignette:.24,grain:.02,aoStrength:.7};
 function applyQuality(q){gfx=q;sun.castShadow=q>0;const ms=q>=2?2048:1536;if(sun.shadow.map&&sun.shadow.mapSize.x!==ms){sun.shadow.map.dispose();sun.shadow.map=null;}sun.shadow.mapSize.set(ms,ms);R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));fxStack=null;
- cam.far=q>=1?2600:1900;buildScene();}
+ cam.far=q>=1?2600:1900;fx.rich=q>0?1:0;buildScene();}
 G.applyQuality=applyQuality;bindQualityKey(()=>gfx,q=>applyQuality(q));
 function renderFrame(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio()))R.setSize(w,h,false);
- cam.aspect=w/h;cam.updateProjectionMatrix();vmCam.aspect=w/h;vmCam.updateProjectionMatrix();fx.sparks.U.uScale.value=fx.smoke.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*PI/360));
- const key=w+'x'+h;if(!fxStack){fxStack=cinematic(R,scene,cam,{...POST,exposure:look.exp,tint:look.tint,saturation:look.sat,quality:gfx});if(fxStack.composer)fxStack.composer.insertPass(new VMPass(),fxStack.ao?2:1);fxSize='';}
+ cam.aspect=w/h;cam.updateProjectionMatrix();vmCam.aspect=w/h;vmCam.updateProjectionMatrix();fx.view(cam,sunDir);fx.sparks.U.uScale.value=fx.fire.U.uScale.value=fx.smoke.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*PI/360));
+ const key=w+'x'+h;if(!fxStack){fxStack=cinematic(R,scene,cam,{...POST,exposure:look.exp,tint:look.tint,saturation:look.sat,quality:gfx});if(fxStack.composer)fxStack.composer.insertPass(new VMPass(),fxStack.ao?2:1);fxSize='';
+  // cut-out foliage, particles and glass stay out of the AO G-buffer (its override material ignores alphaTest, so cards would show as boxes)
+  if(fxStack.ao){const ov=fxStack.ao.overrideVisibility.bind(fxStack.ao);fxStack.ao.overrideVisibility=()=>{ov();scene.traverse(o=>{const m=o.material;if(o.visible&&(o.isPoints||(m&&!Array.isArray(m)&&(m.alphaTest>0||m.transparent))))o.visible=false;});};}}
  if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);}
  if(fxStack.grade){const hp=P&&G.app==='play'&&P.alive?(P.downed?0:P.hp/P.maxHp):1;fxStack.grade.uniforms.sat.value=look.sat*(.4+.6*Math.min(1,hp*1.6));}
  if(fxStack.composer)fxStack.render();else{R.autoClear=true;R.render(scene,cam);R.autoClear=false;R.clearDepth();if(VM.root.visible)R.render(vmScene,vmCam);R.autoClear=true;}}
@@ -622,7 +652,7 @@ applyQuality(gfx);toMenu();
 let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;try{step(dt);renderFrame();}catch(e){console.error(e);}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hook ================= */
-window.WARFRONT={get state(){return G.app==='play'?(G.over?'end':G.deploy?'deploy':!P.alive?'dead':P.downed?'down':P.veh?'vehicle':'live'):G.app;},get app(){return G.app;},step,render:renderFrame,start,toMenu,G,
+window.WARFRONT={get world(){return S;},get state(){return G.app==='play'?(G.over?'end':G.deploy?'deploy':!P.alive?'dead':P.downed?'down':P.veh?'vehicle':'live'):G.app;},get app(){return G.app;},step,render:renderFrame,start,toMenu,G,
  get player(){return P;},get actors(){return G.actors;},get bots(){return G.actors.filter(a=>!a.isPlayer);},get vehicles(){return G.vehicles;},get tickets(){return G.tickets.map(Math.ceil);},get clock(){return G.clock;},
  get points(){return G.points.map(p=>({id:p.id,name:p.name,own:p.own,prog:+p.prog.toFixed(2),n0:p.n0,n1:p.n1}));},get score(){return P?P.stats.score:0;},get stats(){return P?P.stats:null;},get lastAward(){return G.lastAward;},get matchStats(){return G.stats;},
  setClock(s){G.clock=s;},setTickets(a,b){G.tickets=[a,b];},deploy(cls,spawn){return G.deployNow({cls,spawn,force:true});},

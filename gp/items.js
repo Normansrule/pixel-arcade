@@ -8,8 +8,8 @@ import {orbMesh,peelMesh,bombMesh} from './models.js';
 
 const tv=new V();
 export class Items{
- constructor(scene,G){this.scene=scene;this.G=G;this.list=[];this.orbVis=new Map();this.q={};}
- clear(){for(const p of this.list)this.scene.remove(p.m);this.list=[];for(const[k,a]of this.orbVis)a.forEach(m=>this.scene.remove(m));this.orbVis.clear();}
+ constructor(scene,G){this.scene=scene;this.G=G;this.list=[];this.orbVis=new Map();this.trailVis=new Map();this.q={};}
+ clear(){for(const p of this.list)this.scene.remove(p.m);this.list=[];for(const[k,a]of this.orbVis)a.forEach(m=>this.scene.remove(m));this.orbVis.clear();for(const[k,m]of this.trailVis)this.scene.remove(m);this.trailVis.clear();}
  ground(x,z,y){const G=this.G;if(G.A)return{ok:true,inside:Math.hypot(x,z)<G.A.R-1,y:arenaHeight(x,z,G.A.R),flag:0,r:Math.hypot(x,z)};const q=query(G.C,x,z,y,this.q);return q;}
  // ---------- pickups ----------
  pickups(k,dt){const G=this.G,W=G.W;if(k.respawn>0||k.out)return;
@@ -74,6 +74,8 @@ export class Items{
    // hits on karts
    if(p.life>0)for(const o of G.karts){if(o.out||o.respawn>0)continue;if(o===p.owner&&p.age<(p.type==='peel'?.6:.45))continue;const r=(o.shrink>0?.9:1.5)+(p.type==='bomb'?.8:.6);
     const dx=o.p.x-p.p.x,dz=o.p.z-p.p.z;if(dx*dx+dz*dz>r*r||Math.abs(o.p.y-p.p.y)>2.6)continue;
+    // an item held out behind the kart soaks up one projectile arriving from behind
+    if(o.trail&&p.type!=='bomb'&&p.owner!==o){const fx=Math.sin(o.yaw),fz=Math.cos(o.yaw);if((p.p.x-o.p.x)*fx+(p.p.z-o.p.z)*fz<.4){o.itemN--;if(o.itemN<=0){o.item=null;o.itemN=0;}o.trail=null;p.life=0;G.ev('block',o,p.p);break;}}
     // orbiting orbs block projectiles
     if(o.orbs>0&&p.type!=='bomb'){o.orbs--;p.life=0;G.ev('block',o,p.p);break;}
     if(p.type==='bomb'){this.explode(p);break;}
@@ -83,6 +85,10 @@ export class Items{
   // projectile vs projectile
   for(let i=0;i<this.list.length;i++)for(let j=i+1;j<this.list.length;j++){const a=this.list[i],b=this.list[j];if(a.life<=0||b.life<=0)continue;if(a.p.distanceToSquared(b.p)<1.6){if(a.type==='bomb')this.explode(a);else if(b.type==='bomb')this.explode(b);else{a.life=0;b.life=0;G.ev('pop',a.p);}}}
   this.list=this.list.filter(p=>{if(p.life<=0){this.scene.remove(p.m);return false;}return true;});
+  // items trailed behind karts
+  for(const k of G.karts){let m=this.trailVis.get(k);const want=k.trail&&k.respawn<=0?k.trail:null;if(m&&m.userData.kind!==want){this.scene.remove(m);m=null;this.trailVis.delete(k);}
+   if(want&&!m){m=want==='bomb'?bombMesh():peelMesh();m.userData.kind=want;m.scale.setScalar(.8);this.scene.add(m);this.trailVis.set(k,m);}
+   if(m){const fx=Math.sin(k.yaw),fz=Math.cos(k.yaw);m.position.set(k.p.x-fx*2.3,k.p.y+(want==='bomb'?.6:.15),k.p.z-fz*2.3);m.rotation.y=k.yaw;}}
   // orbiting orb visuals
   for(const k of G.karts){let a=this.orbVis.get(k);const n=k.respawn>0?0:k.orbs;if(!a){a=[];this.orbVis.set(k,a);}while(a.length<n){const m=orbMesh('orb');m.scale.setScalar(.75);this.scene.add(m);a.push(m);}while(a.length>n){this.scene.remove(a.pop());}
    k.orbA+=dt*4.5;a.forEach((m,i)=>{const ang=k.orbA+i*Math.PI*2/3;m.position.set(k.p.x+Math.cos(ang)*2.1,k.p.y+.9,k.p.z+Math.sin(ang)*2.1);m.userData.band.rotation.z+=dt*12;});}}

@@ -109,7 +109,7 @@ export function update(G,dt){if(st.banT>0){st.banT-=dt;if(st.banT<=0)$('banner')
  const T=G.tickets,MT=G.maxTickets;txt($('tf'),String(Math.ceil(T[0])),'tf');txt($('te'),String(Math.ceil(T[1])),'te');const w0=Math.round(100*T[0]/MT),w1=Math.round(100*T[1]/MT);
  if(st.c.w0!==w0){st.c.w0=w0;$('tfb').style.width=w0+'%';}if(st.c.w1!==w1){st.c.w1=w1;$('teb').style.width=w1+'%';}
  $('tkf').classList.toggle('bleed',G.bleed[0]>0);$('tke').classList.toggle('bleed',G.bleed[1]>0);txt($('clock'),mmss(G.clock),'clk');$('clock').style.color=G.clock<=60?'#ff3b30':'';
- if(st.flagEls)G.points.forEach((p,i)=>{const e=st.flagEls[i],c=ownCls(p.own)+(p.contest?' con':'');if(e._c!==c){e._c=c;e.className=c;}const d=Math.round(Math.hypot(p.x-P.pos.x,p.z-P.pos.z));if(e._d!==d){e._d=d;e.lastChild.textContent=d+'m';}});
+ if(st.flagEls)G.points.forEach((p,i)=>{const e=st.flagEls[i],c=ownCls(p.own)+(p.contest?' con':'')+(G.orders&&G.orders[0]===p?' ord':'');if(e._c!==c){e._c=c;e.className=c;}const d=Math.round(Math.hypot(p.x-P.pos.x,p.z-P.pos.z));if(e._d!==d){e._d=d;e.lastChild.textContent=d+'m';}});
  // capture bar
  const cp=G.capPoint;if(cp){$('cap').classList.add('on');const k=cp.prog;txt($('capt'),`${cp.id} · ${cp.name}`,'capt');const u=$('capb');u.style.left=k<0?(50+k*50)+'%':'50%';u.style.width=Math.abs(k)*50+'%';u.style.background=k>0?'#4aa8ff':'#ff3b30';
   txt($('caps'),cp.n0>cp.n1?(cp.own===0&&Math.abs(k)>=1?'SECURED':cp.own===1?'NEUTRALIZING':'CAPTURING')+` · ${cp.n0} v ${cp.n1}`:cp.n1>cp.n0?`LOSING · ${cp.n0} v ${cp.n1}`:cp.n0?`CONTESTED · ${cp.n0} v ${cp.n1}`:'','caps');}else $('cap').classList.remove('on');
@@ -127,7 +127,7 @@ export function update(G,dt){if(st.banT>0){st.banT-=dt;if(st.banT<=0)$('banner')
   html($('efrag'),'',  'ef');txt($('watt'),w.cls,'wa');}
  if(V){const S=R.VSPEC[V.kind];txt($('vname'),S.name,'vn');txt($('vsub'),S.cls+' · '+S.seats[P.seat],'vs');const vh=Math.round(cl(V.hp/S.hp,0,1)*100);if(st.c.vh!==vh){st.c.vh=vh;$('vhp').firstChild.style.width=vh+'%';$('vhp').classList.toggle('low',vh<30);}
   const spd=Math.round((V.kind==='heli'||V.kind==='jet'?Math.hypot(V.vel.x,V.vel.z,V.vy||0):Math.abs(V.v))*3.6),alt=Math.round(V.p.y-G.W.height(V.p.x,V.p.z));
-  html($('vrows'),`<span>SPD<b>${V.kind==='jet'?Math.round(V.speed*3.6):spd}</b></span>`+(V.kind==='heli'||V.kind==='jet'?`<span>ALT<b>${alt}</b></span>`:'')+`<span>HP<b>${Math.ceil(V.hp)}</b></span>`,'vr'+spd+alt+Math.ceil(V.hp));
+  html($('vrows'),`<span>SPD<b>${V.kind==='jet'?Math.round(V.speed*3.6):spd}</b></span>`+(V.kind==='heli'||V.kind==='jet'?`<span>ALT<b>${alt}</b></span>`:'')+`<span>HP<b>${Math.ceil(V.hp)}</b></span>`+(V.sys&&(V.kind==='tank'||V.kind==='jeep')?['mob','eng','tur'].map(k=>`<span class="z${V.sys[k]<=0?' dz':V.sys[k]<.5?' wz':''}">${k==='mob'?(V.kind==='tank'?'TRK':'WHL'):k==='eng'?'ENG':'TUR'}<b>${Math.round(V.sys[k]*100)}</b></span>`).join(''):''),'vr'+spd+alt+Math.ceil(V.hp)+(V.sys?Math.round(V.sys.mob*20)+'.'+Math.round(V.sys.eng*20)+'.'+Math.round(V.sys.tur*20):''));
   txt($('vw'),G.vehWeaponText(),'vw');}
  // reticles
  const cr=$('cross');const ret=G.reticle;
@@ -147,7 +147,7 @@ export function update(G,dt){if(st.banT>0){st.banT-=dt;if(st.banT<=0)$('banner')
   el.style.left=(innerWidth/2+Math.sin(-rel)*120)+'px';el.style.top=(innerHeight/2-Math.cos(-rel)*120)+'px';}if(st.nadeEls)for(let i=ni;i<st.nadeEls.length;i++)st.nadeEls[i].style.display='none';
  // world markers: flags, spotted enemies, downed allies
  const vp=G.viewPos;let mi=0;const mk=(x,y,z,cls,label,clamp,key)=>{const q=project(x,y,z,clamp);if(!q)return;if(cls.startsWith('flag')&&q[1]<150)q[1]=150;const el=pool(markEls,$('marks'),mi++);if(el._c!==cls){el._c=cls;el.className=cls;}el.style.display='';el.style.left=q[0]+'px';el.style.top=q[1]+'px';if(el._l!==key){el._l=key;el.innerHTML=label;}};
- for(const p of G.points){const d=Math.round(Math.hypot(p.x-vp.x,p.z-vp.z));if(d<p.r*.7&&!V)continue;mk(p.x,p.y+11,p.z,'flag '+ownCls(p.own),`<i></i><b>${p.id}</b>${d}m`,false,p.id+d+p.own);}
+ for(const p of G.points){const d=Math.round(Math.hypot(p.x-vp.x,p.z-vp.z));if(d<p.r*.7&&!V)continue;{const od=G.orders&&G.orders[0]===p;mk(p.x,p.y+11,p.z,'flag '+ownCls(p.own)+(od?' ord':''),`<i></i><b>${p.id}</b>${od?(p.own===0?'DEFEND ':'ATTACK '):''}${d}m`,false,p.id+d+p.own+od);}}
  for(const a of G.actors){if(!a.alive||a.isPlayer)continue;if(a.team===1&&a.spotT>G.time&&!a.downed){const d=a.pos.distanceTo(vp);if(d<350)mk(a.pos.x,a.pos.y+(a.veh?3.4:2.25),a.pos.z,'spot','<i></i>',false,'s');}
   else if(a.team===0&&a.downed){const d=a.pos.distanceTo(vp);if(d<(P.cls==='medic'?80:30))mk(a.pos.x,a.pos.y+1.1,a.pos.z,'rev',`<i></i>${P.cls==='medic'?'REVIVE ':''}${Math.round(d)}m`,P.cls==='medic'&&d<40,'r'+Math.round(d));}}
  for(const v of G.vehicles){if(!v.alive||v.team!==1||!(v.spotT>G.time))continue;mk(v.p.x,v.p.y+4.5,v.p.z,'spot','<i></i>',false,'s');}

@@ -38,12 +38,12 @@ export function pitchMaps(P,a,b){const k=`${P.size}`;if(C['pm'+k])return C['pm'+
  x.globalCompositeOperation='lighter';
  const scuff=(cx,cz,rx,rz,n,al)=>{for(let i=0;i<n;i++){const u=rr(),ang=rr()*6.283,d=Math.pow(u,.7);const px=X(cx+Math.cos(ang)*rx*d),py=Z(cz+Math.sin(ang)*rz*d),s=.6+rr()*2.2*(1-d);x.fillStyle=`rgba(${(al*(1-d*.8)*255)|0},0,0,1)`;x.fillRect(px-s/2,py-s/2,s,s);}};
  const L=P.L,W2=P.W;
- for(const s of[-1,1]){scuff(0,s*(L-.8),P.GW*.95,1.3,1300,.16);scuff(0,s*(L-2.4),P.GW*.55,2,700,.12);scuff(0,s*(L-P.SPOT),.9,.75,260,.22);
+ for(const s of[-1,1]){scuff(0,s*(L-.8),P.GW*.95,1.3,1300,.16);scuff(0,s*(L-2.4),P.GW*.55,2,700,.12);scuff(0,s*(L-P.SPOT),.75,.6,220,.12);scuff(0,s*(L-P.SPOT),1.4,1.6,160,.05);
   scuff(0,s*(L-P.SD*.6),P.GW*1.6,P.SD*.7,900,.05);
   for(const sx of[-1,1])scuff(sx*(W2-.1),s*(L-.1),1.1,1.1,140,.25);// corner arcs
   // assistant referee tracks just outside each touchline (one half each)
   for(let i=0;i<900;i++){const z=s*(rr()*L),xx=s*(W2+.8+(rr()-.5)*.9);const px=X(xx),py=Z(z);x.fillStyle=`rgba(${(30+rr()*40)|0},0,0,1)`;x.fillRect(px,py,1,1.5);}}
- scuff(0,0,.9,.9,400,.35);scuff(0,0,P.CR*.8,P.CR*.5,900,.06);
+ scuff(0,0,.7,.7,260,.13);scuff(0,0,1.5,1.5,200,.05);scuff(0,0,P.CR*.8,P.CR*.5,900,.06);
  x.globalCompositeOperation='source-over';
  const t=tex(c,{srgb:false,clamp:true});return C['pm'+k]=t;}
 // ---- goal net: knotted diamond mesh with alpha ----
