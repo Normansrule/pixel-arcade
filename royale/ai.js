@@ -1,10 +1,11 @@
 // STORM ROYALE — bot brains: pick a drop, glide in, loot houses (through the door), harvest, rotate with the storm,
 // fight with range-appropriate weapons, build cover when shot, heal when safe. Difficulty scales reaction, aim and building.
 import {cl,angDiff,lerp} from './util.js';
-import {GUNS,HEALS,gunValue} from './items.js';
+import {GUNS,HEALS,THROWS,gunValue} from './items.js';
 import {CELL} from './build.js';
 
-export const DIFF=[{n:'EASY',react:.9,err:.085,build:.22,view:65,burst:.45,dmg:.6,turn:4,strafe:.5},{n:'NORMAL',react:.55,err:.05,build:.55,view:95,burst:.62,dmg:.8,turn:7,strafe:.8},{n:'HARD',react:.28,err:.026,build:.9,view:125,burst:.85,dmg:1,turn:11,strafe:1}];
+// hear: gunfire alert radius (third-partying); rot: how early they rotate ahead of the storm; nade: grenade use; rush: ramp-rush high ground; heal: retreat-to-heal threshold
+export const DIFF=[{n:'EASY',react:.9,err:.085,build:.22,view:65,burst:.45,dmg:.6,turn:4,strafe:.5,hear:55,rot:.6,nade:.15,rush:0,heal:25},{n:'NORMAL',react:.55,err:.05,build:.55,view:95,burst:.62,dmg:.8,turn:7,strafe:.8,hear:90,rot:1,nade:.4,rush:.35,heal:45},{n:'HARD',react:.28,err:.026,build:.9,view:125,burst:.85,dmg:1,turn:11,strafe:1,hear:140,rot:1.5,nade:.75,rush:.85,heal:60}];
 const PREF={sg:[0,9],smg:[3,18],ar:[8,70],sn:[35,260],rl:[12,90]};
 
 export function initBot(a,G){a.ai={mode:'drop',target:null,enemy:null,seen:0,react:0,thinkT:Math.random()*.3,strafe:1,strafeT:0,stuckT:0,last:{x:0,z:0},lastCheck:0,buildCd:0,err:{x:0,y:0},errT:0,
@@ -48,16 +49,17 @@ export function thinkBot(a,G,dt){const ai=a.ai,I=a.in,D=G.diff,W=G.world;I.fire=
   G.select(a,0);I.fire=true;I.mz=.3;a.pitch*=.8;if(ai.stuckT>3)ai.stuckT=3.3;return;}
  if(ai.stuckT>=3.3){ai.detour=1.4;ai.detourDir=Math.random()<.5?-1:1;ai.stuckT=0;}
  // ---- healing when safe
- if(a.healing){I.mz=0;I.mx=0;if(en&&G.time-a.lastHurt<1){G.select(a,bestSlot(a,en));}else{I.fire=true;return;}}
+ if(a.healing){I.mz=0;I.mx=0;if(en&&G.time-a.lastHurt<(D.n==='HARD'?.6:1)){G.select(a,bestSlot(a,en));}else{I.fire=true;return;}}
  const hp=a.hp+a.sh;
  // ---- storm
  const st=G.storm,safe=st.state==='wait'&&st.phase<st.count?st.next:st.cur;const ds=Math.hypot(a.pos.x-safe.x,a.pos.z-safe.z);
- const outCur=Math.hypot(a.pos.x-st.cur.x,a.pos.z-st.cur.z)>st.cur.r-1;const urgent=outCur||(ds>safe.r*.8&&(st.state==='shrink'||st.left<ds/5+15));
+ const outCur=Math.hypot(a.pos.x-st.cur.x,a.pos.z-st.cur.z)>st.cur.r-1;const late=st.phase>=3;const urgent=outCur||(ds>safe.r*(late&&D.rot>1?.55:.8)&&(st.state==='shrink'||st.left<(ds/5+15)*D.rot));
  // ---- fight
+ if(en&&a.hp+a.sh<D.heal&&!outCur&&healSlot(a)>=0&&G.time-a.lastHurt>.5){retreat(a,G,en,dt);return;}
  if(en){fight(a,G,en,dt,urgent,safe);return;}
  if(hp<70&&G.time-a.lastHurt>3){const hs=healSlot(a);if(hs>=0){G.select(a,hs);I.fire=true;I.mz=0;a.healing||null;return;}}
  if(G.time-a.lastHurt<.6&&a.lastHurtBy&&a.lastHurtBy.alive&&hasGun(a)){ai.enemy=a.lastHurtBy;ai.react=G.time+D.react*.6;}
- if(urgent){if(!ai.goal||ai.goal.kind!=='storm'||G.time-ai.goal.t>6){const ang=Math.random()*6.28,rr=Math.sqrt(Math.random())*safe.r*.55;ai.goal={kind:'storm',x:safe.x+Math.cos(ang)*rr,z:safe.z+Math.sin(ang)*rr,t:G.time};}
+ if(urgent){if(!ai.goal||ai.goal.kind!=='storm'||G.time-ai.goal.t>6){const ang=Math.random()*6.28,rr=Math.sqrt(Math.random())*safe.r*(D.rot>1?.35:D.rot<1?.75:.55);ai.goal={kind:'storm',x:safe.x+Math.cos(ang)*rr,z:safe.z+Math.sin(ang)*rr,t:G.time};}
   G.select(a,0);steer(a,ai.goal.x,ai.goal.z,G,dt,true,2);if(ai.heard)ai.heard=null;return;}
  // ---- investigate gunfire
  if(ai.heard&&G.time-ai.heard.t<6&&hasGun(a)){G.select(a,bestSlot(a,null));const d=steer(a,ai.heard.x,ai.heard.z,G,dt,false,6);if(d<7)ai.heard=null;return;}
@@ -73,9 +75,16 @@ export function thinkBot(a,G,dt){const ai=a.ai,I=a.in,D=G.diff,W=G.world;I.fire=
  G.select(a,bestSlot(a,null));steer(a,ai.wander.x,ai.wander.z,G,dt,true,3);
  const cur=a.sel>0?a.inv[a.sel-1]:null;if(cur&&cur.kind==='gun'&&cur.mag<GUNS[cur.t].mag*.5)G.reload(a);}
 
+// low on health with a heal in the bag: box up (HARD/NORMAL with mats) or back off out of sight, then heal
+function retreat(a,G,en,dt){const ai=a.ai,I=a.in,D=G.diff;const dx=en.pos.x-a.pos.x,dz=en.pos.z-a.pos.z,d=Math.hypot(dx,dz);
+ if(G.buildOn&&D.build>.5&&a.mats.some(m=>m>=10)&&ai.buildCd<=0&&(!ai.boxT||G.time-ai.boxT>6)){ai.boxT=G.time;ai.buildCd=1.5;const y=a.yaw;for(const o of[0,Math.PI/2,-Math.PI/2,Math.PI]){a.yaw=Math.atan2(dx,dz)+o;G.placePiece(a,'wall');}a.yaw=y;}
+ const boxed=ai.boxT&&G.time-ai.boxT<5;
+ if(boxed||d>30||!G.los(a,en)){I.mz=0;I.mx=0;const hs=healSlot(a);if(hs>=0){G.select(a,hs);I.fire=true;}return;}
+ const away=Math.atan2(-dx,-dz);turnTo(a,away,0,dt,G,8);I.mz=1;I.mx=ai.strafe;I.sprint=true;}
+function nadeSlot(a){const i=a.inv.findIndex(it=>it&&it.kind==='throw');return i<0?-1:i+1;}
 function hasGun(a){return a.inv.some(it=>it&&it.kind==='gun'&&(it.mag>0||a.ammo[GUNS[it.t].ammo]>0));}
 function bestSlot(a,en){const d=en?Math.hypot(en.pos.x-a.pos.x,en.pos.z-a.pos.z):30;const i=bestGun(a,d);return i<0?0:i+1;}
-function healSlot(a){let best=-1;a.inv.forEach((it,i)=>{if(!it||it.kind!=='heal')return;const h=HEALS[it.t];if(h.sh&&a.sh<h.cap)best=i;else if(h.hp&&a.hp<h.cap&&best<0)best=i;});return best<0?-1:best+1;}
+function healSlot(a){let best=-1;a.inv.forEach((it,i)=>{if(!it||it.kind!=='heal')return;const h=HEALS[it.t];if(h.regen&&(a.hp<100||a.sh<100)&&best<0)best=i;else if(h.sh&&a.sh<h.cap)best=i;else if(h.hp&&a.hp<h.cap&&best<0)best=i;});return best<0?-1:best+1;}
 
 function perceive(a,G){const ai=a.ai,D=G.diff;let best=null,bs=1e9;
  for(const b of G.actors){if(b===a||!b.alive||b.state!=='ground'&&b.state!=='glide')continue;const dx=b.pos.x-a.pos.x,dz=b.pos.z-a.pos.z,dy=b.pos.y-a.pos.y,d=Math.hypot(dx,dz,dy);if(d>D.view*(b.player?1:.5))continue;
@@ -86,6 +95,12 @@ function perceive(a,G){const ai=a.ai,D=G.diff;let best=null,bs=1e9;
  else if(best)ai.seen=G.time;else if(ai.enemy&&G.time-ai.seen>2.5)ai.enemy=null;}
 
 function fight(a,G,en,dt,urgent,safe){const ai=a.ai,I=a.in,D=G.diff;const dx=en.pos.x-a.pos.x,dz=en.pos.z-a.pos.z,d=Math.hypot(dx,dz);
+ // grenade: flush out targets behind cover at mid range
+ const ns=nadeSlot(a);if(ns>0&&d>7&&d<30&&G.time>(ai.nadeCd||0)&&G.time>ai.react){ai.nadeCd=G.time+3+Math.random()*4;if(Math.random()<D.nade*(G.los(a,en)?.35:1.4)){ai.nadeT=G.time+.6;}}
+ if(ai.nadeT&&G.time<ai.nadeT&&ns>0){G.select(a,ns);const th=.42;ai.nadeV=Math.sqrt(Math.max(1,d)*22/Math.sin(2*th))*.8;turnTo(a,Math.atan2(dx,dz)+ai.err.x*.5,th,dt,G,D.turn*1.5);
+  I.fire=Math.abs(angDiff(a.yaw,Math.atan2(dx,dz)))<.15;I.mx=ai.strafe*D.strafe;return;}
+ // high ground: HARD bots ramp-rush an enemy standing above them
+ if(G.buildOn&&en.pos.y-a.pos.y>2.5&&d<26&&a.mats.some(m=>m>=20)&&Math.random()<D.rush*dt*3&&ai.buildCd<=0){ai.buildCd=.5;const y=a.yaw;a.yaw=Math.atan2(dx,dz);G.placePiece(a,'ramp');a.yaw=y;ai.rushT=G.time+1.2;}
  const slot=bestSlot(a,en);G.select(a,slot);const it=a.sel>0?a.inv[a.sel-1]:null;
  // aim with error that re-rolls
  if(G.time>ai.errT){ai.errT=G.time+.25+Math.random()*.35;const e=D.err*(1+(en.state==='glide'?1:0)+(G.time-ai.seen>.5?1:0));ai.err.x=(Math.random()-.5)*2*e;ai.err.y=(Math.random()-.5)*2*e;}
@@ -99,6 +114,7 @@ function fight(a,G,en,dt,urgent,safe){const ai=a.ai,I=a.in,D=G.diff;const dx=en.
  ai.strafeT-=dt;if(ai.strafeT<=0){ai.strafeT=.4+Math.random()*1;ai.strafe=Math.random()<.5?-1:1;if(Math.random()<.25*D.strafe&&a.ground)I.jump=true;}
  const pr=it&&it.kind==='gun'?PREF[it.t]:[0,1.6];const want=(pr[0]+pr[1])/2;I.mz=d>Math.min(pr[1],want+6)?1:d<pr[0]?-1:0;I.mx=ai.strafe*D.strafe;
  if(!it||it.kind!=='gun'){I.mz=d>1.8?1:0;I.mx=0;}
+ if(ai.rushT&&G.time<ai.rushT){I.mz=1;I.mx=0;I.sprint=true;if(a.ground&&Math.random()<.15)I.jump=true;}
  if(urgent&&d>20){const gx=safe.x-a.pos.x,gz=safe.z-a.pos.z,gy=Math.atan2(gx,gz),rel=angDiff(a.yaw,gy);I.mz=Math.cos(rel);I.mx=-Math.sin(rel);I.sprint=true;}
  // build cover when taking fire
  if(G.build&&G.buildOn&&G.time-a.lastHurt<.4&&ai.buildCd<=0&&Math.random()<D.build&&a.mats.some(m=>m>=10)){ai.buildCd=2.2+Math.random()*2.5/D.build;

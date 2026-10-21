@@ -1,7 +1,7 @@
 // STRIKER 11 — instanced articulated footballers: one draw call per body part for all 25 people on the pitch.
 // Each person has a small forward-kinematics skeleton fed by a pose vector; poses come from procedural animation.
 import * as THREE from '../vendor/three.module.min.js';
-import {sponsorAtlas,hairNormal,blobTex} from './tex.js';
+import {sponsorAtlas,hairNormal} from './tex.js';
 const V=THREE.Vector3,O=()=>new THREE.Object3D();
 export const X=0,Y=1,Z=2,YAW=3,PIT=4,ROL=5,HY=6,LEAN=7,TW=8,HD=9,LSX=10,LSZ=11,LEL=12,RSX=13,RSZ=14,REL=15,LHX=16,LHZ=17,LKN=18,RHX=19,RHZ=20,RKN=21,SC=22,VIS=23,LAN=24,RAN=25,NP=26;
 const HIP=.95;
@@ -16,22 +16,26 @@ function fabricNormal(){const N=128,h=new Float32Array(N*N),fold=(x,y)=>Math.sin
  x.putImageData(id,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,2);return t;}
 let FABRIC=null;const fabric=()=>FABRIC||(FABRIC=fabricNormal());
 // two-tone limb/head material: instanceColor is the base, per-instance aC2 the second colour, masked in local space by `mode`
-const TONE={arm:'m=step(-.135-aw*.4,vL.y);sh=1.-.18*(1.-step(.012,abs(vL.y+.135)))*(1.-aw);',
- farm:'m=step(-.235,vL.y)*aw;',
- thigh:'m=step(-.2,vL.y);sh=1.-.25*(1.-step(.012,abs(vL.y+.2)));',
- shin:'m=step(-.135,vL.y)*(1.-step(-.075,vL.y));sh=.9+.1*smoothstep(-.5,0.,vL.y);',
- boot:'m=1.-step(-.064,vL.y);sh=1.;',
- head:`m=0.;vec3 q=vL;float fz=step(.07,q.z),ax=abs(q.x);
+// two-tone limb/head material: instanceColor is the base, per-instance aC2 the second colour, masked in local space by a
+// per-geometry part id (aMd). One shader for every limb part and the head, so the whole squad compiles one program here.
+const TONE=`int md=int(vMd+.5);
+ if(md==0){m=step(-.135-aw*.4,vL.y);sh=1.-.18*(1.-step(.012,abs(vL.y+.135)))*(1.-aw);sh*=.92+.08*smoothstep(-.3,.02,vL.y);}
+ else if(md==1){m=step(-.235,vL.y)*aw;}
+ else if(md==2){m=step(-.2,vL.y);sh=1.-.25*(1.-step(.012,abs(vL.y+.2)));sh*=1.-.1*smoothstep(-.3,-.46,vL.y);}
+ else if(md==3){m=step(-.135,vL.y)*(1.-step(-.075,vL.y));sh=.9+.1*smoothstep(-.5,0.,vL.y);sh*=1.-.07*step(.5,fract(vL.y*38.))*step(-.075,-vL.y)*step(-.4,vL.y);}
+ else if(md==4){m=1.-step(-.064,vL.y);sh=1.;float st=step(.7,fract(vL.z*22.))*step(-.03,vL.y)*step(abs(vL.x),.03);sh*=1.-st*.35;}
+ else if(md==6){m=step(.168,abs(vL.x))*step(-.2,vL.y)*aw;sh=1.-.12*smoothstep(-.12,-.2,vL.y);}
+ else{vec3 q=vL;float fz=step(.07,q.z),ax=abs(q.x);
    float eye=1.-smoothstep(.009,.013,length(vec2(ax-.037,(q.y-.163)*1.25)));float wh=1.-smoothstep(.014,.018,length(vec2(ax-.037,(q.y-.163)*1.6)));
    float brow=step(abs(q.y-.186+ax*.08),.0055)*step(ax,.06)*step(.016,ax);float mouth=step(abs(q.y-.108-ax*ax*3.),.0035)*step(ax,.024);
    float sock=exp(-pow(length(vec2(ax-.036,(q.y-.168)*1.15))/.026,2.));float lip=step(abs(q.y-.104-ax*ax*2.),.009)*step(ax,.03)*fz;float jaw=(1.-smoothstep(.1,.135,q.y))*smoothstep(.0,.06,q.z)*(1.-lip)*(1.-step(.142,q.y));
    m=max(brow*fz,jaw*aw*.62);sh=(1.-mouth*fz*.5-.12*(1.-smoothstep(.05,.11,q.y)))*(1.-sock*fz*.22)*(1.-.08*smoothstep(.02,-.08,q.z));
-   diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.82,.58,.55),lip*.7);diffuseColor.rgb*=mix(vec3(1.),vec3(1.05,.96,.94),exp(-pow(length(vec2(ax-.055,q.y-.125))/.03,2.))*fz);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.92,.9,.86),wh*fz*.85);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.06,.05,.05),eye*fz);`};
-function toneMat(r,mode){const m=new THREE.MeshStandardMaterial({roughness:r,metalness:0});
- m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec4 aC2;varying vec4 vC2;varying vec3 vL;').replace('#include <begin_vertex>','#include <begin_vertex>\nvC2=aC2;vL=position;');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec4 vC2;varying vec3 vL;').replace('#include <color_fragment>',`#include <color_fragment>
-  {float m=0.,sh=1.,aw=vC2.w;${TONE[mode]}diffuseColor.rgb=mix(diffuseColor.rgb,vC2.rgb,m)*sh;}`);};
- m.customProgramCacheKey=()=>'tone_'+mode;return m;}
+   diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.82,.58,.55),lip*.7);diffuseColor.rgb*=mix(vec3(1.),vec3(1.05,.96,.94),exp(-pow(length(vec2(ax-.055,q.y-.125))/.03,2.))*fz);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.92,.9,.86),wh*fz*.85);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.06,.05,.05),eye*fz);}`;
+const MODE={arm:0,farm:1,thigh:2,shin:3,boot:4,head:5,shorts:6};
+function toneCompile(sh){sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec4 aC2;attribute float aMd;varying vec4 vC2;varying vec3 vL;varying float vMd;').replace('#include <begin_vertex>','#include <begin_vertex>\nvC2=aC2;vL=position;vMd=aMd;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec4 vC2;varying vec3 vL;varying float vMd;').replace('#include <color_fragment>',`#include <color_fragment>
+  {float m=0.,sh=1.,aw=vC2.w;${TONE}diffuseColor.rgb=mix(diffuseColor.rgb,vC2.rgb,m)*sh;}`);}
+function toneMat(r,mode){const m=new THREE.MeshStandardMaterial({roughness:r,metalness:0});m.userData.md=MODE[mode];m.onBeforeCompile=toneCompile;m.customProgramCacheKey=()=>'tone';return m;}
 function kitMaterial(numTex){const m=new THREE.MeshStandardMaterial({roughness:.68,metalness:0,normalMap:fabric(),normalScale:new THREE.Vector2(.55,.55)});
  m.onBeforeCompile=sh=>{sh.uniforms.uNum={value:numTex};sh.uniforms.uSpn={value:sponsorAtlas()};
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec4 aK2;attribute vec3 aNum;varying vec4 vK2;varying vec3 vNum;varying vec3 vL;')
@@ -76,26 +80,30 @@ export class Squad{
   const neck=new THREE.CylinderGeometry(.052,.06,.12,8);neck.translate(0,.02,0);
   const hairG=q===0?new THREE.SphereGeometry(.12,14,8,0,Math.PI*2,0,Math.PI*.54):new THREE.SphereGeometry(.12,18,10,0,Math.PI*2,0,Math.PI*.54);hairG.scale(.97,1.08,1.08);hairG.translate(0,.168,-.012);
   {const p=hairG.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i),z=p.getZ(i),k=Math.min(1,Math.max(0,(z+.01)/.09));const hl=.168+.05*k;if(y<hl)p.setY(i,hl-(hl-y)*(1-k*.85));}hairG.computeVertexNormals();}// hairline: high at the forehead, low at the nape
-  const uarmG=limb([[.05,0],[.03,.056],[-.03,.064],[-.12,.057],[-.22,.047],[-.3,.043],[-.33,0]],z=>1-.12*(z>0)),farmG=limb([[.035,0],[.01,.046],[-.06,.051],[-.16,.041],[-.25,.033],[-.27,0]]);
+  let uarmG=limb([[.05,0],[.03,.056],[-.03,.064],[-.12,.057],[-.22,.047],[-.3,.043],[-.33,0]],z=>1-.12*(z>0));if(q>0){const d=new THREE.SphereGeometry(.068,10,8);d.scale(1,1.05,.92);d.translate(-.004,-.012,0);uarmG=mergeGeo([uarmG,d]);}const farmG=limb([[.035,0],[.01,.046],[-.06,.051],[-.16,.041],[-.25,.033],[-.27,0]]);
   {const hand=new THREE.SphereGeometry(.05,8,6);hand.scale(.75,1.15,.62);hand.translate(0,-.3,.004);const th=new THREE.SphereGeometry(.02,6,4);th.scale(.8,1.4,.8);th.translate(.028,-.29,.02);farmG.copy(mergeGeo([farmG,hand,th]));}
   const thighG=limb([[.055,0],[.04,.07],[-.02,.092],[-.12,.086],[-.26,.074],[-.38,.061],[-.44,.056],[-.48,0]],(z,y)=>z>0&&y>-.36?1.08:1),shinG=limb([[.045,0],[.03,.056],[-.03,.06],[-.12,.067],[-.22,.056],[-.34,.04],[-.41,.037],[-.45,0]],(z,y)=>z<0&&y<-.02&&y>-.3?1+.3*Math.sin((y+.02)/-.28*Math.PI):1);const bootG=new THREE.CapsuleGeometry(.048,.15,3,8);bootG.rotateX(Math.PI/2);bootG.scale(1.05,.85,1);bootG.translate(0,-.035,.055);
   this.numTex=numTex;const kit=kitMaterial(numTex);
-  const mk=(g,m,k)=>{if(m.customProgramCacheKey&&String(m.customProgramCacheKey()).startsWith('tone'))g.setAttribute('aC2',new THREE.InstancedBufferAttribute(new Float32Array(max*k*4),4));const im=new THREE.InstancedMesh(g,m,max*k);im.castShadow=true;im.receiveShadow=true;im.frustumCulled=false;im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);for(let i=0;i<max*k;i++){im.setMatrixAt(i,new THREE.Matrix4().makeScale(0,0,0));im.setColorAt(i,new THREE.Color(1,1,1));}scene.add(im);return im;};
+  const mk=(g,m,k)=>{if(m.userData.md!==undefined){g.setAttribute('aC2',new THREE.InstancedBufferAttribute(new Float32Array(max*k*4),4));g.setAttribute('aMd',new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count).fill(m.userData.md),1));}const im=new THREE.InstancedMesh(g,m,max*k);im.castShadow=true;im.receiveShadow=true;im.frustumCulled=false;im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);for(let i=0;i<max*k;i++){im.setMatrixAt(i,new THREE.Matrix4().makeScale(0,0,0));im.setColorAt(i,new THREE.Color(1,1,1));}scene.add(im);return im;};
   torsoG.setAttribute('aK2',new THREE.InstancedBufferAttribute(new Float32Array(max*4),4));torsoG.setAttribute('aNum',new THREE.InstancedBufferAttribute(new Float32Array(max*3),3));
-  this.torso=mk(torsoG,kit,1);this.shorts=mk(shortsG,(()=>{const m=std(.8);m.normalMap=fabric();m.normalScale=new THREE.Vector2(.4,.4);return m;})(),1);this.head=mk(mergeGeo([headG,neck,noseG,...earG]),toneMat(.6,'head'),1);hairG.setAttribute('aHS',new THREE.InstancedBufferAttribute(new Float32Array(max),1));this.hair=mk(hairG,hairMaterial(),1);
-  this.uarm=mk(uarmG,toneMat(.72,'arm'),2);this.farm=mk(farmG,toneMat(.65,'farm'),2);this.thigh=mk(thighG,toneMat(.68,'thigh'),2);this.shin=mk(shinG,(()=>{const m=toneMat(.85,'shin');m.normalMap=fabric();m.normalScale=new THREE.Vector2(.5,.5);return m;})(),2);this.boot=mk(bootG,toneMat(.35,'boot'),2);
-  // floodlight multi-shadows: four soft blobs per person, one draw (MEDIUM+ at night)
-  {const g=new THREE.PlaneGeometry(1,1);g.rotateX(Math.PI/2);g.translate(0,0,.5);this.blob=new THREE.InstancedMesh(g,new THREE.MeshBasicMaterial({color:0x000000,map:blobTex(),transparent:true,opacity:.3,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4}),max*4);
-   this.blob.frustumCulled=false;this.blob.renderOrder=2;this.blob.visible=false;this.blob.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(this.blob);this.blobMax=max*4;}
+  this.torso=mk(torsoG,kit,1);this.shorts=mk(shortsG,toneMat(.8,'shorts'),1);this.head=mk(mergeGeo([headG,neck,noseG,...earG]),toneMat(.6,'head'),1);hairG.setAttribute('aHS',new THREE.InstancedBufferAttribute(new Float32Array(max),1));this.hair=mk(hairG,hairMaterial(),1);
+  this.uarm=mk(uarmG,toneMat(.72,'arm'),2);this.farm=mk(farmG,toneMat(.65,'farm'),2);this.thigh=mk(thighG,toneMat(.68,'thigh'),2);this.shin=mk(shinG,toneMat(.85,'shin'),2);this.boot=mk(bootG,toneMat(.35,'boot'),2);
+  // floodlight shadows (MEDIUM+ at night): every body part is drawn a second time, flattened onto the turf along the
+  // direction from each of the four floodlight banks, so each player throws four crisp, overlapping shadows.
+  // One extra draw per part (4 lamps x instances). Each lamp's copy sits a few mm higher than the previous one and the
+  // shadows write depth: parts of the same shadow never double-darken, shadows of different lamps do.
+  this.parts=[[this.torso,1],[this.shorts,1],[this.head,1],[this.hair,1],[this.uarm,2],[this.farm,2],[this.thigh,2],[this.shin,2],[this.boot,2]];
+  this.psh=null;if(q>=1){const sm=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.24,depthWrite:true,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+   this.psh=this.parts.map(([m,k])=>{const im=new THREE.InstancedMesh(m.geometry,sm,max*k*4);im.frustumCulled=false;im.renderOrder=2;im.count=0;im.visible=false;im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(im);return[im,m,k];});}
   this.rigs=[];for(let i=0;i<max;i++)this.rigs.push(makeRig());this.hidden=new THREE.Matrix4().makeScale(0,0,0);}
  // look: {c1,c2,pat,sh,so,skin,hair,boot,num,sleeve,glove,bald}
  setLook(i,L){const c=new THREE.Color();this.torso.setColorAt(i,c.set(L.c1));const k2=c.set(L.c2);this.torso.geometry.attributes.aK2.setXYZW(i,k2.r,k2.g,k2.b,L.pat);
   const nb=new THREE.Color(L.c1),lum=nb.r*.3+nb.g*.59+nb.b*.11;this.torso.geometry.attributes.aNum.setXYZ(i,L.num||0,lum>.5?.05:.95,L.spn??0);
-  this.shorts.setColorAt(i,c.set(L.sh));this.head.setColorAt(i,c.set(L.skin));this.hair.setColorAt(i,c.set(L.hair));const t2=(m,j,col,w=0)=>{c.set(col);m.geometry.attributes.aC2.setXYZW(j,c.r,c.g,c.b,w);};t2(this.head,i,L.hair,L.beard?1:0);
+  this.shorts.setColorAt(i,c.set(L.sh));this.head.setColorAt(i,c.set(L.skin));this.hair.setColorAt(i,c.set(L.hair));const t2=(m,j,col,w=0)=>{c.set(col);m.geometry.attributes.aC2.setXYZW(j,c.r,c.g,c.b,w);};t2(this.head,i,L.hair,L.beard?1:0);{const k2=new THREE.Color(L.c2),same=k2.getHex()===new THREE.Color(L.sh).getHex();t2(this.shorts,i,same?L.c1:L.c2,1);}
   const slv=L.pat===6?L.c2:L.c1,lu=v=>{c.set(v);return c.r*.3+c.g*.59+c.b*.11;},sole=lu(L.boot)>.45?'#26272b':'#eeeeea',band=lu(L.so)>.5?L.c1===L.so?L.c2:L.c1:L.c2;
   for(let s=0;s<2;s++){const j=i*2+s;this.uarm.setColorAt(j,c.set(L.skin));t2(this.uarm,j,slv,L.glove?1:0);this.farm.setColorAt(j,c.set(L.glove||L.skin));t2(this.farm,j,L.glove?L.c1:L.skin,L.glove?1:0);
    this.thigh.setColorAt(j,c.set(L.skin));t2(this.thigh,j,L.sh);this.shin.setColorAt(j,c.set(L.so));t2(this.shin,j,band);this.boot.setColorAt(j,c.set(L.boot));t2(this.boot,j,sole);}
-  for(const m of[this.head,this.uarm,this.farm,this.thigh,this.shin,this.boot])m.geometry.attributes.aC2.needsUpdate=true;
+  for(const m of[this.head,this.shorts,this.uarm,this.farm,this.thigh,this.shin,this.boot])m.geometry.attributes.aC2.needsUpdate=true;
   this.rigs[i].bald=!!L.bald;this.hair.geometry.attributes.aHS.setX(i,L.hs??0);this.hair.geometry.attributes.aHS.needsUpdate=true;this.rigs[i].long=!!L.glove;
   for(const m of[this.torso,this.shorts,this.head,this.hair,this.uarm,this.farm,this.thigh,this.shin,this.boot])m.instanceColor.needsUpdate=true;
   this.torso.geometry.attributes.aK2.needsUpdate=this.torso.geometry.attributes.aNum.needsUpdate=true;}
@@ -110,14 +118,18 @@ export class Squad{
  hand(i,k,out){return out.set(0,-.29,0).applyMatrix4(this.rigs[i].el[k].matrixWorld);}
  foot(i,k,out){return out.set(0,-.03,.1).applyMatrix4(this.rigs[i].an[k].matrixWorld);}
  headPos(i,out){return out.set(0,.16,0).applyMatrix4(this.rigs[i].neck.matrixWorld);}
- // lamps: world positions of the floodlight banks; each blob points away from its lamp, longer for lower light
- shadows(ents,lamps,on){const b=this.blob;b.visible=!!on&&!!lamps&&lamps.length>0;if(!b.visible)return;const m=_m,q=_q,up=_up;let n=0;
-  for(const e of ents){if(e.hidden||e.visible===false)continue;const hy=(e.pose&&e.pose[1])||0,fade=Math.max(0,1-hy*1.4);if(fade<=.05)continue;
-   for(const L of lamps){if(n>=this.blobMax)break;let dx=e.p.x-L.x,dz=e.p.z-L.z;const d=Math.hypot(dx,dz)||1;dx/=d;dz/=d;const len=Math.min(4.2,1.85*(e.h||1)*d/L.y);
-    q.setFromAxisAngle(up,Math.atan2(dx,dz));m.compose(_p.set(e.p.x,.02,e.p.z),q,_s.set(.62*fade+.1,1,len*fade));b.setMatrixAt(n++,m);}}
-  b.count=n;b.instanceMatrix.needsUpdate=true;}
+ // lamps: world positions of the floodlight banks. Off: the parts cast into the key light's shadow map instead.
+ shadows(ents,lamps,on){const P=this.psh;on=!!on&&!!P&&!!lamps&&lamps.length>0;if(this.pOn!==on){this.pOn=on;for(const[m]of this.parts)m.castShadow=!on;if(P)for(const[im]of P)im.visible=on;}if(!on)return;
+  const L=lamps.length,tm=_m,pm=_m2,rt=this.shorts.instanceMatrix.array;
+  for(const[im,m,k]of P){const src=m.instanceMatrix.array,n=this.max*k;let o=0;
+   for(let li=0;li<L;li++){const lp=lamps[li],h0=.012+li*.008;
+    for(let i=0;i<this.max;i++){const q=i*16;if(rt[q+15]===0||rt[q]===0&&rt[q+1]===0&&rt[q+2]===0)continue;const dx=rt[q+12]-lp.x,dy=-lp.y,dz=rt[q+14]-lp.z,sx=dx/dy,sz=dz/dy;
+     // flatten along (sx,1,sz) onto y=h0: x'=x-sx*(y-h0), z'=z-sz*(y-h0)
+     pm.set(1,-sx,0,sx*h0, 0,0,0,h0, 0,-sz,1,sz*h0, 0,0,0,1);
+     for(let j=0;j<k;j++){const ii=i*k+j;tm.fromArray(src,ii*16);tm.premultiply(pm);tm.toArray(im.instanceMatrix.array,o*16);o++;}}}
+   im.count=o;im.instanceMatrix.needsUpdate=true;}}
  commit(){for(const m of[this.torso,this.shorts,this.head,this.hair,this.uarm,this.farm,this.thigh,this.shin,this.boot])m.instanceMatrix.needsUpdate=true;}}
-const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_up=new V(0,1,0),_p=new V(),_s=new V();
+const _m=new THREE.Matrix4(),_m2=new THREE.Matrix4();
 function makeRig(){const root=O(),spine=O(),neck=O();root.add(spine);spine.add(neck);neck.position.y=.585;
  const sh=[O(),O()],el=[O(),O()],hp=[O(),O()],kn=[O(),O()],an=[O(),O()];
  for(let k=0;k<2;k++){const s=k?-1:1;sh[k].position.set(s*.215,.5,0);spine.add(sh[k]);el[k].position.y=-.29;sh[k].add(el[k]);
@@ -136,19 +148,38 @@ export function animate(e,dt){const a=e.anim,T=e.tp,Pz=e.pose;const sp=Math.hypo
  let df=e.face-a.lastFace;df=Math.atan2(Math.sin(df),Math.cos(df));a.lastFace=e.face;a.turn=lerp(a.turn,dt>0?df/dt:0,Math.min(1,dt*6));
  const s=Math.sin(a.ph),c=Math.cos(a.ph);
  T[X]=e.p.x;T[Y]=e.p.y||0;T[Z]=e.p.z;T[YAW]=e.face;T[PIT]=0;T[ROL]=cl(-a.turn*.045,-.32,.32)*Math.min(1,amp);T[SC]=e.h||1;T[VIS]=e.visible===false?0:1;T[TW]=-s*.12*amp;T[HD]=0;
- T[HY]=walk?-.01-.012*amp:-.035*amp+.05*amp*Math.abs(c);T[LEAN]=.04+amp*(e.sprint?.26:.17);
- const la=walk?.45:.82;T[LHX]=s*la*amp;T[RHX]=-s*la*amp;T[LHZ]=T[RHZ]=.03;
- T[LKN]=.1+amp*(walk?.25*Math.max(0,c):.15+1.25*Math.max(0,c));T[RKN]=.1+amp*(walk?.25*Math.max(0,-c):.15+1.25*Math.max(0,-c));T[LAN]=T[RAN]=-.05;
- T[LSX]=-s*.62*amp;T[RSX]=s*.62*amp;T[LSZ]=T[RSZ]=.1+.06*amp;T[LEL]=T[REL]=.25+(walk?.2:1.05)*amp;
+ // locomotion. Phase: s>0 = left leg ahead. Running: pelvis lowest at mid-stance (legs passing), highest in flight (legs split);
+ // swing knee folds hard under the hips (heel toward the backside at a sprint), push-off ankle extends, arms counter-swing
+ // from the shoulder with ~90-degree elbows that close on the forward swing, the chest counter-rotates against the hips.
+ const spr=e.sprint&&!walk?1:0;
+ if(walk){const w=cl(sp/2.4,0,1);T[HY]=-.008-.012*w+.012*w*Math.abs(c);T[LEAN]=.03+.04*w;
+  T[LHX]=s*.36*w;T[RHX]=-s*.36*w;T[LKN]=.08+w*(.5*Math.max(0,c)+.08);T[RKN]=.08+w*(.5*Math.max(0,-c)+.08);
+  T[LAN]=-.08*w*Math.max(0,s)+.25*w*Math.max(0,-s)*Math.max(0,-c);T[RAN]=-.08*w*Math.max(0,-s)+.25*w*Math.max(0,s)*Math.max(0,c);
+  T[LSX]=-s*.34*w;T[RSX]=s*.34*w;T[LSZ]=T[RSZ]=.1;T[LEL]=.18+.14*w*Math.max(0,-s);T[REL]=.18+.14*w*Math.max(0,s);T[TW]=-s*.07*w;T[ROL]+=s*.02*w;}
+ else{const A=amp,ha=.62+.22*spr;T[HY]=-.045*A+.05*A*Math.abs(s);T[LEAN]=.07+A*(.15+.14*spr);
+  // hip: slightly longer forward reach than back extension
+  const hl=s>0?s*ha*A*1.08:s*ha*A*.85,hr=-s>0?-s*ha*A*1.08:-s*ha*A*.85;T[LHX]=hl+.06*A;T[RHX]=hr+.06*A;
+  const fold=1.25+.55*spr;T[LKN]=.18+A*(fold*Math.pow(Math.max(0,c),1.4)+.22*Math.max(0,s)*Math.max(0,-c));T[RKN]=.18+A*(fold*Math.pow(Math.max(0,-c),1.4)+.22*Math.max(0,-s)*Math.max(0,c));
+  T[LAN]=.55*A*Math.max(0,-s)*Math.max(0,-c)-.12*A*Math.max(0,c);T[RAN]=.55*A*Math.max(0,s)*Math.max(0,c)-.12*A*Math.max(0,-c);
+  const aa=(.75+.45*spr)*A;T[LSX]=-s*aa-.04;T[RSX]=s*aa-.04;T[LSZ]=T[RSZ]=.12+.05*A;
+  // elbow: ~90 degrees, closing as the arm drives forward and opening as it swings back past the hip
+  T[LEL]=.95+.3*spr+.55*A*Math.max(0,-s)-.25*A*Math.max(0,s);T[REL]=.95+.3*spr+.55*A*Math.max(0,s)-.25*A*Math.max(0,-s);
+  T[TW]=-s*(.14+.08*spr)*A;T[ROL]+=s*.035*A;T[HD]=s*.05*A;}
  if(sp<.25){const b=Math.sin(performance.now()*.002+e.p.x)*.02;T[LSZ]=T[RSZ]=.12+b;T[LEL]=T[REL]=.22;T[LKN]=T[RKN]=.08;T[HY]=-.01;T[LEAN]=.03+b;
   if(a.set){T[LKN]=T[RKN]=.55;T[LHX]=T[RHX]=.35;T[HY]=-.11;T[LEAN]=.32;T[LSX]=T[RSX]=.55;T[LSZ]=T[RSZ]=.45;T[LEL]=T[REL]=.9;T[LHZ]=T[RHZ]=.12;}}
- if(!a.act&&e.charging>0){const p=e.charging;T[RHX]=-.95*p;T[RKN]=1.35*p;T[RHZ]=-.06;T[LEAN]+=.08*p;T[RSZ]=.45+.3*p;T[LSX]=.45*p;T[LSZ]=.55;}
+ if(!a.act&&e.charging>0){const p=e.charging;T[RHX]=-1.05*p;T[RKN]=1.7*p;T[RHZ]=-.08;T[RAN]=.5*p;T[LKN]=Math.max(T[LKN],.35*p);T[LEAN]+=.06*p;T[LSZ]=.6+.6*p;T[LSX]=.3*p;T[LEL]=.4;T[RSX]=-.25*p;T[RSZ]=.4;T[TW]=-.28*p;}
  if(a.act){a.t+=dt;const k=cl(a.t/a.dur,0,1),R=a.side>0;// R: right foot / right side
   const leg=(hx,kn,hz=0)=>{if(R){T[RHX]=hx;T[RKN]=kn;T[RHZ]=hz;}else{T[LHX]=hx;T[LKN]=kn;T[LHZ]=hz;}},plant=(hx,kn)=>{if(R){T[LHX]=hx;T[LKN]=kn;}else{T[RHX]=hx;T[RKN]=kn;}};
   switch(a.act){
-   case'kick':{const p=a.pow;const sw=k<.25?-.95*sm(k/.25):k<.5?lerp(-.95,.7+.9*p,sm((k-.25)/.25)):lerp(.7+.9*p,0,sm((k-.5)/.5));const kn=k<.25?1.5*sm(k/.25):k<.45?lerp(1.5,.08,(k-.25)/.2):lerp(.08,.2,(k-.45)/.55);
-    leg(sw,kn,-.08);plant(.12,.38);T[HY]=-.06;T[LEAN]=.12-Math.max(0,k-.35)*.45*a.h;
-    if(R){T[LSX]=.55;T[LSZ]=.75;T[RSX]=-.35;T[RSZ]=.5;}else{T[RSX]=.55;T[RSZ]=.75;T[LSX]=-.35;T[LSZ]=.5;}T[LEL]=T[REL]=.4;T[TW]=(R?-1:1)*(k<.3?.25:-.2);break;}
+   case'kick':{// plant, cock the leg (heel up, hip back), whip through, follow-through high for a strike / short for a pass;
+    // the opposite arm swings out wide for balance and the chest twists through the ball. h~1 lofted (lean back), h<.5 driven.
+    const p=a.pow,lo=a.h>.6,back=-.75-.35*p,fw=.55+1.05*p;
+    const sw=k<.2?lerp(.1,back,sm(k/.2)):k<.42?lerp(back,fw,sm((k-.2)/.22)):lerp(fw,.05,sm((k-.42)/.58));
+    const kn=k<.2?lerp(.3,1.55+.35*p,sm(k/.2)):k<.36?lerp(1.55+.35*p,.06,sm((k-.2)/.16)):lerp(.06,.25,sm((k-.36)/.64));
+    leg(sw,kn,-.1);plant(.18,.42);if(R){T[LAN]=-.05;T[RAN]=k<.36?.55:.2;}else{T[RAN]=-.05;T[LAN]=k<.36?.55:.2;}
+    T[HY]=-.07-.03*Math.sin(Math.min(1,k/.42)*PI);T[LEAN]=(lo?-.08:.2)+(k<.2?-.06:.12*Math.sin(Math.min(1,(k-.2)/.5)*PI))*(1+p);
+    const arm=.9+.5*p;if(R){T[LSX]=.35;T[LSZ]=arm;T[LEL]=.45;T[RSX]=k<.3?-.15:-.55;T[RSZ]=.42;T[REL]=.75;}else{T[RSX]=.35;T[RSZ]=arm;T[REL]=.45;T[LSX]=k<.3?-.15:-.55;T[LSZ]=.42;T[LEL]=.75;}
+    T[TW]=(R?-1:1)*(k<.2?.32*sm(k/.2):lerp(.32,-.3,sm(Math.min(1,(k-.2)/.3))));T[ROL]+=(R?1:-1)*.08*Math.sin(Math.min(1,k/.5)*PI);break;}
    case'charge':{const p=a.pow;leg(-.95*p,1.4*p,-.06);T[LEAN]+=.08*p;if(R){T[RSZ]=.4+.3*p;T[LSX]=.4*p;T[LSZ]=.5;}else{T[LSZ]=.4+.3*p;T[RSX]=.4*p;T[RSZ]=.5;}break;}
    case'tackle':{const e2=k<.25?sm(k/.25):k>.7?1-sm((k-.7)/.3):1;leg(1.3*e2,.1,-.2*e2);plant(-.15*e2,.85*e2);T[HY]=-.2*e2;T[LEAN]=.45*e2;T[LSZ]=T[RSZ]=.7*e2;T[LEL]=T[REL]=.5;break;}
    case'slide':{const up=k>.72?sm((k-.72)/.28):0,d=1-up,i=sm(Math.min(1,k*5));T[PIT]=-1.12*i*d;T[HY]=-.74*i*d;leg(1.3*i*d,.05,0);plant(.45*i*d,1.55*i*d);

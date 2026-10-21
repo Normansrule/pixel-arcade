@@ -2,7 +2,32 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round9`)
+## Unreleased (on branch `round11`)
+
+- **Cartridge Shelf redesign.** The hub is now a library of printed game packaging: one cobalt ink, with a night-navy stage (top bar, front page, footer) over warm stone shelves and no white anywhere. A full dark mode follows your system, or switch it in the top bar.
+- **The console:** the front page has a console whose screen runs the games on the counter in attract mode, with a 20-second round clock that turns red for the last 10 seconds. Drag a cartridge into the slot (or tap it, or use the arrow keys and Enter) and the screen powers off, counts down and boots the game. Shuffle deals a new tray.
+- **Shelves and boxes:** every game is a spine on a genre shelf, printed with its mode (1P, VS or 3D) and round length, with a print pattern per genre. Pick one and its box opens beside the shelf (a bottom sheet on phones) with a live preview, round length, mode, your best score, the rules, and Play, Favorite, Top 10 and Source. A Boxes view swaps the spines for box fronts with screenshots.
+- **Type:** PA Pixel, a web font made from the engine's own bitmap lettering (`tools/pixelfont.py`), for labels, headings and the clock; Atkinson Hyperlegible Next for reading. Both ship in `fonts/`.
+- **States:** a printed skeleton while the shelves load, an empty search with suggestions and a clear button, NO SIGNAL for a game with no screenshot, and a leaderboard error with Try again.
+- **Keyboard and access:** arrow keys walk the shelves and the cartridge tray, `/` focuses search, Esc closes the box and the leaderboard, visible focus rings everywhere, WCAG AA (Web Content Accessibility Guidelines) contrast in both themes, and reduced motion holds the console on a still frame.
+- **Docs site:** a new page at `docs/` (linked from the top bar and footer) covering play, controls, the library, building, installing, scores, development, project structure and the design.
+- **Fixes:** the lobby leaderboard opens (it was hidden inside the game screen); "Save all offline" reports errors instead of failing silently.
+- **Removed:** the Three.js cabinet ring (`js/hero.js`), the cursor trail (`js/trail.js`), pointer glow, parallax, name ticker, grain overlay and count-up stats.
+- **README:** overview, features, new screenshots and an insert GIF, setup, project structure and a Design section for the new concept.
+
+## v33 update (released 18 Oct 2026 from branch `round10`)
+
+- **README progress tracker:** a new 📈 Progress section shows every release from v29 on (date, branch, game counts, what it added) and which 3D worlds have had the realism pass, with a progress bar. `tools/gen_docs.py` builds it from the game registry and `docs/progress.json`, so the counts stay current.
+- **Realism and depth pass on six more 3D games.** Heavier effects only switch on at MEDIUM and above; LOW quality is as light as before or lighter in every measured view. All checks were headless (software WebGL), not on a real GPU or phone.
+- **STRIKER 11 (second pass):** floodlight pools with four-way player shadows, grass sheen and rain puddles, a closed truss roof and skyline, home and away crowd ends with scarves, better run and kick animation, a glass score bug and lower-thirds; a LEAGUE mode with six clubs and five matchdays, and faster loading.
+- **IRON VANGUARD:** golden-hour sky, blended terrain with ruts, track scars and craters, a riveted truss bridge, swaying card trees, a detailed tank and new jeep, helicopter and jet, lit smoke and layered explosions; vehicle damage zones, bots that pull back for repairs, squad objective orders and multi-kill banners.
+- **STORM ROYALE:** a procedural sky, splatted island terrain with paths, new trees, fresnel water with shore foam, detailed houses, destructible props, a swirling storm wall and loot halos; rarity now affects spread and reload, a FIZZ CAN heal and frag grenades, difficulty-scaled bot tactics, seven storm phases, a richer kill feed and a killer cam.
+- **WILD QUEST:** carved rivers with stepped waterfalls and mist, baked ground textures, five procedural tree kinds, distant mountains, a cloth cloak and parafoil glider, armoured camp enemies; a Sunroot warm buff, a cold zone on the peaks, chained camp chests, wading and rain stealth.
+- **KART GRAND PRIX:** per-track road surfaces, kerbs, grandstands with crowds and rebuilt karts with boost lights; slipstream, item dragging, tactical CPUs, time-trial medals and saved cup trophies.
+- **ABYSS DIVER:** physically based underwater light with depth absorption, caustics, a Snell's window surface, soft shadows, textured sand and rock, arches and reef life, a rusted wreck and a remodelled diver, sub and pod; echo logs that unlock gear, an objective chain, a buildable seabed outpost, curious turtles, a territorial razorjaw and a third-person view.
+- **SWELL GUARD** (new 3D world, `surf/`): a surfing lifeguard on a golden-hour beach. Ride breaking waves for carve, air and barrel combos while rip, sting and shark rescues, a lost child, a seagull thief and a contest heat pull you off the waves.
+
+## v32 update (released 18 Oct 2026 from branch `round9`)
 
 - **Realism and depth pass on six 3D games.** Heavier effects only switch on at MEDIUM and above; LOW quality is as light as before or lighter in every measured view. All checks were headless (software WebGL), not on a real GPU or phone.
 - **FRONTLINE OPS:** baked surface textures with grime and decals, rebuilt soldiers, worn weapon finishes and a lit viewmodel, per-map lighting and colour grading, contact shadows, skylines and street clutter; nine weapon attachments, bot squads that flank, smoke and suppress, a new HARDPOINT mode and kill medals.

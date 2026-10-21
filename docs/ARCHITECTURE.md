@@ -4,7 +4,7 @@ Pixel Arcade is a static website with no build step. GitHub Pages serves `main` 
 
 ```
 index.html ── js/engine/*.js ── js/gx.js ── games/*.js        455 canvas cabinets + hub entries for the 3D worlds
-           └─ js/hero.js (Three.js lobby hero)
+           └─ js/lobby.js (shelves, box, search) ── js/console.js (front-page console)
 <folder>/index.html ── <folder>/game.js (+ modules) ── vendor/, js/fx3d.js, js/kit3d/      31 full-3D worlds
 builder/                                                       2D + 3D game builder
 sw.js + offline.json + manifest.webmanifest                    installable offline web app
@@ -31,7 +31,7 @@ Every cabinet draws on a 320×240 logical screen, rendered in high definition (H
 | `09-clock.js` | round clock: category defaults `LIMITS`, per-game `TIMES`, `A.limitOf`, round start |
 | `10-cards.js` | cabinet UI drawn at backing resolution: title, pause and results cards, clock bar, how-to strip |
 | `11-loop.js` | the frame loop, bloom, `A.open`/`A.close`, graphics quality (**G**), hub previews, HD fit |
-| `12-hub.js` | boot: DOM events, profile chip, leaderboard modal, lobby grid, search, favourites, recently played |
+| `12-hub.js` | boot: DOM events, profile chip, leaderboard modal; then hands the lobby to `js/lobby.js` (`A.lobby`), which builds the shelves, box panel, search, favourites and recently played. `js/console.js` runs the front-page console on `arcade-ready` |
 
 `js/gx.js` is the shared art kit `A.gx` (gradients, glossy blocks, glow, HUD panels, cached backdrops) used by the game packs.
 

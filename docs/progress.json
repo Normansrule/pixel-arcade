@@ -1,0 +1,32 @@
+{
+  "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
+  "releases": [
+    {"v": "v34", "date": "20 Oct 2026", "branch": "round11", "round": 11,
+     "added": "Cartridge Shelf redesign of the hub and a new docs site: genre shelves of cartridge spines, a box panel for each game, a front-page console with attract mode, a round clock and drag-to-insert, light and dark modes, and the engine's pixel font as a web font."},
+    {"v": "v33", "date": "18 Oct 2026", "branch": "round10", "round": 10, "games": 510, "worlds": 55,
+     "added": "Realism and depth pass on six more 3D worlds (STRIKER 11 second pass, IRON VANGUARD, STORM ROYALE, WILD QUEST, KART GRAND PRIX, ABYSS DIVER); the new lifeguard surfing world SWELL GUARD; this progress tracker."},
+    {"v": "v32", "date": "18 Oct 2026", "branch": "round9", "round": 9, "games": 509, "worlds": 54,
+     "added": "Realism and depth pass on six flagship 3D worlds: FRONTLINE OPS, SIDEWAYS, STRIKER 11, DUSTWATER, FAIRWAY LEGENDS, NEON BAY."},
+    {"v": "v31", "date": "18 Oct 2026", "branch": "round8", "round": 8, "games": 509, "worlds": 54,
+     "added": "Four new 3D worlds from the inspiration pack: BEACON RESCUE, LANTERN STREET, TIDEWAY COURIER, HARBOR PALS."},
+    {"v": "v30", "date": "18 Oct 2026", "branch": "v30", "round": 7, "games": 505, "worlds": 50,
+     "added": "BASTION LINE and FAIRWAY LEGENDS, a 43-game art pass, cheaper ambient occlusion, COURT KINGS and SILENT CONTRACT polish."},
+    {"v": "v29", "date": "17 Oct 2026", "branch": "v29-heavy-3d", "round": 6, "games": 503, "worlds": 48,
+     "added": "Rounds 1 to 6: repository reorganisation, the shared 3D kit, online play codes, dozens of new 3D worlds and art passes on the canvas cabinets."}
+  ],
+  "realism": {
+    "_about": "Realism pass status per 3D world id: the release that shipped it and how many passes it has had. Worlds not listed are still to do.",
+    "frontline":      {"v": "v32", "passes": 2},
+    "sideways":       {"v": "v32", "passes": 1},
+    "dustwater":      {"v": "v32", "passes": 1},
+    "fairwaylegends": {"v": "v32", "passes": 1},
+    "neonbay":        {"v": "v32", "passes": 1},
+    "striker":        {"v": "v33", "passes": 2},
+    "warfront":       {"v": "v33", "passes": 1},
+    "stormroyale":    {"v": "v33", "passes": 1},
+    "wildquest":      {"v": "v33", "passes": 1},
+    "kartgp":         {"v": "v33", "passes": 1},
+    "abyss3d":        {"v": "v33", "passes": 1},
+    "swellguard":     {"v": "v33", "passes": 1}
+  }
+}

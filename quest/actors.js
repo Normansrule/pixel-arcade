@@ -28,8 +28,8 @@ export class Enemy{
   if((this.losT-=dt)<=0){this.losT=.35+rnd(.2);const e=this.center;e.y+=.6;tv2.set(P.p.x,P.p.y+1.4,P.p.z).sub(e);const L=tv2.length();tv2.divideScalar(L||1);this.los=L>80?false:G.phys.terrainRay(e.x,e.y,e.z,tv2.x,tv2.y,tv2.z,L,1.5)===Infinity;}
   const sleeping=this.kind==='grunt'&&!this.aware&&G.night>.55&&this.state==='idle';this.sleeping=sleeping;
   if(this.kind==='grunt'||this.kind==='archer'){
-   if(!this.aware){const fwd=Math.sin(this.yaw)*dx+Math.cos(this.yaw)*dz;const range=K.sight*(sleeping?.22:1)*(G.night>.55?.65:1)*(P.crouch?.6:1);
-    const seen=pAvail&&this.los&&d<range&&(fwd>d*.25||d<5)&&Math.abs(dy)<20;const loud=pAvail&&d<(P.sprinting?11:P.loud>0?14:0);
+   if(!this.aware){const fwd=Math.sin(this.yaw)*dx+Math.cos(this.yaw)*dz;const range=K.sight*(sleeping?.22:1)*(G.night>.55?.65:1)*(P.crouch?.6:1)*(1-G.rain*.3);
+    const seen=pAvail&&this.los&&d<range&&(fwd>d*.25||d<5)&&Math.abs(dy)<20;const loud=pAvail&&d<(P.sprinting?11:P.loud>0?14:0)*(1-G.rain*.45);
     if(seen||loud)this.alert+=dt*(1.8*(1-d/Math.max(range,1))+.35+(loud?1.2:0))*G.dm.aggr;else this.alert=Math.max(0,this.alert-dt*.3);if(this.alert>=1)this.becomeAware();}
    else{if(!pAvail||d>48){this.lostT+=dt;if(this.lostT>6){this.aware=false;this.alert=0;this.state='return';this.releaseToken();}}else this.lostT=0;}}
   this.stun=Math.max(0,this.stun-dt);

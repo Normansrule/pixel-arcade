@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixel Arcade docs</title>
+<meta name="description" content="How to play, build, install and develop Pixel Arcade, and how its design works.">
+<link rel="icon" href="icons/favicon-64.png">
+<meta name="theme-color" content="#141823" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
+<script>try{const t=localStorage.getItem('pxd_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="docs">
+<a class="skip" href="#doc">Skip to the docs</a>
+<nav class="topbar" aria-label="Site">
+  <a class="brand" href="../" aria-label="Pixel Arcade, back to the arcade"><i aria-hidden="true"></i><span>PIXEL ARCADE</span></a>
+  <div class="tools"></div>
+  <a class="btn ghost" href="../"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Arcade</a>
+  <a class="btn ghost buildlink" href="../builder/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Build</a>
+  <button class="ico" id="themeBtn" type="button" aria-label="Switch to dark mode"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+  <a class="ico gh" href="https://github.com/Normansrule/pixel-arcade" target="_blank" rel="noopener" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.88.87 2.34.66.07-.52.28-.87.51-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+</nav>
+
+<main id="top" class="wrap">
+  <nav class="docnav" aria-label="On this page">
+    <a href="#start">Getting started</a>
+    <a href="#controls">Controls</a>
+    <a href="#library">Library and console</a>
+    <a href="#build">Build your own</a>
+    <a href="#anywhere">Play anywhere</a>
+    <a href="#scores">Scores</a>
+    <a href="#develop">Develop</a>
+    <a href="#structure">Project structure</a>
+    <a href="#design">Design</a>
+  </nav>
+
+  <article class="doc" id="doc">
+    <h1>Pixel Arcade docs</h1>
+    <p class="lead">Pixel Arcade is a free, open-source arcade that runs in your web browser: hundreds of short, original games plus a set of full 3D (three-dimensional) worlds. Every game ends on a round clock, most have a computer opponent, and the whole thing works offline.</p>
+    <figure><img src="readme/hub-light.jpg" alt="The front page in light mode: the pixel-lettered headline on the left, the console running a game in attract mode on the right, and a tray of cartridges under it" width="1440" height="900"><figcaption>The front page. The console plays short demos of the cartridges in the tray.</figcaption></figure>
+
+    <h2 id="start">Getting started</h2>
+    <ol>
+      <li>Open <a href="https://normansrule.github.io/pixel-arcade/">normansrule.github.io/pixel-arcade</a>.</li>
+      <li>Drag a cartridge into the console, tap one, or pick a game from the library.</li>
+      <li>Press <kbd>Space</kbd> on the title card and beat the clock. When the round ends you get a results card with your score, tokens and the option to play again.</li>
+    </ol>
+    <p>Can't decide? <b>Surprise me</b> on the front page (or the dice in the top bar) starts a random game.</p>
+
+    <h2 id="controls">Controls</h2>
+    <table>
+      <thead><tr><th scope="col">Action</th><th scope="col">Keyboard</th><th scope="col">Mouse or touch</th></tr></thead>
+      <tbody>
+        <tr><td>Move</td><td><kbd>Arrows</kbd> or <kbd>WASD</kbd></td><td>Aim games follow the pointer; phones get an on-screen D-pad (directional pad)</td></tr>
+        <tr><td>A: fire, jump, select</td><td><kbd>Space</kbd></td><td>Click, hold or tap</td></tr>
+        <tr><td>B</td><td><kbd>X</kbd></td><td>Right-click</td></tr>
+        <tr><td>Pause, restart, mute, graphics</td><td><kbd>P</kbd> <kbd>R</kbd> <kbd>M</kbd> <kbd>G</kbd></td><td>Buttons above the game screen</td></tr>
+        <tr><td>Back to the lobby</td><td><kbd>Esc</kbd></td><td>The Lobby button</td></tr>
+        <tr><td>Search the library</td><td><kbd>/</kbd></td><td>The search box</td></tr>
+        <tr><td>Two players</td><td>Player 1: <kbd>WASD</kbd> + <kbd>F</kbd>/<kbd>G</kbd>. Player 2: <kbd>Arrows</kbd> + <kbd>Enter</kbd>/<kbd>Shift</kbd></td><td></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="library">Library and console</h2>
+    <p>The library is a set of shelves, one per genre. Each game is a cartridge spine with its mode printed at the top (<b>1P</b> for solo, <b>VS</b> for computer or two players, <b>3D</b> for the worlds) and its round length at the bottom. Each genre has its own print pattern, so you can tell the shelves apart at a glance.</p>
+    <ul>
+      <li><b>Pick a spine</b> and it slides up while its box opens on the right: a live preview, the round length, the mode, your best score, the rules, and buttons to play, favourite, see the global top 10 or read the source. Click the same spine again to play. On a phone the box comes up from the bottom of the screen.</li>
+      <li><b>Arrow keys</b> walk along a shelf, <kbd>Home</kbd> and <kbd>End</kbd> jump to its ends, and <kbd>Tab</kbd> moves to the next shelf.</li>
+      <li><b>Shelf or Boxes</b>: the switch above the shelves swaps the spines for box fronts with screenshots. Your choice is remembered.</li>
+      <li><b>Search</b> matches names and tags, including parts of words, so "tow def" finds the tower defence games. The filters along the top jump to a genre, your recently played games or your favourites.</li>
+    </ul>
+    <p>The console on the front page runs in <b>attract mode</b>, the way arcade cabinets used to: it plays a 20-second demo of each cartridge in the tray, with the round clock counting down and turning red for the last 10 seconds. Drag a cartridge into the slot (or tap it, or select it with the arrow keys and press <kbd>Enter</kbd>) and the screen powers off, counts down 3, 2, 1 and boots the game. <b>Shuffle</b> deals a new set of cartridges.</p>
+    <figure><img src="readme/console-insert.gif" alt="A cartridge being dragged from the tray into the console, which powers off, counts down and boots the game" width="440" height="511" loading="lazy" style="max-width:440px"><figcaption>Dragging a cartridge into the console.</figcaption></figure>
+
+    <h2 id="build">Build your own</h2>
+    <p>The <a href="../builder/">builder</a> is a 2D and 3D game editor in the browser: scenes, components, rules, play-testing, sharing and publishing. Games you make show up under <b>Your games</b> on the front page. The full guide is in the repository's <a href="https://github.com/Normansrule/pixel-arcade#-build-your-own">README</a>.</p>
+
+    <h2 id="anywhere">Play anywhere</h2>
+    <ul>
+      <li><b>Install it.</b> In Chrome or Edge, <b>Install</b> in the top bar adds Pixel Arcade as an app. On a phone, use "Add to Home Screen".</li>
+      <li><b>Save it offline.</b> <b>Save all offline</b> at the bottom of the front page downloads every game, so the arcade works with no internet.</li>
+      <li><b>Desktop app.</b> Windows, macOS and Linux builds are on the <a href="https://github.com/Normansrule/pixel-arcade/releases">releases page</a>.</li>
+      <li><b>Play online.</b> Some games can be played with a friend on the same network by swapping short codes. There's no server; see <a href="https://github.com/Normansrule/pixel-arcade/blob/main/docs/MULTIPLAYER.md">the multiplayer notes</a>.</li>
+    </ul>
+
+    <h2 id="scores">Scores</h2>
+    <p>Your best score for each solo game is kept in your browser. Tap the profile chip in the top bar to set your GitHub username; scores are then kept per name. To post a score to the global board, press <kbd>U</kbd> on a game-over screen. That opens a GitHub issue titled <code>[score] game points</code>, so every entry is tied to a real GitHub account. <b>Top 10</b> in a game's box (or <kbd>L</kbd> on its results card) shows the board.</p>
+
+    <h2 id="develop">Develop</h2>
+    <p>There's no build step: the site is static HTML (HyperText Markup Language), plain JavaScript and a few ES (ECMAScript) modules, and every font and library ships in the repository, so it works without a CDN (content delivery network). You need Python 3 to serve files and run the tools, and Node.js for the tests.</p>
+<pre><code>git clone https://github.com/Normansrule/pixel-arcade.git
+cd pixel-arcade
+python3 -m http.server 8000      # open http://localhost:8000
+node tests/test.js               # every canvas game, every mode
+node tests/quality.js            # quality gate, writes docs/QUALITY.md
+python3 tools/gen_docs.py        # counts and tables in the README and docs
+python3 tools/build.py           # offline files and the single-file build</code></pre>
+    <p>CI (continuous integration) runs the tests and <code>gen_docs.py --check</code> on every push. The engine itself is described in <a href="https://github.com/Normansrule/pixel-arcade/blob/main/docs/ARCHITECTURE.md">ARCHITECTURE.md</a>, and every game is listed in <a href="https://github.com/Normansrule/pixel-arcade/blob/main/docs/GAMES.md">GAMES.md</a>.</p>
+
+    <h2 id="structure">Project structure</h2>
+<pre><code>index.html, style.css   the front page: console, shelves, game player, leaderboard
+js/lobby.js             shelves, the cartridge box, search, favourites, views, theme
+js/console.js           the console: attract mode, round clock, drag-to-insert
+js/engine/              the canvas engine, one numbered file per layer
+games/                  the canvas games in themed packs (games/index.json is the load order)
+&lt;world&gt;/                each full 3D world in its own folder
+js/kit3d/, js/fx3d.js   shared pieces for the 3D worlds
+builder/                the 2D and 3D game builder
+fonts/                  Atkinson Hyperlegible Next, PA Pixel and the engine fonts
+docs/                   this page, screenshots, thumbnails and the reference docs
+tools/                  docs generator, thumbnails, offline files, pixel font builder
+tests/                  headless tests for every canvas game
+desktop/                the Electron desktop app</code></pre>
+
+    <h2 id="design">Design</h2>
+    <p>The concept is <b>Cartridge Shelf</b>: a library this size is a wall of games, so the site is built like printed packaging. The page is two-tone with no white: a night-navy stage (the top bar, the front page and the footer) above warm stone shelves, all printed in one cobalt ink. Dark mode turns the shelves to night too, with the cobalt a little brighter so it keeps its contrast.</p>
+    <div class="swatches" aria-label="Colour tokens">
+      <div><i style="background:#141823"></i>Night</div>
+      <div><i style="background:var(--paper)"></i>Stone</div>
+      <div><i style="background:var(--paper-2)"></i>Stone 2</div>
+      <div><i style="background:var(--ink)"></i>Ink</div>
+      <div><i style="background:var(--ink-3)"></i>Ink 3</div>
+      <div><i style="background:var(--cobalt-fill)"></i>Cobalt</div>
+      <div><i style="background:var(--signal)"></i>Signal</div>
+    </div>
+    <h3>Type</h3>
+    <p><b>PA Pixel</b> is the engine's own 3×5 bitmap font, turned into a web font by <code>tools/pixelfont.py</code>, so the lettering on spines, headings and the round clock is the same lettering the games draw. Reading text is <b>Atkinson Hyperlegible Next</b>, a typeface designed for low-vision readers. Both ship in <code>fonts/</code>.</p>
+    <h3>Principles</h3>
+    <ul>
+      <li><b>One ink, one signal.</b> Cobalt marks what you can act on and what's selected. Signal orange is kept for the clock and your scores.</li>
+      <li><b>Things behave like objects.</b> Spines slide up when picked, cartridges tilt with the speed of your drag and spring home if you let go. The springs are short and settle quickly; nothing floats or loops for decoration.</li>
+      <li><b>Show the game, not a picture of it.</b> The console, the box and the Boxes view all show the real game running or its real screen.</li>
+      <li><b>Every state is designed.</b> Loading shelves, an empty search, a box with nothing picked, a leaderboard that can't reach GitHub and a game with no screenshot each have their own state.</li>
+      <li><b>Accessible by default.</b> Every control works from the keyboard with a visible focus ring, text meets WCAG (Web Content Accessibility Guidelines) AA contrast in both themes, and with reduced motion turned on the console holds a still frame and nothing slides.</li>
+    </ul>
+  </article>
+</main>
+<script>
+(function(){
+ const tb=document.getElementById('themeBtn'),root=document.documentElement;
+ const cur=()=>root.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+ const lab=()=>tb.setAttribute('aria-label',cur()==='dark'?'Switch to light mode':'Switch to dark mode');
+ tb.onclick=()=>{const t=cur()==='dark'?'light':'dark';root.dataset.theme=t;try{localStorage.setItem('pxd_theme',t);}catch(e){}lab();};lab();
+ // the page navigation marks the section you're reading
+ const links=[...document.querySelectorAll('.docnav a')],secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+ if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting)links.forEach((a,i)=>a.setAttribute('aria-current',secs[i]===en.target));});},{rootMargin:'0px 0px -70% 0px'});secs.forEach(s=>s&&io.observe(s));}
+})();
+</script>
+</body>
+</html>

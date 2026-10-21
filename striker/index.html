@@ -5,7 +5,7 @@
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>STRIKER 11 · Pixel Arcade</title>
-<meta name="description" content="STRIKER 11: full 3D eleven-a-side football in the browser. Broadcast camera, sixteen original clubs, quick matches, an eight-team cup, local 2P versus.">
+<meta name="description" content="STRIKER 11: full 3D eleven-a-side football in the browser. Broadcast camera, sixteen original clubs, quick matches, an eight-team cup, a league season, local 2P versus.">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="striker.css">
 </head>
@@ -19,6 +19,8 @@
     <div class="tm r" id="t1"><b id="n1">AWY</b><canvas id="cr1" width="64" height="64"></canvas></div>
     <div class="clk"><b id="clk">00:00</b><span id="per">1ST</span></div>
   </div>
+  <div id="comp"></div>
+  <div id="l3"><div class="tag" id="l3t"></div><div class="bd"><canvas id="l3c" width="96" height="96"></canvas><div class="tx"><b id="l3n"></b><span id="l3s"></span></div></div></div>
   <div id="so" hidden></div>
   <div id="bug">STRIKER<em>11</em></div>
   <div id="feed"></div>
@@ -34,9 +36,9 @@
 <div id="menu">
   <p class="eye">[ PIXEL ARCADE ] FULL 3D · FOOTBALL</p>
   <h1>STRIKER<br>11<em>.</em></h1>
-  <p class="how">Eleven-a-side football under the floodlights. Pass, press, curl it in the top corner. Quick matches, an eight-team knockout cup, or a local 2P derby on one keyboard.</p>
+  <p class="how">Eleven-a-side football under the floodlights. Pass, press, curl it in the top corner. Quick matches, an eight-team knockout cup, a six-club league season, or a local 2P derby on one keyboard.</p>
   <div class="opts">
-    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0">QUICK MATCH</button><button data-v="1">CUP</button></div>
+    <label>MODE</label><div class="seg" id="o-mode"><button data-v="0">QUICK MATCH</button><button data-v="1">CUP</button><button data-v="2">LEAGUE</button></div>
     <label id="r-pll">PLAYERS</label><div class="seg" id="r-pl"><span class="seg" id="o-pl"><button data-v="1">1P VS CPU</button><button data-v="2">2P VERSUS</button></span></div>
     <label>YOUR CLUB</label><div class="pick" id="p-club"><button class="l" aria-label="previous club">◀</button><canvas width="96" height="96"></canvas><div><b></b><span></span></div><button class="r" aria-label="next club">▶</button></div>
     <label id="r-oppl"><span id="l-opp">OPPONENT</span></label><div id="r-opp"><div class="pick" id="p-opp"><button class="l" aria-label="previous club">◀</button><canvas width="96" height="96"></canvas><div><b></b><span></span></div><button class="r" aria-label="next club">▶</button></div></div>
@@ -82,6 +84,13 @@
   <div id="bracket"></div>
   <p class="how" id="cupmsg"></p>
   <div class="row"><button id="cupgo" class="go">PLAY</button><button id="cupmenu" class="ghost">MENU</button></div>
+</div>
+<div id="lgv" hidden>
+  <p class="eye" id="lgeye">STRIKER 11 · LEAGUE</p>
+  <h1 id="lgh">MATCH<br>DAY 1<em>.</em></h1>
+  <div class="lgwrap"><table id="lgtab" class="lg"></table><div id="lgres"></div></div>
+  <p class="how" id="lgmsg"></p>
+  <div class="row"><button id="lggo" class="go">PLAY</button><button id="lgnew" class="ghost">NEW SEASON</button><button id="lgmenu" class="ghost">MENU</button></div>
 </div>
 <a class="back" href="../">← ARCADE</a>
 <script type="module" src="game.js"></script>

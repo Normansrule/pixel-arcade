@@ -6,7 +6,6 @@ os.chdir(os.path.dirname(HERE))  # paths below are relative to the repo root
 subprocess.run([sys.executable, os.path.join(HERE, 'make_pwa.py')], check=True)
 src = open('index.html', encoding='utf-8').read()
 src = src.replace('<link rel="stylesheet" href="style.css">', '<style>\n' + open('style.css', encoding='utf-8').read() + '</style>')
-src = src.replace('<script type="module" src="js/hero.js"></script>', '')
 src = re.sub(r'<script src="([^"]+)"></script>', lambda m: '<script>\n' + open(m.group(1), encoding='utf-8').read() + '</script>', src)
 import base64
 if os.path.exists('docs/kart.png'):

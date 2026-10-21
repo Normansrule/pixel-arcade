@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swell Guard · Pixel Arcade</title>
+<meta name="description" content="Swell Guard: surf a golden-hour point break as the lifeguard on shift. Carve, bottom-turn, cutback, get barrelled and boost airs, then drop everything to paddle a swimmer out of a rip, clear the water for a shark fin, beat CPU surfers in a heat and walk a lost kid home.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="surf.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="under"></div>
+<div id="marks"></div>
+<div id="hud" hidden>
+  <div id="tl"><span class="lbl">SURF</span><b id="surf">0</b><span class="lbl">DUTY</span><b id="duty" class="d">0</b></div>
+  <div id="clockW"><b id="clock">5:00</b><span id="diffTag">SHIFT</span></div>
+  <div id="tr"><div id="rep"><span>REPUTATION</span><div class="bar"><i id="repF"></i></div><b id="repN">70</b></div><div id="resc">0 SAVED · 0 MISSED</div><div id="repFeed"></div></div>
+  <div id="alerts"></div>
+  <div id="events"></div>
+  <canvas id="radar" width="200" height="116"></canvas>
+  <div id="pops"></div>
+  <div id="tname"></div>
+  <div id="combo"><div id="ctricks"></div><div id="cscore"></div></div>
+  <div id="prompt"></div>
+  <div id="intro" hidden><p class="eye">TOWER 7 · GOLDEN HOUR</p><h2>ON SHIFT<em>.</em></h2><ul><li>Surf for points: carve, cut back, get barrelled, boost airs</li><li>Watch the water: grab swimmers in trouble (E) and bring them in</li><li>Handle beach events: whistle (F) to clear the water</li></ul><p class="tap">SPACE TO PADDLE OUT</p></div>
+  <div id="touch"><div id="tpad"></div><button id="tAct">JUMP<br>DUCK</button><button id="tE">GRAB</button><button id="tF">WHISTLE</button></div>
+</div>
+<div id="menu">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SURF + LIFEGUARD</p>
+  <h1>SWELL<br>GUARD<em>.</em></h1>
+  <p class="how">You're the lifeguard on the evening shift at a golden-hour point break. Surf for score between duties: carve, cut back, get barrelled and boost airs. But keep one eye on the water: rip currents, a shark fin, jellyfish, a lost kid and a contest heat all need you. Missed rescues cost reputation.</p>
+  <div class="opts">
+    <label>CONDITIONS</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label></label><p id="shiftLen" class="sub"></p>
+  </div>
+  <div class="row"><button id="go" class="go">START SHIFT</button><button id="resume" class="ghost" hidden>RESUME</button></div>
+</div>
+<div class="card" id="keys">
+  <h3>CONTROLS<em>.</em></h3>
+  <table>
+    <tr><td>Run · paddle · steer</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span class="pad">L-stick</span></td></tr>
+    <tr><td>Stand up · duck-dive · launch</td><td><kbd>Space</kbd> <span class="pad">A</span></td></tr>
+    <tr><td>Riding: steer on screen</td><td>W up the face · S down</td></tr>
+    <tr><td>Crouch (speed, barrel) · stall</td><td><kbd>Shift</kbd> · <kbd>Q</kbd> <span class="pad">RT · LT</span></td></tr>
+    <tr><td>Air: spin · flip · grabs</td><td><kbd>A</kbd><kbd>D</kbd> · <kbd>W</kbd><kbd>S</kbd> · <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd></td></tr>
+    <tr><td>Grab swimmer · help kid</td><td><kbd>E</kbd> <span class="pad">X</span></td></tr>
+    <tr><td>Whistle (clear the water)</td><td><kbd>F</kbd> <span class="pad">Y</span></td></tr>
+    <tr><td>Camera · map · music · pause</td><td><kbd>C</kbd> <kbd>M</kbd> <kbd>N</kbd> <kbd>Esc</kbd></td></tr>
+    <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
+  </table>
+  <p>Catch a wave: face the beach and paddle as the face lifts you, then stand. Stay near the curl, kick out over the back to bank the combo. Release grabs before you land.</p>
+</div>
+<div class="card2" id="careerCard"><h3>CAREER<em>.</em></h3><table id="career"></table></div>
+<div id="pause" hidden><p class="eye">PAUSED</p><h1>HOLD<br>THE FLAGS<em>.</em></h1><p id="pInfo" class="sub"></p><div class="row"><button id="resumeB" class="go">RESUME</button><button id="restart" class="ghost">RESTART SHIFT</button><button id="quit" class="ghost">SAVE + QUIT</button></div></div>
+<div id="over" hidden>
+  <p class="eye" id="oeye">END OF SHIFT</p>
+  <p class="res" id="ores">SOLID SHIFT</p>
+  <p class="stars" id="ostars"></p>
+  <p class="fs" id="ofs">0</p>
+  <div class="ogrid"><table id="stats"></table><ul id="oEvents"></ul></div>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">NEXT SHIFT</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

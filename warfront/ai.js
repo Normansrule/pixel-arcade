@@ -34,7 +34,7 @@ function perceive(a,G){const ai=a.ai,range=a.cls==='recon'?190:a.cls==='engineer
 export function pickObjective(a,G){const t=a.team;let best=null,bs=-1e9;const me=posOf(a.veh||a);
  for(const p of G.points){const d=Math.hypot(p.x-me.x,p.z-me.z);let s=-d*.012;if(p.own!==t)s+=p.own===-1?2.6:2.2;else s+=p.contest>0?2.4:-1.5;
   // spread out: fewer bots already heading there is better
-  s-=(G.objLoad[t][p.i]||0)*.12;s+=Math.random()*1.4;if(s>bs){bs=s;best=p;}}return best;}
+  s-=(G.objLoad[t][p.i]||0)*.12;if(G.orders&&G.orders[t]===p)s+=1.3;s+=Math.random()*1.4;if(s>bs){bs=s;best=p;}}return best;}
 function objGoal(a,p){const an=Math.random()*PI*2,r=Math.random()*p.r*.75;let x=p.x+Math.cos(an)*r,z=p.z+Math.sin(an)*r;if(p.kind==='bridge'){x=p.x+rr(-3,3);z=p.z+rr(-14,14);}return[x,z];}
 export function setPath(a,x,z,G,budget=true){if(budget){if(G.pathBudget<=0)return false;G.pathBudget--;}const p=posOf(a.veh||a);const path=G.W.path(p.x,p.z,x,z);a.ai.path=path&&path.length?path:null;a.ai.goal=new V(x,0,z);a.ai.pathT=G.time;return!!a.ai.path;}
 function leaderOf(a,G){if(a.ai.leader)return null;for(const b of G.actors)if(b.team===a.team&&b.ai&&b.ai.squad===a.ai.squad&&b.ai.leader&&b.alive&&!b.downed)return b;const P=G.player;if(P&&P.alive&&P.team===a.team&&P.squad===a.ai.squad)return P;return null;}
@@ -52,11 +52,11 @@ export function think(a,G){const ai=a.ai,D=G.diff;ai.think=a.far?rr(.5,.8):rr(.2
    if(best){ai.job={kind:'revive',t:best};best.reviver=a;if(me.distanceTo(best.pos)>1.6){if(!ai.path||G.time-ai.pathT>2)setPath(a,best.pos.x,best.pos.z,G);}ai.state='job';return;}
    if(ai.kitT<=0){for(const b of G.actors)if(b.team===a.team&&b.alive&&!b.downed&&b!==a&&b.hp<b.maxHp*.7&&me.distanceTo(b.pos)<9){G.dropKit(a,'med');ai.kitT=rr(18,26);break;}}}
   if(a.cls==='assault'&&ai.kitT<=0){for(const b of G.actors)if(b.team===a.team&&b.alive&&b!==a&&me.distanceTo(b.pos)<9&&(b.isPlayer?b.lowAmmo:Math.random()<.2)){G.dropKit(a,'ammo');ai.kitT=rr(20,30);break;}}
-  if(a.cls==='engineer'){let best=null,bd=35;for(const v of G.vehicles){if(v.team!==a.team||!v.alive||v.hp>v.S.hp*.8||v.kind==='jet'||v.kind==='heli'&&v.p.y-G.W.height(v.p.x,v.p.z)>3)continue;const d=me.distanceTo(v.p);if(d<bd){bd=d;best=v;}}
+  if(a.cls==='engineer'){let best=null,bd=60;for(const v of G.vehicles){if(v.team!==a.team||!v.alive||v.hp>v.S.hp*.8&&!(G.vehBroken&&G.vehBroken(v))||v.kind==='jet'||v.kind==='heli'&&v.p.y-G.W.height(v.p.x,v.p.z)>3)continue;const d=me.distanceTo(v.p);if(d<bd){bd=d;best=v;}}
    if(best){ai.job={kind:'repair',t:best};if(me.distanceTo(best.p)>3.6){if(!ai.path||G.time-ai.pathT>2)setPath(a,best.p.x,best.p.z,G);}ai.state='job';return;}}}
  if(ai.job){if(ai.job.t)ai.job.t.reviver=ai.job.t.reviver===a?null:ai.job.t.reviver;ai.job=null;}
  // vehicles: grab a free one nearby
- if(!tA&&!a.veh&&G.time-(a.spawnT||0)<20&&!ai.vehGoal&&Math.random()<.5){let best=null,bd=a.atHQ?60:24;for(const v of G.vehicles){if(v.team!==a.team||!v.alive||v.claim&&v.claim!==a)continue;const fs=v.freeSeat();if(fs<0)continue;if(fs===0&&v.kind!=='jeep'&&!a.atHQ&&v.kind!=='tank')continue;
+ if(!tA&&!a.veh&&G.time-(a.spawnT||0)<20&&!ai.vehGoal&&Math.random()<.5*(a.team===1?D.veh:SKIRM.veh)){let best=null,bd=a.atHQ?60:24;for(const v of G.vehicles){if(v.team!==a.team||!v.alive||v.claim&&v.claim!==a)continue;const fs=v.freeSeat();if(fs<0)continue;if(fs===0&&v.kind!=='jeep'&&!a.atHQ&&v.kind!=='tank')continue;
    const d=me.distanceTo(v.p);if(d<bd&&(v.kind!=='jet'&&v.kind!=='heli'||a.atHQ&&Math.random()<.6)){bd=d;best=v;}}
   if(best){ai.vehGoal=best;if(best.freeSeat()===0)best.claim=a;setPath(a,best.p.x,best.p.z,G,false);}}
  if(ai.vehGoal){const v=ai.vehGoal;if(!v.alive||v.freeSeat()<0||(v.claim&&v.claim!==a)){if(v.claim===a)v.claim=null;ai.vehGoal=null;}else{if(me.distanceTo(v.p)<4.2){if(v.claim===a)v.claim=null;G.enterVehicle(a,v);ai.vehGoal=null;return;}if(!ai.path||G.time-ai.pathT>3)setPath(a,v.p.x,v.p.z,G);ai.state='veh';return;}}
@@ -114,7 +114,13 @@ export function crew(a,G,dt){const v=a.veh,ai=a.ai,c=v.ctrl,seat=a.seat;ai.think
  if(thinkNow&&(!ai.obj||G.time-ai.objT>25||ai.obj.own===a.team&&!ai.obj.contest&&G.time-ai.objT>10)){ai.obj=pickObjective(a,G);ai.objT=G.time;ai.path=null;}
  const o=ai.obj;
  if(k==='tank'||k==='jeep'){
-  if(seat===0){if(thinkNow&&o){const d=Math.hypot(v.p.x-o.x,v.p.z-o.z);if(d>o.r*.9&&(!ai.path||G.time-ai.pathT>10))setPath(a,o.x+rr(-6,6),o.z+rr(-6,6),G);if(d<o.r*.9&&!ai.path&&Math.random()<.1)setPath(a,o.x+rr(-o.r,o.r),o.z+rr(-o.r,o.r),G);}
+  // crews on NORMAL/HARD pull a badly hurt or crippled vehicle back to the nearest engineer (or HQ) and return once fixed
+  const DV=a.team===1?G.diff:SKIRM;if(seat===0&&thinkNow){const hurt=v.hp<v.S.hp*.32||v.sys&&(v.sys.eng<=0||v.sys.tur<=0&&k==='tank');
+   if(!ai.retreat&&hurt&&DV.veh>=.8&&!(v.sys&&v.sys.mob<=0)){let to=null,bd=170;for(const b of G.actors)if(b.team===a.team&&b.cls==='engineer'&&b.alive&&!b.downed&&!b.veh){const d=v.p.distanceTo(b.pos);if(d<bd){bd=d;to=b.pos;}}
+    if(!to){const h=HQ[v.team];to=tv.set(h.x,0,h.z+(v.team?30:-30));}ai.retreat=true;ai.retreatT=G.time;setPath(a,to.x+rr(-5,5),to.z+rr(-5,5),G,false);}
+   else if(ai.retreat&&(!hurt&&v.hp>v.S.hp*.6||G.time-ai.retreatT>45)){ai.retreat=false;ai.path=null;}}
+  if(seat===0&&ai.retreat){if(ai.path&&ai.path.length){const wp=ai.path[0],d=steerTo(v,wp[0],wp[1],dt,k==='tank'?1:.85);if(d<5){ai.path.shift();if(!ai.path.length)ai.path=null;}}else{c.thr=0;c.steer=0;}}
+  else if(seat===0){if(thinkNow&&o){const d=Math.hypot(v.p.x-o.x,v.p.z-o.z);if(d>o.r*.9&&(!ai.path||G.time-ai.pathT>10))setPath(a,o.x+rr(-6,6),o.z+rr(-6,6),G);if(d<o.r*.9&&!ai.path&&Math.random()<.1)setPath(a,o.x+rr(-o.r,o.r),o.z+rr(-o.r,o.r),G);}
    if(ai.path&&ai.path.length){const wp=ai.path[0],d=steerTo(v,wp[0],wp[1],dt,k==='tank'?1:.85);if(d<(k==='tank'?5:6)){ai.path.shift();if(!ai.path.length)ai.path=null;}}else{c.thr=0;c.steer=0;}
    if(ai.seen&&k==='tank'&&ai.target&&v.p.distanceTo(posOf(ai.target))<70&&o&&Math.hypot(v.p.x-o.x,v.p.z-o.z)<o.r*1.5){c.thr*=.3;}
    // unstick
