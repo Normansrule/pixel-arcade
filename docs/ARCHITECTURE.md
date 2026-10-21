@@ -88,6 +88,7 @@ Run `python3 tools/build.py` after adding, moving or removing files; it calls `m
 | `node tests/quick.js id…` | quick per-game run with timings |
 | `python3 tools/gen_docs.py` | counts, README tables, `docs/GAMES.md`, `index.html` script tags; `--art` redraws `docs/readme/`, `--check` fails when anything is stale |
 | `python3 tools/thumbs.py` | prerenders hub thumbnails into `docs/thumbs/` (needs a local server) |
+| `python3 tools/readme_hero.py` | renders the README header `docs/screenshot.png` from `tools/readme_hero.html` with live counts (needs a local server) |
 | `python3 tools/build.py` | `sw.js`, `offline.json` and the single-file build |
 
 3D worlds are tested in headless Chromium with software WebGL (`--use-gl=swiftshader --enable-webgl --ignore-gpu-blocklist`). Override `requestAnimationFrame` and call the world's `step()` and `render()` yourself, because software rendering takes seconds per frame.

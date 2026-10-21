@@ -2,7 +2,16 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round11`)
+## Unreleased (on branch `round12`, which includes round 11)
+
+### Round 12 (v35)
+
+- **README header refurbished:** the ring of arcade cabinets and the big PIXEL ARCADE title are back, rebuilt in 3D. Each cabinet now has a real game on its screen, a lit marquee, controls and coin slots, standing on a reflective floor, with live counts of games, cabinets and 3D worlds. `tools/readme_hero.py` renders it from `tools/readme_hero.html`, so it can be regenerated after new games land.
+- **Big box worlds:** the section is now a cinema band on a deeper night stage. Each world is a poster with its title over the screenshot, a numbered tag and a hover zoom; the first is a large feature. The first nine show by default, and **Show all 55 worlds** opens the rest.
+- **Footer sign-off:** the PIXEL ARCADE wordmark from the README header, with a blinking FREE PLAY tag (still under reduced motion) and the live game and world counts.
+- **Fixes:** the night footer now runs to the bottom of the page (a strip of stone showed under it); `tools/thumbs.py` works with the new library (it called a card method that round 11 removed).
+
+### Round 11 (v34)
 
 - **Cartridge Shelf redesign.** The hub is now a library of printed game packaging: one cobalt ink, with a night-navy stage (top bar, front page, footer) over warm stone shelves and no white anywhere. A full dark mode follows your system, or switch it in the top bar.
 - **The console:** the front page has a console whose screen runs the games on the counter in attract mode, with a 20-second round clock that turns red for the last 10 seconds. Drag a cartridge into the slot (or tap it, or use the arrow keys and Enter) and the screen powers off, counts down and boots the game. Shuffle deals a new tray.

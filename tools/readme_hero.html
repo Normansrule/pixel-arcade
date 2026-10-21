@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>README hero</title>
+<!-- The README header (docs/screenshot.png): the arcade cabinets and the PIXEL ARCADE title.
+     Rendered by tools/readme_hero.py; open it through a local server to tweak it by eye:
+     python3 -m http.server 8765  then  http://127.0.0.1:8765/tools/readme_hero.html?games=510&worlds=55&cabs=455 -->
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+ html,body{margin:0;width:1280px;height:800px;overflow:hidden;background:#0c0f17}
+ #v{position:absolute;inset:0}
+ .ov{position:absolute;inset:0;pointer-events:none;color:#eceae3}
+ /* screen-wide finish: a soft vignette and faint scanlines, like looking at the room through a monitor */
+ .ov::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 60% 45%,transparent 55%,rgba(5,7,12,.75) 100%),repeating-linear-gradient(rgba(0,0,0,0) 0 3px,rgba(0,0,0,.08) 3px 4px)}
+ .tag{position:absolute;top:34px;font:15px/1 'PA Pixel';letter-spacing:.14em;color:#959aa8}
+ .tag.l{left:44px}.tag.r{right:44px}
+ .tag b{color:#ff4d00;font-weight:400}
+ h1{position:absolute;left:36px;bottom:118px;margin:0;font:400 238px/.8 Anton,Impact,sans-serif;letter-spacing:-.01em;text-transform:uppercase;color:#eceae3;text-shadow:0 18px 50px rgba(0,0,0,.55)}
+ h1 span{display:block}
+ h1 i{display:inline-block;width:.15em;height:.15em;margin-left:.05em;background:#ff4d00;box-shadow:0 0 40px rgba(255,77,0,.55)}
+ .sub{position:absolute;left:44px;bottom:58px;font:18px/1 'PA Pixel';letter-spacing:.08em;color:#eceae3}
+ .sub em{font-style:normal;color:#8f9fff}
+ .stats{position:absolute;right:44px;bottom:50px;display:flex}
+ .stats div{width:132px;padding:16px 16px 14px;border:1px solid rgba(236,234,227,.16);margin-left:-1px;background:rgba(12,15,23,.55);backdrop-filter:blur(6px)}
+ .stats b{display:block;font:400 44px/1 Anton,sans-serif;color:#eceae3}
+ .stats small{display:block;margin-top:10px;font:12px/1 'PA Pixel';letter-spacing:.1em;color:#959aa8}
+ .stats div:first-child b{color:#ff4d00}
+</style>
+</head>
+<body>
+<canvas id="v" width="1280" height="800"></canvas>
+<div class="ov">
+  <p class="tag l">[ <b>●</b> INSERT COIN ]</p>
+  <p class="tag r">BROWSER · FREE · OFFLINE · OPEN SOURCE</p>
+  <h1><span>Pixel</span><span>Arcade<i></i></span></h1>
+  <p class="sub">→ <em>PICK A CABINET.</em> NO INSTALLS, NO ACCOUNT, NO WAITING.</p>
+  <div class="stats"><div><b id="sg">510</b><small>GAMES</small></div><div><b id="sc">455</b><small>CABINETS</small></div><div><b id="sw">55</b><small>3D WORLDS</small></div></div>
+</div>
+<script type="module">
+import * as THREE from '../vendor/three.module.min.js';
+import {EffectComposer} from '../vendor/jsm/postprocessing/EffectComposer.js';
+import {RenderPass} from '../vendor/jsm/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from '../vendor/jsm/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from '../vendor/jsm/postprocessing/OutputPass.js';
+
+await document.fonts.load('64px "PA Pixel"');await document.fonts.load('200px Anton');
+const q=new URLSearchParams(location.search);
+for(const [k,id] of [['games','sg'],['cabs','sc'],['worlds','sw']])if(q.get(k))document.getElementById(id).textContent=q.get(k);
+// the games on the screens; any canvas game with a thumbnail in docs/thumbs works
+const SCREENS=(q.get('ids')||'hoops,starrun,artillery,volley,boxing,bowling,penalty,spellcaster,darts,bounceball,roadagent,digger').split(',');
+const NAMES={hoops:'HOOPS 1 ON 1',starrun:'STAR RUN 3D',artillery:'ARTILLERY DUEL',volley:'BEACH VOLLEY',boxing:'RING BOXING',bowling:'BOWLING 3D',penalty:'PENALTY KICKS',spellcaster:'SPELL CASTER',darts:'DARTS 301',bounceball:'BOUNCE BALL',roadagent:'ROAD AGENT',digger:'TUNNEL DIGGER'};
+
+const cv=document.getElementById('v'),W=1280,H=800;
+const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true});
+r.setPixelRatio(+(q.get('dpr')||1));r.setSize(W,H,false);r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.05;r.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();const NIGHT=0x0c0f17;scene.background=new THREE.Color(NIGHT);scene.fog=new THREE.Fog(NIGHT,11,30);
+const cam=new THREE.PerspectiveCamera(40,W/H,.1,100);cam.position.set(-.4,2.3,10.6);cam.lookAt(1.5,1.55,-2);
+
+scene.add(new THREE.HemisphereLight(0x8f9fff,0x0c0f17,.35));
+const key=new THREE.DirectionalLight(0xffd2b0,1.1);key.position.set(-6,7,9);scene.add(key);
+const rimL=new THREE.PointLight(0x3352ff,60,26);rimL.position.set(-5,5,-5);scene.add(rimL);
+const rimR=new THREE.PointLight(0x3352ff,70,26);rimR.position.set(7,5,-3);scene.add(rimR);
+const warm=new THREE.PointLight(0xff4d00,9,14);warm.position.set(1.5,2.4,1.2);scene.add(warm);
+
+// floor: dark polished tiles with a faint cobalt grid that runs off into the fog
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.MeshStandardMaterial({color:0x161a26,roughness:.3,metalness:.4}));floor.rotation.x=-Math.PI/2;scene.add(floor);
+const grid=new THREE.GridHelper(80,64,0x3352ff,0x3352ff);grid.material.transparent=true;grid.material.opacity=.16;grid.position.y=.002;scene.add(grid);
+
+const tl=new THREE.TextureLoader();
+const label=(txt,bg,fg)=>{const c=document.createElement('canvas');c.width=512;c.height=128;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,512,128);
+ x.fillStyle='rgba(255,255,255,.06)';for(let i=0;i<512;i+=8)x.fillRect(i,0,2,128);
+ let size=64;x.font=size+'px "PA Pixel"';while(x.measureText(txt).width>460&&size>24){size-=4;x.font=size+'px "PA Pixel"';}
+ x.textAlign='center';x.textBaseline='middle';x.fillStyle=fg;x.fillText(txt,256,70);
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;};
+
+// the side profile of an upright cabinet: kick plate, control-panel ledge, a screen that leans back, marquee overhang
+const prof=new THREE.Shape([[-.62,0],[.46,0],[.46,1.02],[.78,1.16],[.74,1.3],[.36,1.38],[.2,2.46],[.44,2.56],[.44,2.98],[-.62,2.98]].map(p=>new THREE.Vector2(p[0],p[1])));
+const sideGeo=new THREE.ExtrudeGeometry(prof,{depth:.08,bevelEnabled:true,bevelSize:.012,bevelThickness:.012,bevelSegments:2});
+const SIDES=[0x2443ff,0xdcd8cd,0x1d2231,0x2443ff,0xff4d00,0xdcd8cd];
+function cabinet(i,id,far){
+ const g=new THREE.Group(),sideCol=SIDES[i%SIDES.length];
+ const sideM=new THREE.MeshStandardMaterial({color:sideCol,roughness:.45,metalness:.1});
+ for(const sx of [-.8,.72]){const s=new THREE.Mesh(sideGeo,sideM);s.rotation.y=-Math.PI/2;s.position.x=sx+.08;g.add(s);}
+ const body=new THREE.MeshStandardMaterial({color:0x151925,roughness:.6,metalness:.15});
+ const box=(w,h,d,m,x,y,z,rx=0)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.rotation.x=rx;g.add(b);return b;};
+ box(1.52,2.98,.9,body,0,1.49,-.17);                  // the cabinet's back and top
+ box(1.52,1.02,.06,body,0,.51,.43);                   // front panel
+ const coin=new THREE.MeshStandardMaterial({color:0x0a0c12,emissive:0xff4d00,emissiveIntensity:1.6});
+ box(.05,.16,.02,coin,-.16,.62,.47);box(.05,.16,.02,coin,.16,.62,.47);   // glowing coin slots
+ const deck=box(1.52,.1,.5,new THREE.MeshStandardMaterial({color:0x0f1219,roughness:.4}),0,1.2,.56,.18);
+ // buttons and a ball-top joystick on the control panel
+ [[-.05,0xff4d00],[.17,0x2443ff],[.39,0xdcd8cd],[.07,0xff4d00],[.29,0x2443ff]].forEach(([x,c],k)=>{const b=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.05,20),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.35,roughness:.3}));b.position.set(x,1.27-(k>2?.02:0),.5+(k>2?.12:0));b.rotation.x=.18;g.add(b);});
+ const stick=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.22,10),new THREE.MeshStandardMaterial({color:0x222631}));stick.position.set(-.42,1.3,.62);g.add(stick);
+ const ball=new THREE.Mesh(new THREE.SphereGeometry(.075,20,14),new THREE.MeshStandardMaterial({color:0xff4d00,roughness:.25}));ball.position.set(-.42,1.42,.62);g.add(ball);
+ // the screen leans back with the profile; a black bezel frames the real game screenshot
+ const tilt=Math.atan2(.16,1.08),sy=1.92,sz=.27;
+ const bez=box(1.5,1.1,.04,new THREE.MeshStandardMaterial({color:0x05060a,roughness:.2,metalness:.3}),0,sy,sz,-tilt);
+ const tex=tl.load('../docs/thumbs/'+id+'.jpg');tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.NearestFilter;
+ const scr=new THREE.Mesh(new THREE.PlaneGeometry(1.32,.99),new THREE.MeshBasicMaterial({map:tex,toneMapped:false,color:far?0x8088a0:0xffffff}));
+ scr.position.set(0,sy,sz+.03);scr.rotation.x=-tilt;g.add(scr);
+ // the marquee: a backlit sign with the game's name in the engine's pixel lettering
+ const mq=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.38),new THREE.MeshBasicMaterial({map:label(NAMES[id]||id.toUpperCase(),i%2?'#1b33cc':'#141823',i%2?'#eceae3':'#ff7a3d'),toneMapped:false}));
+ mq.position.set(0,2.77,.455);g.add(mq);
+ // each screen throws a little light onto the floor and the player's spot
+ if(!far){const glow=new THREE.PointLight(0x8f9fff,5,4.5);glow.position.set(0,1.7,1.3);g.add(glow);}
+ return g;
+}
+// a ring of cabinets facing outwards, the way the hub's old front page showed them: the middle one faces you,
+// the ones round the sides turn away and show their printed side panels. A dimmer second ring sits behind.
+const front=SCREENS.slice(0,7),back=SCREENS.slice(7);
+const ring=new THREE.Group();scene.add(ring);
+const C=new THREE.Vector3(2.5,0,-4.4);
+front.forEach((id,i)=>{const a=(i-3)*.42+.08,R=5.4,g=cabinet(i,id);g.position.set(C.x+Math.sin(a)*R,0,C.z+Math.cos(a)*R);g.rotation.y=a;ring.add(g);});
+back.forEach((id,i)=>{const a=(i-2)*.5+.3,R=9.5,g=cabinet(i+3,id,true);g.position.set(C.x+Math.sin(a)*R-1,0,C.z+Math.cos(a)*R-6.5);g.rotation.y=a*.6;ring.add(g);});
+// polished floor: a mirrored copy of the room under a tinted, slightly see-through floor
+const mirror=ring.clone();mirror.scale.y=-1;scene.add(mirror);
+floor.material.transparent=true;floor.material.opacity=.86;floor.position.y=0;
+// dust in the air catches the screen light
+const pts=new Float32Array(900);for(let i=0;i<900;i+=3){pts[i]=(Math.random()-.5)*18;pts[i+1]=Math.random()*5;pts[i+2]=(Math.random()-.5)*12-1;}
+const dust=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(pts,3)),new THREE.PointsMaterial({color:0x8f9fff,size:.025,transparent:true,opacity:.5}));scene.add(dust);
+
+const comp=new EffectComposer(r);comp.addPass(new RenderPass(scene,cam));
+comp.addPass(new UnrealBloomPass(new THREE.Vector2(W,H),.4,.5,.86));comp.addPass(new OutputPass());
+const draw=()=>comp.render();
+let loaded=false;THREE.DefaultLoadingManager.onLoad=()=>{loaded=true;};
+// wait for every screenshot texture, then draw a few frames so bloom settles
+const wait=()=>loaded?(draw(),draw(),window.HERO_READY=true):setTimeout(wait,50);wait();
+</script>
+</body>
+</html>

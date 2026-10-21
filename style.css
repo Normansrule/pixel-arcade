@@ -147,26 +147,47 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .cart b{display:block;margin-top:8px;font:.78rem/1.1 var(--pixel);letter-spacing:.05em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400}
 .cart small{display:block;margin-top:4px;font:.72rem/1 var(--pixel);letter-spacing:.05em;opacity:.85}
 
-/* ---------- big box worlds ---------- */
-.fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s4)}
-.fc{position:relative;display:grid;grid-template-rows:auto 1fr;border-radius:var(--r);overflow:hidden;background:var(--paper-2);color:var(--ink);text-decoration:none;isolation:isolate;
+/* ---------- big box worlds: a cinema band on the night stage ----------
+   Deeper than the front-page stage so the two dark bands read apart. Posters carry their own scrim,
+   so the title sits on the screenshot. The first poster is the feature (2 x 2); .big ones are wide. */
+.flag{--paper:#0d1018;--paper-2:#171b27;--paper-3:#232a3c;
+ --ink:#eceae3;--ink-2:#bdbfc6;--ink-3:#959aa8;--cobalt:#8f9fff;--cobalt-fill:#3352ff;--cobalt-soft:rgba(143,159,255,.14);
+ --signal-text:#ff7a3d;--plank:#2b3247;--line:rgba(236,234,227,.12);--shade:rgba(0,0,0,.6);color-scheme:dark;color:var(--ink);
+ background:var(--paper);box-shadow:0 0 0 100vmax var(--paper);clip-path:inset(0 -100vmax);padding:var(--s7) 0;counter-reset:w}
+.flag .sec-head h2{font-size:clamp(1.8rem,4vw,3.2rem)}
+.flag .sec-head h2::after{content:"";display:inline-block;width:.32em;height:.32em;margin-left:.12em;background:var(--signal)}
+.fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:clamp(170px,15.5vw,236px);gap:var(--s3)}
+.fc{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-width:0;padding:var(--s4) var(--s4) var(--s4) calc(var(--s4) + 6px);border-radius:var(--r);overflow:hidden;
+ background:#05070c;color:#f2f0ea;text-decoration:none;isolation:isolate;counter-increment:w;
  transition:transform var(--pull) var(--spring),box-shadow var(--base) ease}
-.fc::before{content:"";display:block;aspect-ratio:16/10;background:var(--img) center/cover var(--paper-3)}
-/* the printed spine edge down the left of each box */
-.fc::after{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--cobalt-fill)}
-.fc>*{margin-left:calc(var(--s4) + 6px);margin-right:var(--s4)}
+.fc::before{content:"";position:absolute;inset:0;z-index:-1;
+ background:linear-gradient(to top,rgba(5,7,12,.94),rgba(5,7,12,.6) 34%,rgba(5,7,12,0) 62%),var(--img) center/cover #11141d;
+ transition:transform 700ms var(--ease-out)}
+/* the printed spine edge down the left of each box; it fills the bottom on hover */
+.fc::after{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--cobalt-fill);transition:height var(--base) var(--ease-out)}
 .fc.big{grid-column:span 2}
-.fc.big::before{aspect-ratio:16/9}
+.fc:first-child{grid-row:span 2}
 .fc i{position:absolute;top:var(--s3);left:calc(var(--s3) + 6px);margin:0;padding:5px 9px 3px;border-radius:3px;background:var(--signal);color:#000;font:.75rem/1 var(--pixel);letter-spacing:.08em;font-style:normal;text-transform:uppercase}
-.fc b{margin-top:var(--s4);font:clamp(1.05rem,1.6vw,1.4rem)/1.05 var(--pixel);letter-spacing:.04em;font-weight:400;text-wrap:balance}
-.fc.big b{font-size:clamp(1.3rem,2.2vw,1.9rem)}
-.fc em{order:-1;margin-top:var(--s3);font:600 var(--t-xs)/1.35 var(--text);font-style:normal;color:var(--cobalt)}
-.fc{grid-template-rows:auto auto auto 1fr}
-.fc em{order:0}
-.fc span{margin-top:var(--s2);margin-bottom:var(--s4);font-size:var(--t-xs);line-height:1.5;color:var(--ink-2)}
-.fc.big span{font-size:var(--t-sm);max-width:52ch}
-@media (hover:hover){.fc:hover{transform:translateY(-6px);box-shadow:0 22px 40px -24px var(--shade)}}
+.fc em{font:.72rem/1.2 var(--pixel);letter-spacing:.06em;text-transform:uppercase;font-style:normal;color:#a9b4ff;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc b{margin-top:var(--s2);font:clamp(1rem,1.5vw,1.3rem)/1.05 var(--pixel);letter-spacing:.04em;font-weight:400;text-wrap:balance;text-shadow:0 2px 0 rgba(0,0,0,.5)}
+.fc b::before{content:counter(w,decimal-leading-zero);position:absolute;top:var(--s3);right:var(--s3);padding:4px 7px 2px;border-radius:3px;
+ background:rgba(5,7,12,.7);color:#bdbfc6;font-size:.72rem;letter-spacing:.08em;text-shadow:none}
+.fc.big b{font-size:clamp(1.2rem,2vw,1.7rem)}
+.fc:first-child b{font-size:clamp(1.6rem,3.2vw,2.8rem)}
+.fc span{margin-top:var(--s2);font-size:var(--t-xs);line-height:1.45;color:rgba(242,240,234,.82);max-width:56ch;
+ display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fc:first-child span{font-size:var(--t-sm);-webkit-line-clamp:3}
+/* small posters keep the blurb out of the way until you point at them (it stays in the link's name) */
+.fc:not(.big):not(:first-child) span{max-height:0;margin-top:0;opacity:0;transition:max-height var(--base) var(--ease-out),opacity var(--base) ease,margin var(--base) var(--ease-out)}
+@media (hover:hover){
+ .fc:hover{transform:translateY(-5px);box-shadow:0 26px 44px -22px var(--shade)}
+ .fc:hover::before{transform:scale(1.06)}
+ .fc:hover:not(.big):not(:first-child) span{max-height:3em;margin-top:var(--s2);opacity:1}}
+.fc:focus-visible:not(.big):not(:first-child) span{max-height:3em;margin-top:var(--s2);opacity:1}
 .fc:active{transform:translateY(-2px) scale(.99)}
+.fgrid.short .fc:nth-child(n+10){display:none}
+.fmore{display:flex;justify-content:center;margin-top:var(--s5)}
 
 /* ---------- the library ---------- */
 .libbar{position:sticky;top:var(--topbar-h);z-index:20;display:flex;align-items:center;gap:var(--s4);height:var(--libbar-h);margin:0 calc(50% - 50vw) var(--s5);padding:0 max(var(--s5),calc(50vw - 640px));background:var(--paper);border-bottom:1px solid var(--line)}
@@ -341,7 +362,7 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
  .libbar{gap:var(--s2);padding:0 var(--s4)}
  .views span{display:none}.views button{padding:0 10px}
  .spines{--sh:208px}.spine{width:42px}.spine .nm{width:26px;font-size:.95rem}
- .fgrid{grid-template-columns:1fr}.fc.big{grid-column:auto}
+ .fgrid{grid-template-columns:1fr;grid-auto-rows:200px}.fc.big{grid-column:auto}.fc:first-child{grid-row:auto}
  .console{padding:var(--s6) var(--s4) var(--s4)}
  .foot{flex-direction:column;align-items:flex-start}}
 @media (pointer:coarse){.chips button,.views button{height:44px}}
@@ -396,7 +417,16 @@ body.playing{overflow:hidden}body.playing #cab{display:flex}body.playing main,bo
  --cobalt:#8f9fff;--cobalt-fill:#3352ff;--cobalt-hover:#4a66ff;--cobalt-soft:rgba(143,159,255,.14);
  --signal-text:#ff7a3d;--plank:#2b3247;--line:rgba(236,234,227,.12);--shade:rgba(0,0,0,.55);color-scheme:dark;color:var(--ink)}
 .hero,.foot{background:var(--paper);box-shadow:0 0 0 100vmax var(--paper);clip-path:inset(0 -100vmax)}
+.foot{clip-path:inset(0 -100vmax -100vmax)}
 .foot{margin-top:var(--s8);padding-bottom:var(--s6);border-top:0}
+/* the sign-off: the README header's wordmark, with a cabinet's FREE PLAY blinking under it */
+.sign{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--s3) var(--s6);padding:var(--s6) 0 var(--s5);border-bottom:1px solid var(--line)}
+.sign .mark{margin:0;font:clamp(3.2rem,11vw,9.5rem)/.82 var(--disp);letter-spacing:-.01em;text-transform:uppercase;color:var(--ink)}
+.sign .mark i{display:inline-block;width:.16em;height:.16em;margin-left:.04em;background:var(--signal)}
+.sign .credits{margin:0 0 .4em;font:var(--t-xs)/1.6 var(--pixel);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.sign .credits b{color:var(--ink);font-weight:400}
+.sign .free{display:inline-block;margin-right:var(--s2);padding:4px 8px 2px;border-radius:3px;background:var(--signal);color:#000;animation:freeplay 1.6s steps(1) infinite}
+@keyframes freeplay{50%{opacity:.25}}
 :root:not([data-theme=dark]) .console{
  --paper:#dcd8cd;--paper-2:#cfcbbf;--paper-3:#c2bdb0;--ink:#12151d;--ink-2:#30343f;--ink-3:#474c58;
  --cobalt:#1b33cc;--cobalt-soft:rgba(27,51,204,.12);--plank:#12151d;--line:rgba(18,21,29,.16);color:var(--ink)}
@@ -435,7 +465,8 @@ body.playing{overflow:hidden}body.playing #cab{display:flex}body.playing main,bo
 @media (prefers-reduced-motion:reduce){
  html{scroll-behavior:auto}
  *,*::before,*::after{transition-duration:1ms!important;animation-duration:1ms!important;animation-iteration-count:1!important}
- .btn:active,.ico:active,.spine:hover,.spine:active,.cart:hover,.fc:hover,.fc:active{transform:none}
+ .btn:active,.ico:active,.spine:hover,.spine:active,.cart:hover,.fc:hover,.fc:active,.fc:hover::before{transform:none}
+ .sign .free{animation:none}
  .spine[aria-pressed=true]{transform:translateY(-22px)}
  /* no transitions at all on the page behind the game: a 1ms visibility transition would keep a spine unfocusable for a frame when you come back */
  main,main *,.topbar,.topbar *{transition-property:none!important}}

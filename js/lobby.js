@@ -37,6 +37,14 @@ A.shelf={art,live,fmt,play,modeOf,capOf,RM};
 A.lobby=()=>{
  const E=A._e,tc=E.tc,grid=$('grid'),chips=$('chips'),q=$('q'),box=$('box'),cnt=$('libcount');
  if(!grid)return;
+ // big box worlds: show the first nine posters, the rest behind a button (all of them without JS)
+ {const fg=document.querySelector('.fgrid'),n=fg?fg.children.length:0;if(n>9){
+  fg.classList.add('short');const w=document.createElement('div'),bt=document.createElement('button');
+  const lbl=()=>bt.textContent=fg.classList.contains('short')?'Show all '+fg.querySelectorAll('.fc:not([href="builder/"])').length+' worlds':'Show fewer worlds';
+  w.className='fmore';bt.type='button';bt.className='btn ghost';bt.setAttribute('aria-controls','flag');bt.setAttribute('aria-expanded','false');lbl();
+  bt.onclick=()=>{const short=fg.classList.toggle('short');bt.setAttribute('aria-expanded',String(!short));lbl();
+   if(short)$('flag').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});};
+  w.append(bt);fg.after(w);}}
  const favs=new Set(ls('pxd_favs',[]));let recent=ls('pxd_recent',[]);let filt='All',sel=null,selEl=null,stopPrev=null;
  A.played=id=>{recent=[id].concat(recent.filter(x=>x!==id)).slice(0,12);lsSet('pxd_recent',recent);syncChips();};
  {const _o=A.open;A.open=g=>{if(g&&g.id)A.played(g.id);return _o(g);};}
