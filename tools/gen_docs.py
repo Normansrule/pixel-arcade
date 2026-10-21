@@ -89,7 +89,7 @@ def sync_counts(n):
             (r'content="\d+ original browser games and \d+ full-3D worlds', f'content="{n["total"]} original browser games and {n["worlds"]} full-3D worlds'),
             (r'content="\d+ original browser games, \d+ full-3D worlds', f'content="{n["total"]} original browser games, {n["worlds"]} full-3D worlds'),
             (r'placeholder="Search \d+ games"', f'placeholder="Search {n["total"]} games"'),
-            (r'<span>\d+ real-time 3D worlds\.', f'<span>{n["worlds"]} real-time 3D worlds.'),
+            (r'<p>\d+ real-time 3D worlds', f'<p>{n["worlds"]} real-time 3D worlds'),
         ],
         'desktop/package.json': [
             (r'Pixel Arcade: \d+ original games, \d+ full-3D worlds', f"Pixel Arcade: {n['total']} original games, {n['worlds']} full-3D worlds"),
@@ -127,7 +127,7 @@ def worlds_table(games):
 def cat_badges(n):
     out = []
     for c, k in sorted(n['cats'].items(), key=lambda x: -x[1]):
-        out.append(f'![{c}](https://img.shields.io/badge/{c.replace(" ", "_")}-{k}-1a1a1a?style=flat-square&labelColor=ff4d00)')
+        out.append(f'![{c}](https://img.shields.io/badge/{c.replace(" ", "_")}-{k}-1a1a1a?style=flat-square&labelColor=2443ff)')
     return ' '.join(out)
 
 
@@ -143,8 +143,8 @@ def progress_block(games, n):
     pct = round(100 * done / len(worlds))
     bar = '█' * round(pct / 5) + '░' * (20 - round(pct / 5))
     latest = p['releases'][0]
-    out = [f'![latest](https://img.shields.io/badge/latest-{latest["v"]}-ff4d00?style=flat-square) '
-           f'![realism](https://img.shields.io/badge/realism_pass-{done}%2F{len(worlds)}_worlds-2fe8d0?style=flat-square)', '',
+    out = [f'![latest](https://img.shields.io/badge/latest-{latest["v"]}-2443ff?style=flat-square) '
+           f'![realism](https://img.shields.io/badge/realism_pass-{done}%2F{len(worlds)}_worlds-f2f2f2?style=flat-square)', '',
            f'**`{bar}` {done} of {len(worlds)} full-3D worlds have had the realism pass ({pct}%).**', '',
            '| Release | Date | Branch | Games | 3D | What it added |', '|---|---|---|---|---|---|']
     for i, r in enumerate(p['releases']):

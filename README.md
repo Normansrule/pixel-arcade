@@ -6,18 +6,18 @@
 
 ### 510 original games · 55 full-3D worlds · a 2D + 3D game builder · zero installs
 
-[![PLAY NOW](https://img.shields.io/badge/▶_PLAY_NOW-normansrule.github.io%2Fpixel--arcade-ff4d00?style=for-the-badge&labelColor=000)](https://normansrule.github.io/pixel-arcade/)
+[![PLAY NOW](https://img.shields.io/badge/▶_PLAY_NOW-normansrule.github.io%2Fpixel--arcade-2443ff?style=for-the-badge&labelColor=000)](https://normansrule.github.io/pixel-arcade/)
 [![DESKTOP APP](https://img.shields.io/badge/⤓_DESKTOP_APP-Windows_·_macOS_·_Linux-f2f2f2?style=for-the-badge&labelColor=000)](https://github.com/Normansrule/pixel-arcade/releases)
-[![BUILD A GAME](https://img.shields.io/badge/✚_BUILD_A_GAME-2D_+_3D_editor-2fe8d0?style=for-the-badge&labelColor=000)](https://normansrule.github.io/pixel-arcade/builder/)
+[![BUILD A GAME](https://img.shields.io/badge/✚_BUILD_A_GAME-2D_+_3D_editor-f2f2f2?style=for-the-badge&labelColor=000)](https://normansrule.github.io/pixel-arcade/builder/)
 
-![games](https://img.shields.io/badge/games-510-ff4d00?style=flat-square)
-![3D](https://img.shields.io/badge/full--3D_worlds-55-ff4d00?style=flat-square)
-![offline](https://img.shields.io/badge/works-offline-2fe8d0?style=flat-square)
-![installable](https://img.shields.io/badge/PWA-installable-2fe8d0?style=flat-square)
+![games](https://img.shields.io/badge/games-510-2443ff?style=flat-square)
+![3D](https://img.shields.io/badge/full--3D_worlds-55-2443ff?style=flat-square)
+![offline](https://img.shields.io/badge/works-offline-f2f2f2?style=flat-square)
+![installable](https://img.shields.io/badge/installable-app-f2f2f2?style=flat-square)
 [![test](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml/badge.svg)](https://github.com/Normansrule/pixel-arcade/actions/workflows/test.yml)
 ![license](https://img.shields.io/badge/license-MIT-7a7a7a?style=flat-square)
 
-**[Play](#-play-in-10-seconds)** · **[3D worlds](#-55-full-3d-worlds)** · **[Cabinets](#-455-arcade-cabinets)** · **[Progress](#-progress)** · **[Builder](#-build-your-own)** · **[Get the app](#-play-anywhere)** · **[All games](docs/GAMES.md)**
+**[Play](#-play-in-10-seconds)** · **[Features](#-what-you-get)** · **[3D worlds](#-55-full-3d-worlds)** · **[Cabinets](#-455-arcade-cabinets)** · **[Progress](#-progress)** · **[Builder](#-build-your-own)** · **[Get the app](#-play-anywhere)** · **[Develop](#-develop)** · **[Design](#-design)** · **[Docs](https://normansrule.github.io/pixel-arcade/docs/)**
 
 <img src="docs/readme/reel.gif" width="720" alt="A reel of the full-3D games">
 
@@ -25,22 +25,51 @@
 
 ---
 
+Pixel Arcade is a free, open-source arcade that runs in your web browser: hundreds of short, original games, including 55 full-3D (three-dimensional) worlds, that you can start in a couple of seconds and finish in a few minutes. It's for anyone who wants a quick game without installing anything or owning a gaming PC (personal computer): on a school laptop, an old desktop, a phone on the bus, or a family computer where two people share one keyboard. Every game has a round timer and a results screen, most can be played against the computer at three difficulty levels, and the whole arcade can be saved for offline play or installed as an app.
+
 ## ⚡ Play in 10 seconds
 
 1. Open **[normansrule.github.io/pixel-arcade](https://normansrule.github.io/pixel-arcade/)**.
-2. Click a cabinet. Press **Space**.
-3. Beat the clock. Every game runs against a **round timer**, and the last 10 seconds count down on screen. VS games are decided on points when time runs out.
+2. Drag a cartridge into the console on the front page, or pick a game from the shelves and press **Play**. Then press **Space**.
+3. Beat the clock. Every game runs against a **round timer**, and the last 10 seconds count down on screen. Two-player games are decided on points when time runs out.
 
 | | Keyboard | Mouse / touch |
 |---|---|---|
-| Move | Arrows / WASD | aim games follow the pointer · on-screen D-pad on phones |
+| Move | Arrows / WASD | aim games follow the pointer · on-screen D-pad (directional pad) on phones |
 | A: fire, jump, select | Space | click, hold, or spam-click |
 | B | X | right-click |
 | Pause · Restart · Mute · Graphics | P · R · M · G | |
 | Exit | Esc | |
-| 2 players | P1 WASD + F/G · P2 Arrows + Enter/Shift | |
+| 2 players | Player 1 (P1): WASD + F/G · P2: Arrows + Enter/Shift | |
 
-Can't decide? Hit 🎲 in the top bar. Star ★ the ones you love; they live under **Favorites**.
+Can't decide? Hit **Surprise me** on the front page (or the dice in the top bar). Favourite the games you love and they get their own **Favorites** filter. Press **/** anywhere to search.
+
+## ✨ What you get
+
+- **510 original games.** 455 arcade cabinets (classics, sports, board games, puzzles, cards, party games, sims) plus 55 full-3D worlds. Every name and level is our own; search the hub for a classic you know and it finds the game it inspired.
+- **Quick rounds.** Each game has a time limit and a results screen, so a session takes minutes, not evenings.
+- **A real opponent.** The CPU (central processing unit, so the computer player) comes in easy, normal and hard, and board games use proper search, not random moves. Or play a friend on the same keyboard.
+- **Light on hardware.** The cabinets draw on a small 320×240 screen and scale it up; the 3D worlds have three graphics levels (press **G**). Nothing to download before you play.
+- **Plays anywhere, even offline.** Install it as a PWA (progressive web app), save every game for offline play, or grab the desktop app for Windows, macOS and Linux.
+- **Scores on GitHub.** Post a score and it becomes a GitHub issue tied to your account, so the global top 10 is real.
+- **Make your own.** A 2D (two-dimensional) and 3D game builder runs in the same browser tab and can publish straight into the arcade.
+- **Online play with codes.** Swap a short code (or scan a QR (Quick Response) code) with a friend on the same network to play head to head. No server and no account.
+
+## 📸 The front page
+
+<table>
+<tr>
+<td colspan="2"><img src="docs/readme/hub-light.jpg" alt="The front page in light mode: a pixel-lettered headline, the console running a game demo in attract mode with its round clock, and a tray of cartridges"></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/readme/shelf-light.jpg" alt="The library: genre shelves of cartridge spines, with one pulled out and its box open on the right"></td>
+<td width="50%"><img src="docs/readme/boxes-dark.jpg" alt="The library in dark mode and Boxes view: box fronts with screenshots, and the selected game's box"></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/readme/console-insert.gif" alt="A cartridge dragged from the tray into the console, which powers off, counts down 3, 2, 1 and boots the game"></td>
+<td width="50%"><img src="docs/readme/phone.jpg" alt="Three phone screens: the front page, the shelves, and a game's box as a bottom sheet"></td>
+</tr>
+</table>
 
 ## 🌍 55 full-3D worlds
 
@@ -150,10 +179,10 @@ Real-time 3D in the browser: shadows, ambient occlusion, bloom, filmic colour, a
 
 <img src="docs/readme/wall.jpg" alt="A wall of arcade cabinets">
 
-Classic arcade, sports, board games with real CPU search, puzzles, cards, party games and sims, all drawn in HD with particles, shake and juice. VS CPU at three difficulties, or grab a friend for 2-player.
+Classic arcade, sports, board games with real CPU search, puzzles, cards, party games and sims, all drawn in HD (high definition) with particles, screen shake and plenty of juice. Play the CPU at three difficulties, or grab a friend for 2-player.
 
 <!-- gen:cats (generated by tools/gen_docs.py) -->
-![CLASSICS](https://img.shields.io/badge/CLASSICS-89-1a1a1a?style=flat-square&labelColor=ff4d00) ![PUZZLE](https://img.shields.io/badge/PUZZLE-75-1a1a1a?style=flat-square&labelColor=ff4d00) ![SPORTS](https://img.shields.io/badge/SPORTS-71-1a1a1a?style=flat-square&labelColor=ff4d00) ![VERSUS](https://img.shields.io/badge/VERSUS-40-1a1a1a?style=flat-square&labelColor=ff4d00) ![RETRO 3D](https://img.shields.io/badge/RETRO_3D-40-1a1a1a?style=flat-square&labelColor=ff4d00) ![ACTION](https://img.shields.io/badge/ACTION-40-1a1a1a?style=flat-square&labelColor=ff4d00) ![BOARD](https://img.shields.io/badge/BOARD-36-1a1a1a?style=flat-square&labelColor=ff4d00) ![SIM](https://img.shields.io/badge/SIM-25-1a1a1a?style=flat-square&labelColor=ff4d00) ![CARDS](https://img.shields.io/badge/CARDS-20-1a1a1a?style=flat-square&labelColor=ff4d00) ![PARTY](https://img.shields.io/badge/PARTY-19-1a1a1a?style=flat-square&labelColor=ff4d00)
+![CLASSICS](https://img.shields.io/badge/CLASSICS-89-1a1a1a?style=flat-square&labelColor=2443ff) ![PUZZLE](https://img.shields.io/badge/PUZZLE-75-1a1a1a?style=flat-square&labelColor=2443ff) ![SPORTS](https://img.shields.io/badge/SPORTS-71-1a1a1a?style=flat-square&labelColor=2443ff) ![VERSUS](https://img.shields.io/badge/VERSUS-40-1a1a1a?style=flat-square&labelColor=2443ff) ![RETRO 3D](https://img.shields.io/badge/RETRO_3D-40-1a1a1a?style=flat-square&labelColor=2443ff) ![ACTION](https://img.shields.io/badge/ACTION-40-1a1a1a?style=flat-square&labelColor=2443ff) ![BOARD](https://img.shields.io/badge/BOARD-36-1a1a1a?style=flat-square&labelColor=2443ff) ![SIM](https://img.shields.io/badge/SIM-25-1a1a1a?style=flat-square&labelColor=2443ff) ![CARDS](https://img.shields.io/badge/CARDS-20-1a1a1a?style=flat-square&labelColor=2443ff) ![PARTY](https://img.shields.io/badge/PARTY-19-1a1a1a?style=flat-square&labelColor=2443ff)
 <!-- /gen:cats -->
 
 **[See every game →](docs/GAMES.md)**
@@ -163,12 +192,13 @@ Classic arcade, sports, board games with real CPU search, puzzles, cards, party 
 Where the arcade is heading: every release, and which 3D worlds have had the realism pass (physically based materials, real lighting, detailed models and effects, plus deeper gameplay). Generated by `tools/gen_docs.py` from the game registry and [`docs/progress.json`](docs/progress.json), so the counts can't go stale.
 
 <!-- gen:progress (generated by tools/gen_docs.py) -->
-![latest](https://img.shields.io/badge/latest-v33-ff4d00?style=flat-square) ![realism](https://img.shields.io/badge/realism_pass-12%2F55_worlds-2fe8d0?style=flat-square)
+![latest](https://img.shields.io/badge/latest-v34-2443ff?style=flat-square) ![realism](https://img.shields.io/badge/realism_pass-12%2F55_worlds-f2f2f2?style=flat-square)
 
 **`████░░░░░░░░░░░░░░░░` 12 of 55 full-3D worlds have had the realism pass (22%).**
 
 | Release | Date | Branch | Games | 3D | What it added |
 |---|---|---|---|---|---|
+| **v34** | 20 Oct 2026 | `round11` | 510 | 55 | Cartridge Shelf redesign of the hub and a new docs site: genre shelves of cartridge spines, a box panel for each game, a front-page console with attract mode, a round clock and drag-to-insert, light and dark modes, and the engine's pixel font as a web font. |
 | **v33** | 18 Oct 2026 | `round10` | 510 | 55 | Realism and depth pass on six more 3D worlds (STRIKER 11 second pass, IRON VANGUARD, STORM ROYALE, WILD QUEST, KART GRAND PRIX, ABYSS DIVER); the new lifeguard surfing world SWELL GUARD; this progress tracker. |
 | **v32** | 18 Oct 2026 | `round9` | 509 | 54 | Realism and depth pass on six flagship 3D worlds: FRONTLINE OPS, SIDEWAYS, STRIKER 11, DUSTWATER, FAIRWAY LEGENDS, NEON BAY. |
 | **v31** | 18 Oct 2026 | `round8` | 509 | 54 | Four new 3D worlds from the inspiration pack: BEACON RESCUE, LANTERN STREET, TIDEWAY COURIER, HARBOR PALS. |
@@ -257,22 +287,22 @@ The **[Game Builder](https://normansrule.github.io/pixel-arcade/builder/)** is a
 | Where | How |
 |---|---|
 | **Browser** | [normansrule.github.io/pixel-arcade](https://normansrule.github.io/pixel-arcade/): nothing to install. |
-| **Install as an app** | Click **⤓ APP** in the top bar (Chrome/Edge/Android), or *Share → Add to Home Screen* on iPhone/iPad. Opens full-screen with its own icon. |
-| **Offline** | Click **⤓ Save all offline** at the bottom of the hub; every game is cached and the arcade runs with no internet. |
+| **Install as an app** | Click **Install app** in the top bar (Chrome, Edge, Android), or *Share → Add to Home Screen* on iPhone and iPad. It opens full-screen with its own icon. |
+| **Offline** | Click **Save all offline** at the bottom of the hub. Every game is cached and the arcade runs with no internet. |
 | **Desktop app** | Installers for **Windows, macOS and Linux** on the [Releases](https://github.com/Normansrule/pixel-arcade/releases) page, built automatically by GitHub Actions. |
 | **One file** | `python3 tools/build.py` → `dist/pixel-arcade.html`, the canvas arcade in a single file. |
 
 ## 🏆 Scores on GitHub
 
-Click the profile chip and enter your GitHub username. At game over, **U** posts your score as a GitHub issue and **L** opens the global top 10. The 3D worlds have a **POST SCORE** button on their results screens.
+Click the profile chip and enter your GitHub username. At game over, **U** posts your score as a GitHub issue and **L** opens the global top 10 (the trophy button on a game card does the same from the hub). The 3D worlds have a **POST SCORE** button on their results screens.
 
-## 🧑‍💻 Develop
+## 💻 Develop
 
-No build step: the site is static HTML, vanilla JavaScript and ES modules.
+There's no build step: the site is static HTML (HyperText Markup Language), plain JavaScript and ES (ECMAScript) modules, so any static file server works. You need **Python 3** to serve files and run the tools, and **Node.js** for the tests and the desktop app.
 
 ```bash
 git clone https://github.com/Normansrule/pixel-arcade.git && cd pixel-arcade
-python3 -m http.server 8000          # http://localhost:8000
+python3 -m http.server 8000          # then open http://localhost:8000
 node tests/test.js                   # every canvas game, every mode (shard with RANGE=0:150)
 node tests/quality.js                # quality gate → docs/QUALITY.md
 python3 tools/gen_docs.py            # counts, README tables, docs/GAMES.md (--art redraws docs/readme/)
@@ -280,6 +310,47 @@ python3 tools/build.py               # sw.js + offline.json + dist/pixel-arcade.
 cd desktop && npm install && npm start   # desktop app; npm run dist builds installers
 ```
 
-Push a tag (`git tag v29 && git push --tags`) and GitHub Actions builds the Windows, macOS and Linux installers onto [Releases](https://github.com/Normansrule/pixel-arcade/releases).
+CI (continuous integration) on GitHub Actions runs the tests and `gen_docs.py --check` on every push, so the counts and tables in this README must be regenerated, not hand-edited. Push a tag (`git tag v34 && git push --tags`) and GitHub Actions builds the Windows, macOS and Linux installers onto [Releases](https://github.com/Normansrule/pixel-arcade/releases).
 
-**[Architecture](docs/ARCHITECTURE.md)** · **[Add a game](CONTRIBUTING.md)** · **[Changelog](CHANGELOG.md)** · **[Quality report](docs/QUALITY.md)** · **[Third-party licences](THIRD_PARTY.md)** · MIT licence
+### Project structure
+
+```
+index.html, style.css     the hub: front page, console, shelves, game player, leaderboard (one stylesheet, light and dark)
+js/engine/                the canvas engine, one numbered file per layer (core, draw, audio, input, scores, hub…)
+js/gx.js                  shared art kit for the canvas games (gradients, glossy blocks, HUD (heads-up display) panels)
+js/lobby.js               the library: genre shelves, the cartridge box, search, favourites, Shelf/Boxes views, theme
+js/console.js             the front-page console: attract mode, the round clock, drag a cartridge in to play
+js/kit3d/, js/fx3d.js     shared pieces for the 3D worlds: input, audio, menus, score posting, graphics presets
+js/net.js                 online play by swapping codes (WebRTC, Web Real-Time Communication; no server)
+games/                    the 455 canvas cabinets in themed packs; games/index.json is the load order
+<world>/                  one folder per full-3D world (city/, zombies/, surf/…), each with its own index.html
+builder/                  the 2D + 3D game builder
+desktop/                  the Electron desktop app
+docs/                     the docs site (docs/index.html), screenshots, card art, thumbnails, GAMES.md, ARCHITECTURE.md
+fonts/, vendor/           local copies of the fonts (including PA Pixel, the engine's own lettering) and Three.js, so nothing loads from a CDN (content delivery network)
+tests/                    headless Node tests for every canvas game, plus the quality gate
+tools/                    docs generator, thumbnails, offline file list, single-file build and the pixel font builder
+sw.js, offline.json, manifest.webmanifest    the installable, offline web app
+```
+
+More detail in the **[docs site](https://normansrule.github.io/pixel-arcade/docs/)** and **[Architecture](docs/ARCHITECTURE.md)**; to add a game, see **[Contributing](CONTRIBUTING.md)**.
+
+## 🎨 Design
+
+The concept is **the Cartridge Shelf**. Five hundred games is a library, so the hub is built like a wall of printed game packaging: genre shelves of cartridge spines you pull out to read the box, and a console on the front page that you slot a cartridge into to play. Two ideas from arcade cabinets ride along: **attract mode**, where the console plays short demos of the games on the counter, and **the round clock**, because every game here ends on a timer.
+
+- **Night stage, stone shelves.** The page is two-tone, with no white anywhere. The top bar, the front-page stage and the footer are night navy (`#141823`), and the console sits on that stage as a stone-coloured object. The library and the docs are warm stone (`#dcd8cd`), like the cardboard of an old game shop. Everything is printed in one cobalt ink (`#2443ff`), which marks what you can press and what's selected. Signal orange (`#ff4d00`) is kept for the round clock, the power light and your scores. Dark mode turns the stone shelves to night as well, with a slightly brighter cobalt, so every text colour still passes WCAG AA (Web Content Accessibility Guidelines, level AA) contrast in both themes.
+- **The games' own lettering.** Spines, headings and the clock use **PA Pixel**, a web font made from the engine's 3×5 bitmap font by `tools/pixelfont.py`, so the hub speaks in the same letters the games draw. Everything you read is **Atkinson Hyperlegible Next**, a typeface designed for low-vision readers.
+- **Spines, not cards.** Each spine prints the game's mode at the top (1P, VS or 3D) and its round length at the bottom, and each genre has its own print pattern (stripes for sports, a chequerboard for board games, dots for puzzles), so the shelves read at a glance without icons or badges. **Boxes** view swaps the spines for box fronts with real screenshots.
+- **Motion like objects.** A picked spine slides up on a spring; a dragged cartridge tilts with the speed of your hand, lights the slot when it's over the console and springs home if you let go elsewhere. The screen powers off and on like a CRT (cathode-ray tube) television when a game loads. The springs are short and settle fast, and nothing moves just to decorate.
+- **Every state designed.** Shelves show a printed skeleton while the engine loads; an empty search says what didn't match and offers four games to try; a game with no screenshot shows NO SIGNAL; the leaderboard says when it can't reach GitHub and has a Try again button.
+- **Keyboard, touch and reduced motion.** Arrow keys walk a shelf, `/` jumps to search, Esc closes things, and every control has a visible focus ring. On phones the box comes up as a bottom sheet. With *reduce motion* turned on, the console shows a still frame instead of cycling demos and nothing slides.
+- **Offline first.** Both fonts ship in `fonts/`, so the hub looks the same with no internet.
+
+---
+
+<div align="center">
+
+**[Architecture](docs/ARCHITECTURE.md)** · **[Add a game](CONTRIBUTING.md)** · **[Changelog](CHANGELOG.md)** · **[Quality report](docs/QUALITY.md)** · **[Third-party licences](THIRD_PARTY.md)** · MIT (Massachusetts Institute of Technology) License
+
+</div>

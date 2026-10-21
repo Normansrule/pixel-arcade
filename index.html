@@ -8,110 +8,164 @@
 <link rel="icon" href="docs/icons/favicon-64.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="docs/icons/apple-touch-icon.png">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#141823" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="description" content="510 original browser games, 55 full-3D worlds and a 2D/3D game builder. Free, open source, plays offline as an app.">
+<meta name="og:description" content="510 original browser games, 55 full-3D worlds and a 2D/3D game builder. Free, open source, plays offline as an app.">
+<script>try{const t=localStorage.getItem('pxd_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="bg" aria-hidden="true"><div class="stars"></div><div class="sun"></div><div class="peaks"></div><div class="floor"></div></div>
-<div id="glow" aria-hidden="true"></div>
+<a class="skip" href="#library">Skip to the library</a>
 <nav class="topbar" aria-label="Site">
-  <a class="brand" href="#top"><i></i><b>PIXEL</b>ARCADE</a>
-  <div class="tools"><input id="q" type="search" placeholder="Search 510 games" aria-label="Search games"><button id="rnd" type="button" title="Random game">🎲</button><a class="buildlink" href="builder/" title="Make your own game">+ BUILD</a><button class="buildlink" id="installBtn" type="button" title="Install Pixel Arcade as an app" hidden>⤓ APP</button></div>
+  <a class="brand" href="#top" aria-label="Pixel Arcade, back to top"><i aria-hidden="true"></i><span>PIXEL ARCADE</span></a>
+  <div class="tools">
+    <label class="search"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="sr">Search games</span><input id="q" type="search" placeholder="Search 510 games" autocomplete="off" aria-controls="library"><kbd aria-hidden="true">/</kbd></label>
+    <button class="ico" data-random type="button" title="Play a random game" aria-label="Play a random game"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></button>
+  </div>
+  <a class="btn ghost buildlink" href="builder/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Build</a>
+  <a class="btn ghost docslink" href="docs/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5M8 13h8M8 17h6"/></svg>Docs</a>
+  <button class="btn ghost" id="installBtn" type="button" title="Install Pixel Arcade as an app" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Install</button>
+  <button class="ico" id="themeBtn" type="button" aria-label="Switch to dark mode"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
   <button class="profile" id="profile" type="button" aria-label="Player profile"></button>
-  <a class="gh" href="https://github.com/Normansrule/pixel-arcade" target="_blank" rel="noopener" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a>
+  <a class="ico gh" href="https://github.com/Normansrule/pixel-arcade" target="_blank" rel="noopener" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a>
 </nav>
-<main class="lobby" id="top">
+<main id="top">
   <header class="hero">
-    <div id="hero3d" aria-hidden="true"></div>
     <div class="hcopy">
-      <p class="eyebrow"><span>[ ARCADE ]</span><span>BROWSER · FREE · OPEN SOURCE</span></p>
-      <h1 class="mega" aria-label="Pixel Arcade"><span>PIXEL</span><span>ARCADE<em>.</em></span></h1>
-      <p class="lede">Click a cabinet to play.</p>
-      <p id="herolabel" class="herolabel" aria-live="polite"></p>
+      <h1 class="mega">Pick a<br>cartridge.</h1>
+      <p class="lede"><b data-stat="games">510</b> original games on the shelf, from two-minute sports rounds to <b data-stat="worlds">55</b> full 3D worlds. Every one runs in your browser, works offline and ends on the clock.</p>
+      <div class="cta"><a class="btn pri" href="#library">Browse the library</a><button class="btn" data-random type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>Surprise me</button></div>
     </div>
-    <div class="stats">
-      <div class="stat"><b data-stat="games">0</b><span>games</span></div>
-      <div class="stat"><b data-stat="vs">0</b><span>vs CPU</span></div>
-      <div class="stat"><b data-stat="hd">0</b><span>3D</span></div>
+    <div class="deck" id="deck">
+      <div class="console" id="console" aria-label="Game console. Drag a cartridge into the slot, or pick one and press Enter.">
+        <div class="slot" id="slot" aria-hidden="true"><span>Insert cartridge</span></div>
+        <div class="bezel">
+          <div class="screen" id="cscreen"><canvas id="cdemo" width="320" height="240" aria-hidden="true"></canvas><p class="osd" id="cosd" aria-live="polite">ATTRACT MODE</p></div>
+        </div>
+        <div class="panel">
+          <span class="led" aria-hidden="true"></span>
+          <span class="clock" id="cclock" aria-label="Demo round clock">0:30</span>
+          <span class="cname" id="cname"></span>
+        </div>
+      </div>
+      <div class="tray">
+        <div class="tray-head"><p id="trayhint">Drag a cartridge into the console, or tap one.</p><button class="btn ghost small" id="shuffle" type="button"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h4v4M4 20L20 4M20 16v4h-4M14 14l6 6M4 4l5 5"/></svg>Shuffle</button></div>
+        <div class="carts" id="carts" role="listbox" aria-label="Cartridges on the counter" aria-orientation="horizontal"></div>
+      </div>
     </div>
-    <a class="down" href="#chips" aria-label="All games">▼</a>
   </header>
-  <div class="ticker" aria-hidden="true"><div id="ticker"></div></div>
-  <section class="flag" id="flag" aria-label="Full 3D games">
-    <header><p>(00)</p><h2>FULL 3D</h2><span>55 real-time 3D worlds. Cinematic lighting. Press G in game for graphics.</span></header>
+
+  <section class="sect flag" id="flag" aria-labelledby="flag-h">
+    <header class="sec-head"><h2 id="flag-h">Big box worlds</h2><p>55 real-time 3D worlds with cinematic lighting. Press <kbd>G</kbd> in any of them to change the graphics quality.</p></header>
     <div class="fgrid">
-      <a class="fc big" href="city/" style="--img:url(docs/cards/neonbay.jpg)"><em>OPEN WORLD · CARS · COPS</em><b>NEON BAY</b><span>A sun-bleached coastal city: steal cars, drive fares, win street races and shake the cops before sunrise. GTA-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc big" href="zombies/" style="--img:url(docs/cards/nightfall.jpg)"><em>ROUND SURVIVAL · UNTIL DAWN</em><b>NIGHTFALL</b><span>Board the windows, buy guns and perks, open the farm station and hold off the undead until sunrise. CoD Zombies-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc big" href="voxel/" style="--img:url(docs/cards/voxel.jpg)"><em>MINECRAFT-STYLE · SURVIVAL SANDBOX</em><b>VOXEL FRONTIER</b><span>Mine through biomes and glowing caves, craft tools and armour, survive the night and light the beacon.</span><i>PLAY →</i></a>
-      <a class="fc big" href="abyss/" style="--img:url(docs/cards/abyss.jpg)"><em>SUBNAUTICA-STYLE · CRAFT &amp; DIVE</em><b>ABYSS DIVER</b><span>Survive an alien ocean: gather, print gear and a mini-sub, slip past a leviathan, launch a distress beacon.</span><i>PLAY →</i></a>
-      <a class="fc big" href="frontline/" style="--img:url(docs/cards/frontline.jpg)"><em>MILITARY FPS · CAMPAIGN · 6V6</em><b>FRONTLINE OPS</b><span>A cinematic campaign plus 6v6 deathmatch and domination on four sunlit maps, with ADS, recoil and airstrikes. Call of Duty-style.</span><i>PLAY →</i></a>
-      <a class="fc big" href="monsters/" style="--img:url(docs/cards/blockbeasts.jpg)"><em>PIXELMON-STYLE · CATCH &amp; BATTLE</em><b>BLOCK BEASTS</b><span>Explore a voxel island, catch 24 blocky beasts, battle trainers and climb three spires for every badge.</span><i>PLAY →</i></a>
-      <a class="fc big" href="gp/" style="--img:url(docs/cards/kartgp.jpg)"><em>KART RACING · 12 RACERS · CUPS</em><b>KART GRAND PRIX</b><span>Cups, items, drift boosts and balloon battle, solo or split-screen. Mario Kart-style.</span><i>PLAY →</i></a>
-      <a class="fc big" href="rocket/" style="--img:url(docs/cards/rocket.jpg)"><em>CAR SOCCER · 1V1–3V3 · SPLIT SCREEN</em><b>ROCKET ARENA</b><span>Rocket cars, one giant ball. Boost, flip and fly to score. Rocket League-style.</span><i>PLAY →</i></a>
-      <a class="fc big" href="breach/" style="--img:url(docs/cards/breachpoint.jpg)"><em>TACTICAL 5V5 · PLANT / DEFUSE · ECONOMY</em><b>BREACH POINT</b><span>One life per round: buy, breach, plant or defuse. Learn every spray. CS:GO-style.</span><i>PLAY →</i></a>
-      <a class="fc big" href="quest/" style="--img:url(docs/cards/wildquest.jpg)"><em>OPEN WORLD · CLIMB · GLIDE</em><b>WILD QUEST</b><span>Climb, glide and cook across a wild island; clear four shrines before the Crimson Moon. Zelda-style.</span><i>PLAY →</i></a>
-      <a class="fc big" href="orbit/" style="--img:url(docs/cards/orbitlab.jpg)"><em>ROCKET SCIENCE · KSP-STYLE</em><b>ORBIT LAB</b><span>Build rockets, fly real orbital mechanics and watch Tsiolkovsky, vis-viva and Hohmann do the work.</span><i>PLAY →</i></a>
-      <a class="fc big" href="siege/" style="--img:url(docs/cards/fortbreach.jpg)"><em>TACTICAL 5V5 · DESTRUCTION · R6-STYLE</em><b>FORTRESS BREACH</b><span>Rain-soaked embassy siege: drone, reinforce, then blast holes through walls.</span><i>PLAY →</i></a>
-      <a class="fc" href="surf/" style="--img:url(docs/cards/swellguard.jpg)"><em>SURF · RESCUE · 3D</em><b>SWELL GUARD</b><span>Carve golden-hour barrels between rip rescues, shark alarms and a contest heat. Pro-surfer style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="festival/" style="--img:url(docs/cards/lanternstreet.jpg)"><em>ADVENTURE · COSTUME · TURN-BASED</em><b>LANTERN STREET</b><span>Build a cardboard lighthouse costume, beat the Puffkins in a timed battle and relight your street before the parade bell. Costume Quest-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="critters/" style="--img:url(docs/cards/harborpals.jpg)"><em>COMPANIONS · RESCUE · TIDE CLOCK</em><b>HARBOR PALS</b><span>Dig, bridge and zap with three helper creatures to winch a stranded boat ashore before the tide comes in. Pokémon-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="courier/" style="--img:url(docs/cards/tidewaycourier.jpg)"><em>KART · DELIVERY · VS CPU</em><b>TIDEWAY COURIER</b><span>Drift round a sunny flooded harbor, grab a parcel at the depot and drop it at the Post House every lap before three rival couriers beat you to the line. Mario Kart 8-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="rescue/" style="--img:url(docs/cards/beaconrescue.jpg)"><em>PUZZLE · RESCUE · 3 ROOMS</em><b>BEACON RESCUE</b><span>Carry batteries, plug in cables and set counterweights so a little repair robot can relight the lamp before the storm clock runs out. Portal 2-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="links/" style="--img:url(docs/cards/fairwaylegends.jpg)"><em>SPORTS · GOLF · VS CPU · HOT-SEAT</em><b>FAIRWAY LEGENDS</b><span>Nine wind-swept coastal holes: shape it, spin it, read the greens and beat the CPU or your friends. PGA Tour 2K-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="bastion/" style="--img:url(docs/cards/bastionline.jpg)"><em>TOWER DEFENSE · HEROES · BOSS WAVES</em><b>BASTION LINE</b><span>Raise towers, level a hero and hold the keep against an adaptive warlord across three diorama maps. Bloons TD-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="shadow/" style="--img:url(docs/cards/silentcontract.jpg)"><em>STEALTH · DISGUISES · ACCIDENTS</em><b>SILENT CONTRACT</b><span>Two targets at a cliffside sunset gala: steal a uniform, learn their routines and stage the accident. Hitman-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="hoops/" style="--img:url(docs/cards/courtkings.jpg)"><em>3D BASKETBALL · 5V5 · STREET 3V3</em><b>COURT KINGS</b><span>Time your release for the green and throw it down in a sold-out arena or the street cage at sundown. NBA 2K-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="west/" style="--img:url(docs/cards/dustwater.jpg)"><em>OPEN-WORLD WESTERN · BOUNTIES · DUELS</em><b>DUSTWATER</b><span>Take a bounty off the sheriff's board, ride out before sundown and bring the gang leader back alive or dead. Red Dead-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="manor/" style="--img:url(docs/cards/hollowmanor.jpg)"><em>SURVIVAL HORROR · STALKER · PUZZLES</em><b>HOLLOW MANOR</b><span>Find three sigils in a pitch-dark manor and escape before dawn while something in a torn veil hunts you by sound and light. Resident Evil 7-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="fight/" style="--img:url(docs/cards/tempestfist.jpg)"><em>3D FIGHTER · ARCADE · VERSUS</em><b>TEMPEST FIST</b><span>Nine original fighters trade strings, launchers, juggles and cinematic supers in an arcade ladder, local versus and training. Tekken-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="rts/" style="--img:url(docs/cards/shardwar.jpg)"><em>REAL-TIME STRATEGY · 1V1 · 2V2</em><b>SHARDWAR</b><span>Frontier legion against crystal swarm: mine, build, tech up and raze every enemy base. StarCraft-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="moba/" style="--img:url(docs/cards/aeonfall.jpg)"><em>5V5 BATTLE ARENA · LANES</em><b>AEONFALL</b><span>Pick from ten champions and push three lanes against CPU teams to shatter the enemy's Aeon Heart. League of Legends-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="ashen/" style="--img:url(docs/cards/ashen.jpg)"><em>SOULS-LIKE · FOUR BOSSES</em><b>ASHEN VIGIL</b><span>Roll, parry and riposte through a ruined cathedral-keep and fell four bosses before the embers fade. Dark Souls-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="heist/" style="--img:url(docs/cards/halcyonheist.jpg)"><em>CO-OP HEIST · STEALTH OR LOUD</em><b>HALCYON HEIST</b><span>Mask up with three CPU crew, crack the vault and bag the cash to the van before the police assault overwhelms you. Payday-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="void/" style="--img:url(docs/cards/voidwing.jpg)"><em>STARFIGHTER SQUADRONS · FLEET</em><b>VOIDWING</b><span>Route power, dodge missile locks and tear down a capital ship's shields in cockpit dogfights among the asteroids. Squadrons-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="dropzone/" style="--img:url(docs/cards/dropzone.jpg)"><em>40-PLAYER BATTLE ROYALE · CAGE</em><b>DROPZONE</b><span>Parachute into a port city with 39 CPU rivals, loot rarity weapons, outrun the gas and win the cage to redeploy. Warzone-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="heroes/" style="--img:url(docs/cards/zenith.jpg)"><em>5V5 HERO SHOOTER · PAYLOAD</em><b>ZENITH PROTOCOL</b><span>Seven heroes with abilities and ultimates fight CPU squads over the payload or the point. Overwatch-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="warfront/" style="--img:url(docs/cards/warfront.jpg)"><em>COMBINED ARMS · 16V16 CONQUEST</em><b>IRON VANGUARD</b><span>Fight for five flags across a river valley with tanks, jeeps, attack helicopters and jets. Battlefield-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="looter/" style="--img:url(docs/cards/starwarden.jpg)"><em>CO-OP LOOTER · STRIKES</em><b>STARWARDEN</b><span>Run alien-ruin strikes with two CPU guardians, break elemental shields, topple a multi-phase boss and chase exotic loot. Destiny-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="campaign/" style="--img:url(docs/cards/starfall.jpg)"><em>SCI-FI STORY CAMPAIGN · SQUAD</em><b>STARFALL VANGUARD</b><span>Lead a marine squad across an alien ring-world on foot, in a buggy and in a hover tank, then face the Overseer. Halo-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="ink/" style="--img:url(docs/cards/glossriot.jpg)"><em>TURF WAR · GLOSSY</em><b>GLOSS RIOT</b><span>Paint the town in your crew's colour, swim through your ink and out-cover the rival crew before the 3-minute whistle. Splatoon-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="titans/" style="--img:url(docs/cards/hardfall.jpg)"><em>PILOTS AND WAR FRAMES</em><b>HARDFALL</b><span>Wall-run across a desert depot or a neon city, then call a war frame down from orbit and climb in. Titanfall-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="tanks/" style="--img:url(docs/cards/ironclad.jpg)"><em>5V5 TANK BATTLES · GARAGE</em><b>IRONCLAD</b><span>Ballistic shells, ricochets and destructible maps. World of Tanks-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="sky/" style="--img:url(docs/cards/skylancers.jpg)"><em>AIR COMBAT · CAMPAIGN · DOGFIGHT</em><b>SKY LANCERS</b><span>Guns, heat-seekers, flares, bombs and carrier landings over an archipelago. War Thunder-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="extract/" style="--img:url(docs/cards/exfil.jpg)"><em>EXTRACTION SHOOTER · LOOT</em><b>EXFIL</b><span>Raid a fog-bound harbour town, loot safes, outgun raiders and reach an extract. Tarkov-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="arena/" style="--img:url(docs/cards/novaarena.jpg)"><em>SCI-FI ARENA · JETPACKS</em><b>NOVA ARENA</b><span>Shields, jetpacks and power weapons across an orbital ring and a sky citadel. Halo-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="bow/" style="--img:url(docs/cards/longbowkeep.jpg)"><em>CASTLE CTF · ARCHERY</em><b>LONGBOW KEEP</b><span>5v5 capture the flag with real arrow drop, sword and shield, fire pots and barricades. Narrow One-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="scope/" style="--img:url(docs/cards/longshot.jpg)"><em>SNIPER MISSIONS · WIND</em><b>LONG SHOT</b><span>Pick your mark out of a living crowd, dial in drop and wind, take the 400 m shot. Sniper Elite-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="drift/" style="--img:url(docs/cards/sideways.jpg)"><em>DRIFT · TANDEM · TOUGE</em><b>SIDEWAYS</b><span>Angle × speed scoring, tandem runs behind a CPU pro, five tunable cars. Drift Hunters-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="parkour/" style="--img:url(docs/cards/runline.jpg)"><em>FREERUN · SPEEDRUN</em><b>RUNLINE</b><span>Slide, wall-run, surf and grapple across 12 rooftop courses. Mirror's Edge-style.</span><i>NEW · PLAY →</i></a>
-      <a class="fc" href="strike/" style="--img:url(docs/cards/strike3d.jpg)"><em>ARENA FPS · FFA · 5V5 · GUN LADDER</em><b>STRIKE ZONE</b><span>Slide, bunny-hop and headshot smart CPU fighters on three maps. Krunker-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="plaza/" style="--img:url(docs/cards/penguinplaza.jpg)"><em>ISLAND HANGOUT · MINIGAMES</em><b>PENGUIN PLAZA</b><span>A snowy town full of penguins: minigames, coins, outfits and your own igloo. Club Penguin-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="royale/" style="--img:url(docs/cards/stormroyale.jpg)"><em>BATTLE ROYALE · BUILD</em><b>STORM ROYALE</b><span>Drop from the sky barge, loot, build walls and ramps, outlast the storm. Fortnite-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="tumble/" style="--img:url(docs/cards/tumble.jpg)"><em>PARTY ROYALE · OBSTACLES</em><b>TUMBLE ROYALE</b><span>A wobbly game show of races, survival rounds and a crown finale. Fall Guys-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="brawl/" style="--img:url(docs/cards/platformbrawl.jpg)"><em>PLATFORM FIGHTER · UP TO 4</em><b>PLATFORM BRAWL</b><span>Eight expressive brawlers, five bright stages and wild items: rack up the percent, then launch them off. Smash-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="striker/" style="--img:url(docs/cards/striker.jpg)"><em>FOOTBALL · 11 V 11 · CUP</em><b>STRIKER 11</b><span>Full-pitch football with formations, set pieces and a cup run. FIFA-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="skate/" style="--img:url(docs/cards/skatecity.jpg)"><em>SKATEBOARDING · CAREER</em><b>SKATE CITY</b><span>Chain flips, grabs, grinds and manuals across parks to hit goals. Tony Hawk-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="suspects/" style="--img:url(docs/cards/suspects.jpg)"><em>SOCIAL DEDUCTION · BOTS</em><b>STARSHIP SUSPECTS</b><span>Squishy spacers, ten original tasks, sabotage and lively bot meetings aboard a cosy starship. Among Us-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="drive/" style="--img:url(docs/cards/drive.jpg)"><em>OPEN CITY · TAXI · COPS</em><b>NIGHT DRIVE</b><span>Neon night shift: fares, races, chases. Crazy Taxi/GTA-style.</span><i>PLAY →</i></a>
-      <a class="fc" href="kart/" style="--img:url(docs/cards/kart.jpg)"><em>ADVENTURE RACING · 8 RACERS</em><b>CRITTER KART</b><span>Kart, hover and plane races across an island of balloons and bosses.</span><i>PLAY →</i></a>
-      <a class="fc" href="pets/" style="--img:url(docs/cards/pets.jpg)"><em>AUTO-BATTLER 3D</em><b>PET BRAWL</b><span>66 pets, six tiers. Build, merge, brawl.</span><i>PLAY →</i></a>
-      <a class="fc" href="builder/" style="--img:url(docs/cards/builder3d.jpg)"><em>2D + 3D EDITOR</em><b>BUILD YOUR OWN</b><span>Make a game in 60 seconds.</span><i>OPEN →</i></a>
+      <a class="fc big" href="city/" style="--img:url(docs/cards/neonbay.jpg)"><em>Open world, cars, cops</em><b>NEON BAY</b><span>A sun-bleached coastal city: steal cars, drive fares, win street races and shake the cops before sunrise. GTA-style.</span></a>
+      <a class="fc big" href="zombies/" style="--img:url(docs/cards/nightfall.jpg)"><em>Round survival, until dawn</em><b>NIGHTFALL</b><span>Board the windows, buy guns and perks, open the farm station and hold off the undead until sunrise. CoD Zombies-style.</span></a>
+      <a class="fc big" href="voxel/" style="--img:url(docs/cards/voxel.jpg)"><em>Minecraft-style, survival sandbox</em><b>VOXEL FRONTIER</b><span>Mine through biomes and glowing caves, craft tools and armour, survive the night and light the beacon.</span></a>
+      <a class="fc big" href="abyss/" style="--img:url(docs/cards/abyss.jpg)"><em>Subnautica-style, craft &amp; dive</em><b>ABYSS DIVER</b><span>Survive an alien ocean: gather, print gear and a mini-sub, slip past a leviathan, launch a distress beacon.</span></a>
+      <a class="fc big" href="frontline/" style="--img:url(docs/cards/frontline.jpg)"><em>Military FPS, campaign, 6v6</em><b>FRONTLINE OPS</b><span>A cinematic campaign plus 6v6 deathmatch and domination on four sunlit maps, with ADS, recoil and airstrikes. Call of Duty-style.</span></a>
+      <a class="fc big" href="monsters/" style="--img:url(docs/cards/blockbeasts.jpg)"><em>Pixelmon-style, catch &amp; battle</em><b>BLOCK BEASTS</b><span>Explore a voxel island, catch 24 blocky beasts, battle trainers and climb three spires for every badge.</span></a>
+      <a class="fc big" href="gp/" style="--img:url(docs/cards/kartgp.jpg)"><em>Kart racing, 12 racers, cups</em><b>KART GRAND PRIX</b><span>Cups, items, drift boosts and balloon battle, solo or split-screen. Mario Kart-style.</span></a>
+      <a class="fc big" href="rocket/" style="--img:url(docs/cards/rocket.jpg)"><em>Car soccer, 1v1–3v3, split screen</em><b>ROCKET ARENA</b><span>Rocket cars, one giant ball. Boost, flip and fly to score. Rocket League-style.</span></a>
+      <a class="fc big" href="breach/" style="--img:url(docs/cards/breachpoint.jpg)"><em>Tactical 5v5, plant / defuse, economy</em><b>BREACH POINT</b><span>One life per round: buy, breach, plant or defuse. Learn every spray. CS:GO-style.</span></a>
+      <a class="fc big" href="quest/" style="--img:url(docs/cards/wildquest.jpg)"><em>Open world, climb, glide</em><b>WILD QUEST</b><span>Climb, glide and cook across a wild island; clear four shrines before the Crimson Moon. Zelda-style.</span></a>
+      <a class="fc big" href="orbit/" style="--img:url(docs/cards/orbitlab.jpg)"><em>Rocket science, KSP-style</em><b>ORBIT LAB</b><span>Build rockets, fly real orbital mechanics and watch Tsiolkovsky, vis-viva and Hohmann do the work.</span></a>
+      <a class="fc big" href="siege/" style="--img:url(docs/cards/fortbreach.jpg)"><em>Tactical 5v5, destruction, R6-style</em><b>FORTRESS BREACH</b><span>Rain-soaked embassy siege: drone, reinforce, then blast holes through walls.</span></a>
+      <a class="fc" href="surf/" style="--img:url(docs/cards/swellguard.jpg)"><i>New</i><em>Surf, rescue, 3D</em><b>SWELL GUARD</b><span>Carve golden-hour barrels between rip rescues, shark alarms and a contest heat. Pro-surfer style.</span></a>
+      <a class="fc" href="festival/" style="--img:url(docs/cards/lanternstreet.jpg)"><i>New</i><em>Adventure, costume, turn-based</em><b>LANTERN STREET</b><span>Build a cardboard lighthouse costume, beat the Puffkins in a timed battle and relight your street before the parade bell. Costume Quest-style.</span></a>
+      <a class="fc" href="critters/" style="--img:url(docs/cards/harborpals.jpg)"><i>New</i><em>Companions, rescue, tide clock</em><b>HARBOR PALS</b><span>Dig, bridge and zap with three helper creatures to winch a stranded boat ashore before the tide comes in. Pokémon-style.</span></a>
+      <a class="fc" href="courier/" style="--img:url(docs/cards/tidewaycourier.jpg)"><i>New</i><em>Kart, delivery, vs CPU</em><b>TIDEWAY COURIER</b><span>Drift round a sunny flooded harbor, grab a parcel at the depot and drop it at the Post House every lap before three rival couriers beat you to the line. Mario Kart 8-style.</span></a>
+      <a class="fc" href="rescue/" style="--img:url(docs/cards/beaconrescue.jpg)"><i>New</i><em>Puzzle, rescue, 3 rooms</em><b>BEACON RESCUE</b><span>Carry batteries, plug in cables and set counterweights so a little repair robot can relight the lamp before the storm clock runs out. Portal 2-style.</span></a>
+      <a class="fc" href="links/" style="--img:url(docs/cards/fairwaylegends.jpg)"><em>Sports, golf, vs CPU, hot-seat</em><b>FAIRWAY LEGENDS</b><span>Nine wind-swept coastal holes: shape it, spin it, read the greens and beat the CPU or your friends. PGA Tour 2K-style.</span></a>
+      <a class="fc" href="bastion/" style="--img:url(docs/cards/bastionline.jpg)"><em>Tower defense, heroes, boss waves</em><b>BASTION LINE</b><span>Raise towers, level a hero and hold the keep against an adaptive warlord across three diorama maps. Bloons TD-style.</span></a>
+      <a class="fc" href="shadow/" style="--img:url(docs/cards/silentcontract.jpg)"><em>Stealth, disguises, accidents</em><b>SILENT CONTRACT</b><span>Two targets at a cliffside sunset gala: steal a uniform, learn their routines and stage the accident. Hitman-style.</span></a>
+      <a class="fc" href="hoops/" style="--img:url(docs/cards/courtkings.jpg)"><em>3D basketball, 5v5, street 3v3</em><b>COURT KINGS</b><span>Time your release for the green and throw it down in a sold-out arena or the street cage at sundown. NBA 2K-style.</span></a>
+      <a class="fc" href="west/" style="--img:url(docs/cards/dustwater.jpg)"><em>Open-world western, bounties, duels</em><b>DUSTWATER</b><span>Take a bounty off the sheriff's board, ride out before sundown and bring the gang leader back alive or dead. Red Dead-style.</span></a>
+      <a class="fc" href="manor/" style="--img:url(docs/cards/hollowmanor.jpg)"><em>Survival horror, stalker, puzzles</em><b>HOLLOW MANOR</b><span>Find three sigils in a pitch-dark manor and escape before dawn while something in a torn veil hunts you by sound and light. Resident Evil 7-style.</span></a>
+      <a class="fc" href="fight/" style="--img:url(docs/cards/tempestfist.jpg)"><em>3D fighter, arcade, versus</em><b>TEMPEST FIST</b><span>Nine original fighters trade strings, launchers, juggles and cinematic supers in an arcade ladder, local versus and training. Tekken-style.</span></a>
+      <a class="fc" href="rts/" style="--img:url(docs/cards/shardwar.jpg)"><em>Real-time strategy, 1v1, 2v2</em><b>SHARDWAR</b><span>Frontier legion against crystal swarm: mine, build, tech up and raze every enemy base. StarCraft-style.</span></a>
+      <a class="fc" href="moba/" style="--img:url(docs/cards/aeonfall.jpg)"><em>5v5 battle arena, lanes</em><b>AEONFALL</b><span>Pick from ten champions and push three lanes against CPU teams to shatter the enemy's Aeon Heart. League of Legends-style.</span></a>
+      <a class="fc" href="ashen/" style="--img:url(docs/cards/ashen.jpg)"><em>Souls-like, four bosses</em><b>ASHEN VIGIL</b><span>Roll, parry and riposte through a ruined cathedral-keep and fell four bosses before the embers fade. Dark Souls-style.</span></a>
+      <a class="fc" href="heist/" style="--img:url(docs/cards/halcyonheist.jpg)"><em>Co-op heist, stealth or loud</em><b>HALCYON HEIST</b><span>Mask up with three CPU crew, crack the vault and bag the cash to the van before the police assault overwhelms you. Payday-style.</span></a>
+      <a class="fc" href="void/" style="--img:url(docs/cards/voidwing.jpg)"><em>Starfighter squadrons, fleet</em><b>VOIDWING</b><span>Route power, dodge missile locks and tear down a capital ship's shields in cockpit dogfights among the asteroids. Squadrons-style.</span></a>
+      <a class="fc" href="dropzone/" style="--img:url(docs/cards/dropzone.jpg)"><em>40-player battle royale, cage</em><b>DROPZONE</b><span>Parachute into a port city with 39 CPU rivals, loot rarity weapons, outrun the gas and win the cage to redeploy. Warzone-style.</span></a>
+      <a class="fc" href="heroes/" style="--img:url(docs/cards/zenith.jpg)"><em>5v5 hero shooter, payload</em><b>ZENITH PROTOCOL</b><span>Seven heroes with abilities and ultimates fight CPU squads over the payload or the point. Overwatch-style.</span></a>
+      <a class="fc" href="warfront/" style="--img:url(docs/cards/warfront.jpg)"><em>Combined arms, 16v16 conquest</em><b>IRON VANGUARD</b><span>Fight for five flags across a river valley with tanks, jeeps, attack helicopters and jets. Battlefield-style.</span></a>
+      <a class="fc" href="looter/" style="--img:url(docs/cards/starwarden.jpg)"><em>Co-op looter, strikes</em><b>STARWARDEN</b><span>Run alien-ruin strikes with two CPU guardians, break elemental shields, topple a multi-phase boss and chase exotic loot. Destiny-style.</span></a>
+      <a class="fc" href="campaign/" style="--img:url(docs/cards/starfall.jpg)"><em>Sci-fi story campaign, squad</em><b>STARFALL VANGUARD</b><span>Lead a marine squad across an alien ring-world on foot, in a buggy and in a hover tank, then face the Overseer. Halo-style.</span></a>
+      <a class="fc" href="ink/" style="--img:url(docs/cards/glossriot.jpg)"><em>Turf war, glossy</em><b>GLOSS RIOT</b><span>Paint the town in your crew's colour, swim through your ink and out-cover the rival crew before the 3-minute whistle. Splatoon-style.</span></a>
+      <a class="fc" href="titans/" style="--img:url(docs/cards/hardfall.jpg)"><em>Pilots and war frames</em><b>HARDFALL</b><span>Wall-run across a desert depot or a neon city, then call a war frame down from orbit and climb in. Titanfall-style.</span></a>
+      <a class="fc" href="tanks/" style="--img:url(docs/cards/ironclad.jpg)"><em>5v5 tank battles, garage</em><b>IRONCLAD</b><span>Ballistic shells, ricochets and destructible maps. World of Tanks-style.</span></a>
+      <a class="fc" href="sky/" style="--img:url(docs/cards/skylancers.jpg)"><em>Air combat, campaign, dogfight</em><b>SKY LANCERS</b><span>Guns, heat-seekers, flares, bombs and carrier landings over an archipelago. War Thunder-style.</span></a>
+      <a class="fc" href="extract/" style="--img:url(docs/cards/exfil.jpg)"><em>Extraction shooter, loot</em><b>EXFIL</b><span>Raid a fog-bound harbour town, loot safes, outgun raiders and reach an extract. Tarkov-style.</span></a>
+      <a class="fc" href="arena/" style="--img:url(docs/cards/novaarena.jpg)"><em>Sci-fi arena, jetpacks</em><b>NOVA ARENA</b><span>Shields, jetpacks and power weapons across an orbital ring and a sky citadel. Halo-style.</span></a>
+      <a class="fc" href="bow/" style="--img:url(docs/cards/longbowkeep.jpg)"><em>Castle CTF, archery</em><b>LONGBOW KEEP</b><span>5v5 capture the flag with real arrow drop, sword and shield, fire pots and barricades. Narrow One-style.</span></a>
+      <a class="fc" href="scope/" style="--img:url(docs/cards/longshot.jpg)"><em>Sniper missions, wind</em><b>LONG SHOT</b><span>Pick your mark out of a living crowd, dial in drop and wind, take the 400 m shot. Sniper Elite-style.</span></a>
+      <a class="fc" href="drift/" style="--img:url(docs/cards/sideways.jpg)"><em>Drift, tandem, touge</em><b>SIDEWAYS</b><span>Angle × speed scoring, tandem runs behind a CPU pro, five tunable cars. Drift Hunters-style.</span></a>
+      <a class="fc" href="parkour/" style="--img:url(docs/cards/runline.jpg)"><em>Freerun, speedrun</em><b>RUNLINE</b><span>Slide, wall-run, surf and grapple across 12 rooftop courses. Mirror's Edge-style.</span></a>
+      <a class="fc" href="strike/" style="--img:url(docs/cards/strike3d.jpg)"><em>Arena FPS, FFA, 5v5, gun ladder</em><b>STRIKE ZONE</b><span>Slide, bunny-hop and headshot smart CPU fighters on three maps. Krunker-style.</span></a>
+      <a class="fc" href="plaza/" style="--img:url(docs/cards/penguinplaza.jpg)"><em>Island hangout, minigames</em><b>PENGUIN PLAZA</b><span>A snowy town full of penguins: minigames, coins, outfits and your own igloo. Club Penguin-style.</span></a>
+      <a class="fc" href="royale/" style="--img:url(docs/cards/stormroyale.jpg)"><em>Battle royale, build</em><b>STORM ROYALE</b><span>Drop from the sky barge, loot, build walls and ramps, outlast the storm. Fortnite-style.</span></a>
+      <a class="fc" href="tumble/" style="--img:url(docs/cards/tumble.jpg)"><em>Party royale, obstacles</em><b>TUMBLE ROYALE</b><span>A wobbly game show of races, survival rounds and a crown finale. Fall Guys-style.</span></a>
+      <a class="fc" href="brawl/" style="--img:url(docs/cards/platformbrawl.jpg)"><em>Platform fighter, up to 4</em><b>PLATFORM BRAWL</b><span>Eight expressive brawlers, five bright stages and wild items: rack up the percent, then launch them off. Smash-style.</span></a>
+      <a class="fc" href="striker/" style="--img:url(docs/cards/striker.jpg)"><em>Football, 11 v 11, cup</em><b>STRIKER 11</b><span>Full-pitch football with formations, set pieces and a cup run. FIFA-style.</span></a>
+      <a class="fc" href="skate/" style="--img:url(docs/cards/skatecity.jpg)"><em>Skateboarding, career</em><b>SKATE CITY</b><span>Chain flips, grabs, grinds and manuals across parks to hit goals. Tony Hawk-style.</span></a>
+      <a class="fc" href="suspects/" style="--img:url(docs/cards/suspects.jpg)"><em>Social deduction, bots</em><b>STARSHIP SUSPECTS</b><span>Squishy spacers, ten original tasks, sabotage and lively bot meetings aboard a cosy starship. Among Us-style.</span></a>
+      <a class="fc" href="drive/" style="--img:url(docs/cards/drive.jpg)"><em>Open city, taxi, cops</em><b>NIGHT DRIVE</b><span>Neon night shift: fares, races, chases. Crazy Taxi/GTA-style.</span></a>
+      <a class="fc" href="kart/" style="--img:url(docs/cards/kart.jpg)"><em>Adventure racing, 8 racers</em><b>CRITTER KART</b><span>Kart, hover and plane races across an island of balloons and bosses.</span></a>
+      <a class="fc" href="pets/" style="--img:url(docs/cards/pets.jpg)"><em>Auto-battler 3D</em><b>PET BRAWL</b><span>66 pets, six tiers. Build, merge, brawl.</span></a>
+      <a class="fc" href="builder/" style="--img:url(docs/cards/builder3d.jpg)"><em>2D + 3D editor</em><b>BUILD YOUR OWN</b><span>Make a game in 60 seconds.</span></a>
     </div>
   </section>
-  <section class="make" id="make" aria-label="Make your own game">
-    <header><p>(+)</p><h2>MAKE YOUR OWN</h2><span>A real 2D and 3D game editor in the browser: scenes, components, rules, play-test, share, publish.</span></header>
-    <a class="mkcard" href="builder/"><div class="mkimgs"><img src="docs/cards/builder3d.jpg" alt="3D game builder editor" loading="lazy"><img class="mk2" src="docs/cards/builder.jpg" alt="2D game builder editor" loading="lazy"></div><div><em>GAME BUILDER · 2D + 3D</em><b>BUILD A GAME<br>IN 60 SECONDS.</b><span>2D platformers and shooters or 3D obstacle courses, islands and arenas. Drop in players, enemies, coins and goals, move them with gizmos, wire up WHEN → DO rules, press Play. Share a link or publish it to the arcade.</span><i>OPEN BUILDER →</i></div></a>
-    <div class="mine" id="mine" hidden><h3>YOUR GAMES</h3><div class="minerow" id="minerow"></div></div>
+
+  <section class="sect library" id="library" aria-labelledby="lib-h">
+    <header class="sec-head lib-head">
+      <h2 id="lib-h">The library</h2><span class="cnt" id="libcount" aria-live="polite">510 cartridges</span>
+      <p>Every canvas game and 3D world, shelved by genre. Pick one to see its box, then press Play.</p>
+    </header>
+    <div class="libbar">
+      <nav class="chips" id="chips" aria-label="Filter by shelf"></nav>
+      <div class="views" role="group" aria-label="View"><button type="button" data-view="shelf" aria-pressed="true"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V5M10 20V7M14 20V4M18 20l-2-14"/></svg><span>Shelf</span></button><button type="button" data-view="boxes" aria-pressed="false"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg><span>Boxes</span></button></div>
+    </div>
+    <div class="libwrap">
+      <div class="shelves" id="grid">
+        <div class="skeleton" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="empty" id="empty" hidden>
+        <p class="empty-t">No cartridge matches <q id="emptyq"></q>.</p>
+        <p>Try a genre, or one of these:</p>
+        <div class="empty-sugg" id="emptysugg"></div>
+        <button class="btn" type="button" id="emptyclear">Clear the search</button>
+      </div>
+      <aside class="box" id="box" aria-label="Selected cartridge" tabindex="-1">
+        <div class="box-empty" id="boxempty"><div class="ghostcart" aria-hidden="true"></div><p>Pick a cartridge from the shelf to see its box.</p></div>
+        <div class="box-full" id="boxfull" hidden>
+          <button class="ico box-x" id="boxclose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          <div class="box-art"><canvas id="boxcv" width="320" height="240" aria-hidden="true"></canvas><p class="nosig" hidden>NO SIGNAL</p></div>
+          <p class="box-cat" id="boxcat"></p>
+          <h3 class="box-name" id="boxname"></h3>
+          <dl class="box-facts"><div><dt>Round</dt><dd class="digits" id="boxtime"></dd></div><div><dt>Mode</dt><dd id="boxmode"></dd></div><div><dt>Your best</dt><dd class="digits" id="boxbest"></dd></div></dl>
+          <p class="box-how" id="boxhow"></p>
+          <div class="box-acts"><button class="btn pri" id="boxplay" type="button">Play</button><button class="btn" id="boxfav" type="button" aria-pressed="false">Favorite</button><button class="btn" id="boxtop" type="button">Top 10</button><a class="btn ghost" id="boxsrc" target="_blank" rel="noopener">Source</a></div>
+        </div>
+      </aside>
+    </div>
   </section>
-  <nav class="chips" id="chips" aria-label="Filter games"></nav>
-  <p id="empty" class="empty" hidden>No cabinet matches that. Try another word.</p>
-  <section class="grid" id="grid" aria-label="Games"></section>
-  <footer class="foot"><span><kbd>Arrows</kbd> move</span><span><kbd>Space</kbd>/<kbd>Click</kbd> A</span><span><kbd>X</kbd>/<kbd>Right-click</kbd> B</span><span><kbd>Esc</kbd> exit</span><a href="builder/">+ Build a game</a><a href="#" id="netBtn" title="Play a friend on the same network by swapping codes">⇄ Play online</a><a href="#" id="offlineBtn" title="Download every game so the arcade works with no internet">⤓ Save all offline</a><a href="https://github.com/Normansrule/pixel-arcade/releases" target="_blank" rel="noopener">Desktop app</a></footer>
+
+  <section class="sect make" id="make" aria-labelledby="make-h">
+    <header class="sec-head"><h2 id="make-h">Make your own</h2><p>A real 2D and 3D game editor in the browser: scenes, components, rules, play-test, share and publish.</p></header>
+    <a class="mkcard" href="builder/"><div class="mkimgs"><img src="docs/cards/builder3d.jpg" alt="The 3D game builder editor" loading="lazy"><img class="mk2" src="docs/cards/builder.jpg" alt="The 2D game builder editor" loading="lazy"></div><div><b>Build a game in 60 seconds.</b><span>2D platformers and shooters or 3D obstacle courses, islands and arenas. Drop in players, enemies, coins and goals, move them with gizmos, wire up WHEN → DO rules and press Play. Share a link or publish it to the arcade shelf.</span><i class="btn pri">Open the builder</i></div></a>
+    <div class="mine" id="mine" hidden><h3>Your games</h3><div class="minerow" id="minerow"></div></div>
+  </section>
+
+  <footer class="foot">
+    <ul class="keys" aria-label="Controls"><li><kbd>Arrows</kbd> move</li><li><kbd>Space</kbd> or click: A</li><li><kbd>X</kbd> or right-click: B</li><li><kbd>P</kbd> pause</li><li><kbd>Esc</kbd> back to the lobby</li><li><kbd>/</kbd> search</li></ul>
+    <nav class="links" aria-label="More"><a href="docs/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5M8 13h8M8 17h6"/></svg>Docs</a><a href="builder/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Build a game</a><a href="#" id="netBtn" title="Play a friend on the same network by swapping codes"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>Play online</a><a href="#" id="offlineBtn" title="Download every game so the arcade works with no internet"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Save all offline</a><a href="https://github.com/Normansrule/pixel-arcade/releases" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Desktop app</a></nav>
+  </footer>
 </main>
+<div id="board" class="board" hidden><div class="bpanel" role="dialog" aria-modal="true" aria-label="Leaderboard"><h3></h3><ol></ol><p class="bnote">Scores are posted as GitHub issues titled <code>[score] game points</code>, so each entry is tied to a real GitHub account. Press <kbd>U</kbd> on a game-over screen to post yours.</p><button type="button" class="btn bclose">Close</button></div></div>
 <div id="cab" role="application" aria-label="Game screen" data-gfx="high">
   <div class="bar">
     <button id="back" type="button" title="Back to lobby (Esc)"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>Lobby</span></button>
@@ -122,7 +176,6 @@
     <button id="fs" type="button" title="Fullscreen" aria-pressed="false"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>Full</span></button>
   </div>
   <div class="tube"><div class="crt"><canvas id="scr" width="320" height="240"></canvas><canvas id="bloom" width="160" height="120" aria-hidden="true"></canvas></div></div>
-  <div id="board" class="board" hidden><div class="bpanel"><h3></h3><ol></ol><p class="bnote">Scores are posted as GitHub issues titled <code>[score] game points</code>, so each entry is tied to a real GitHub account. Press <kbd>U</kbd> on a game-over screen to post yours.</p><button type="button">Close</button></div></div>
   <div class="pad" aria-hidden="true">
     <div class="dp"><span></span><button data-k="u" type="button"><i></i></button><span></span><button data-k="l" type="button"><i></i></button><span class="hub"></span><button data-k="r" type="button"><i></i></button><span></span><button data-k="d" type="button"><i></i></button><span></span></div>
     <div class="ab"><button data-k="b" type="button">B</button><button data-k="a" type="button">A</button></div>
@@ -191,17 +244,17 @@
 <script src="games/advanced1.js"></script>
 <script src="games/advanced2.js"></script>
 <script src="games/space1.js"></script>
-<script src="js/trail.js"></script>
 <script src="js/net.js"></script>
 <!-- scripts:end -->
-<script type="module" src="js/hero.js"></script>
+<script src="js/lobby.js"></script>
+<script src="js/console.js"></script>
 <script>
 (function(){let L=[];try{L=JSON.parse(localStorage.getItem('pxd_mygames'))||[];}catch(e){}if(!Array.isArray(L)||!L.length)return;
  const box=document.getElementById('mine'),row=document.getElementById('minerow');box.hidden=false;
  L.slice(0,12).forEach(g=>{const a=document.createElement('a');a.className='minec';a.href=g.url||('builder/?play&game='+encodeURIComponent(g.id));
   const im=document.createElement('img');im.alt='';im.src=g.thumb||'';a.appendChild(im);const b=document.createElement('b');b.textContent=g.title||'Untitled';a.appendChild(b);
-  const sp=document.createElement('span');sp.textContent=(g.category||'CUSTOM')+' · '+new Date(g.updated||Date.now()).toLocaleDateString();a.appendChild(sp);row.appendChild(a);});
- const add=document.createElement('a');add.className='minec new';add.href='builder/';add.innerHTML='<b>+ NEW GAME</b>';row.appendChild(add);})();
+  const sp=document.createElement('span');sp.textContent=(g.category||'Custom')+', '+new Date(g.updated||Date.now()).toLocaleDateString();a.appendChild(sp);row.appendChild(a);});
+ const add=document.createElement('a');add.className='minec new';add.href='builder/';add.innerHTML='<b>+ New game</b>';row.appendChild(add);})();
 </script>
 <script>
 // installable app + offline play
@@ -213,10 +266,12 @@
  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!navigator.standalone;if(ios)ib.hidden=false;
  ib.onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null;ib.hidden=true;}else alert('To install: tap Share, then "Add to Home Screen".');};
  const ob=document.getElementById('offlineBtn');if(!ob)return;
- ob.onclick=async e=>{e.preventDefault();if(!('serviceWorker' in navigator)){ob.textContent='Offline needs a modern browser';return;}
-  const reg=await navigator.serviceWorker.ready;const list=await (await fetch('offline.json',{cache:'no-store'})).json();
-  navigator.serviceWorker.addEventListener('message',m=>{const d=m.data||{};if(d.type==='cache-progress')ob.textContent='Saving… '+Math.round(d.done/d.total*100)+'%';if(d.type==='cache-done')ob.textContent=d.failed?'Saved ('+d.failed+' files skipped)':'✓ All games saved offline';});
-  ob.textContent='Saving… 0%';(reg.active||navigator.serviceWorker.controller).postMessage({type:'cache-all',files:list.files});};
+ ob.onclick=async e=>{e.preventDefault();const lab=t=>{ob.lastChild.textContent=t;};if(!('serviceWorker' in navigator)){lab('Offline needs a modern browser');return;}
+  ob.setAttribute('aria-busy','true');
+  try{const reg=await navigator.serviceWorker.ready;const list=await (await fetch('offline.json',{cache:'no-store'})).json();
+   navigator.serviceWorker.addEventListener('message',m=>{const d=m.data||{};if(d.type==='cache-progress')lab('Saving '+Math.round(d.done/d.total*100)+'%');if(d.type==='cache-done'){ob.removeAttribute('aria-busy');lab(d.failed?'Saved ('+d.failed+' files skipped)':'Saved for offline');}});
+   lab('Saving 0%');(reg.active||navigator.serviceWorker.controller).postMessage({type:'cache-all',files:list.files});}
+  catch(err){ob.removeAttribute('aria-busy');ob.classList.add('err');lab('Couldn\'t save: check your connection');}};
 })();
 </script>
 </body>
