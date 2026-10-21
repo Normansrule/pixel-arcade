@@ -49,7 +49,9 @@ addEventListener('arcade-ready',()=>{
   if(left<=0){osd.textContent='TIME UP';setTimeout(()=>{if(!busy)osd.textContent='ATTRACT MODE';},900);powerCycle(()=>tune(cur+1,true));}
  },250);
  function powerCycle(then){scr.classList.remove('on');scr.classList.add('off');setTimeout(()=>{scr.classList.remove('off');then&&then();void scr.offsetWidth;scr.classList.add('on');},RM.matches?0:280);}
- if(window.IntersectionObserver)new IntersectionObserver(es=>{seen=es[0].isIntersecting;if(!seen&&stop){stop();stop=null;}else if(seen&&!stop&&!busy&&!RM.matches&&tray[cur])stop=A.preview(tray[cur],cv,30);}).observe(con);
+ // the demo also runs while the front-page intro is showing: the intro's middle cabinet screen is this canvas
+ const vis=new Set(),stg=document.querySelector('#intro .istage');
+ if(window.IntersectionObserver){const io=new IntersectionObserver(es=>{es.forEach(e=>e.isIntersecting?vis.add(e.target):vis.delete(e.target));seen=vis.size>0;if(!seen&&stop){stop();stop=null;}else if(seen&&!stop&&!busy&&!RM.matches&&tray[cur])stop=A.preview(tray[cur],cv,30);});io.observe(con);if(stg)io.observe(stg);}
 
  /* insert: the cartridge drops into the slot, the screen powers down, the clock counts 3-2-1, the game boots */
  function insert(gm,el,from){

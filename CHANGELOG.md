@@ -2,7 +2,15 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round12`, which includes round 11)
+## Unreleased (on branch `round13`, which includes rounds 11 and 12)
+
+### Round 13 (v36)
+
+- **A front-page intro you fly into.** The hub now opens on the README's arcade room, live in 3D. Scrolling pins the scene and flies the camera through the ring of cabinets into the middle screen, which plays the console's attract demo. Meanwhile the PIXEL ARCADE title lifts away and four lines take the middle of the screen in turn (510 games, no installs, no accounts, every round ends on the clock), then the room fades into the console stage. Three.js loads only on a wide screen with WebGL, without reduced motion or data saver, and drops the glow and renders at 1x if the first second runs slow. Everyone else gets a still of the room (`docs/intro.jpg`) with the same scroll timeline, and with reduced motion it is one still screen.
+- **The cabinet room is one shared module,** `js/arcade-scene.js`, used by both the intro and the README header renderer, so the two always match.
+- **Motion everywhere else:** section headings decode from scrambled pixel glyphs as they scroll in, posters and sections rise in with a short stagger, a tilted cobalt marquee runs the world names between the console and the posters, and the title rises in on load.
+- **Docs site:** a cinematic header (the arcade room behind a big DOCS wordmark), a reading-progress bar, and the same reveals and decoding headings.
+- **README:** an intro flythrough GIF at the top of the front-page section, and the Design section covers the intro and the new motion.
 
 ### Round 12 (v35)
 

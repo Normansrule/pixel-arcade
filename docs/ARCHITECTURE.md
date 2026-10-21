@@ -5,6 +5,7 @@ Pixel Arcade is a static website with no build step. GitHub Pages serves `main` 
 ```
 index.html ── js/engine/*.js ── js/gx.js ── games/*.js        455 canvas cabinets + hub entries for the 3D worlds
            └─ js/lobby.js (shelves, box, search) ── js/console.js (front-page console)
+           └─ js/intro.js (scroll intro; imports js/arcade-scene.js and vendor Three.js on demand) · js/fx.js (reveals, marquee)
 <folder>/index.html ── <folder>/game.js (+ modules) ── vendor/, js/fx3d.js, js/kit3d/      31 full-3D worlds
 builder/                                                       2D + 3D game builder
 sw.js + offline.json + manifest.webmanifest                    installable offline web app

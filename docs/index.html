@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="../style.css">
 </head>
 <body class="docs">
+<div class="progress" aria-hidden="true"></div>
 <a class="skip" href="#doc">Skip to the docs</a>
 <nav class="topbar" aria-label="Site">
   <a class="brand" href="../" aria-label="Pixel Arcade, back to the arcade"><i aria-hidden="true"></i><span>PIXEL ARCADE</span></a>
@@ -23,6 +24,13 @@
   <a class="ico gh" href="https://github.com/Normansrule/pixel-arcade" target="_blank" rel="noopener" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.88.87 2.34.66.07-.52.28-.87.51-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
 </nav>
 
+<header class="dhero">
+  <div class="dwrap">
+    <p class="dtag" aria-hidden="true">[ <b>●</b> MANUAL ]</p>
+    <h1 class="dmark">Docs<i aria-hidden="true"></i></h1>
+    <p class="dsub">How to play, build, install and develop Pixel Arcade, and how its design works.</p>
+  </div>
+</header>
 <main id="top" class="wrap">
   <nav class="docnav" aria-label="On this page">
     <a href="#start">Getting started</a>
@@ -37,7 +45,6 @@
   </nav>
 
   <article class="doc" id="doc">
-    <h1>Pixel Arcade docs</h1>
     <p class="lead">Pixel Arcade is a free, open-source arcade that runs in your web browser: hundreds of short, original games plus a set of full 3D (three-dimensional) worlds. Every game ends on a round clock, most have a computer opponent, and the whole thing works offline.</p>
     <figure><img src="readme/hub-light.jpg" alt="The front page in light mode: the pixel-lettered headline on the left, the console running a game in attract mode on the right, and a tray of cartridges under it" width="1440" height="900"><figcaption>The front page. The console plays short demos of the cartridges in the tray.</figcaption></figure>
 
@@ -103,6 +110,9 @@ python3 tools/build.py           # offline files and the single-file build</code
 <pre><code>index.html, style.css   the front page: console, shelves, game player, leaderboard
 js/lobby.js             shelves, the cartridge box, search, favourites, views, theme
 js/console.js           the console: attract mode, round clock, drag-to-insert
+js/intro.js             the scroll intro into the arcade room (3D)
+js/arcade-scene.js      the arcade room, shared with the README header
+js/fx.js                reveals, decoding headings, marquee, progress bar
 js/engine/              the canvas engine, one numbered file per layer
 games/                  the canvas games in themed packs (games/index.json is the load order)
 &lt;world&gt;/                each full 3D world in its own folder
@@ -132,11 +142,13 @@ desktop/                the Electron desktop app</code></pre>
       <li><b>One ink, one signal.</b> Cobalt marks what you can act on and what's selected. Signal orange is kept for the clock and your scores.</li>
       <li><b>Things behave like objects.</b> Spines slide up when picked, cartridges tilt with the speed of your drag and spring home if you let go. The springs are short and settle quickly; nothing floats or loops for decoration.</li>
       <li><b>Show the game, not a picture of it.</b> The console, the box and the Boxes view all show the real game running or its real screen.</li>
+      <li><b>A room you fly into.</b> The front page opens on the arcade room from the README header, live in 3D. Scrolling flies the camera into the middle cabinet's screen, which plays the console's demo, then fades into the console. Three.js only loads on a wide screen with WebGL and without reduced motion or data saver; otherwise you get a still of the room.</li>
       <li><b>Every state is designed.</b> Loading shelves, an empty search, a box with nothing picked, a leaderboard that can't reach GitHub and a game with no screenshot each have their own state.</li>
       <li><b>Accessible by default.</b> Every control works from the keyboard with a visible focus ring, text meets WCAG (Web Content Accessibility Guidelines) AA contrast in both themes, and with reduced motion turned on the console holds a still frame and nothing slides.</li>
     </ul>
   </article>
 </main>
+<script src="../js/fx.js"></script>
 <script>
 (function(){
  const tb=document.getElementById('themeBtn'),root=document.documentElement;
