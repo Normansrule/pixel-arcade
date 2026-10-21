@@ -27,4 +27,9 @@
  document.querySelectorAll('.sec-head h2,.doc h2').forEach(h=>h.setAttribute('data-decode',''));
  tag('.sec-head,.mkcard,.sign,.doc>*:not(h1):not(.lead)',0);
  tag('.fc',4);
+ // posters and the console lean a few degrees toward the pointer
+ if(matchMedia('(hover:hover) and (pointer:fine)').matches)document.querySelectorAll('.fc,[data-tilt]').forEach(c=>{
+  c.addEventListener('pointermove',e=>{const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+   c.style.setProperty('--ry',(x*7).toFixed(2)+'deg');c.style.setProperty('--rx',(-y*6).toFixed(2)+'deg');});
+  c.addEventListener('pointerleave',()=>{c.style.removeProperty('--rx');c.style.removeProperty('--ry');});});
 })();

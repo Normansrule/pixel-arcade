@@ -37,6 +37,7 @@
     <div class="istage">
       <canvas id="introgl" aria-hidden="true"></canvas>
       <div class="ishade" aria-hidden="true"></div>
+      <p class="ihint" id="ihint" hidden aria-hidden="true"></p>
       <p class="itag l" aria-hidden="true">[ <b>●</b> INSERT COIN ]</p>
       <p class="itag r">Browser · free · offline · open source</p>
       <h1 class="imark" id="intro-h"><span>Pixel</span> <span>Arcade<i aria-hidden="true"></i></span></h1>
@@ -57,7 +58,7 @@
       <div class="cta"><a class="btn pri" href="#library">Browse the library</a><button class="btn" data-random type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>Surprise me</button></div>
     </div>
     <div class="deck" id="deck">
-      <div class="console" id="console" aria-label="Game console. Drag a cartridge into the slot, or pick one and press Enter.">
+      <div class="console" id="console" data-tilt aria-label="Game console. Drag a cartridge into the slot, or pick one and press Enter.">
         <div class="slot" id="slot" aria-hidden="true"><span>Insert cartridge</span></div>
         <div class="bezel">
           <div class="screen" id="cscreen"><canvas id="cdemo" width="320" height="240" aria-hidden="true"></canvas><p class="osd" id="cosd" aria-live="polite">ATTRACT MODE</p></div>
@@ -174,7 +175,7 @@
 
   <section class="sect make" id="make" aria-labelledby="make-h">
     <header class="sec-head"><h2 id="make-h">Make your own</h2><p>A real 2D and 3D game editor in the browser: scenes, components, rules, play-test, share and publish.</p></header>
-    <a class="mkcard" href="builder/"><div class="mkimgs"><img src="docs/cards/builder3d.jpg" alt="The 3D game builder editor" loading="lazy"><img class="mk2" src="docs/cards/builder.jpg" alt="The 2D game builder editor" loading="lazy"></div><div><b>Build a game in 60 seconds.</b><span>2D platformers and shooters or 3D obstacle courses, islands and arenas. Drop in players, enemies, coins and goals, move them with gizmos, wire up WHEN → DO rules and press Play. Share a link or publish it to the arcade shelf.</span><i class="btn pri">Open the builder</i></div></a>
+    <a class="mkcard" href="builder/" data-tilt><div class="mkimgs"><img src="docs/cards/builder3d.jpg" alt="The 3D game builder editor" loading="lazy"><img class="mk2" src="docs/cards/builder.jpg" alt="The 2D game builder editor" loading="lazy"></div><div><b>Build a game in 60 seconds.</b><span>2D platformers and shooters or 3D obstacle courses, islands and arenas. Drop in players, enemies, coins and goals, move them with gizmos, wire up WHEN → DO rules and press Play. Share a link or publish it to the arcade shelf.</span><i class="btn pri">Open the builder</i></div></a>
     <div class="mine" id="mine" hidden><h3>Your games</h3><div class="minerow" id="minerow"></div></div>
   </section>
 

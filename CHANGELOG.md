@@ -2,7 +2,15 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round13`, which includes rounds 11 and 12)
+## Unreleased (on branch `round14`, which includes rounds 11 to 13)
+
+### Round 14 (v37)
+
+- **Playable cabinets in the intro.** Point at a cabinet in the front-page room and its marquee lights up, its light shaft brightens and it lifts, with a label naming the game. Click it to start that game. The middle cabinet, which shows the console's demo, scrolls you down to the console. The cue under the title now says "Click a cabinet to play, or scroll to insert coin" (mouse only).
+- **More depth in the room:** soft light shafts fall from the ceiling onto each front cabinet (a small shader fades them at the edges and towards the floor), and a warm spotlight follows the pointer across the floor.
+- **Pointer tilt and light sweeps:** world posters, the console and the builder card lean a few degrees toward the pointer, and a band of light sweeps across a poster when you point at it. Both are off with reduced motion and on touch screens.
+- **Game graphics pass on 38 games** that still looked flat next to the rest of the shelf. Only drawing changed; rules, speeds, controls and scoring are the same. Highlights: the first-person shooter has fogged, trimmed walls, shaded robot enemies and a proper rifle; the rhythm jumper is a synthwave run with a striped sun, a skyline and a scrolling neon floor; the moon buggy rides under the Milky Way and a lit Earth over three parallax hill layers; the digger's dirt has wavy layers, rocks, roots and fossils; the missile defense cities are lit skyscrapers that burn when hit; the jetpack lab, highway, zombie street, meteor field, star catcher, bullet hell, broadside sea, tanks, dodgeball court and most of the others gained lighting, shadows, glows, particles and HUD panels. Heavier extras run only on HIGH graphics. Games: survivors, beatjumper, cellgrow, gundungeon, bullethell, broadside, boomerang, lavarise, samuraislash, swing, firefly, painter, pingbounce, asteroidrain, lanes, meteors, catcher, fps, royale, zombies, brawl, snake, digger, shield, trails, tanks, snakeduel, paint, arena, dodgeball, territory, colorswitch, jetpack, roboriot, blobdrop, columns, mazebots, moonbuggy.
+- **README:** the flythrough GIF is re-recorded with the light shafts, and the Design section covers the playable cabinets.
 
 ### Round 13 (v36)
 

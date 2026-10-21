@@ -1,7 +1,9 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
-    {"v": "v36", "date": "21 Oct 2026", "branch": "round13", "round": 13,
+    {"v": "v37", "date": "21 Oct 2026", "branch": "round14", "round": 14,
+     "added": "Playable cabinets in the front-page intro (point to light one up, click to play), soft light shafts and a pointer spotlight in the 3D room, pointer tilt with light sweeps on the posters and console, and a graphics pass on 38 games (lighting, shadows, parallax, glows and particles)."},
+    {"v": "v36", "date": "21 Oct 2026", "branch": "round13", "round": 13, "games": 510, "worlds": 55,
      "added": "A scroll-driven front-page intro that flies through the 3D arcade room into a cabinet screen, decoding headings, scroll reveals and a world-name marquee, and a cinematic docs header with a progress bar."},
     {"v": "v35", "date": "21 Oct 2026", "branch": "round12", "round": 12, "games": 510, "worlds": 55,
      "added": "The README header is back as a refurbished 3D ring of arcade cabinets with real game screens under the PIXEL ARCADE title; Big box worlds became a cinema band of posters with a Show all button; a PIXEL ARCADE sign-off with FREE PLAY in the footer."},

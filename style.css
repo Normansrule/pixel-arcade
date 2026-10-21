@@ -179,6 +179,9 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .istats small{display:block;margin-top:10px;font:.72rem/1 var(--pixel);letter-spacing:.1em;text-transform:uppercase;color:#959aa8}
 .icue{left:max(var(--s5),calc(50vw - 640px));bottom:clamp(40px,7svh,64px);display:flex;align-items:center;gap:var(--s2);color:#eceae3;text-decoration:none;
  font:.8rem/1 var(--pixel);letter-spacing:.12em;text-transform:uppercase;opacity:calc(1 - var(--p) * 5)}
+.ihint{left:0;top:0;z-index:5;margin:0;padding:8px 12px 6px;border-radius:4px;background:var(--cobalt-fill);color:#fff;pointer-events:none;white-space:nowrap;
+ font:.8rem/1 var(--pixel);letter-spacing:.08em;text-transform:uppercase;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}
+.istage.picking{cursor:pointer}
 .icue svg{animation:cue 1.8s var(--ease-out) infinite}
 @keyframes cue{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
 /* the manifesto: in the static intro it is a quiet line under the title; when scrubbing each line takes the
@@ -229,8 +232,10 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
  background:#05070c;color:#f2f0ea;text-decoration:none;isolation:isolate;counter-increment:w;
  transition:transform var(--pull) var(--spring),box-shadow var(--base) ease}
 .fc::before{content:"";position:absolute;inset:0;z-index:-1;
- background:linear-gradient(to top,rgba(5,7,12,.94),rgba(5,7,12,.6) 34%,rgba(5,7,12,0) 62%),var(--img) center/cover #11141d;
- transition:transform 700ms var(--ease-out)}
+ background:linear-gradient(to top,rgba(5,7,12,.94),rgba(5,7,12,.6) 34%,rgba(5,7,12,0) 62%),
+  linear-gradient(105deg,transparent 42%,rgba(255,255,255,.2) 50%,transparent 58%),var(--img);
+ background-size:100% 100%,260% 100%,cover;background-position:0 0,130% 0,center;background-repeat:no-repeat;background-color:#11141d;
+ transition:transform 700ms var(--ease-out),background-position 0s}
 /* the printed spine edge down the left of each box; it fills the bottom on hover */
 .fc::after{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--cobalt-fill);transition:height var(--base) var(--ease-out)}
 .fc.big{grid-column:span 2}
@@ -250,7 +255,11 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .fc:not(.big):not(:first-child) span{max-height:0;margin-top:0;opacity:0;transition:max-height var(--base) var(--ease-out),opacity var(--base) ease,margin var(--base) var(--ease-out)}
 @media (hover:hover){
  .fc:hover{transform:translateY(-5px);box-shadow:0 26px 44px -22px var(--shade)}
- .fc:hover::before{transform:scale(1.06)}
+ .fc:hover::before{transform:scale(1.06);background-position:0 0,-30% 0,center;transition:transform 700ms var(--ease-out),background-position 900ms var(--ease-out)}
+ /* a light tilt toward the pointer; js/fx.js sets --rx and --ry */
+ .fx [data-tilt]{transition:transform var(--pull) var(--spring),opacity 700ms var(--ease-out),filter 700ms var(--ease-out)}
+ .fx [data-tilt]:hover{transform:perspective(1200px) rotateX(calc(var(--rx,0deg) * .6)) rotateY(calc(var(--ry,0deg) * .6))}
+ .fx .fc[data-reveal].in:hover{transform:perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-5px)}
  .fc:hover:not(.big):not(:first-child) span{max-height:3em;margin-top:var(--s2);opacity:1}}
 .fc:focus-visible:not(.big):not(:first-child) span{max-height:3em;margin-top:var(--s2);opacity:1}
 .fc:active{transform:translateY(-2px) scale(.99)}

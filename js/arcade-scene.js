@@ -5,7 +5,7 @@
 export const SCREENS = ['hoops','starrun','artillery','volley','boxing','bowling','penalty','spellcaster','darts','bounceball','roadagent','digger'];
 export const NAMES = {hoops:'HOOPS 1 ON 1',starrun:'STAR RUN 3D',artillery:'ARTILLERY DUEL',volley:'BEACH VOLLEY',boxing:'RING BOXING',bowling:'BOWLING 3D',penalty:'PENALTY KICKS',spellcaster:'SPELL CASTER',darts:'DARTS 301',bounceball:'BOUNCE BALL',roadagent:'ROAD AGENT',digger:'TUNNEL DIGGER'};
 
-export function arcadeScene(THREE, {base = '', ids = SCREENS, names = NAMES, live = null, aspect = 1.6} = {}) {
+export function arcadeScene(THREE, {base = '', ids = SCREENS, names = NAMES, live = null, aspect = 1.6, cones = false} = {}) {
  const scene = new THREE.Scene(), NIGHT = 0x0c0f17;
  scene.background = new THREE.Color(NIGHT); scene.fog = new THREE.Fog(NIGHT, 11, 30);
  const cam = new THREE.PerspectiveCamera(40, aspect, .1, 100);
@@ -63,6 +63,7 @@ export function arcadeScene(THREE, {base = '', ids = SCREENS, names = NAMES, liv
   // the marquee: a backlit sign with the game's name in the engine's pixel lettering
   const mq = new THREE.Mesh(new THREE.PlaneGeometry(1.5, .38), new THREE.MeshBasicMaterial({map: label(useLive ? 'INSERT COIN' : names[id] || id.toUpperCase(), i % 2 ? '#1b33cc' : '#141823', i % 2 ? '#eceae3' : '#ff7a3d'), toneMapped: false}));
   mq.position.set(0, 2.77, .455); g.add(mq);
+  g.userData.mq = mq; g.userData.id = useLive ? null : id; g.userData.live = !!useLive;
   // each screen throws a little light onto the floor and the player's spot
   if (!far) {const glow = new THREE.PointLight(0x8f9fff, 5, 4.5); glow.position.set(0, 1.7, 1.3); g.add(glow);}
   return g;
@@ -73,9 +74,22 @@ export function arcadeScene(THREE, {base = '', ids = SCREENS, names = NAMES, liv
  const ring = new THREE.Group(), cabinets = []; scene.add(ring);
  const C = new THREE.Vector3(2.5, 0, -4.4);
  front.forEach((id, i) => {const a = (i - 3) * .42 + .08, R = 5.4, g = cabinet(i, id, false, live && i === 3); g.position.set(C.x + Math.sin(a) * R, 0, C.z + Math.cos(a) * R); g.rotation.y = a; ring.add(g); cabinets.push(g);});
- back.forEach((id, i) => {const a = (i - 2) * .5 + .3, R = 9.5, g = cabinet(i + 3, id, true); g.position.set(C.x + Math.sin(a) * R - 1, 0, C.z + Math.cos(a) * R - 6.5); g.rotation.y = a * .6; ring.add(g);});
+ const rear = [];
+ back.forEach((id, i) => {const a = (i - 2) * .5 + .3, R = 9.5, g = cabinet(i + 3, id, true); g.position.set(C.x + Math.sin(a) * R - 1, 0, C.z + Math.cos(a) * R - 6.5); g.rotation.y = a * .6; ring.add(g); rear.push(g);});
  // polished floor: a mirrored copy of the room under the tinted, slightly see-through floor
  const mirror = ring.clone(); mirror.scale.y = -1; scene.add(mirror);
+ // light cones: a soft shaft from the ceiling onto each front cabinet, brightest at the top (added after the mirror
+ // copy so the floor doesn't double them)
+ if (cones) {
+  // brightest at the ceiling and where you look straight through the shaft, fading to nothing at its edges and the floor
+  const vert = 'varying vec3 vN; varying vec3 vV; varying float vY; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); vY = position.y / 5.2 + .5; gl_Position = projectionMatrix * mv; }';
+  const frag = 'uniform vec3 uC; uniform float uO; varying vec3 vN; varying vec3 vV; varying float vY; void main(){ float f = pow(abs(dot(normalize(vN), normalize(vV))), 2.2); float g = pow(clamp(vY, 0., 1.), 1.8); gl_FragColor = vec4(uC * f * g * uO, 1.); }';
+  cabinets.forEach((g, i) => {
+   const m = new THREE.ShaderMaterial({vertexShader: vert, fragmentShader: frag, uniforms: {uC: {value: new THREE.Color(i === 3 ? 0xffb38a : 0x8f9fff)}, uO: {value: .22}},
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide});
+   const cone = new THREE.Mesh(new THREE.CylinderGeometry(.1, 1.3, 5.2, 40, 1, true), m);
+   cone.position.set(g.position.x, 3.25, g.position.z); scene.add(cone); g.userData.cone = cone;});
+ }
  // dust in the air catches the screen light
  const pts = new Float32Array(900); for (let i = 0; i < 900; i += 3) {pts[i] = (Math.random() - .5) * 18; pts[i + 1] = Math.random() * 5; pts[i + 2] = (Math.random() - .5) * 12 - 1;}
  const dust = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pts, 3)), new THREE.PointsMaterial({color: 0x8f9fff, size: .025, transparent: true, opacity: .5}));
@@ -88,5 +102,5 @@ export function arcadeScene(THREE, {base = '', ids = SCREENS, names = NAMES, liv
  const target = {pos: look.clone().addScaledVector(n, .62), look};
 
  const tick = t => {dust.rotation.y = t * .00002; dust.position.y = Math.sin(t * .0004) * .05; if (liveTex) liveTex.needsUpdate = true;};
- return {scene, cam, start, target, cabinets, dust, tick};
+ return {scene, cam, start, target, cabinets, rear, dust, tick};
 }
