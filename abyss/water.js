@@ -1,7 +1,21 @@
 // ABYSS DIVER — water rendering: depth fog, caustics, sky dome, surface, god rays, particulate, bubbles, lens pass.
 import * as THREE from '../vendor/three.module.min.js';
+import {mulberry,fbmField,normalTex,canvasTex} from './util.js';
 
-export const U={uTime:{value:0},uSun:{value:1},uCaus:{value:1},uCamY:{value:0}};
+/* caustic web: tileable, domain-warped Voronoi cell borders (F2-F1). Two scrolling copies are min-combined in the shader. */
+function causticTex(){const N=256,R=mulberry(311),P=[];for(let i=0;i<26;i++)P.push([R(),R()]);
+ return canvasTex(N,N,(x,w,h)=>{const im=x.createImageData(w,h);for(let j=0;j<h;j++)for(let i=0;i<w;i++){let u=i/w,v=j/h;
+  u+=Math.sin(v*Math.PI*2*2+Math.cos(u*Math.PI*2))*.035;v+=Math.sin(u*Math.PI*2*3)*.03;
+  let f1=9,f2=9;for(const[px,py]of P){let dx=Math.abs(u-px),dy=Math.abs(v-py);dx=Math.min(dx,1-dx);dy=Math.min(dy,1-dy);const d=Math.sqrt(dx*dx+dy*dy);if(d<f1){f2=f1;f1=d;}else if(d<f2)f2=d;}
+  const e=f2-f1;const k=Math.pow(Math.max(0,1-e/.075),3)*.9+Math.pow(Math.max(0,1-e/.022),2)*.6;const o=(j*w+i)*4;im.data[o]=im.data[o+1]=im.data[o+2]=Math.min(255,k*200);im.data[o+3]=255;}
+  x.putImageData(im,0,0);},{srgb:false});}
+/* small ripple normal map for the sea surface */
+function rippleTex(){const H=fbmField(128,128,4,57);return normalTex(128,128,H,6);}
+export const TEX={caus:causticTex(),ripple:rippleTex()};
+
+export const U={uTime:{value:0},uSun:{value:1},uCaus:{value:1},uCamY:{value:0},
+ // per-channel extinction of downwelling light (1/m): red dies first, then green; blue survives deepest
+ uKd:{value:new THREE.Vector3(.042,.018,.0115)},tCaus:{value:null},uAmb:{value:new THREE.Color(.004,.012,.022)},uBump:{value:1}};
 
 /* ---------- underwater fog: colour depends on view direction and on fragment depth ----------
    scene.fog is a THREE.Fog whose `near` is the exp2 density and `far` is 1 underwater / 0 above. */
@@ -16,15 +30,19 @@ export function installWaterFog(){const C=THREE.ShaderChunk;
  vec3 fwd=(vec4(vFogView,0.)*viewMatrix).xyz;float fdl=length(fwd);vec3 fdir=fwd/max(fdl,1e-4);
  float fyw=cameraPosition.y+fwd.y;
  float absorb=mix(1.,clamp(exp((fyw-cameraPosition.y)*.0075),.42,1.22),fogFar);
- gl_FragColor.rgb*=absorb;
+ gl_FragColor.rgb*=absorb*mix(vec3(1.),exp(-vec3(.085,.03,.016)*fdl),fogFar);
  float fdd=fogNear*fdl;float fogFactor=1.-exp(-fdd*fdd);
  gl_FragColor.rgb=mix(gl_FragColor.rgb,uwCol(fogColor,fdir.y,fogFar),fogFactor);
 #endif`;}
 
 /* ---------- caustics + vertex animation injected into standard materials ---------- */
 const CAUS=`float caus(vec2 p,float t){vec2 i=p;float c=1.;float inten=.005;for(int n=0;n<4;n++){float tt=t*(1.-(3.5/float(n+1)));i=p+vec2(cos(tt-i.x)+sin(tt+i.y),sin(tt-i.y)+cos(tt+i.x));vec2 dv=vec2(sin(i.x+tt),cos(i.y+tt));dv=sign(dv)*max(abs(dv),vec2(1e-3));c+=1./max(length(vec2(p.x/(dv.x/inten),p.y/(dv.y/inten))),1e-3);}c/=4.;c=1.17-pow(max(c,0.),1.4);return clamp(pow(abs(c),8.),0.,2.5);}`;
-// o: {caus:strength, vert:'glsl after begin_vertex (has transformed, position, iph, uTime)', emis:'glsl after emissivemap (totalEmissiveRadiance)', uniforms:{}}
-export function wmat(m,o={}){const cs=o.caus??1;m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U,o.uniforms||{});
+/* bump from a scalar height field (same maths as three's perturbNormalArb, without needing a bumpMap) */
+const BUMPF=`vec3 wBump(vec3 surf_pos,vec3 surf_norm,float h,float fd){vec3 dpx=dFdx(surf_pos),dpy=dFdy(surf_pos);float hx=dFdx(h),hy=dFdy(h);vec3 r1=cross(dpy,surf_norm),r2=cross(surf_norm,dpx);float det=dot(dpx,r1)*fd;vec3 grad=sign(det)*(hx*r1+hy*r2);return normalize(abs(det)*surf_norm-grad);}`;
+const LIGHTS=THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );','getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color*=wSunK;');
+// o: {caus:strength, vert:'glsl after begin_vertex (has transformed, position, iph, uTime)', emis:'glsl after emissivemap (totalEmissiveRadiance)',
+//     bump:'glsl that sets float bh (detail height, ~0..1) from vWP/vWN', bumpS:strength, uniforms:{}, noAbs:skip light absorption}
+export function wmat(m,o={}){const cs=o.caus??1;m.userData.w=1;m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U,o.uniforms||{});
  let v=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;varying float vIph;uniform float uTime;'+(o.vpars||''))
   .replace('#include <begin_vertex>',`#include <begin_vertex>
   float iph=0.;
@@ -40,31 +58,79 @@ export function wmat(m,o={}){const cs=o.caus??1;m.onBeforeCompile=sh=>{Object.as
   #endif
   vWP=(modelMatrix*wq).xyz;vWN=normalize(mat3(modelMatrix)*wn);`);
  sh.vertexShader=v;
- let f=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;varying float vIph;uniform float uTime,uSun,uCaus;'+CAUS+(o.fpars||''));
+ let f=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;varying float vIph;uniform float uTime,uSun,uCaus,uBump;uniform vec3 uKd,uAmb;uniform sampler2D tCaus;'+CAUS+BUMPF+(o.fpars||''));
  if(o.diffuse)f=f.replace('#include <color_fragment>','#include <color_fragment>\n'+o.diffuse);
+ if(o.bump)f=f.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+  {float bh=0.;${o.bump}
+  float bfade=smoothstep(60.,8.,length(vViewPosition))*uBump;normal=wBump(-vViewPosition,normal,bh*${(o.bumpS??1).toFixed(3)}*bfade,faceDirection);}`);
  if(o.emis||o.rim)f=f.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+(o.emis||'')+(o.rim?`totalEmissiveRadiance+=diffuseColor.rgb*pow(1.-abs(dot(normal,normalize(vViewPosition))),2.2)*${o.rim.toFixed(2)}*(.35+.65*uSun);`:''));
- if(cs>0)f=f.replace('#include <opaque_fragment>',`float cz=caus(mod(vWP.xz*.13,6.2831),uTime*.5)*1.3;
-  float cf=exp(min(vWP.y,0.)*.024)*uSun*uCaus*${cs.toFixed(2)}*smoothstep(-.2,.7,vWN.y);
-  outgoingLight+=diffuseColor.rgb*vec3(.8,1.,.98)*min(cz,1.8)*.3*cf;
-  #include <opaque_fragment>`);
- sh.fragmentShader=f;};m.customProgramCacheKey=()=>'w'+cs+(o.rim||0)+(o.key||'')+(o.vert||'').length+(o.emis||'').length+(o.diffuse||'').length;return m;}
+ // sunlight: per-channel absorption by the fragment's own depth, focused into caustics, shadowed by the sun's shadow map
+ const ab=o.noAbs?'vec3(1.)':'exp(-uKd*max(-vWP.y,0.))';
+ f=f.replace('#include <lights_fragment_begin>',`vec3 wDown=${ab};
+  float wcz=${cs>0?'min(texture2D(tCaus,vWP.xz*.16+vec2(vWP.y*.05)+vec2(uTime*.023,uTime*.011)).r,texture2D(tCaus,vec2(vWP.x*.6-vWP.z*.8,vWP.x*.8+vWP.z*.6)*.125-vec2(uTime*.017,-uTime*.02)).r)*3.2':'1.'};
+  float wcf=${cs>0?`exp(min(vWP.y,0.)*.016)*smoothstep(70.,15.,length(vViewPosition))*uCaus*${cs.toFixed(2)}`:'0.'};
+  vec3 wSunK=wDown*mix(1.,.3+min(wcz,2.6)*1.6,clamp(wcf,0.,1.));
+  ${LIGHTS}`);
+ f=f.replace('#include <lights_fragment_maps>',`#include <lights_fragment_maps>
+  {vec3 wa=${o.noAbs?'vec3(1.)':'wDown*wDown*.6+wDown*.4'};irradiance=irradiance*wa+uAmb;
+  #if defined( USE_ENVMAP ) && defined( RE_IndirectSpecular )
+  radiance*=wa;
+  #endif
+  #if defined( USE_ENVMAP ) && defined( STANDARD ) && defined( ENVMAP_TYPE_CUBE_UV )
+  iblIrradiance*=wa;
+  #endif
+  }`);
+ sh.fragmentShader=f;};m.customProgramCacheKey=()=>'w2'+cs+(o.rim||0)+(o.key||'')+(o.vert||'').length+(o.emis||'').length+(o.diffuse||'').length+(o.bump||'').length+(o.noAbs?'n':'');
+ m.userData.wvert=o.vert||'';m.userData.wvpars=o.vpars||'';m.userData.wuni=o.uniforms||{};return m;}
+/* depth material for shadow casting that repeats a wmat vertex animation (kelp sway, fins) */
+export function depthFor(m){const d=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:m.map||null,alphaTest:m.alphaTest||0});const vv=m.userData.wvert||'';
+ if(vv){d.onBeforeCompile=sh=>{sh.uniforms.uTime=U.uTime;Object.assign(sh.uniforms,m.userData.wuni||{});sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uTime;'+(m.userData.wvpars||'')).replace('#include <begin_vertex>',`#include <begin_vertex>
+  float iph=0.;
+  #ifdef USE_INSTANCING
+  iph=instanceMatrix[3].x*.37+instanceMatrix[3].z*.23+instanceMatrix[3].y*.11;
+  #endif
+  ${vv}`);};d.customProgramCacheKey=()=>'wd'+vv.length+vv.slice(0,40);}
+ return d;}
+export function caster(mesh,on=true){mesh.castShadow=on;if(on&&mesh.material&&mesh.material.userData&&mesh.material.userData.wvert&&!mesh.customDepthMaterial)mesh.customDepthMaterial=depthFor(mesh.material);return mesh;}
 
 /* ---------- background dome (matches the fog colour per view direction) ---------- */
-export function makeDome(){const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,uniforms:{fc:{value:new THREE.Color()},uw:{value:1},uTime:U.uTime,sunDir:{value:new THREE.Vector3(.25,1,.15).normalize()}},
+export function makeDome(){const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,uniforms:{fc:{value:new THREE.Color()},uw:{value:1},uTime:U.uTime,sunDir:{value:new THREE.Vector3(.48,1,.3).normalize()}},
  vertexShader:'varying vec3 vD;void main(){vD=normalize(position);vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_Position=p.xyww;}',
  fragmentShader:`uniform vec3 fc,sunDir;uniform float uw,uTime;varying vec3 vD;${WATER_FN}
- void main(){vec3 d=normalize(vD);vec3 c=uwCol(fc,d.y,uw);float s=pow(max(dot(d,sunDir),0.),18.)*uw;c+=fc*vec3(.9,1.,1.)*s*1.4;gl_FragColor=vec4(c,1.);}`});
+ void main(){vec3 d=normalize(vD);vec3 c=uwCol(fc,d.y,uw);float sd=max(dot(d,sunDir),0.);float s=(pow(sd,18.)*1.4+pow(sd,90.)*1.6)*uw;c+=fc*vec3(.9,1.,1.)*s;gl_FragColor=vec4(c,1.);}`});
  const d=new THREE.Mesh(new THREE.SphereGeometry(300,32,16),m);d.frustumCulled=false;d.renderOrder=-10;return d;}
 
-/* ---------- sea surface (Snell's window from below, glassy swell from above) ---------- */
-export function makeSurface(){const m=new THREE.ShaderMaterial({side:THREE.DoubleSide,transparent:true,depthWrite:false,fog:false,uniforms:{uTime:U.uTime,fc:{value:new THREE.Color()},dens:{value:.02},sky:{value:new THREE.Color(0x9fd4f0)}},
- vertexShader:`varying vec3 vW;uniform float uTime;void main(){vec3 p=position;vec4 w=modelMatrix*vec4(p,1.);w.y+=sin(w.x*.16+uTime*.9)*.22+cos(w.z*.21+uTime*1.15)*.18;vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
- fragmentShader:`varying vec3 vW;uniform float uTime,dens;uniform vec3 fc,sky;${WATER_FN}
- float n(vec2 p){return sin(p.x)*sin(p.y);}
- void main(){vec2 q=vW.xz*.22;float r=n(q+uTime*.35)*.5+n(q*2.3-uTime*.45)*.3+n(q*5.3+uTime*.8)*.2;vec3 v=vW-cameraPosition;float dl=length(v);vec3 dir=v/dl;
-  if(cameraPosition.y<vW.y){float ang=dir.y+r*.06;float win=smoothstep(.62,.8,ang);vec3 tir=uwCol(fc,-.2,1.)*.9;vec3 lit=mix(fc*2.2,vec3(.85,.97,1.),.55)+r*.08;
-   vec3 c=mix(tir,lit,win);c+=vec3(1.)*pow(max(r,0.),3.)*.35*win;c+=fc*smoothstep(.55,.62,ang)*smoothstep(.8,.62,ang)*1.4;float fd=dens*dl;float ff=1.-exp(-fd*fd*.35);c=mix(c,uwCol(fc,dir.y,1.),ff);gl_FragColor=vec4(c,1.);}
-  else{float fr=pow(1.-max(-dir.y,0.),5.);vec3 deep=vec3(.02,.16,.24);vec3 c=mix(deep+r*.03,sky,fr*.85)+max(0.,r)*.08;float ff=1.-exp(-dl*.004);c=mix(c,sky,ff);gl_FragColor=vec4(c,.97);}}`});
+/* ---------- sea surface: wave normals, Snell's window + total internal reflection from below, Fresnel sky from above ---------- */
+export const SUN_DIR=new THREE.Vector3(.48,1,.3).normalize();
+export function makeSurface(){const m=new THREE.ShaderMaterial({side:THREE.DoubleSide,transparent:true,depthWrite:false,fog:false,uniforms:{tRip:{value:TEX.ripple},uTime:U.uTime,fc:{value:new THREE.Color()},dens:{value:.02},sky:{value:new THREE.Color(0x9fd4f0)},sunDir:{value:SUN_DIR},uQ:{value:1}},
+ vertexShader:`varying vec3 vW;uniform float uTime;void main(){vec3 p=position;vec4 w=modelMatrix*vec4(p,1.);
+  w.y+=sin(w.x*.16+uTime*.9)*.22+cos(w.z*.21+uTime*1.15)*.18+sin((w.x+w.z)*.09+uTime*.6)*.25;vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+ fragmentShader:`varying vec3 vW;uniform float uTime,dens,uQ;uniform vec3 fc,sky,sunDir;uniform sampler2D tRip;${WATER_FN}
+ // analytic slope of a sum of directional waves -> surface normal
+ vec3 wn(vec2 p){vec2 g=vec2(0.);float t=uTime;
+  vec2 d1=normalize(vec2(1.,.3)),d2=normalize(vec2(-.4,1.)),d3=normalize(vec2(.7,-.8)),d4=normalize(vec2(-1.,-.2));
+  g+=d1*cos(dot(p,d1)*.16+t*.9)*.16*.22; g+=d2*cos(dot(p,d2)*.43+t*1.4)*.43*.09;
+  g+=d3*cos(dot(p,d3)*1.1+t*2.1)*1.1*.035; g+=d4*cos(dot(p,d4)*2.3+t*2.9)*2.3*.016;
+  vec3 r1=texture2D(tRip,p*.045+vec2(t*.012,t*.008)).xyz*2.-1.,r2=texture2D(tRip,p*.083-vec2(t*.01,-t*.014)).xyz*2.-1.;g+=(r1.xy+r2.xy)*.15;
+  return normalize(vec3(-g.x*1.2,1.,-g.y*1.2));}
+ void main(){vec3 v=vW-cameraPosition;float dl=length(v);vec3 dir=v/dl;float fadeN=smoothstep(140.,10.,dl);
+  vec3 N=normalize(mix(vec3(0.,1.,0.),wn(vW.xz),fadeN));
+  if(cameraPosition.y<vW.y){
+   vec3 Nd=-N;vec3 rf=refract(dir,Nd,1.333);
+   vec3 rl=reflect(dir,Nd);vec3 deep=uwCol(fc,rl.y,1.)*.75;
+   vec3 c;
+   if(dot(rf,rf)<.01){ // total internal reflection: a mirror of the dark water below, streaked by the waves
+    float gl=clamp(1.-abs(N.x*5.+N.z*4.),0.,1.);c=mix(deep*.9,fc*1.6+vec3(.02,.05,.06),.35+.25*gl);}
+   else{float cosT=max(dot(-Nd,dir),0.);float F=.02+.98*pow(1.-cosT,5.);F=clamp(F,0.,1.);
+    float up=clamp(rf.y,0.,1.);vec3 skyc=mix(vec3(.5,.72,.82),vec3(.16,.4,.68),pow(up,1.4))*(.78+.5*clamp((N.x*1.3+N.z)*6.,-.5,.6));
+    float sd=max(dot(rf,sunDir),0.);skyc+=vec3(1.,.95,.82)*(pow(sd,600.)*6.+pow(sd,40.)*.6+pow(sd,6.)*.12);
+    // window rim brightens where the window meets the mirror
+    float rim=smoothstep(.2,.0,length(rf.xz)-.85)*smoothstep(.85,1.05,length(rf.xz)+.2);
+    c=mix(skyc*.8,deep,F)+fc*rim*.5;}
+   float fd=dens*dl;float ff=1.-exp(-fd*fd*.35);c=mix(c,uwCol(fc,dir.y,1.),ff);gl_FragColor=vec4(c,1.);}
+  else{vec3 r=reflect(dir,N);float fr=.02+.98*pow(1.-max(-dir.y*N.y,0.),5.);vec3 deepc=vec3(.01,.12,.17)+fc*.12;
+   vec3 rs=mix(sky,vec3(.25,.48,.78),clamp(r.y,0.,1.));float sp=pow(max(dot(r,sunDir),0.),220.)*6.;
+   vec3 c=mix(deepc,rs,clamp(fr,0.,1.))+vec3(1.,.95,.85)*sp;float ff=1.-exp(-dl*.004);c=mix(c,sky,ff);gl_FragColor=vec4(c,.97);}}`});
  const s=new THREE.Mesh(new THREE.PlaneGeometry(700,700,96,96).rotateX(-Math.PI/2),m);s.frustumCulled=false;return s;}
 
 /* ---------- god rays: billboarded shafts that wrap around the camera ---------- */
@@ -72,7 +138,7 @@ export function makeRays(n=56){const g=new THREE.PlaneGeometry(1,1,1,8);g.transl
  const m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false,side:THREE.DoubleSide,uniforms:{uTime:U.uTime,uI:{value:1},uCam:{value:new THREE.Vector3()},col:{value:new THREE.Color(.6,.92,1)}},
   vertexShader:`uniform vec3 uCam;uniform float uTime;varying vec2 vUv;varying float vF;varying float vS;
   void main(){vUv=uv;vec3 c=instanceMatrix[3].xyz;float w=length(instanceMatrix[0].xyz),h=length(instanceMatrix[1].xyz);vS=instanceMatrix[2].x;
-   vec3 to=uCam-c;to.y=0.;vec3 rt=normalize(vec3(to.z,0.,-to.x)+1e-4);vec3 p=c+rt*position.x*w+vec3(.22,1.,.12)*position.y*h;
+   vec3 to=uCam-c;to.y=0.;vec3 rt=normalize(vec3(to.z,0.,-to.x)+1e-4);vec3 p=c+rt*position.x*w+vec3(.48,1.,.3)*position.y*h;
    float d=length(uCam.xz-p.xz);vF=smoothstep(4.,16.,d)*smoothstep(150.,70.,d);
    gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
   fragmentShader:`uniform float uTime,uI;uniform vec3 col;varying vec2 vUv;varying float vF;varying float vS;
@@ -115,8 +181,8 @@ export function makeBubbles(n=420){const c=document.createElement('canvas');c.wi
   vertexShader:'attribute float sz;uniform float uScale;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=clamp(uScale*.11*sz/-mv.z,1.,40.);gl_Position=projectionMatrix*mv;}',
   fragmentShader:'uniform sampler2D map;void main(){vec4 c=texture2D(map,gl_PointCoord);gl_FragColor=vec4(c.rgb*.9,c.a*.85);}'});
  const pts=new THREE.Points(g,m);pts.frustumCulled=false;let head=0;
- const api={pts,mat:m,emit(x,y,z,k=1,spread=.15,size=1){for(let i=0;i<k;i++){const b=B[head],o=head*3;head=(head+1)%n;pos[o]=x+(Math.random()-.5)*spread;pos[o+1]=y+(Math.random()-.5)*spread*.5;pos[o+2]=z+(Math.random()-.5)*spread;sz[head===0?n-1:head-1]=size*(.6+Math.random()*.8);b.t=6+Math.random()*4;b.vx=(Math.random()-.5)*.3;b.vz=(Math.random()-.5)*.3;b.v=.8+Math.random()*.8;}},
-  step(dt){for(let i=0;i<n;i++){const b=B[i],o=i*3;if(b.t<=0)continue;b.t-=dt;b.ph+=dt*7;pos[o]+=(b.vx+Math.sin(b.ph)*.12)*dt;pos[o+1]+=b.v*dt;pos[o+2]+=(b.vz+Math.cos(b.ph*1.3)*.12)*dt;b.v=Math.min(2.6,b.v+dt*.3);if(b.t<=0||pos[o+1]>-.05){b.t=0;pos[o+1]=1e5;}}g.attributes.position.needsUpdate=true;g.attributes.sz.needsUpdate=true;}};
+ const api={pts,mat:m,emit(x,y,z,k=1,spread=.15,size=1){pts.visible=true;this.wasAlive=true;g.attributes.position.needsUpdate=true;g.attributes.sz.needsUpdate=true;for(let i=0;i<k;i++){const b=B[head],o=head*3;head=(head+1)%n;pos[o]=x+(Math.random()-.5)*spread;pos[o+1]=y+(Math.random()-.5)*spread*.5;pos[o+2]=z+(Math.random()-.5)*spread;sz[head===0?n-1:head-1]=size*(.6+Math.random()*.8);b.t=6+Math.random()*4;b.vx=(Math.random()-.5)*.3;b.vz=(Math.random()-.5)*.3;b.v=.8+Math.random()*.8;}},
+  step(dt){let alive=0;for(let i=0;i<n;i++){const b=B[i],o=i*3;if(b.t<=0)continue;alive++;b.t-=dt;b.ph+=dt*7;pos[o]+=(b.vx+Math.sin(b.ph)*.12)*dt;pos[o+1]+=b.v*dt;pos[o+2]+=(b.vz+Math.cos(b.ph*1.3)*.12)*dt;b.v=Math.min(2.6,b.v+dt*.3);if(b.t<=0||pos[o+1]>-.05){b.t=0;pos[o+1]=1e5;}}pts.visible=alive>0;if(alive||this.wasAlive){g.attributes.position.needsUpdate=true;g.attributes.sz.needsUpdate=true;}this.wasAlive=alive>0;}};
  return api;}
 
 /* ---------- lens pass: gentle refraction wobble, edge chroma, visor vignette ---------- */
@@ -128,3 +194,15 @@ export const LensShader={uniforms:{tDiffuse:{value:null},uTime:{value:0},uAmt:{v
   float ca=uAmt*.004*smoothstep(.25,.9,r);vec3 c;c.r=texture2D(tDiffuse,uv+d*ca).r;c.g=texture2D(tDiffuse,uv).g;c.b=texture2D(tDiffuse,uv-d*ca).b;
   float vis=smoothstep(.98,.72,r);c*=mix(1.,.55+.45*vis,uVisor*uAmt);
   c=mix(c,c*vec3(1.25,.55,.5),uHurt*smoothstep(.2,.9,r));gl_FragColor=vec4(c,1.);}`};
+
+/* ---------- underwater image-based lighting: a procedural light field baked once through PMREM ---------- */
+export function makeEnv(renderer){const sc=new THREE.Scene();const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{sunDir:{value:SUN_DIR}},
+ vertexShader:'varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:`uniform vec3 sunDir;varying vec3 vD;void main(){vec3 d=normalize(vD);float up=d.y*.5+.5;
+  vec3 c=mix(vec3(.004,.03,.05),vec3(.05,.3,.38),smoothstep(.1,.75,up));c=mix(c,vec3(.55,.85,.95),smoothstep(.78,1.,up));
+  float sd=max(dot(d,sunDir),0.);c+=vec3(1.,.97,.9)*(pow(sd,60.)*6.+pow(sd,8.)*.5);
+  // bright mottled "window" overhead, like light breaking through waves
+  float w=sin(d.x*23.)*sin(d.z*19.)*.5+.5;c+=vec3(.4,.7,.75)*w*smoothstep(.82,.97,up)*.6;gl_FragColor=vec4(c*.42,1.);}`});
+ sc.add(new THREE.Mesh(new THREE.SphereGeometry(10,48,24),m));const pm=new THREE.PMREMGenerator(renderer);const rt=pm.fromScene(sc,0,.1,20);pm.dispose();m.dispose();return rt.texture;}
+
+U.tCaus.value=TEX.caus;

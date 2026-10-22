@@ -5,7 +5,7 @@ import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import {CHARS,CLASS,BODIES,WHEELS,GLIDERS,STATS,statsOf,CC,DIFF,POINTS,ITEMS,THEMES,COURSES,CUPS,ARENA} from './data.js';
 import {buildCourse,query,at,F,SURF} from './trackmath.js';
 import {buildWorld,updateWorld,arenaHeight} from './world.js';
-import {makeRacer,poseRacer,droneMesh,ghostify} from './models.js';
+import {makeRacer,poseRacer,droneMesh,ghostify,modelOpts} from './models.js';
 import {newKart,stepKart,collideKarts,maxSpeed,KMH,DRIFT_LV,placeAtSafe} from './physics.js';
 import {Items} from './items.js';
 import {thinkRace,thinkBattle} from './ai.js';
@@ -14,6 +14,7 @@ import {V,cl,lerp,wrapA,Particles,Skids,icon,rng} from './util.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
 import {controls,deadzone,playerPad} from '../js/kit3d/input.js';
 import {postButton,toast} from '../js/kit3d/ui.js';
+import {ShaderPass} from '../vendor/jsm/postprocessing/ShaderPass.js';
 
 const $=id=>document.getElementById(id),rnd=(a=1)=>Math.random()*a;
 const LAPS=3,BATTLE_TIME=180,ID='kartgp';
@@ -24,6 +25,9 @@ const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,powerPreference:'hig
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;
 const scene=new THREE.Scene();const mainCam=new THREE.PerspectiveCamera(55,1,.3,6000);
 const sparks=new Particles(scene,3500,true),dust=new Particles(scene,2500,false),skids=new Skids(scene);
+// dynamic lights for boosts and explosions (MEDIUM and up; the light count only changes with the quality level)
+const boostLight=new THREE.PointLight(0xff8a30,0,9,2),fxLight=new THREE.PointLight(0xffa040,0,46,2);let fxI=0;
+function syncLights(){const on=gfx>=1;if(on&&!boostLight.parent)scene.add(boostLight,fxLight);else if(!on&&boostLight.parent){scene.remove(boostLight);scene.remove(fxLight);}}
 const snd=new Sound();const drone=droneMesh();drone.visible=false;scene.add(drone);
 
 /* ================= options ================= */
@@ -56,7 +60,7 @@ function buildRoster(n){const hum=opt.players,used=[];roster=[];
  let alt=0;while(roster.length<n){let ch,paint=null,name;if(pool.length){ch=pool.shift();name=CHARS[ch].n;}else{ch=(alt*3+1)%8;paint=hueShift(CHARS[ch].kart,.33+alt*.17);name=CHARS[ch].n+' II';alt++;}
   roster.push({id:roster.length,human:-1,ch,parts:{body:(r2()*4)|0,wheels:(r2()*4)|0,glider:(r2()*3)|0},paint,name,skill:.985+r2()*.03});}}
 function spawnKarts(){for(const k of karts){scene.remove(k.model);if(k.ghostM)scene.remove(k.ghostM);}karts=[];
- for(const r of roster){const ch=CHARS[r.ch];const k=newKart({id:r.id,human:r.human,name:r.name,spec:r,ch});k.stats_=statsOf(ch,r.parts.body,r.parts.wheels,r.parts.glider);k.model=makeRacer(ch,r.parts,r.paint);k.color='#'+new THREE.Color(r.paint??ch.kart).getHexString();scene.add(k.model);k.vp=new V();karts.push(k);}}
+ for(const r of roster){const ch=CHARS[r.ch];const k=newKart({id:r.id,human:r.human,name:r.name,spec:r,ch});k.stats_=statsOf(ch,r.parts.body,r.parts.wheels,r.parts.glider);modelOpts.detail=gfx;k.model=makeRacer(ch,r.parts,r.paint,{num:r.id+1});k.color='#'+new THREE.Color(r.paint??ch.kart).getHexString();scene.add(k.model);k.vp=new V();karts.push(k);}}
 
 /* ================= race setup ================= */
 function gridOrder(){// GP: reverse of standings (humans start at the back for race 1); VS: humans at the back
@@ -67,7 +71,7 @@ function placeGrid(){const B=C.main,order=opt.mode==='gp'&&gp&&gp.race>0?gridOrd
   at(B,f,u,k.p);k.p.y+=.3;k.yaw=Math.atan2(B.tx[i],B.tz[i]);resetKart(k);k.prog=f-1;k.lastF=f;k.lap=0;});
  if(opt.mode==='tt'){const k=karts[0],f=1-8/B.len,i=Math.round(f*B.n)%B.n;at(B,f,0,k.p);k.p.y+=.3;k.yaw=Math.atan2(B.tx[i],B.tz[i]);k.prog=f-1;k.lastF=f;}}
 function resetKart(k){k.vel.set(0,0,0);k.spd=0;k.ground=false;k.gyPrev=k.p.y;k.drift=0;k.driftT=0;k.driftLv=0;k.boost=0;k.aura=0;k.shrink=0;k.spin=0;k.tumble=0;k.invuln=0;k.coins=0;k.item=null;k.itemN=0;k.roulette=0;k.orbs=0;k.finished=null;k.glide=false;k.respawn=0;k.out=false;k.rsStart=null;k.stall=0;k.wrongT=0;k.lapTimes=[];k.lapStart=0;k.safe=null;k.balloons=3;k.pops=0;k.trick=0;k.trickWin=0;k.vp.copy(k.p);k.model.visible=true;k.model.scale.setScalar(1);k.dnf=false;
- k.stats={items:0,hits:0,falls:0,mt:0,tricks:0};k.model.userData.celebrate=0;}
+ k.stats={items:0,hits:0,falls:0,mt:0,tricks:0,drafts:0};k.draft=0;k.drafting=false;k.trail=null;k.aiTrail=false;k.model.userData.celebrate=0;}
 function placeArena(){karts.forEach((k,n)=>{const a=n/karts.length*Math.PI*2,r=A.R-14;k.p.set(Math.cos(a)*r,arenaHeight(Math.cos(a)*r,Math.sin(a)*r,A.R)+.3,Math.sin(a)*r);k.yaw=Math.atan2(-k.p.x,-k.p.z);resetKart(k);k.balloons=3;k.safe={x:k.p.x,z:k.p.z,yaw:k.yaw};});}
 
 function startEvent(o={}){Object.assign(opt,o);saveOpt();snd.init();
@@ -123,6 +127,7 @@ function ev(type,a,b,c){const hum=a&&a.human>=0;
   case'mt':if(hum){snd.play('mt',b);msg(a,['','MINI-TURBO','SUPER TURBO','ULTRA TURBO'][b],'lv'+b,.9);}{const col=BOOSTC[b];sparks.burst(tv.copy(a.p).setY(a.p.y+.4),14+b*6,9,new THREE.Color(...col),.3,.4,{grav:6});}break;
   case'driftlv':if(hum)snd.play('lv',b);break;
   case'pad':if(hum)snd.play('pad');break;
+  case'draft':if(hum){snd.play('pad');msg(a,'SLIPSTREAM!','lv1',.9);}a.stats.drafts=(a.stats.drafts||0)+1;break;
   case'spring':if(hum)snd.play('spring');sparks.burst(tv.copy(a.p),30,8,new THREE.Color(.4,1.4,3),.6,.5,{up:true});break;
   case'glide':if(hum){snd.play('whoosh');msg(a,'GLIDE!','good',1);}break;
   case'land':if(hum)snd.play('land',b);if(b>6){const col=landCol(a);for(let n=0;n<10;n++)dust.emit(a.p.x+rnd(2)-1,a.p.y+.2,a.p.z+rnd(2)-1,rnd(6)-3,rnd(2),rnd(6)-3,col.r,col.g,col.b,1.4,.8,0,2,2);}break;
@@ -141,7 +146,7 @@ function ev(type,a,b,c){const hum=a&&a.human>=0;
   case'hit':{const k=a;k.stats.hits++;if(k.human>=0){snd.play('hit');const v=viewOf(k);if(v)v.shake=.6;msg(k,c==='tumble'?'OUCH!':'SPIN OUT!','bad',1);}else if(nearHuman(k.p,30))snd.play('hit');
    sparks.burst(tv.copy(k.p).setY(k.p.y+1),40,12,[new THREE.Color(3,2.4,.6),new THREE.Color(3,3,3)],.5,.5,{grav:10});for(let n=0;n<Math.min(3,k.coins+2);n++)sparks.emit(k.p.x,k.p.y+1,k.p.z,rnd(10)-5,8+rnd(4),rnd(10)-5,2.8,2,.3,.9,1,20,.5);
    if(b&&b!==k&&b.human>=0)msg(b,'HIT!','good',.8);if(A)battleHit(k,b);break;}
-  case'boom':{const p=a;snd.play('boom');sparks.burst(p,160,26,[new THREE.Color(3,1.6,.3),new THREE.Color(3,2.6,1.2),new THREE.Color(2.4,.6,.1)],1.2,.9,{grav:4,drag:2});for(let n=0;n<40;n++)dust.emit(p.x+rnd(4)-2,p.y+rnd(2),p.z+rnd(4)-2,rnd(8)-4,4+rnd(6),rnd(8)-4,.2,.18,.18,3,1.8,-1,1.2,2);views.forEach(v=>{const d=v.k.p.distanceTo(p);if(d<40)v.shake=Math.max(v.shake,.9*(1-d/40));});break;}
+  case'boom':{const p=a;snd.play('boom');fxLight.position.copy(p).setY(p.y+2);fxLight.color.setRGB(1,.55,.2);fxI=1;sparks.burst(p,160,26,[new THREE.Color(3,1.6,.3),new THREE.Color(3,2.6,1.2),new THREE.Color(2.4,.6,.1)],1.2,.9,{grav:4,drag:2});for(let n=0;n<40;n++)dust.emit(p.x+rnd(4)-2,p.y+rnd(2),p.z+rnd(4)-2,rnd(8)-4,4+rnd(6),rnd(8)-4,.2,.18,.18,3,1.8,-1,1.2,2);views.forEach(v=>{const d=v.k.p.distanceTo(p);if(d<40)v.shake=Math.max(v.shake,.9*(1-d/40));});break;}
   case'pop':snd.play('pop');sparks.burst(a,20,8,new THREE.Color(2.6,2.6,2.6),.35,.35,{});break;
   case'block':if(a.human>=0)snd.play('pop');sparks.burst(b,24,8,new THREE.Color(.4,3,1.4),.4,.4,{});break;
   case'bounce':break;
@@ -199,7 +204,7 @@ function hud(dt){if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('card').classList.rem
   if(v.msgT>0){v.msgT-=dt;if(v.msgT<=0)v.msgEl.className='msg';}
   v.wrongEl.classList.toggle('on',k.wrongT>1.2&&!k.finished);
   const uw=W&&W.waterY!==undefined&&v.cam.position.y<W.waterY;if(o.uw!==uw){o.uw=uw;v.uwEl.classList.toggle('on',uw);}
-  if(opt.mode==='tt')v.ttEl.innerHTML=(k.lapTimes||[]).map((t,i)=>`<div>LAP ${i+1} <b>${fmt(t)}</b></div>`).join('')+`<div class="cur">TIME <b>${fmt(k.finished??(phase==='race'?raceT:0))}</b></div>`+(ghost?`<div class="gh">GHOST <b>${fmt(ghost.t)}</b></div>`:'<div class="gh">NO GHOST YET</div>');
+  if(opt.mode==='tt')v.ttEl.innerHTML=(k.lapTimes||[]).map((t,i)=>`<div>LAP ${i+1} <b>${fmt(t)}</b></div>`).join('')+medalsHTML(k)+`<div class="cur">TIME <b>${fmt(k.finished??(phase==='race'?raceT:0))}</b></div>`+(ghost?`<div class="gh">GHOST <b>${fmt(ghost.t)}</b></div>`:'<div class="gh">NO GHOST YET</div>');
   if((v.miniT=(v.miniT||0)-dt)<=0){v.miniT=1/20;drawMini(v);}}
  if(!$('ranks').hidden&&(hudC.rk=(hudC.rk||0)-dt)<=0){hudC.rk=.25;const list=A?karts.slice().sort((a,b)=>(b.balloons-a.balloons)||(b.pops-a.pops)):karts.slice().sort((a,b)=>a.place-b.place);
   $('ranks').innerHTML=list.map((k,i)=>`<div class="${k.human>=0?'me':''}${k.out?' out':''}"><i style="background:${k.color}"></i><b>${A?k.balloons:i+1}</b>${k.name}${A?'':k.finished?' ✓':''}</div>`).join('');}}
@@ -217,9 +222,18 @@ function fixed(dt){
  if(phase==='countdown'){for(const k of karts){k.revv=(k.revv||0)+((k.ctrl.thr>0?1:0)-(k.revv||0))*Math.min(1,dt*5);}return;}
  // rubber band
  if(!A&&opt.mode!=='tt'){const lead=Math.max(...karts.filter(k=>k.human>=0).map(k=>k.prog));for(const k of karts){if(k.human>=0&&!autopilot[k.human]&&!k.finished)continue;const gap=(lead-k.prog)*C.len,D=G.diff;k.rb=G.cc.ai*D.skill*(k.spec.skill||1)*(1+cl(gap/70,-1,1)*(gap>0?D.rubber:D.rubber*1.05));if(k.finished)k.rb=.85;}}
+ // slipstream: tuck in behind a rival at speed to charge a draft boost
+ if(!A&&racing)for(const k of karts){if(k.respawn>0||!k.ground||k.spd<17||k.spin>0||k.tumble>0){k.draft=Math.max(0,(k.draft||0)-dt*2);continue;}
+  const fx=Math.sin(k.yaw),fz=Math.cos(k.yaw);let ok=false;
+  for(const o of karts){if(o===k||o.respawn>0||o.out||o.spd<12)continue;const dx=o.p.x-k.p.x,dz=o.p.z-k.p.z,f=dx*fx+dz*fz;if(f<2.6||f>15)continue;if(Math.abs(dx*fz-dz*fx)<1.4+f*.05&&Math.abs(o.p.y-k.p.y)<2){ok=true;break;}}
+  k.draft=ok?(k.draft||0)+dt:Math.max(0,(k.draft||0)-dt*1.2);k.drafting=ok;
+  if(k.draft>=1.25){k.draft=0;if(!(k.boost>0&&k.boostPow>1.25)){k.boostPow=1.25;k.boostCol=1;}k.boost=Math.max(k.boost,1.0);ev('draft',k);}}
  for(const k of karts){if(k.stall>0){k.stall-=dt;k.ctrl.thr=0;}
   // item edge
-  const ip=k.ctrl.item&&!k.pItem;k.pItem=k.ctrl.item;if(ip&&racing&&!k.finished)items.use(k,k.ctrl.back);
+  const held=k.ctrl.item,ip=held&&!k.pItem,rel=!held&&k.pItem;k.pItem=held;
+  if(k.trail&&(k.item!==k.trail||k.respawn>0||k.out))k.trail=null;
+  if(racing&&!k.finished){if(ip){if(!k.orbs&&k.roulette<=0&&(k.item==='peel'||k.item==='bomb'))k.trail=k.item;else items.use(k,k.ctrl.back);}
+   else if(rel&&k.trail){k.trail=null;items.use(k,k.ctrl.back);}}
   stepKart(k,G,dt);items.pickups(k,dt);}
  for(let i=0;i<karts.length;i++)for(let j=i+1;j<karts.length;j++)collideKarts(karts[i],karts[j],ev);
  // hazards
@@ -268,14 +282,14 @@ function finishRace(){snd.stopMusic();
   if(gp){for(const k of karts){const p=k.dnf?0:POINTS[k.place-1]||0;gp.last[k.id]=p;gp.pts[k.id]+=p;}gp.race++;}}
  else{const ord=karts.slice().sort((a,b)=>(b.balloons-a.balloons)||((b.outT??1e9)-(a.outT??1e9))||(b.pops-a.pops));ord.forEach((k,i)=>k.place=i+1);}
  // ghost save
- if(opt.mode==='tt'){const k=karts[0];if(k.finished!=null&&!k.dnf)saveGhost(k.finished);}
+ if(opt.mode==='tt'){const k=karts[0];if(k.finished!=null&&!k.dnf){saveGhost(k.finished);saveMedal(medalFor(k.finished));}}
  showResults();}
 function showResults(){app='results';$('hud').hidden=true;document.body.classList.remove('playing');snd.silence();
  replay={t:0,cut:0,cam:0,camT:0};
  const me=karts.find(k=>k.human===0),list=karts.slice().sort((a,b)=>a.place-b.place);let html='',title='',eye='';
  if(A){eye=`${ARENA.n} · BALLOON BATTLE`;const win=list[0];title=opt.players>1?(win.human>=0?`P${win.human+1} WINS`:win.name+' WINS'):me.place===1?'VICTORY':me.out?'POPPED':ORD(me.place).toUpperCase();
   html='<tr><th>#</th><th>DRIVER</th><th>BALLOONS</th><th>POPS</th></tr>'+list.map(k=>`<tr class="${k.human>=0?'me':''}"><td>${k.place}</td><td><i style="background:${k.color}"></i>${k.name}</td><td>${k.balloons}</td><td>${k.pops}</td></tr>`).join('');}
- else{const d=COURSES[courseIdx];eye=`${d.n} · ${opt.mode==='gp'?CUPS[gp.cup].n+' RACE '+gp.race+'/4':opt.mode==='tt'?'TIME TRIAL':'VS RACE'} · ${CC[opt.cc].n}`;const p2=karts.find(k=>k.human===1);title=me.dnf?'DNF':opt.mode==='tt'?fmt(me.finished):p2?`P1 ${ORD(me.place).toUpperCase()} · P2 ${p2.dnf?'DNF':ORD(p2.place).toUpperCase()}`:ORD(me.place).toUpperCase()+' PLACE';
+ else{const d=COURSES[courseIdx];eye=`${d.n} · ${opt.mode==='gp'?CUPS[gp.cup].n+' RACE '+gp.race+'/4':opt.mode==='tt'?'TIME TRIAL':'VS RACE'} · ${CC[opt.cc].n}`;const p2=karts.find(k=>k.human===1);title=me.dnf?'DNF':opt.mode==='tt'?fmt(me.finished)+(medalFor(me.finished)>=0?' · '+MEDALS[medalFor(me.finished)][0]:''):p2?`P1 ${ORD(me.place).toUpperCase()} · P2 ${p2.dnf?'DNF':ORD(p2.place).toUpperCase()}`:ORD(me.place).toUpperCase()+' PLACE';
   html=`<tr><th>#</th><th>DRIVER</th><th>TIME</th>${gp?'<th>PTS</th><th>TOTAL</th>':''}</tr>`+list.map(k=>`<tr class="${k.human>=0?'me':''}"><td>${k.dnf?'—':k.place}</td><td><i style="background:${k.color}"></i>${k.name}</td><td>${k.dnf?'DNF':fmt(k.finished)}</td>${gp?`<td>+${gp.last[k.id]}</td><td>${gp.pts[k.id]}</td>`:''}</tr>`).join('');
   if(opt.mode==='tt'){html=`<tr><th>LAP</th><th>TIME</th></tr>`+me.lapTimes.map((t,i)=>`<tr class="me"><td>${i+1}</td><td>${fmt(t)}</td></tr>`).join('')+`<tr><td>BEST</td><td>${ghostBest()?fmt(ghostBest()):'—'}</td></tr>`;}}
  $('reye').textContent=eye;$('rtitle').textContent=title;$('rtitle').style.color=me.place===1&&!me.dnf?'#ffd23a':'';$('rtable').innerHTML=html;
@@ -285,7 +299,7 @@ function showResults(){app='results';$('hud').hidden=true;document.body.classLis
 function showStandings(){const list=karts.slice().sort((a,b)=>gp.pts[b.id]-gp.pts[a.id]);$('stitle').textContent=CUPS[gp.cup].n;
  $('stable').innerHTML='<tr><th>#</th><th>DRIVER</th><th>LAST</th><th>TOTAL</th></tr>'+list.map((k,i)=>`<tr class="${k.human>=0?'me':''}"><td>${i+1}</td><td><i style="background:${k.color}"></i>${k.name}</td><td>+${gp.last[k.id]}</td><td><b>${gp.pts[k.id]}</b></td></tr>`).join('');
  $('standings').hidden=false;}
-function scoreFor(me){const ccM=[1,1.5,2][opt.cc];if(A)return Math.round((me.pops*60+(me.place===1?250:0)+me.balloons*30)*ccM);
+function scoreFor(me){const ccM=[1,1.5,2][opt.cc];if(opt.mode==='tt'&&!me.dnf&&!A){const md=medalFor(me.finished);if(md>=0)return Math.round((60000/Math.max(1,me.finished)+[300,180,90][md])*ccM);}if(A)return Math.round((me.pops*60+(me.place===1?250:0)+me.balloons*30)*ccM);
  if(opt.mode==='tt')return me.dnf?0:Math.max(0,Math.round(60000/Math.max(1,me.finished)*ccM));
  if(opt.mode==='gp'){const pts=gp.pts[me.id],rank=karts.slice().sort((a,b)=>gp.pts[b.id]-gp.pts[a.id]).indexOf(me)+1;return Math.round((pts*10+[300,200,100][rank-1]||0)*ccM);}
  return me.dnf?0:Math.round(((POINTS[me.place-1]||0)*10+(me.place===1?100:0))*ccM);}
@@ -305,7 +319,7 @@ function startPodium(){app='podium';$('results').hidden=true;$('standings').hidd
  for(const k of karts){k.model.visible=false;}
  list.slice(0,3).forEach((k,j)=>{const x=[0,-4.6,4.6][j],h=[3.2,2.2,1.4][j];tv.set(x,h,0).applyAxisAngle(new V(0,1,0),podium.rotation.y).add(base);k.p.copy(tv);k.yaw=podium.rotation.y;k.model.visible=true;k.model.userData.celebrate=1;k.spd=0;k.vel.set(0,0,0);k.ground=true;k.drift=0;k.boost=0;k.glide=false;k.aura=0;k.respawn=0;k.out=false;k.shrink=0;k.spin=0;k.tumble=0;});
  podium.userData.t=0;podium.userData.base=base;
- const pts=scoreFor(me),won=rank===1,tok=award(pts,won);
+ const pts=scoreFor(me),won=rank===1,tok=award(pts,won);try{const pv=localStorage.getItem(cupKey(gp.cup,opt.cc));if(rank<=3&&(pv==null||rank<+pv))localStorage.setItem(cupKey(gp.cup,opt.cc),rank);}catch(e){}
  $('ptitle').textContent=rank<=3?['GOLD','SILVER','BRONZE'][rank-1]+' CUP':ORD(rank).toUpperCase()+' OVERALL';$('ptitle').style.color=['#ffd23a','#dfe3ee','#e09050'][rank-1]||'#fff';$('peye').textContent=`${CUPS[gp.cup].n} · ${CC[opt.cc].n} · FINAL STANDINGS`;
  $('ptable').innerHTML=list.map((k,i)=>`<tr class="${k.human>=0?'me':''}"><td>${i+1}</td><td><i style="background:${k.color}"></i>${k.name}</td><td><b>${gp.pts[k.id]}</b></td></tr>`).join('');
  $('ptok').textContent=`${pts} PTS · +${tok} TOKENS · BEST ${best()}`;$('podium').hidden=false;snd.play('finish');}
@@ -341,6 +355,7 @@ function kartVis(k,dt){const m=k.model,u=m.userData;let visible=!k.out||A;
  const fx=Math.sin(k.yaw),fz=Math.cos(k.yaw),rx=Math.cos(k.yaw),rz=-Math.sin(k.yaw),sp=Math.abs(k.spd);
  if(k.boost>0&&Math.random()<.7){const c=BOOSTC[k.boostCol||1];sparks.emit(k.p.x-fx*2.2+rnd(.4)-.2,k.p.y+.85,k.p.z-fz*2.2+rnd(.4)-.2,-fx*8+rnd(2)-1,rnd(2),-fz*8+rnd(2)-1,c[0]*.6,c[1]*.6,c[2]*.6,.45,.25);}
  if(k.ground&&sp>8&&(k.surf===SURF.off||k.surf===SURF.sand||k.surf===SURF.mud||(T.key==='snow'&&k.surf!==SURF.road))&&Math.random()<sp/70){const c=landCol(k);dust.emit(k.p.x-fx*1.6+rnd(1.6)-.8,k.p.y+.3,k.p.z-fz*1.6+rnd(1.6)-.8,-fx*3+rnd(2)-1,.6+rnd(1.4),-fz*3+rnd(2)-1,c.r,c.g,c.b,.8,.6,-.3,1.5,1.4);}
+ if(k.drafting&&k.draft>.2&&Math.random()<.9){const sd=Math.random()<.5?-1:1,a=.5+k.draft*.6;sparks.emit(k.p.x+fx*3+rx*sd*(1+rnd(.8)),k.p.y+.6+rnd(1.2),k.p.z+fz*3+rz*sd*(1+rnd(.8)),-fx*28,0,-fz*28,.5*a,.7*a,1*a,.16,.22);}
  if(k.under&&Math.random()<.4)sparks.emit(k.p.x+rnd(2)-1,k.p.y+1,k.p.z+rnd(2)-1,0,3+rnd(2),0,.35,.6,.9,.16,1.1,-2,.5);
  if(k.aura>0&&Math.random()<.8){const c=new THREE.Color().setHSL((time*1.5+Math.random()*.3)%1,1,.6).multiplyScalar(2.5);sparks.emit(k.p.x+rnd(3)-1.5,k.p.y+rnd(2.4),k.p.z+rnd(3)-1.5,0,1,0,c.r,c.g,c.b,.4,.5);}
  if(k.ground&&(k.drift||(k.spin>0&&sp>4))&&k.surf!==SURF.off){for(const s of[-1,1]){const w=tv.set(k.p.x-fx*1+rx*s*.85,k.p.y,k.p.z-fz*1+rz*s*.85);const key=s<0?'skL':'skR';if(k[key])skids.add(0,0,k[key],w,.18,.8);k[key]=(k[key]||new V()).copy(w);}}else{k.skL=null;k.skR=null;}
@@ -348,6 +363,11 @@ function kartVis(k,dt){const m=k.model,u=m.userData;let visible=!k.out||A;
 function driftSparks(k,lv,dt){const fx=Math.sin(k.yaw),fz=Math.cos(k.yaw),rx=Math.cos(k.yaw),rz=-Math.sin(k.yaw);const c=lv>0?BOOSTC[lv]:[2.2,2,1.4],n=lv>0?3:1;
  for(let j=0;j<n;j++)for(const s of[-1,1]){if(Math.random()>(lv>0?.9:.35))continue;const x=k.p.x-fx*1.1+rx*s*.9,z=k.p.z-fz*1.1+rz*s*.9;sparks.emit(x,k.p.y+.15,z,-fx*4+rnd(6)-3+rx*s*2,2+rnd(4),-fz*4+rnd(6)-3+rz*s*2,c[0],c[1],c[2],lv>0?.42+lv*.06:.2,.3,18,1);}}
 function visuals(dt){drone.visible=false;
+ if(boostLight.parent){const me=views[0]&&(app==='race'||app==='intro'||app==='paused')?views[0].k:null;let bi=0;
+  if(me&&me.respawn<=0){const fx=Math.sin(me.yaw),fz=Math.cos(me.yaw);boostLight.position.set(me.p.x-fx*2.2,me.p.y+.9,me.p.z-fz*2.2);
+   if(me.boost>0){const c=BOOSTC[me.boostCol||1];boostLight.color.setRGB(c[0]/3,c[1]/3,c[2]/3);bi=26;}else if(me.drift&&me.driftLv>0){const c=BOOSTC[me.driftLv];boostLight.color.setRGB(c[0]/3,c[1]/3,c[2]/3);bi=5+me.driftLv*4;}}
+  boostLight.intensity+=(bi-boostLight.intensity)*Math.min(1,dt*14);fxI=Math.max(0,fxI-dt*2.4);fxLight.intensity=fxI*fxI*900;}
+ if(W&&W.crowdU){const me=views[0]&&views[0].k;const ex=phase==='countdown'||phase==='done'||(me&&me.finished!=null)||app==='podium'?1:.35;W.crowdU.uCheer.value+=(ex-W.crowdU.uCheer.value)*Math.min(1,dt*2);}
  if(W)updateWorld(W,time,dt);
  for(const k of karts)kartVis(k,dt);
  if(ghost)ghostVis();
@@ -393,6 +413,19 @@ function cameras(dt){if(app==='race'||app==='paused'||app==='intro'){views.forEa
  const k=karts[0];if(!k)return;menuA+=dt*.16;const a=k.yaw+.9+Math.sin(menuA)*.7;mainCam.position.set(k.p.x+Math.sin(a)*7.6,k.p.y+2.5,k.p.z+Math.cos(a)*7.6);mainCam.fov=38;
  tv.set(k.p.x-mainCam.position.x,0,k.p.z-mainCam.position.z).normalize();tv2.crossVectors(tv,up).normalize();mainCam.lookAt(k.p.x-tv2.x*2.5,k.p.y+.9,k.p.z-tv2.z*2.5);}
 
+/* ================= time-trial medals ================= */
+// target times scale with the course length and engine class; gold needs clean drifting and well-timed peppers
+const MEDALS=[['GOLD','#ffd23a',1],['SILVER','#dfe3ee',1.07],['BRONZE','#e09050',1.16]];
+function medalBase(){return LAPS*C.len/(CC[opt.cc].v*MEDAL_K)+2.5;}
+const MEDAL_K=1.12;
+function medalFor(t){const b=medalBase();for(let i=0;i<3;i++)if(t<=b*MEDALS[i][2])return i;return -1;}
+function medalsHTML(k){const b=medalBase(),t=phase==='race'?raceT:0,cur=k.finished??t;return MEDALS.map(([n,c,f],i)=>{const tt=b*f,gone=cur>tt;return`<div class="md" style="color:${gone?'#6a6f7a':c}">${n} <b>${fmt(tt)}</b></div>`;}).join('');}
+function medalKey(){return'pxd_kartgp_medal_'+COURSES[opt.track].id+'_'+opt.cc;}
+function bestMedal(i){try{const v=localStorage.getItem('pxd_kartgp_medal_'+COURSES[i].id+'_'+opt.cc);return v==null?-1:+v;}catch(e){return -1;}}
+function saveMedal(m){try{const b=localStorage.getItem(medalKey());if(m>=0&&(b==null||m<+b))localStorage.setItem(medalKey(),m);}catch(e){}}
+function cupKey(c,cc){return'pxd_kartgp_cup_'+c+'_'+cc;}
+function bestCup(c){let out=null;for(let cc=2;cc>=0;cc--){try{const v=localStorage.getItem(cupKey(c,cc));if(v!=null&&+v<=3){out={rank:+v,cc};break;}}catch(e){}}return out;}
+
 /* ================= ghost (time trial) ================= */
 function ghostKey(){return'pxd_kartgp_ghost_'+COURSES[opt.track].id+'_'+opt.cc;}
 function ghostBest(){try{const g=JSON.parse(localStorage.getItem(ghostKey()));return g?g.t:0;}catch(e){return 0;}}
@@ -403,9 +436,13 @@ function ghostVis(){const g=ghost,n=g.f.length/4;if(app!=='race'&&app!=='intro'|
 
 /* ================= rendering ================= */
 let fxAll=null,fxSplit=[];const POST=()=>({ao:false,exposure:T?T.exp:1,bloom:T&&T.night?.7:.42,bloomThreshold:T&&T.night?.8:.92,bloomRadius:.5,vignette:.3,saturation:1.12,grain:.02,aoStrength:.7});
-function applyQuality(q){gfx=q;W&&W.sun&&(W.sun.castShadow=q>0);R.shadowMap.needsUpdate=true;fxAll=null;fxSplit=[];R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));}
-bindQualityKey(()=>gfx,q=>applyQuality(q));
-function getFx(i,w,h,cam){const o=POST();if(i<0){if(!fxAll||fxAll.cam!==cam){fxAll=cinematic(R,scene,cam,{...o,quality:gfx});fxAll.cam=cam;fxAll.w=0;}if(fxAll.w!==w*9999+h){fxAll.w=w*9999+h;fxAll.setSize(w,h);}return fxAll;}
+function applyQuality(q){gfx=q;syncLights();W&&W.sun&&(W.sun.castShadow=q>0);R.shadowMap.needsUpdate=true;fxAll=null;fxSplit=[];R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));}
+bindQualityKey(()=>gfx,q=>applyQuality(q));syncLights();
+const RADIAL={uniforms:{tDiffuse:{value:null},uS:{value:0}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:'uniform sampler2D tDiffuse;uniform float uS;varying vec2 vUv;void main(){vec2 d=vUv-vec2(.5,.45);float w=smoothstep(.12,.75,length(d))*uS;if(w<.001){gl_FragColor=texture2D(tDiffuse,vUv);return;}vec4 c=vec4(0.);for(int i=0;i<6;i++)c+=texture2D(tDiffuse,vUv-d*w*float(i)*.014);gl_FragColor=c/6.;}'};
+let blurS=0;
+function getFx(i,w,h,cam){const o=POST();if(i<0){if(!fxAll||fxAll.cam!==cam){fxAll=cinematic(R,scene,cam,{...o,quality:gfx});fxAll.cam=cam;fxAll.w=0;if(gfx>=2&&fxAll.composer){const p=new ShaderPass(RADIAL);fxAll.composer.insertPass(p,fxAll.ao?2:1);fxAll.blur=p;}}
+  if(fxAll.blur){const me=views[0]&&app==='race'?views[0].k:null;const tgt=me?(me.boost>0?.9:0)+cl(Math.abs(me.spd)/G.cc.v-.8,0,.4)*.5:0;blurS+=(tgt-blurS)*.12;fxAll.blur.uniforms.uS.value=blurS;fxAll.blur.enabled=blurS>.01;}if(fxAll.w!==w*9999+h){fxAll.w=w*9999+h;fxAll.setSize(w,h);}return fxAll;}
  let f=fxSplit[i];if(!f||f.cam!==cam){f=fxSplit[i]=cinematic(R,scene,cam,{...o,ao:false,quality:Math.min(gfx,1)});f.cam=cam;f.w=0;}if(f.w!==w*9999+h){f.w=w*9999+h;f.setSize(w,h);}return f;}
 function renderView(cam,x,y,w,h,fi,focus){cam.aspect=w/h;cam.updateProjectionMatrix();sparks.U.uScale.value=dust.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));
  if(W){const t=focus||cam.position;W.sun.target.position.copy(t);W.sun.position.copy(t).addScaledVector(W.sunDir,160);W.sun.updateMatrixWorld();W.sun.target.updateMatrixWorld();R.shadowMap.needsUpdate=true;
@@ -443,9 +480,9 @@ function buildDriverUI(){const p=opt.picks[editP];$('ptabs').hidden=opt.players<
  const st=statsOf(CHARS[p.ch],p.body,p.wheels,p.glider);$('stats').innerHTML=STATS.map(([k,n])=>`<div><span>${n}</span><i><em style="width:${(st[k]/6*100).toFixed(0)}%"></em></i></div>`).join('');
  $('blurb').textContent=CHARS[p.ch].blurb;}
 function buildCourseUI(){const host=$('courses');let html='';
- if(opt.mode==='gp')html=CUPS.map((c,i)=>`<button class="cup${i===opt.cup?' on':''}" data-i="${i}"><b style="color:${c.c}">${c.ic} ${c.n}</b>${c.tracks.map(t=>`<span>${COURSES[t].n}</span>`).join('')}</button>`).join('');
+ if(opt.mode==='gp')html=CUPS.map((c,i)=>`<button class="cup${i===opt.cup?' on':''}" data-i="${i}"><b style="color:${c.c}">${c.ic} ${c.n}</b>${c.tracks.map(t=>`<span>${COURSES[t].n}</span>`).join('')}${(b=>b?`<span class="tro" style="color:${['#ffd23a','#dfe3ee','#e09050'][b.rank-1]}">★ ${['GOLD','SILVER','BRONZE'][b.rank-1]} TROPHY · ${CC[b.cc].n}</span>`:'<span class="tro">NO TROPHY YET</span>')(bestCup(i))}</button>`).join('');
  else if(opt.mode==='battle')html=`<button class="cup on"><b style="color:#ff8a3a">◎ ${ARENA.n}</b><span>Ring arena · 8 pillars · 20 prism boxes</span><span>3 balloons each · 3:00</span></button>`;
- else html=COURSES.map((c,i)=>`<button class="trk${i===opt.track?' on':''}" data-i="${i}"><canvas width="120" height="90" data-i="${i}"></canvas><b>${c.n}</b>${opt.mode==='tt'&&bestTT(i)?`<i>BEST ${fmt(bestTT(i))}</i>`:`<i>${THEMES[c.theme]===undefined?'':c.theme.toUpperCase()}</i>`}</button>`).join('');
+ else html=COURSES.map((c,i)=>`<button class="trk${i===opt.track?' on':''}" data-i="${i}"><canvas width="120" height="90" data-i="${i}"></canvas><b>${c.n}</b>${opt.mode==='tt'&&bestTT(i)?`<i>BEST ${fmt(bestTT(i))}${bestMedal(i)>=0?' · '+MEDALS[bestMedal(i)][0]:''}</i>`:`<i>${THEMES[c.theme]===undefined?'':c.theme.toUpperCase()}</i>`}</button>`).join('');
  host.innerHTML=html;host.className=opt.mode==='gp'||opt.mode==='battle'?'cups':'tracks';
  host.querySelectorAll('canvas').forEach(cv=>drawThumb(cv,+cv.dataset.i));
  host.querySelectorAll('button').forEach(b=>b.onclick=()=>{snd.play('ui');if(opt.mode==='gp')opt.cup=+b.dataset.i;else if(opt.mode!=='battle')opt.track=+b.dataset.i;saveOpt();buildCourseUI();});}

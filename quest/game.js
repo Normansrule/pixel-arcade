@@ -2,7 +2,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import {ShaderPass} from '../vendor/jsm/postprocessing/ShaderPass.js';
-import {POI,HALF,N,H,heightAt,gradAt,waterAt,inLake,roadDist,clearing,forestDensity,GRASS,FOREST,mulberry,ss} from './terrain.js';
+import {POI,HALF,N,H,heightAt,gradAt,waterAt,inLake,roadDist,clearing,forestDensity,GRASS,FOREST,mulberry,ss,POOLS,riverQuery} from './terrain.js';
 import {World,U,lighting} from './world.js';
 import {buildStructures} from './build.js';
 import {buildShrines} from './shrines.js';
@@ -46,14 +46,14 @@ const DIFF=[{n:'EASY',hp:.75,dmg:.5,aggr:.75,hearts:4,pen:30,tokens:1},{n:'NORMA
 
 /* ================= items ================= */
 const ING={apple:{n:'Sunapple',heal:2,col:'#e2402a',k:'apple'},herb:{n:'Swiftsprig',heal:1,buff:'speed',col:'#6ad24a'},mushroom:{n:'Ironcap',heal:1,buff:'defense',col:'#9a7650'},pepper:{n:'Ember Pepper',heal:1,buff:'attack',col:'#ff6a1a'},
- honey:{n:'Wild Honey',heal:4,buff:'stamina',col:'#ffc23a'},truffle:{n:'Hearty Truffle',heal:4,buff:'hearty',col:'#e8d2b0'},meat:{n:'Raw Meat',heal:3,col:'#c8545a'}};
-const ORDER=['apple','herb','mushroom','pepper','honey','truffle','meat'];
-const BUFF={speed:'SWIFT',attack:'FIERCE',defense:'IRONCLAD',stamina:'VIGOR',hearty:'HEARTY'};
-const DISH={apple:'Apple Bake',herb:'Herb Salad',mushroom:'Mushroom Stew',pepper:'Pepper Sauté',honey:'Honey Glaze',truffle:'Truffle Pot Pie',meat:'Meat Skewer'};
+ honey:{n:'Wild Honey',heal:4,buff:'stamina',col:'#ffc23a'},truffle:{n:'Hearty Truffle',heal:4,buff:'hearty',col:'#e8d2b0'},meat:{n:'Raw Meat',heal:3,col:'#c8545a'},sunroot:{n:'Sunroot',heal:1,buff:'warm',col:'#ff9a2a'}};
+const ORDER=['apple','herb','mushroom','pepper','honey','truffle','meat','sunroot'];
+const BUFF={speed:'SWIFT',attack:'FIERCE',defense:'IRONCLAD',stamina:'VIGOR',hearty:'HEARTY',warm:'WARM'};
+const DISH={apple:'Apple Bake',herb:'Herb Salad',mushroom:'Mushroom Stew',pepper:'Pepper Sauté',honey:'Honey Glaze',truffle:'Truffle Pot Pie',meat:'Meat Skewer',sunroot:'Sunroot Broth'};
 function cookResult(list){if(!list.length)return null;const cnt={};list.forEach(k=>cnt[k]=(cnt[k]||0)+1);let heal=0;list.forEach(k=>heal+=ING[k].heal*2);
  const bc={};list.forEach(k=>{const b=ING[k].buff;if(b)bc[b]=(bc[b]||0)+1;});const bk=Object.keys(bc);const buff=bk.length===1?bk[0]:null;const main=cnt.meat?'meat':cnt.truffle?'truffle':Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||ING[b].heal-ING[a].heal)[0];
- const n=(buff?{speed:'Swift',attack:'Fierce',defense:'Ironclad',stamina:'Vigorous',hearty:'Hearty'}[buff]+' ':bk.length>1?'Muddled ':'')+DISH[main];
- return{name:n,heal:buff==='hearty'?99:heal,tmp:buff==='hearty'?4*bc.hearty:0,buff:buff==='hearty'?null:buff,dur:buff?60*bc[buff]:0,col:ING[main].col};}
+ const n=(buff?{speed:'Swift',attack:'Fierce',defense:'Ironclad',stamina:'Vigorous',hearty:'Hearty',warm:'Spicy'}[buff]+' ':bk.length>1?'Muddled ':'')+DISH[main];
+ return{name:n,heal:buff==='hearty'?99:heal,tmp:buff==='hearty'?4*bc.hearty:0,buff:buff==='hearty'?null:buff,dur:buff?(buff==='warm'?120:60)*bc[buff]:0,col:ING[main].col};}
 
 /* pickups: instanced per type */
 const pickups=[];const PK={};{const mk=(type,geo,mat,max)=>{const m=new THREE.InstancedMesh(geo,mat,max);m.count=max;m.castShadow=true;const z=new THREE.Matrix4().makeScale(0,0,0);for(let i=0;i<max;i++)m.setMatrixAt(i,z);scene.add(m);PK[type]={m,max,free:[...Array(max).keys()]};};
@@ -65,15 +65,16 @@ const pickups=[];const PK={};{const mk=(type,geo,mat,max)=>{const m=new THREE.In
  mk('honey',mergeG([new THREE.SphereGeometry(.22,10,8).scale(1,1.2,1).translate(0,.26,0),new THREE.TorusGeometry(.2,.04,4,12).rotateX(Math.PI/2).translate(0,.3,0)]),std(0xe8a820,{r:.3,e:0x402800}),20);
  mk('truffle',new THREE.DodecahedronGeometry(.17,1).translate(0,.14,0),std(0xe8d2b0,{r:.8,e:0x302010}),16);
  mk('meat',new THREE.CylinderGeometry(.13,.15,.32,8).rotateZ(Math.PI/2).translate(0,.13,0),std(0xb8434a,{r:.5}),40);
+ mk('sunroot',mergeG([new THREE.ConeGeometry(.07,.32,7).rotateX(Math.PI).translate(0,.1,0),...[0,1,2].map(i=>new THREE.ConeGeometry(.035,.3,4).translate(0,.4,0).rotateZ(.3).rotateY(i*2.1))]),std(0xff8a20,{r:.5,e:0x401000}),40);
  mk('arrows',mergeG([0,1,2,3,4].map(i=>new THREE.CylinderGeometry(.012,.012,.8,4).rotateX(Math.PI/2).translate((i-2)*.04,.06,0))),std(0xc8a070,{r:.8}),40);}
 function mergeG(list){const pos=[],nor=[];for(const g of list){const n=g.index?g.toNonIndexed():g;pos.push(...n.attributes.position.array);nor.push(...n.attributes.normal.array);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));return g;}
 const tm=new THREE.Matrix4(),tq=new THREE.Quaternion(),te=new THREE.Euler();
 function addPickup(type,x,y,z,n=1){const k=PK[type];if(!k||!k.free.length)return null;const i=k.free.pop();const ry=rnd(6.28);k.m.setMatrixAt(i,tm.compose(new V(x,y,z),tq.setFromEuler(te.set(0,ry,0)),new V(1,1,1)));k.m.instanceMatrix.needsUpdate=true;const p={type,x,y,z,i,n,taken:false};pickups.push(p);return p;}
 function takePickup(p){p.taken=true;const k=PK[p.type];k.m.setMatrixAt(p.i,tm.makeScale(0,0,0));k.m.instanceMatrix.needsUpdate=true;k.free.push(p.i);}
 function spawnPickups(){for(const p of pickups)if(!p.taken)takePickup(p);pickups.length=0;const r=mulberry(99),R2=()=>r();
- world.apples.slice(0,110).forEach(a=>{const h=heightAt(a.x,a.z);if(h>2&&!inLake(a.x,a.z))addPickup('apple',a.x,h+.12,a.z);});
- const place=(type,n,test,tries=4000)=>{let c=0;for(let t=0;t<tries&&c<n;t++){const x=(R2()*2-1)*HALF*.85,z=(R2()*2-1)*HALF*.85,h=heightAt(x,z);if(h<2.5||inLake(x,z)||clearing(x,z,1)||roadDist(x,z)<2)continue;const g=gradAt(x,z);if(Math.hypot(g.x,g.z)>.9)continue;if(!test(x,z,h))continue;addPickup(type,x,h,z);c++;}};
- place('mushroom',60,(x,z)=>forestDensity(x,z)>.55);place('herb',60,(x,z,h)=>forestDensity(x,z)<.3&&h<60);place('pepper',34,(x,z,h)=>x>40&&h<50);place('honey',16,(x,z)=>forestDensity(x,z)>.35);place('truffle',12,(x,z,h)=>forestDensity(x,z)>.75||h>45);
+ world.apples.slice(0,110).forEach(a=>{const h=heightAt(a.x,a.z);if(h>2&&!inLake(a.x,a.z)&&waterAt(a.x,a.z)<h-.3)addPickup('apple',a.x,h+.12,a.z);});
+ const place=(type,n,test,tries=4000)=>{let c=0;for(let t=0;t<tries&&c<n;t++){const x=(R2()*2-1)*HALF*.85,z=(R2()*2-1)*HALF*.85,h=heightAt(x,z);if(h<2.5||inLake(x,z)||clearing(x,z,1)||roadDist(x,z)<2||waterAt(x,z)>h-.3)continue;const g=gradAt(x,z);if(Math.hypot(g.x,g.z)>.9)continue;if(!test(x,z,h))continue;addPickup(type,x,h,z);c++;}};
+ place('mushroom',60,(x,z)=>forestDensity(x,z)>.55);place('herb',60,(x,z,h)=>forestDensity(x,z)<.3&&h<60);place('pepper',34,(x,z,h)=>x>40&&h<50);place('honey',16,(x,z)=>forestDensity(x,z)>.35);place('truffle',12,(x,z,h)=>forestDensity(x,z)>.75||h>45);place('sunroot',36,(x,z,h)=>h>16&&h<58&&forestDensity(x,z)<.45);
  for(const c of POI.camps)for(let k=0;k<2;k++){const a=rnd(6.28);addPickup('arrows',c.x+Math.cos(a)*5.5,heightAt(c.x+Math.cos(a)*5.5,c.z+Math.sin(a)*5.5),c.z+Math.sin(a)*5.5,5);}
  for(const k of['herb','apple','mushroom'])for(let i=0;i<2;i++){const a=rnd(6.28),d=4+rnd(4);const x=POI.start.x+Math.cos(a)*d,z=POI.start.z+Math.sin(a)*d;addPickup(k,x,heightAt(x,z)+(k==='apple'?.12:0),z);}}
 
@@ -87,9 +88,14 @@ function seedSpots(){const L=[];const add=(x,y,z,why)=>L.push({x,y,z,why});const
  S.towers.slice(0,2).forEach(t=>add(t.x+.8,t.y+.7,t.z+.8,'tower'));
  add(POI.start.x,POI.start.h+3.6,POI.start.z-3,'tablet');add(132,POI.lake.level+.6,50,'lake');
  const c=S.castle;add(c.x-7,c.h+19.6,c.z+30.5,'gatehouse');S.spires.slice(0,6).forEach(s=>add(s.x,s.y+1,s.z,'spire'));
+ POOLS.filter((p,i)=>i===3||i===12).forEach(p=>add(p.x+p.dx*1.2,p.L+.9,p.z+p.dz*1.2,'waterfall'));
  const rr=mulberry(5);let guard=0;while(L.length<20&&guard++<6000){const x=(rr()*2-1)*HALF*.8,z=(rr()*2-1)*HALF*.8,h=heightAt(x,z);if(h<14||h>85)continue;const g=gradAt(x,z),s=Math.hypot(g.x,g.z);if(s<1.25)continue;if(L.some(q=>Math.hypot(q.x-x,q.z-z)<45)||clearing(x,z,10))continue;add(x-g.x/s*.6,h+1,z-g.z/s*.6,'cliff');}
  return L;}
-function spawnSeeds(){for(const s of seeds)scene.remove(s.m);seeds.length=0;for(const p of seedSpots()){const g=new THREE.Group();g.add(new THREE.Mesh(seedGeo,seedMat));const l=new THREE.Mesh(leafGeo,leafMat);g.add(l);g.position.set(p.x,p.y,p.z);scene.add(g);seeds.push({...p,m:g,taken:false});}}
+// all 20 seeds share two instanced meshes (body + leaf); a taken seed collapses to zero scale
+const seedIM=new THREE.InstancedMesh(seedGeo,seedMat,24),seedLeafIM=new THREE.InstancedMesh(leafGeo,leafMat,24);seedIM.count=seedLeafIM.count=0;seedIM.frustumCulled=seedLeafIM.frustumCulled=false;scene.add(seedIM,seedLeafIM);
+const seedM4=new THREE.Matrix4(),seedQ=new THREE.Quaternion(),seedE=new THREE.Euler(),seedP=new V(),seedS=new V(1,1,1),seedZ=new V(0,0,0);
+function placeSeed(s,i){seedP.set(s.x,s.m.y,s.z);seedQ.setFromEuler(seedE.set(0,s.m.ry,0));seedM4.compose(seedP,seedQ,s.taken?seedZ:seedS);seedIM.setMatrixAt(i,seedM4);seedLeafIM.setMatrixAt(i,seedM4);}
+function spawnSeeds(){seeds.length=0;for(const p of seedSpots()){seeds.push({...p,m:{y:p.y,ry:0},taken:false});}seedIM.count=seedLeafIM.count=seeds.length;seeds.forEach(placeSeed);seedIM.instanceMatrix.needsUpdate=seedLeafIM.instanceMatrix.needsUpdate=true;}
 
 /* fires (campfires cook; braziers light the keep) */
 const fires=S.fires;
@@ -122,7 +128,7 @@ function start(o={}){Object.assign(opt,o);saveOpt();snd.init();
  G.room=null;G.bossTarget=null;$('boss').hidden=true;G.time=0;G.timeScale=1;
  resetPlayer(G,run.respawn.x,run.respawn.y,run.respawn.z,run.respawn.yaw);G.cam.yaw=Math.PI;G.cam.pitch=.2;
  app='play';hideAll();$('hud').hidden=false;document.body.classList.add('playing');lockPointer();
- banner('WILD QUEST',`Clear the four shrines · the Crimson Moon rises in ${opt.len}:00`,'#ff6a1a',3.2);run.cur='Dawnrise Meadow';run.regions.add('Dawnrise Meadow');}
+ banner('WILD QUEST',`Clear the four shrines · the Crimson Moon rises in ${opt.len}:00`,'#ff6a1a',3.2);G.introT=4.2;run.cur='Dawnrise Meadow';run.regions.add('Dawnrise Meadow');}
 function hideAll(){for(const id of['menu','keys','over','pause','cook','inv','map','bless','dead'])$(id).hidden=true;}
 function toMenu(){app='menu';hideAll();$('menu').hidden=false;$('keys').hidden=false;$('hud').hidden=true;document.body.classList.remove('playing');unlockPointer();G.room=null;rooms.forEach(r=>r.g.visible=false);
  $('best').textContent=best()?`BEST ${best()} PTS`:'';}
@@ -159,7 +165,7 @@ function hurt(q,from,kind,o={}){if(P.dead||!run||run.end)return'none';
  if(P.buffs.defense&&kind!=='fall'&&kind!=='drown')q=Math.ceil(q*.5);
  const a=Math.min(P.tmp,q);P.tmp-=a;q-=a;P.hp-=q;P.hurtT=.35;snd.play('hurt');G.cam.shake=Math.max(G.cam.shake,.45);$('vign').style.opacity=.9;G.hitstop(.05);
  if(src&&o.knock){const dx=P.p.x-src.x,dz=P.p.z-src.z,d=Math.hypot(dx,dz)||1;P.v.x+=dx/d*o.knock;P.v.z+=dz/d*o.knock;P.v.y=4;if(P.mode==='ground')P.mode='air';P.airT=.3;P.fallV=0;}
- if(P.mode==='climb'||P.mode==='glide'){P.mode='air';P.climb=null;P.rig.glider.visible=false;P.fallV=0;}P.atk=null;P.charge=0;
+ if((P.mode==='climb'||P.mode==='glide')&&kind!=='cold'){P.mode='air';P.climb=null;P.rig.glider.visible=false;P.fallV=0;}P.atk=null;P.charge=0;
  if(P.hp<=0){P.hp=0;die(kind);}return'hit';}
 G.hurtPlayer=hurt;
 function startFlurry(e){P.flurry={t:3,target:e,hits:0};G.setFlurry(true);snd.play('flurry');toast('FLURRY RUSH!','t');P.roll=null;P.iframe=3;P.lock=P.lock||e;}
@@ -183,7 +189,7 @@ function killEnemy(e){e.dead=true;e.deadT=0;e.releaseToken();P.kills++;run.killS
  if(e.kind==='golem'){run.golemDead=true;$('boss').hidden=true;G.bossTarget=null;G.after(1.6,()=>{if(!run||run.end)return;upgradeSword(G);P.maxHp+=4;P.hp=P.maxHp;banner('RUNE BLADE','The Colossus yields its blade · +1 heart container','#3fe6e6',3.2);snd.play('blessing');});}
  if(e.kind==='boss'){run.bossDead=true;run.victory=true;$('boss').hidden=true;G.bossTarget=null;G.victoryT=0;banner('THE KEEP IS FREED','The Ashen Warden falls','#ffcf5a',4);snd.play('victory');G.shake(1,e.p);fade(true);}
  // camp cleared?
- if(e.camp!==undefined&&e.camp<10){const left=G.enemies.filter(x=>x.camp===e.camp&&!x.dead).length;if(!left){toast('Camp cleared!','g');run.gems+=150;}}}
+ if(e.camp!==undefined&&e.camp<10){const left=G.enemies.filter(x=>x.camp===e.camp&&!x.dead).length;if(!left){toast('Camp cleared! The treasure chest\'s chains fall away.','g');run.gems+=150;run.camps=(run.camps||0)+1;const ch=S.chests[e.camp];if(ch)parts.burst(new V(ch.x,ch.y+.8,ch.z),40,4,[new THREE.Color(2.6,2,.8)],.3,1,{up:true,drag:1.5});}}}
 
 /* ================= shrines ================= */
 function enterRoom(s){const r=rooms[s.i];fade();snd.play('warp');G.after(.23,()=>{G.room=r;r.g.visible=true;r.t=0;resetPlayer(G,r.spawn.x,r.spawn.y,r.spawn.z,Math.PI);G.cam.yaw=Math.PI;G.cam.pitch=.18;run.respawn={x:s.enter.x,y:heightAt(s.enter.x,s.enter.z)+.6,z:s.enter.z,yaw:s.rot+Math.PI};G.curShrine=s;
@@ -202,7 +208,7 @@ function findInteract(){let best=null,bd=2.4;const consider=(o,d,label,act)=>{if
  if(G.room){const r=G.room;if(r.orb&&!r.orb.taken&&r.orb.y>-.5)consider(r.orb,Math.hypot(P.p.x-r.orb.x,P.p.z-r.orb.z)-.5,'CLAIM THE LUMEN ORB',takeOrb);
   if(r.quiver&&r.quiver.visible)consider(r.quiver,Math.hypot(P.p.x-r.arrows.x,P.p.z-r.arrows.z),'TAKE ARROWS',()=>{P.arrows=Math.max(P.arrows,15);r.quiver.visible=false;snd.play('pickup');toast('Arrows restocked','');});return best;}
  for(const p of pickups){if(p.taken)continue;const d=Math.hypot(P.p.x-p.x,P.p.z-p.z);if(d<bd&&Math.abs(P.p.y-p.y)<1.6)consider(p,d,p.type==='arrows'?`PICK UP ${p.n} ARROWS`:'PICK UP '+ING[p.type].n.toUpperCase(),()=>pick(p));}
- for(const c of S.chests){if(c.open)continue;consider(c,Math.hypot(P.p.x-c.x,P.p.z-c.z)-.4,'OPEN CHEST',()=>openChest(c));}
+ for(const c of S.chests){if(c.open)continue;const guarded=G.enemies.some(e=>e.camp===c.i&&!e.dead);consider(c,Math.hypot(P.p.x-c.x,P.p.z-c.z)-.4,guarded?'CHAINED · CLEAR THE CAMP':'OPEN CHEST',guarded?()=>{toast('Chained shut. Defeat the camp\'s guards to break the chains.','');snd.play('block');}:()=>openChest(c));}
  for(const f of fires){if(f.brazier)continue;consider(f,Math.hypot(P.p.x-f.x,P.p.z-f.z)-.8,'COOK AT THE FIRE',openCook);}
  for(const s of S.shrines){const d=Math.hypot(P.p.x-s.enter.x,P.p.z-s.enter.z);if(Math.abs(P.p.y-s.y)<3)consider(s,d-.8,s.done?`${s.name.toUpperCase()} · CLEARED`:'ENTER '+s.name.toUpperCase(),()=>{if(!s.done)enterRoom(s);else toast('This trial is complete. Warp here from the map.','');});}
  return best;}
@@ -235,7 +241,7 @@ function drawInv(){const items=[...P.dishes.map(d=>({d,n:d.name,col:d.col,s:`hea
  $('invs').innerHTML=`<b>${(P.hp/4).toFixed(2).replace(/\.?0+$/,'')}</b>/${P.maxHp/4} hearts · stamina <b>${P.stMax}</b> · arrows <b>${P.arrows}</b> · ${P.sword==='rune'?'<b>Rune Blade</b>':'Traveler\'s Blade'} · glimmer seeds <b>${P.seeds}</b>/20 · foes felled <b>${P.kills}</b>`;}
 /* map */
 const mapCanvas=document.createElement('canvas');mapCanvas.width=mapCanvas.height=640;{const x=mapCanvas.getContext('2d'),id=x.createImageData(640,640);for(let j=0;j<640;j++)for(let i=0;i<640;i++){const wx=i-320,wz=j-320,h=heightAt(wx,wz),k=(j*640+i)*4;let r,g,b;
-  const lake=inLake(wx,wz)&&h<POI.lake.level;if(h<0||lake){const d=lake?POI.lake.level-h:-h;r=20;g=70+Math.max(0,40-d*4);b=110+Math.max(0,50-d*5);}else{const gx=heightAt(wx+1,wz)-heightAt(wx-1,wz),gz=heightAt(wx,wz+1)-heightAt(wx,wz-1);const sh=cl(1-(gx+gz)*.35,.55,1.35);const f=forestDensity(wx,wz);
+  const wl=waterAt(wx,wz);const lake=wl>0&&h<wl;if(h<0||lake){const d=lake?wl-h:-h;r=20;g=70+Math.max(0,40-d*4);b=110+Math.max(0,50-d*5);}else{const gx=heightAt(wx+1,wz)-heightAt(wx-1,wz),gz=heightAt(wx,wz+1)-heightAt(wx,wz-1);const sh=cl(1-(gx+gz)*.35,.55,1.35);const f=forestDensity(wx,wz);
    if(h<2.5){r=200;g=184;b=130;}else if(h>72){r=230;g=235;b=240;}else if(Math.hypot(gx,gz)/2>1.05){r=120;g=114;b=104;}else{r=96-f*40+h*.4;g=130-f*30+h*.2;b=60-f*10+h*.3;}
    if(roadDist(wx,wz)<2.2&&h>1){r=176;g=148;b=96;}r*=sh;g*=sh;b*=sh;}id.data[k]=r;id.data[k+1]=g;id.data[k+2]=b;id.data[k+3]=255;}x.putImageData(id,0,0);}
 function drawMapMarks(ctx,toPx,scale=1){const dia=(x,y,c,s=6)=>{ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4);ctx.fillStyle=c;ctx.strokeStyle='#000';ctx.lineWidth=1.5;ctx.fillRect(-s/2,-s/2,s,s);ctx.strokeRect(-s/2,-s/2,s,s);ctx.restore();};
@@ -256,7 +262,7 @@ const I=controls(canvas,{canLock:()=>app==='play'&&!G.noPauseOnUnlock,clickThrou
  menu:e=>e.target===canvas,onLock:(on,was)=>{if(was&&!on&&app==='play'&&!G.noPauseOnUnlock)pause(true);},
  onKey:e=>{if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
  if(e.code==='Escape'){if(app==='panel'){if(!$('bless').hidden)return;closePanels();}else if(app==='play')pause(true);else if(app==='paused')pause(false);}
- if(app==='panel'){if(!$('cook').hidden){const n=+e.key;if(n>=1&&n<=7)addPot(ORDER[n-1]);if(e.code==='Backspace'){pot.pop();drawCook();}if(e.code==='Enter')cook();}
+ if(app==='panel'){if(!$('cook').hidden){const n=+e.key;if(n>=1&&n<=ORDER.length)addPot(ORDER[n-1]);if(e.code==='Backspace'){pot.pop();drawCook();}if(e.code==='Enter')cook();}
   if(!$('inv').hidden){const n=+e.key;if(n>=1&&n<=9&&G.invItems&&G.invItems[n-1]){const it=G.invItems[n-1];eat(it.d||it.k);drawInv();}if(e.code==='Tab')closePanels();}
   if(!$('map').hidden&&e.code==='KeyM')closePanels();if(!$('bless').hidden){if(e.key==='1')bless('heart');if(e.key==='2')bless('stamina');}}}});
 const {keys,edge,mouse}=I,lockPointer=I.lock,unlockPointer=I.unlock;
@@ -298,36 +304,48 @@ function step(dt){dt=Math.min(dt,.1);if(banT>0){banT-=dt;if(banT<=0)$('banner').
   G.proj.update(wdt);G.waves.update(wdt);if(G.room){G.room.t+=wdt;G.room.cam=camera.position;G.room.update(wdt,P);}}
  if(P.flurry&&P.atk&&P.atk.name==='flurry'&&!P.atk.counted){P.atk.counted=true;P.flurry.hits++;if(P.flurry.hits>=8){P.flurry=null;G.setFlurry(false);}}
  // seeds
- for(const s of seeds){if(s.taken)continue;s.m.rotation.y+=dt*2;s.m.position.y=s.y+Math.sin(G.time*2+s.x)*.12;const d=Math.hypot(P.p.x-s.x,P.p.z-s.z);if(d<40&&Math.random()<dt*3)parts.emit(s.x+rnd(.6)-.3,s.y+rnd(.4),s.z+rnd(.6)-.3,0,.6,0,2.2,1.6,.5,.18,.9);
-  if(d<1.4&&Math.abs(P.p.y+.9-s.y)<1.9){s.taken=true;scene.remove(s.m);P.seeds++;snd.play('seed');toast(`Glimmer seed! ${P.seeds}/20`,'g');parts.burst(new V(s.x,s.y,s.z),60,4,[new THREE.Color(2.6,2,.6),new THREE.Color(.6,2.4,.8)],.3,1,{up:true,drag:1.5});}}
+ seeds.forEach(placeSeed);seedIM.instanceMatrix.needsUpdate=seedLeafIM.instanceMatrix.needsUpdate=true;seedIM.visible=seedLeafIM.visible=!G.room;
+ for(const s of seeds){if(s.taken)continue;s.m.ry+=dt*2;s.m.y=s.y+Math.sin(G.time*2+s.x)*.12;const d=Math.hypot(P.p.x-s.x,P.p.z-s.z);if(d<40&&Math.random()<dt*3)parts.emit(s.x+rnd(.6)-.3,s.y+rnd(.4),s.z+rnd(.6)-.3,0,.6,0,2.2,1.6,.5,.18,.9);
+  if(d<1.4&&Math.abs(P.p.y+.9-s.y)<1.9){s.taken=true;P.seeds++;snd.play('seed');toast(`Glimmer seed! ${P.seeds}/20`,'g');parts.burst(new V(s.x,s.y,s.z),60,4,[new THREE.Color(2.6,2,.6),new THREE.Color(.6,2.4,.8)],.3,1,{up:true,drag:1.5});}}
  // chest lids
  for(const c of S.chests){if(c.open&&c.openT<1){c.openT=Math.min(1,c.openT+dt*1.5);c.lid.rotation.x=-c.openT*1.7;}}
  // world clock: crimson moon, day/night, weather
  if(!run.end){run.clock-=dt;run.tod+=dt/run.dayLen;if(run.tod>=1){run.tod-=1;run.day++;}
   if(run.clock<=60&&!run.warned){run.warned=true;banner('THE CRIMSON MOON','rises in one minute','#ff2a2a',2.6);snd.play('moon');}
   if(run.clock<=0&&!run.victory){run.clock=0;endRun('moon');return;}
-  run.rainT-=dt;if(run.rainT<=0){run.rainOn=!run.rainOn&&Math.random()<.65;run.rainT=run.rainOn?45+rnd(60):60+rnd(80);if(run.rainOn)toast('Rain rolls in. Wet rock is slippery.','');}
+  run.rainT-=dt;if(run.rainT<=0){run.rainOn=!run.rainOn&&Math.random()<.65;run.rainT=run.rainOn?45+rnd(60):60+rnd(80);if(run.rainOn)toast('Rain rolls in. Wet rock is slippery, but the downpour masks your footsteps.','');}
   if(run.rainOn&&G.rain>.7){run.thunderT-=dt;if(run.thunderT<=0){run.thunderT=10+rnd(18);G.flash=1;G.after(.4+rnd(1.2),()=>snd.play('thunder'));}}}
  G.rain+=((run.rainOn?1:0)-G.rain)*Math.min(1,dt*.25);
  if(G.victoryT!==undefined){G.victoryT+=dt;if(G.victoryT>5.5){G.victoryT=undefined;endRun('victory');return;}}
  // castle opening animation
  const c=S.castle;if(c.opened&&c.open<1){c.open=Math.min(1,c.open+dt*.25);c.domeMat.uniforms.uA.value=1-c.open;c.dome.visible=c.open<1;const gy=c.h-8.6*c.open;phys.move(c.gate,0,gy-c.gate.y0,0);c.gateMesh.position.y=gy+4.5;if(Math.random()<dt*20)G.dust(c.x+rnd(8)-4,c.h,c.z+30.5,2,true);}
  if(run.bossDead)c.vortexMat.uniforms.uA.value=Math.max(0,c.vortexMat.uniforms.uA.value-dt*.3);c.vortex.rotation.y+=dt*.05;
+ // cold on Frostcrown's heights: Sunroot dishes or a fire keep you warm
+ if(!G.room&&!P.dead){const alt=P.p.y,fireNear=fires.some(f=>f.lit&&Math.hypot(P.p.x-f.x,P.p.z-f.z)<7);const cold=alt>72&&!P.buffs.warm&&!fireNear;
+  P.cold=cl((P.cold||0)+(cold?dt*(1+G.rain*.8+G.night*.5)/6:-dt*.5),0,1.5);if(cold&&!run.coldHint){run.coldHint=true;toast('Bitter cold! Cook Sunroot for warmth, or stand by a fire.','t');}
+  if(P.cold>=1){P.coldT=(P.coldT||0)-dt;if(P.coldT<=0){P.coldT=3.5;hurt(1,null,'cold');if(!P.dead)toast('Freezing…','');}}}else P.cold=0;
+ $('frost').style.opacity=cl(P.cold||0,0,1)*.9;
+ // wading in rivers and falls: splashes, slower stride
+ {const wl=G.room?-99:waterAt(P.p.x,P.p.z);P.wade=P.mode==='ground'?Math.max(0,wl-P.p.y):0;const sp=Math.hypot(P.v.x,P.v.z);if(P.wade>.05&&sp>1&&Math.random()<dt*(4+sp*2))G.splash(P.p.x+rnd(.6)-.3,wl,P.p.z+rnd(.6)-.3,3);}
  // regions
  if(!G.room){let cur=null,bd=1e9;for(const r of POI.regions){const d=Math.hypot(P.p.x-r.x,P.p.z-r.z)/r.r;if(d<1&&d<bd){bd=d;cur=r.name;}}if(cur&&cur!==run.cur&&banT<=0){run.cur=cur;if(!run.regions.has(cur)){run.regions.add(cur);run.discover+=50;}region(cur);}}
  // hints for new players
  if(run.hintI<hintList.length){run.hintT-=dt;if(run.hintT<=0){toast(hintList[run.hintI][0],'t');run.hintI++;run.hintT=9;}}
- ambient(dt,false);envUpdate(dt,false);world.update(dt,camera,!!G.room);
+ ambient(dt,false);envUpdate(dt,false);world.update(dt,camera,!!G.room,P.p);
  parts.update(dt*Math.max(ts,.3));sparks.update(dt*Math.max(ts,.3));smoke.update(dt*Math.max(ts,.3));
- updateCamera(G,dt);hud(dt);
+ updateCamera(G,dt);if(G.introT>0)introCam(dt);hud(dt);
  snd.music(dt,{night:G.night>.5,combat:G.enemies.some(e=>e.aware&&!e.dead&&e.p.distanceTo(P.p)<40)||!!G.bossTarget?1:0});
- const nearFire=fires.reduce((m,f)=>Math.min(m,Math.hypot(P.p.x-f.x,P.p.z-f.z)),1e9);snd.beds({wind:P.mode==='glide'?.18:G.room?0:.03+(P.p.y>60?.05:0),rain:G.room?0:G.rain,fire:G.room?0:Math.max(0,1-nearFire/12),water:G.room?0:P.mode==='swim'?1:0});}
+ const nearFire=fires.reduce((m,f)=>Math.min(m,Math.hypot(P.p.x-f.x,P.p.z-f.z)),1e9);let fallNear=1e9;for(const p of POOLS)fallNear=Math.min(fallNear,Math.hypot(P.p.x-p.x,P.p.z-p.z)-(p.top-p.L));const rq=riverQuery(P.p.x,P.p.z);
+ snd.beds({wind:P.mode==='glide'?.18:G.room?0:.03+(P.p.y>60?.05+(P.cold||0)*.08:0),rain:G.room?0:G.rain,fire:G.room?0:Math.max(0,1-nearFire/12),water:G.room?0:Math.max(P.mode==='swim'?1:0,rq.river?.6*Math.max(0,1-rq.d/28):0,Math.max(0,1-fallNear/45))});}
 
 /* ambient particles + fires + lamps */
 function ambient(dt,menu){const cp=camera.position;const night=G.night;
  if(!G.room){// fireflies at night, pollen motes by day, leaves in the forest
   const n=Math.random()<dt*(night>.5?14:6);if(n){const a=rnd(6.28),d=4+rnd(18),x=cp.x+Math.cos(a)*d,z=cp.z+Math.sin(a)*d,h=heightAt(x,z);if(h>2&&!inLake(x,z)){if(night>.5)parts.emit(x,h+.4+rnd(1.5),z,rnd(.6)-.3,rnd(.3),rnd(.6)-.3,1.2,2.4,.4,.16,4+rnd(3),-.05,.2);else parts.emit(x,h+.5+rnd(3),z,rnd(.4)-.2,rnd(.2),rnd(.4)-.2,.9,.85,.6,.06,5,0,.1);}}
   if(forestDensity(cp.x,cp.z)>.5&&Math.random()<dt*5){const a=rnd(6.28),d=rnd(16);const x=cp.x+Math.cos(a)*d,z=cp.z+Math.sin(a)*d;smoke.emit(x,heightAt(x,z)+5+rnd(4),z,.6+rnd(.5),-.6,.3,.25,.3,.05,.18,5,0,.2);}}
+ // waterfall mist + spray
+ if(!G.room)for(const p of POOLS){const d=Math.hypot(cp.x-p.x,cp.z-p.z);if(d>170)continue;const k=Math.min(2.5,(p.top-p.L)/4);if(Math.random()<dt*2.6*k)smoke.emit(p.fx+rnd(3)-1.5+p.dx*1.5,p.L+.2+rnd(.5),p.fz+rnd(3)-1.5+p.dz*1.5,rnd(.8)-.4+p.dx*.8,.35+rnd(.5),rnd(.8)-.4+p.dz*.8,.8,.86,.9,.9+rnd(1.2)*Math.min(1.4,k),2.2,-.1,.7);
+  if(d<60&&Math.random()<dt*22*k)parts.emit(p.fx+rnd(p.river.w0)-p.river.w0/2,p.L+.1,p.fz+rnd(1.2)-.6,rnd(2)-1,1.5+rnd(2.5),rnd(2)-1,.7,.75,.8,.08,.7,7,.4);}
  // fires
  let L=[];for(const f of fires){if(!f.lit)continue;if(G.room)continue;const d=Math.hypot(cp.x-f.x,cp.z-f.z);if(d>70)continue;L.push([d,f]);const k=f.brazier?.7:1;if(Math.random()<dt*34*k)parts.emit(f.x+rnd(.5)-.25,f.y+.1+(f.brazier?0:.05),f.z+rnd(.5)-.25,rnd(.3)-.15,1.2+rnd(1.2),rnd(.3)-.15,1.6,.62,.14,.32,.55,-1.2,.6);
   if(Math.random()<dt*4)parts.emit(f.x,f.y+.4,f.z,rnd(1)-.5,2+rnd(2),rnd(1)-.5,3,1.6,.4,.07,1.4,-.5,.3);if(Math.random()<dt*3)smoke.emit(f.x,f.y+1.4,f.z,rnd(.3)-.15,1+rnd(.5),rnd(.3)-.15,.42,.4,.38,.6,2.4,-.2,.4);}
@@ -344,6 +362,10 @@ function envUpdate(dt,menu){let tod,rain,blood;if(menu||!run){tod=app==='over'&&
  // shadow box follows the player (texel-snapped)
  const fp=app==='play'?P.p:camera.position;const dir=sun.position.clone().normalize();const snap=110/sun.shadow.mapSize.x;const tx=Math.round(fp.x/snap)*snap,tz=Math.round(fp.z/snap)*snap;sun.target.position.set(tx,fp.y,tz);sun.position.copy(sun.target.position).addScaledVector(dir,180);}
 
+/* opening shot: a high sweep over the meadow that settles onto the hero's shoulder */
+const icA=new V(),icL=new V();function introCam(dt){G.introT-=dt;const k=1-Math.max(0,G.introT)/4.2,e=k*k*(3-2*k);const a=P.yaw+Math.PI+(1-e)*1.4;
+ icA.set(P.p.x+Math.sin(a)*(34*(1-e)),P.p.y+1.6+30*(1-e)*(1-e),P.p.z+Math.cos(a)*(34*(1-e)));camera.position.lerpVectors(icA,camera.position,e);
+ icL.set(P.p.x,P.p.y+1.4,P.p.z);const f=new V();camera.getWorldDirection(f);const look=camera.position.clone().add(f);look.lerp(icL,1-e);camera.lookAt(look);}
 /* menu & results cameras */
 function menuCam(dt){const s=POI.start;const a=Math.sin(menuT*.04)*.25;camera.position.set(s.x-5+Math.sin(a)*2,s.h+3.6,s.z+7.5);camera.lookAt(s.x+12+Math.sin(a)*14,s.h+3,s.z-110);camera.fov=58;camera.updateProjectionMatrix();
  P.rig.root.visible=true;if(app==='menu'){P.p.set(s.x+1,s.h,s.z-1);P.rig.root.position.copy(P.p);P.rig.root.rotation.y=Math.PI+.2;import_anim(dt);}}
@@ -416,7 +438,7 @@ const POST={exposure:1.0,bloom:.42,bloomThreshold:.92,bloomRadius:.5,vignette:.3
 let fx=null,gfx=quality(),godPass=null;
 function applyQuality(q){gfx=q;world.setQuality(q);sun.castShadow=q>0;sun.shadow.mapSize.set(q>=2?2048:1024,q>=2?2048:1024);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}R.setPixelRatio(Math.min(devicePixelRatio,[1,1,1.25][q]));fx=null;}
 function getFx(){if(!fx){fx=cinematic(R,scene,camera,{...POST,quality:gfx});fx.w=0;godPass=null;if(fx.composer){godPass=new ShaderPass(GodRays);fx.composer.insertPass(godPass,fx.ao?2:1);}
-  if(fx.ao){const ov=fx.ao.overrideVisibility.bind(fx.ao);fx.ao.overrideVisibility=function(){ov();for(const o of[world.grass,world.flowers,world.sea,world.lake,world.sky,world.rain,world.shafts,S.castle.dome,S.castle.vortex])o.visible=false;};}}
+  if(fx.ao){const ov=fx.ao.overrideVisibility.bind(fx.ao);fx.ao.overrideVisibility=function(){ov();for(const o of[world.grass,world.flowers,world.sea,world.lake,world.river,world.ranges,world.sky,world.rain,world.shafts,S.castle.dome,S.castle.vortex])o.visible=false;};}}
  const w=innerWidth,h=innerHeight;if(fx.w!==w*9999+h){fx.w=w*9999+h;R.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();fx.setSize(w,h);}return fx;}
 function render(){const f=getFx();const cp=camera.position;for(const e of G.enemies){if(e.gone)continue;const d=Math.abs(e.p.x-cp.x)+Math.abs(e.p.z-cp.z);e.rig.root.visible=d<(e.kind==='golem'?190:120)&&!(e.kind==='boss'&&e.state==='intro')&&(!G.room);}parts.U.uScale.value=sparks.U.uScale.value=smoke.U.uScale.value=innerHeight*R.getPixelRatio()/(2*Math.tan(camera.fov*Math.PI/360));
  if(godPass){const sd=U.uSunDir.value;const s=tv.copy(camera.position).addScaledVector(sd,1000).project(camera);const facing=new V();camera.getWorldDirection(facing);const k=facing.dot(sd);
@@ -442,9 +464,9 @@ toMenu();
 let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;step(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 
 /* ================= test hooks ================= */
-window.QUEST={R,get state(){return app;},get app(){return app;},start,step,render,toMenu,pause,G,P,S,rooms,seeds,pickups,get run(){return run;},get enemies(){return G.enemies;},
+window.QUEST={R,pools:POOLS,get state(){return app;},get app(){return app;},start,step,render,toMenu,pause,G,P,S,rooms,seeds,pickups,get run(){return run;},get enemies(){return G.enemies;},
  setClock(s){if(run)run.clock=s;},get clock(){return run?run.clock:0;},setTod(t){if(run)run.tod=t;},setRain(on){if(run){run.rainOn=on;run.rainT=999;G.rain=on?1:0;}},
- teleport(x,z,y){resetPlayer(G,x,y??heightAt(x,z),z,P.yaw);},input(o){G.scripted=o;},noLock(){G.noPauseOnUnlock=true;},
+ teleport(x,z,y){G.introT=0;resetPlayer(G,x,y??heightAt(x,z),z,P.yaw);},input(o){G.scripted=o;},noLock(){G.noPauseOnUnlock=true;},
  enterShrine(i){enterRoom(S.shrines[i]);},completeShrine(i){const s=S.shrines[i];if(G.room)exitRoom(true);else{G.curShrine=s;G.room=rooms[i];rooms[i].g.visible=true;exitRoom(true);}},
  takeOrb,bless,openCastle,killAll(kind){for(const e of G.enemies)if(!e.dead&&(!kind||e.kind===kind)){if(e.kind==='boss'&&e.state==='intro'){e.state='chase';e.rig.root.visible=true;}G.damageEnemy(e,99999,{});}},
  hurt:(q,kind='fall')=>hurt(q,null,kind),cook,openCook,eat,setQuality:applyQuality,get quality(){return gfx;},endRun,score:()=>run&&run.score,scoreBreakdown,cookResult,

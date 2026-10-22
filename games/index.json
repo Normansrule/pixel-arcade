@@ -64,10 +64,10 @@
   "games/misc6.js",
   "games/advanced1.js",
   "games/advanced2.js",
-  "games/space1.js"
+  "games/space1.js",
+  "games/orchard.js"
  ],
  "after": [
-  "js/trail.js",
   "js/net.js"
  ]
 }

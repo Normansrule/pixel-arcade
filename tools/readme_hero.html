@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>README hero</title>
+<!-- The README header (docs/screenshot.png): the arcade cabinets and the PIXEL ARCADE title.
+     Rendered by tools/readme_hero.py; open it through a local server to tweak it by eye:
+     python3 -m http.server 8765  then  http://127.0.0.1:8765/tools/readme_hero.html?games=510&worlds=55&cabs=455 -->
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+ html,body{margin:0;width:1280px;height:800px;overflow:hidden;background:#0c0f17}
+ #v{position:absolute;inset:0}
+ .ov{position:absolute;inset:0;pointer-events:none;color:#eceae3}
+ /* screen-wide finish: a soft vignette and faint scanlines, like looking at the room through a monitor */
+ .ov::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 60% 45%,transparent 55%,rgba(5,7,12,.75) 100%),repeating-linear-gradient(rgba(0,0,0,0) 0 3px,rgba(0,0,0,.08) 3px 4px)}
+ .tag{position:absolute;top:34px;font:15px/1 'PA Pixel';letter-spacing:.14em;color:#959aa8}
+ .tag.l{left:44px}.tag.r{right:44px}
+ .tag b{color:#ff4d00;font-weight:400}
+ h1{position:absolute;left:36px;bottom:118px;margin:0;font:400 238px/.8 Anton,Impact,sans-serif;letter-spacing:-.01em;text-transform:uppercase;color:#eceae3;text-shadow:0 18px 50px rgba(0,0,0,.55)}
+ h1 span{display:block}
+ h1 i{display:inline-block;width:.15em;height:.15em;margin-left:.05em;background:#ff4d00;box-shadow:0 0 40px rgba(255,77,0,.55)}
+ .sub{position:absolute;left:44px;bottom:58px;font:18px/1 'PA Pixel';letter-spacing:.08em;color:#eceae3}
+ .sub em{font-style:normal;color:#8f9fff}
+ .stats{position:absolute;right:44px;bottom:50px;display:flex}
+ .stats div{width:132px;padding:16px 16px 14px;border:1px solid rgba(236,234,227,.16);margin-left:-1px;background:rgba(12,15,23,.55);backdrop-filter:blur(6px)}
+ .stats b{display:block;font:400 44px/1 Anton,sans-serif;color:#eceae3}
+ .stats small{display:block;margin-top:10px;font:12px/1 'PA Pixel';letter-spacing:.1em;color:#959aa8}
+ .stats div:first-child b{color:#ff4d00}
+</style>
+</head>
+<body>
+<canvas id="v" width="1280" height="800"></canvas>
+<div class="ov">
+  <p class="tag l">[ <b>●</b> INSERT COIN ]</p>
+  <p class="tag r">BROWSER · FREE · OFFLINE · OPEN SOURCE</p>
+  <h1><span>Pixel</span><span>Arcade<i></i></span></h1>
+  <p class="sub">→ <em>PICK A CABINET.</em> NO INSTALLS, NO ACCOUNT, NO WAITING.</p>
+  <div class="stats"><div><b id="sg">510</b><small>GAMES</small></div><div><b id="sc">455</b><small>CABINETS</small></div><div><b id="sw">55</b><small>3D WORLDS</small></div></div>
+</div>
+<script type="module">
+import * as THREE from '../vendor/three.module.min.js';
+import {EffectComposer} from '../vendor/jsm/postprocessing/EffectComposer.js';
+import {RenderPass} from '../vendor/jsm/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from '../vendor/jsm/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from '../vendor/jsm/postprocessing/OutputPass.js';
+import {arcadeScene} from '../js/arcade-scene.js';
+
+await document.fonts.load('64px "PA Pixel"');await document.fonts.load('200px Anton');
+const q=new URLSearchParams(location.search);
+for(const [k,id] of [['games','sg'],['cabs','sc'],['worlds','sw']])if(q.get(k))document.getElementById(id).textContent=q.get(k);
+// ?bare=1 renders the room alone: that still is the front-page intro's fallback, docs/intro.jpg
+if(q.get('bare'))document.querySelector('.ov').style.display='none';
+let loaded=false;THREE.DefaultLoadingManager.onLoad=()=>{loaded=true;};
+const cv=document.getElementById('v'),W=1280,H=800;
+const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true});
+r.setPixelRatio(+(q.get('dpr')||1));r.setSize(W,H,false);r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.05;r.outputColorSpace=THREE.SRGBColorSpace;
+// the games on the screens; any canvas game with a thumbnail in docs/thumbs works (?ids=a,b,c to change them)
+const {scene,cam}=arcadeScene(THREE,{base:'../',ids:q.get('ids')?q.get('ids').split(','):undefined,aspect:W/H});
+
+const comp=new EffectComposer(r);comp.addPass(new RenderPass(scene,cam));
+comp.addPass(new UnrealBloomPass(new THREE.Vector2(W,H),.4,.5,.86));comp.addPass(new OutputPass());
+const draw=()=>comp.render();
+// wait for every screenshot texture, then draw a few frames so bloom settles
+const wait=()=>loaded?(draw(),draw(),window.HERO_READY=true):setTimeout(wait,50);wait();
+</script>
+</body>
+</html>

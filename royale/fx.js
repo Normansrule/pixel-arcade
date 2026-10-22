@@ -73,17 +73,27 @@ export function makeStorm(scene,world){const U={uT:{value:0},uR:{value:300},uC:{
  const wallMat=layer=>new THREE.ShaderMaterial({uniforms:{...U,uL:{value:layer},uR:{value:300}},transparent:true,depthWrite:false,side:THREE.DoubleSide,
   vertexShader:'varying vec2 vUv;varying vec3 vW;void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
   fragmentShader:`uniform float uT,uR,uL,uFl;uniform vec2 uC;uniform sampler2D uHT;varying vec2 vUv;varying vec3 vW;${NOISE}
-   void main(){float t=uT*(1.-uL*.35)+uL*17.,a=vUv.x*6.2832*uR,y=vW.y;
-    vec2 q=vec2(a*.018,y*.011);vec2 w=vec2(fb(q+vec2(t*.08,-t*.22)),fb(q*1.3+vec2(4.1,-t*.3)));float f=fb(q*2.2+w*1.8+vec2(-t*.15,-t*.45));
-    float st=pow(n(vec2(a*.22+uL*9.,y*.008-t*1.6)),6.)*2.6+pow(n(vec2(a*.6,y*.02-t*2.4)),8.)*1.5;
+   void wl(float a,float y,float t,out float bill,out float lit,out float f2,out float st){
+    vec2 q=vec2(a*.013+t*(.035+uL*.02),y*.0085);
+    vec2 w=vec2(fb(q*1.2+vec2(0.,-t*.12)),fb(q*1.2+vec2(5.2,-t*.09)));
+    float f=fb(q*2.+w*2.4+vec2(-t*.05,-t*.24));f2=fb(q*6.5+w*3.+vec2(t*.1,-t*.7));bill=f*.78+f2*.32;
+    float fu=fb(q*2.+w*2.4+vec2(-t*.05,-t*.24)+vec2(.0,.035))*.78+f2*.32;lit=clamp((bill-fu)*9.+.5,0.,1.);
+    st=pow(n(vec2(a*.22+uL*9.,y*.008-t*1.6)),6.)*2.4+pow(n(vec2(a*.6,y*.02-t*2.4)),8.)*1.4;
+   }
+   void main(){float t=uT*(1.-uL*.3)+uL*17.,a=vUv.x*6.2832*uR,y=vW.y;
+    float bill,lit,f2,st;wl(a,y,t,bill,lit,f2,st);
+    // the cylinder's uv seam: cross-fade into the noise evaluated one circumference back so the wall wraps without a cut
+    float sw=smoothstep(.88,1.,vUv.x);if(sw>0.){float b2,l2,g2,s2;wl(a-6.2832*uR,y,t,b2,l2,g2,s2);bill=mix(bill,b2,sw);lit=mix(lit,l2,sw);f2=mix(f2,g2,sw);st=mix(st,s2,sw);}
     vec2 tuv=((vW.xz+${EXT}.)/${STEP.toFixed(6)}+.5)/${N}.;float gh=max(texture2D(uHT,tuv).r,0.),dz=y-gh;
-    float seam=exp(-max(dz,0.)*.22),seam2=exp(-max(dz,0.)*1.2);
-    vec3 c=mix(vec3(.11,.02,.28),vec3(.66,.3,1.),smoothstep(.3,.78,f));c=mix(c,vec3(.95,.62,1.),smoothstep(.62,.9,f)*.6);c+=st*vec3(.6,.42,1.);
+    float seam=exp(-max(dz,0.)*.18),seam2=exp(-max(dz,0.)*1.1);
+    vec3 c=mix(vec3(.04,.01,.12),vec3(.3,.08,.62),smoothstep(.36,.7,bill));c=mix(c,vec3(.85,.5,1.2),smoothstep(.66,.9,bill)*lit);
+    c+=vec3(.25,.12,.5)*f2*f2;c+=st*vec3(.6,.42,1.);
     float slot=floor(uT*1.7),bx=h(vec2(slot,uL))*6.2832*uR,bo=(fb(vec2(y*.03,slot))-.5)*22.+(n(vec2(y*.2,slot))-.5)*4.;float ad=abs(mod(a-bx-bo+3.1416*uR,6.2832*uR)-3.1416*uR);
     float bolt=smoothstep(1.4,.0,ad)*step(fract(uT*1.7),.14)*step(.35,h(vec2(slot,3.+uL)))*smoothstep(240.,40.,y);c+=bolt*vec3(2.6,2.2,3.4)+uFl*vec3(.5,.35,.8);
-    c+=seam*vec3(.8,.35,1.)*.55+seam2*vec3(1.1,.8,1.3)*.6;
+    c+=seam*vec3(.7,.3,1.)*.35+seam2*vec3(1.,.7,1.3)*.35;
     vec3 V=normalize(cameraPosition-vW);vec2 rn=normalize(vW.xz-uC);float edge=1.-abs(dot(normalize(V.xz+1e-4),rn));
-    float al=(.3+.42*f+st*.18+edge*.22)*(1.-uL*.45)*smoothstep(gh-6.,gh+2.,y)*(1.-smoothstep(120.,360.,y));
+    c+=vec3(.7,.35,1.2)*pow(edge,5.)*(.5+bill);
+    float al=(.3+.55*bill+st*.15+edge*.2)*(1.-uL*.4)*smoothstep(gh-6.,gh+2.,y)*(1.-smoothstep(120.,360.,y));
     float d=length(cameraPosition-vW);al*=.18+.82*smoothstep(1.5,26.,d);al=clamp(al+seam*.2+bolt,0.,.94);
     gl_FragColor=vec4(c*1.2,al);
     #include <tonemapping_fragment>

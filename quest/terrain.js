@@ -67,15 +67,40 @@ function rawH(x,z){
  const L=POI.lake,dl=Math.hypot(x-L.x,z-L.z);h=Math.max(h,lerp(h,L.level+2.2,ss(L.r+30,L.r+8,dl)));h=lerp(h,L.level-5-NZ.noise(x*.05,z*.05)*1.5,ss(L.r+4,L.r-14,dl));
  // shrine pads (the lake shrine sits on an islet)
  for(const s of POI.shrines){const d=Math.hypot(x-s.x,z-s.z);const hs=s.h??(s.h=shrineH(s));h=lerp(h,hs,ss(14,7,d));}
- // roads: soften
+ return h;}
+/* ---------------- rivers: spline beds with terraced waterfalls and plunge pools ---------------- */
+// steps: [from t, to t, terrace height] quantises the water level so the river drops in vertical falls
+export const RIVERS=[
+ {name:'Frostfall',pts:[[-126,-114],[-118,-100],[-111,-84],[-106,-66],[-103,-50],[-100,-36],[-96,-20],[-92,-3],[-88,15],[-85,31],[-88,46],[-96,59],[-105,69],[-113,78]],w0:3.6,w1:8.5,steps:[[0,.36,6.5]]},
+ {name:'Saltwind Fall',pts:[[188,-101],[197,-105],[206,-109],[214,-112],[221,-115],[228,-118],[236,-122]],w0:3.4,w1:4.4,steps:[[.3,1,7]]}];
+function catmull(P,n){const out=[];for(let i=0;i<P.length-1;i++){const p0=P[Math.max(0,i-1)],p1=P[i],p2=P[i+1],p3=P[Math.min(P.length-1,i+2)];
+  for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t;const f=(a,b,c,d)=>.5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);out.push([f(p0[0],p1[0],p2[0],p3[0]),f(p0[1],p1[1],p2[1],p3[1])]);}}
+ out.push(P[P.length-1].slice());return out;}
+export const POOLS=[];
+for(const R of RIVERS){const raw=catmull(R.pts,8);// resample to ~2 m
+ const S=[raw[0]];let acc=0;for(let i=1;i<raw.length;i++){const a=S[S.length-1],b=raw[i];const d=Math.hypot(b[0]-a[0],b[1]-a[1]);acc+=d;if(acc>=2||i===raw.length-1){S.push(b);acc=0;}}
+ let L=1e9,len=0;R.s=[];for(let i=0;i<S.length;i++){const[x,z]=S[i];if(i)len+=Math.hypot(x-S[i-1][0],z-S[i-1][1]);const t=i/(S.length-1);
+  let hr=0;for(const[ox,oz]of[[0,0],[1.5,0],[-1.5,0],[0,1.5],[0,-1.5]])hr+=rawH(x+ox,z+oz);hr/=5;L=Math.min(L-.03,hr-.55);let Lq=L;for(const[a,b,st]of R.steps)if(t>=a&&t<=b)Lq=Math.floor(L/st)*st+.3;
+  Lq=Math.min(Lq,L);if(R.s.length)Lq=Math.min(Lq,R.s[R.s.length-1].L-.03);const w=lerp(R.w0,R.w1,t);R.s.push({x,z,L:Math.max(Lq,0),w,len,t});if(Lq<=.05&&i>3)break;}
+ for(let i=1;i<R.s.length;i++){const a=R.s[i-1],b=R.s[i];if(a.L-b.L>1.6){const dl=Math.hypot(b.x-a.x,b.z-a.z)||1,dx=(b.x-a.x)/dl,dz=(b.z-a.z)/dl,r=b.w*.7+2;const fx=(a.x+b.x)/2,fz=(a.z+b.z)/2;POOLS.push({x:fx+dx*r*.85,z:fz+dz*r*.85,L:b.L,r,top:a.L,fx,fz,dx,dz,river:R});}}
+ let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const p of R.s){x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);z0=Math.min(z0,p.z);z1=Math.max(z1,p.z);}R.box=[x0-30,z0-30,x1+30,z1+30];}
+// nearest point on any river: {d, L (water level), w, t, i, river}
+const RQ={d:1e9,L:0,w:0,t:0,i:0,river:null,fx:0,fz:0};
+export function riverQuery(x,z,out=RQ){out.d=1e9;out.river=null;for(const R of RIVERS){const b=R.box;if(x<b[0]||x>b[2]||z<b[1]||z>b[3])continue;const s=R.s;
+  for(let i=0;i<s.length-1;i++){const a=s[i],c=s[i+1];const dx=c.x-a.x,dz=c.z-a.z,l=dx*dx+dz*dz;let t=((x-a.x)*dx+(z-a.z)*dz)/(l||1);t=t<0?0:t>1?1:t;const ex=x-a.x-dx*t,ez=z-a.z-dz*t,d=ex*ex+ez*ez;
+   if(d<out.d){out.d=d;out.L=a.L+(c.L-a.L)*(a.L-c.L>1.6?(t<.5?0:1):t);out.w=a.w+(c.w-a.w)*t;out.t=a.t;out.i=i;out.river=R;out.fx=dx;out.fz=dz;}}}
+ out.d=Math.sqrt(out.d);return out;}
+function carveRivers(x,z,h){const q=riverQuery(x,z);if(!q.river||q.d>q.w*.5+40)return h;const hw=q.w*.5,d=q.d;
+ let tgt=d<hw?q.L-.85+.85*(d/hw)*(d/hw):q.L+(d-hw)*.85;h=Math.min(h,tgt);
+ for(const p of POOLS){const pd=Math.hypot(x-p.x,z-p.z);if(pd<p.r&&(x-p.fx)*p.dx+(z-p.fz)*p.dz>.3)h=Math.min(h,p.L-2.2*(1-(pd/p.r)*(pd/p.r))+.2);}
  return h;}
 const campCache=new Map();function campH(cp){if(!campCache.has(cp)){let s=0;for(let i=0;i<8;i++){const a=i/8*6.283;s+=rawNoCamp(cp.x+Math.cos(a)*6,cp.z+Math.sin(a)*6);}campCache.set(cp,Math.max(3,s/8));}return campCache.get(cp);}
 function rawNoCamp(x,z){const save=POI.camps;POI.camps=[];const h=rawH(x,z);POI.camps=save;return h;}
 function shrineH(s){if(s.trial==='sphere')return POI.lake.level+1.6;const save=POI.shrines;POI.shrines=[];let t=0;for(let i=0;i<6;i++){const a=i/6*6.283;t+=rawH(s.x+Math.cos(a)*4,s.z+Math.sin(a)*4);}POI.shrines=save;return t/6+.3;}
 
 /* ---------------- grid ---------------- */
-export const H=new Float32Array(N*N),GRASS=new Float32Array(N*N),FLOWER=new Float32Array(N*N),FOREST=new Float32Array(N*N),PATH=new Float32Array(N*N),SHADE=new Float32Array(N*N);
-for(let j=0;j<N;j++)for(let i=0;i<N;i++){const x=-HALF+i*CELL,z=-HALF+j*CELL;H[j*N+i]=rawH(x,z);}
+export const H=new Float32Array(N*N),GRASS=new Float32Array(N*N),FLOWER=new Float32Array(N*N),FOREST=new Float32Array(N*N),PATH=new Float32Array(N*N),SHADE=new Float32Array(N*N),RIVER=new Float32Array(N*N);
+for(let j=0;j<N;j++)for(let i=0;i<N;i++){const x=-HALF+i*CELL,z=-HALF+j*CELL;H[j*N+i]=carveRivers(x,z,rawH(x,z));}
 // road carve/flatten pass
 for(let j=0;j<N;j++)for(let i=0;i<N;i++){const x=-HALF+i*CELL,z=-HALF+j*CELL,d=roadDist(x,z);PATH[j*N+i]=ss(3.4,1.6,d+NZ.noise(x*.2,z*.2)*.7);}
 export function heightAt(x,z){const gx=(x+HALF)/CELL,gz=(z+HALF)/CELL;if(gx<0||gz<0||gx>=N-1||gz>=N-1)return -24;const i=gx|0,j=gz|0,fx=gx-i,fz=gz-j,k=j*N+i;
@@ -84,7 +109,8 @@ export function sampleGrid(A,x,z){const gx=(x+HALF)/CELL,gz=(z+HALF)/CELL;if(gx<
 export function gradAt(x,z,out={x:0,z:0}){const e=.6;out.x=(heightAt(x+e,z)-heightAt(x-e,z))/(2*e);out.z=(heightAt(x,z+e)-heightAt(x,z-e))/(2*e);return out;}
 export function normalAt(x,z,v=new THREE.Vector3()){const g=gradAt(x,z);return v.set(-g.x,1,-g.z).normalize();}
 export function inLake(x,z){return Math.hypot(x-POI.lake.x,z-POI.lake.z)<POI.lake.r+6;}
-export function waterAt(x,z){return inLake(x,z)?POI.lake.level:SEA;}
+export function waterAt(x,z){if(inLake(x,z))return POI.lake.level;const q=riverQuery(x,z);if(q.river&&q.d<q.w*.5+.6)return Math.max(SEA,q.L);for(const p of POOLS)if(Math.hypot(x-p.x,z-p.z)<p.r&&(x-p.fx)*p.dx+(z-p.fz)*p.dz>.3)return p.L;return SEA;}
+export function inRiver(x,z,pad=0){const q=riverQuery(x,z);return !!q.river&&q.d<q.w*.5+pad;}
 // clearings where nothing grows (structures)
 export function clearing(x,z,pad=0){
  if(Math.hypot(x-POI.start.x,z-POI.start.z)<10+pad)return true;
@@ -102,7 +128,7 @@ export function forestDensity(x,z){
 for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=j*N+i,x=-HALF+i*CELL,z=-HALF+j*CELL,h=H[k];
  const gx=(H[j*N+Math.min(N-1,i+1)]-H[j*N+Math.max(0,i-1)])/(2*CELL),gz=(H[Math.min(N-1,j+1)*N+i]-H[Math.max(0,j-1)*N+i])/(2*CELL),sl=Math.hypot(gx,gz);
  const lakeBed=inLake(x,z)&&h<POI.lake.level+.3;
- let g=ss(1.6,3.2,h)*ss(.95,.55,sl)*ss(80,66,h)*(1-PATH[k])*(lakeBed?0:1);
+ let g=ss(1.6,3.2,h)*ss(.95,.55,sl)*ss(80,66,h)*(1-PATH[k])*(lakeBed?0:1);const rq=riverQuery(x,z);if(rq.river){g*=ss(rq.w*.5+.3,rq.w*.5+3,rq.d);RIVER[k]=1-ss(rq.w*.5,rq.w*.5+2.5,rq.d);}
  if(clearing(x,z,-4))g*=POI.camps.some(c=>Math.hypot(x-c.x,z-c.z)<19)?.35:0;
  const fo=forestDensity(x,z);FOREST[k]=fo;
  g*=.55+.45*ss(-.3,.4,NZ.noise(x*.035,z*.035));GRASS[k]=g;

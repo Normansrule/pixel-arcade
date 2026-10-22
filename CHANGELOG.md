@@ -2,7 +2,65 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round9`)
+## Unreleased (on branch `round15`, which includes rounds 11 to 14)
+
+### Round 15 (v38)
+
+- **New game: MELON DROP** (VERSUS, 3:00 rounds, VS CPU with easy/normal/hard or 2 players). Two glass jars side by side; drop fruit, and two of the same fruit touching merge into the next one up an 11-fruit chain from cherry to watermelon (two watermelons burst for 100). Real circle physics: fruits roll, stack, squash on landing and keep their smiling faces as they turn. Making a pear or bigger drops up to three cherries into your rival's jar. A jar that stays over the dashed line loses; otherwise the higher score wins when the clock runs out. The CPU reads the jar and looks for matching landings; easy is noisy and slow, hard is sharp. Search finds it as "suika" or "watermelon".
+- **FRUIT MERGE** (the solo version) now uses the same painted fruit with faces instead of emoji, and is tagged for search too.
+- **A "New on the shelf" spotlight** on the front page, between the console and the 3D worlds: a warm, light product tile with Melon Drop playing itself in high resolution, play buttons, round facts and a "Freshly repainted" row of upgraded cartridges.
+- **Graphics pass on 22 more games**, draw code only: soccer, air hockey, ice hockey, rugby run, slopestyle, sailing, figure skating, canoe, sky fury, cavern quest, pop defense, laser tag, lane rush, terra block, lane defense, count dots, snap, spiral, firebird, room robots, race duel and spacewar (turf stripes, crowds and ad boards, lit water and snow, shaded sprites, glows and trails). Two old drawing bugs fixed on the way: the path in pop defense and the far spires in cavern quest were drawn to the wrong canvas and never showed.
+- **Box art refreshed** for the 60 games repainted in rounds 14 and 15.
+
+### Round 14 (v37)
+
+- **Playable cabinets in the intro.** Point at a cabinet in the front-page room and its marquee lights up, its light shaft brightens and it lifts, with a label naming the game. Click it to start that game. The middle cabinet, which shows the console's demo, scrolls you down to the console. The cue under the title now says "Click a cabinet to play, or scroll to insert coin" (mouse only).
+- **More depth in the room:** soft light shafts fall from the ceiling onto each front cabinet (a small shader fades them at the edges and towards the floor), and a warm spotlight follows the pointer across the floor.
+- **Pointer tilt and light sweeps:** world posters, the console and the builder card lean a few degrees toward the pointer, and a band of light sweeps across a poster when you point at it. Both are off with reduced motion and on touch screens.
+- **Game graphics pass on 38 games** that still looked flat next to the rest of the shelf. Only drawing changed; rules, speeds, controls and scoring are the same. Highlights: the first-person shooter has fogged, trimmed walls, shaded robot enemies and a proper rifle; the rhythm jumper is a synthwave run with a striped sun, a skyline and a scrolling neon floor; the moon buggy rides under the Milky Way and a lit Earth over three parallax hill layers; the digger's dirt has wavy layers, rocks, roots and fossils; the missile defense cities are lit skyscrapers that burn when hit; the jetpack lab, highway, zombie street, meteor field, star catcher, bullet hell, broadside sea, tanks, dodgeball court and most of the others gained lighting, shadows, glows, particles and HUD panels. Heavier extras run only on HIGH graphics. Games: survivors, beatjumper, cellgrow, gundungeon, bullethell, broadside, boomerang, lavarise, samuraislash, swing, firefly, painter, pingbounce, asteroidrain, lanes, meteors, catcher, fps, royale, zombies, brawl, snake, digger, shield, trails, tanks, snakeduel, paint, arena, dodgeball, territory, colorswitch, jetpack, roboriot, blobdrop, columns, mazebots, moonbuggy.
+- **README:** the flythrough GIF is re-recorded with the light shafts, and the Design section covers the playable cabinets.
+
+### Round 13 (v36)
+
+- **A front-page intro you fly into.** The hub now opens on the README's arcade room, live in 3D. Scrolling pins the scene and flies the camera through the ring of cabinets into the middle screen, which plays the console's attract demo. Meanwhile the PIXEL ARCADE title lifts away and four lines take the middle of the screen in turn (510 games, no installs, no accounts, every round ends on the clock), then the room fades into the console stage. Three.js loads only on a wide screen with WebGL, without reduced motion or data saver, and drops the glow and renders at 1x if the first second runs slow. Everyone else gets a still of the room (`docs/intro.jpg`) with the same scroll timeline, and with reduced motion it is one still screen.
+- **The cabinet room is one shared module,** `js/arcade-scene.js`, used by both the intro and the README header renderer, so the two always match.
+- **Motion everywhere else:** section headings decode from scrambled pixel glyphs as they scroll in, posters and sections rise in with a short stagger, a tilted cobalt marquee runs the world names between the console and the posters, and the title rises in on load.
+- **Docs site:** a cinematic header (the arcade room behind a big DOCS wordmark), a reading-progress bar, and the same reveals and decoding headings.
+- **README:** an intro flythrough GIF at the top of the front-page section, and the Design section covers the intro and the new motion.
+
+### Round 12 (v35)
+
+- **README header refurbished:** the ring of arcade cabinets and the big PIXEL ARCADE title are back, rebuilt in 3D. Each cabinet now has a real game on its screen, a lit marquee, controls and coin slots, standing on a reflective floor, with live counts of games, cabinets and 3D worlds. `tools/readme_hero.py` renders it from `tools/readme_hero.html`, so it can be regenerated after new games land.
+- **Big box worlds:** the section is now a cinema band on a deeper night stage. Each world is a poster with its title over the screenshot, a numbered tag and a hover zoom; the first is a large feature. The first nine show by default, and **Show all 55 worlds** opens the rest.
+- **Footer sign-off:** the PIXEL ARCADE wordmark from the README header, with a blinking FREE PLAY tag (still under reduced motion) and the live game and world counts.
+- **Fixes:** the night footer now runs to the bottom of the page (a strip of stone showed under it); `tools/thumbs.py` works with the new library (it called a card method that round 11 removed).
+
+### Round 11 (v34)
+
+- **Cartridge Shelf redesign.** The hub is now a library of printed game packaging: one cobalt ink, with a night-navy stage (top bar, front page, footer) over warm stone shelves and no white anywhere. A full dark mode follows your system, or switch it in the top bar.
+- **The console:** the front page has a console whose screen runs the games on the counter in attract mode, with a 20-second round clock that turns red for the last 10 seconds. Drag a cartridge into the slot (or tap it, or use the arrow keys and Enter) and the screen powers off, counts down and boots the game. Shuffle deals a new tray.
+- **Shelves and boxes:** every game is a spine on a genre shelf, printed with its mode (1P, VS or 3D) and round length, with a print pattern per genre. Pick one and its box opens beside the shelf (a bottom sheet on phones) with a live preview, round length, mode, your best score, the rules, and Play, Favorite, Top 10 and Source. A Boxes view swaps the spines for box fronts with screenshots.
+- **Type:** PA Pixel, a web font made from the engine's own bitmap lettering (`tools/pixelfont.py`), for labels, headings and the clock; Atkinson Hyperlegible Next for reading. Both ship in `fonts/`.
+- **States:** a printed skeleton while the shelves load, an empty search with suggestions and a clear button, NO SIGNAL for a game with no screenshot, and a leaderboard error with Try again.
+- **Keyboard and access:** arrow keys walk the shelves and the cartridge tray, `/` focuses search, Esc closes the box and the leaderboard, visible focus rings everywhere, WCAG AA (Web Content Accessibility Guidelines) contrast in both themes, and reduced motion holds the console on a still frame.
+- **Docs site:** a new page at `docs/` (linked from the top bar and footer) covering play, controls, the library, building, installing, scores, development, project structure and the design.
+- **Fixes:** the lobby leaderboard opens (it was hidden inside the game screen); "Save all offline" reports errors instead of failing silently.
+- **Removed:** the Three.js cabinet ring (`js/hero.js`), the cursor trail (`js/trail.js`), pointer glow, parallax, name ticker, grain overlay and count-up stats.
+- **README:** overview, features, new screenshots and an insert GIF, setup, project structure and a Design section for the new concept.
+
+## v33 update (released 18 Oct 2026 from branch `round10`)
+
+- **README progress tracker:** a new 📈 Progress section shows every release from v29 on (date, branch, game counts, what it added) and which 3D worlds have had the realism pass, with a progress bar. `tools/gen_docs.py` builds it from the game registry and `docs/progress.json`, so the counts stay current.
+- **Realism and depth pass on six more 3D games.** Heavier effects only switch on at MEDIUM and above; LOW quality is as light as before or lighter in every measured view. All checks were headless (software WebGL), not on a real GPU or phone.
+- **STRIKER 11 (second pass):** floodlight pools with four-way player shadows, grass sheen and rain puddles, a closed truss roof and skyline, home and away crowd ends with scarves, better run and kick animation, a glass score bug and lower-thirds; a LEAGUE mode with six clubs and five matchdays, and faster loading.
+- **IRON VANGUARD:** golden-hour sky, blended terrain with ruts, track scars and craters, a riveted truss bridge, swaying card trees, a detailed tank and new jeep, helicopter and jet, lit smoke and layered explosions; vehicle damage zones, bots that pull back for repairs, squad objective orders and multi-kill banners.
+- **STORM ROYALE:** a procedural sky, splatted island terrain with paths, new trees, fresnel water with shore foam, detailed houses, destructible props, a swirling storm wall and loot halos; rarity now affects spread and reload, a FIZZ CAN heal and frag grenades, difficulty-scaled bot tactics, seven storm phases, a richer kill feed and a killer cam.
+- **WILD QUEST:** carved rivers with stepped waterfalls and mist, baked ground textures, five procedural tree kinds, distant mountains, a cloth cloak and parafoil glider, armoured camp enemies; a Sunroot warm buff, a cold zone on the peaks, chained camp chests, wading and rain stealth.
+- **KART GRAND PRIX:** per-track road surfaces, kerbs, grandstands with crowds and rebuilt karts with boost lights; slipstream, item dragging, tactical CPUs, time-trial medals and saved cup trophies.
+- **ABYSS DIVER:** physically based underwater light with depth absorption, caustics, a Snell's window surface, soft shadows, textured sand and rock, arches and reef life, a rusted wreck and a remodelled diver, sub and pod; echo logs that unlock gear, an objective chain, a buildable seabed outpost, curious turtles, a territorial razorjaw and a third-person view.
+- **SWELL GUARD** (new 3D world, `surf/`): a surfing lifeguard on a golden-hour beach. Ride breaking waves for carve, air and barrel combos while rip, sting and shark rescues, a lost child, a seagull thief and a contest heat pull you off the waves.
+
+## v32 update (released 18 Oct 2026 from branch `round9`)
 
 - **Realism and depth pass on six 3D games.** Heavier effects only switch on at MEDIUM and above; LOW quality is as light as before or lighter in every measured view. All checks were headless (software WebGL), not on a real GPU or phone.
 - **FRONTLINE OPS:** baked surface textures with grime and decals, rebuilt soldiers, worn weapon finishes and a lit viewmodel, per-map lighting and colour grading, contact shadows, skylines and street clutter; nine weapon attachments, bot squads that flank, smoke and suppress, a new HARDPOINT mode and kill medals.

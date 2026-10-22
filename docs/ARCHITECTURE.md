@@ -4,7 +4,8 @@ Pixel Arcade is a static website with no build step. GitHub Pages serves `main` 
 
 ```
 index.html ── js/engine/*.js ── js/gx.js ── games/*.js        455 canvas cabinets + hub entries for the 3D worlds
-           └─ js/hero.js (Three.js lobby hero)
+           └─ js/lobby.js (shelves, box, search) ── js/console.js (front-page console)
+           └─ js/intro.js (scroll intro; imports js/arcade-scene.js and vendor Three.js on demand) · js/fx.js (reveals, marquee)
 <folder>/index.html ── <folder>/game.js (+ modules) ── vendor/, js/fx3d.js, js/kit3d/      31 full-3D worlds
 builder/                                                       2D + 3D game builder
 sw.js + offline.json + manifest.webmanifest                    installable offline web app
@@ -31,7 +32,7 @@ Every cabinet draws on a 320×240 logical screen, rendered in high definition (H
 | `09-clock.js` | round clock: category defaults `LIMITS`, per-game `TIMES`, `A.limitOf`, round start |
 | `10-cards.js` | cabinet UI drawn at backing resolution: title, pause and results cards, clock bar, how-to strip |
 | `11-loop.js` | the frame loop, bloom, `A.open`/`A.close`, graphics quality (**G**), hub previews, HD fit |
-| `12-hub.js` | boot: DOM events, profile chip, leaderboard modal, lobby grid, search, favourites, recently played |
+| `12-hub.js` | boot: DOM events, profile chip, leaderboard modal; then hands the lobby to `js/lobby.js` (`A.lobby`), which builds the shelves, box panel, search, favourites and recently played. `js/console.js` runs the front-page console on `arcade-ready` |
 
 `js/gx.js` is the shared art kit `A.gx` (gradients, glossy blocks, glow, HUD panels, cached backdrops) used by the game packs.
 
@@ -88,6 +89,7 @@ Run `python3 tools/build.py` after adding, moving or removing files; it calls `m
 | `node tests/quick.js id…` | quick per-game run with timings |
 | `python3 tools/gen_docs.py` | counts, README tables, `docs/GAMES.md`, `index.html` script tags; `--art` redraws `docs/readme/`, `--check` fails when anything is stale |
 | `python3 tools/thumbs.py` | prerenders hub thumbnails into `docs/thumbs/` (needs a local server) |
+| `python3 tools/readme_hero.py` | renders the README header `docs/screenshot.png` from `tools/readme_hero.html` with live counts (needs a local server) |
 | `python3 tools/build.py` | `sw.js`, `offline.json` and the single-file build |
 
 3D worlds are tested in headless Chromium with software WebGL (`--use-gl=swiftshader --enable-webgl --ignore-gpu-blocklist`). Override `requestAnimationFrame` and call the world's `step()` and `render()` yourself, because software rendering takes seconds per frame.

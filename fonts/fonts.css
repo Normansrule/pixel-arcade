@@ -2,3 +2,8 @@
 @font-face{font-family:'Anton';src:url(anton-400.woff2) format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:'JetBrains Mono';src:url(jetbrains-mono-400.woff2) format('woff2');font-weight:400 500;font-display:swap}
 @font-face{font-family:'JetBrains Mono';src:url(jetbrains-mono-700.woff2) format('woff2');font-weight:600 700;font-display:swap}
+@font-face{font-family:'Atkinson Hyperlegible Next';src:url(atkinson-next-400.woff2) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Atkinson Hyperlegible Next';src:url(atkinson-next-700.woff2) format('woff2');font-weight:600 700;font-display:swap}
+@font-face{font-family:'Atkinson Hyperlegible Next';src:url(atkinson-next-800.woff2) format('woff2');font-weight:800;font-display:swap}
+/* PA Pixel is generated from the engine's own 3x5 bitmap font by tools/pixelfont.py (MIT, part of this repo) */
+@font-face{font-family:'PA Pixel';src:url(pa-pixel.woff2) format('woff2');font-display:block}

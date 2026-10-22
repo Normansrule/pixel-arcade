@@ -107,3 +107,9 @@ body.playing a.back{display:none}
 @media (max-width:1100px){.card{display:none}}
 @media (max-height:640px){h1{font-size:4.2rem}.how{display:none}#over .place{font-size:5.5rem}#over .res{margin:4px 0 10px}#stats div,#top div{padding:4px 10px}#top{gap:2px}}
 @media (max-width:760px){#vitals{width:180px}.sl{width:48px;height:48px}.sl b{font-size:.8rem}#radar{transform:scale(.7);transform-origin:top right}}
+#feed div b{font-weight:700}#feed .w{font-style:normal;display:inline-block;padding:0 7px;margin:0 3px;border-radius:999px;background:rgba(0,0,0,.45);color:var(--rc,#ddd);border:1px solid var(--rc,#888);font-size:.62rem;line-height:1.5}
+#feed .w u{text-decoration:none;color:#ffcf3f;margin-left:3px}#feed .w.st{--rc:#c27cff}#feed em{font-style:normal;opacity:.65;font-size:.6rem;margin-left:4px}#feed .sys{background:rgba(255,207,63,.18);color:#ffcf3f}
+#feed .me .w{background:rgba(0,0,0,.25);color:#000;border-color:#000}
+#prompt small{display:block;font-size:.62rem;opacity:.85;margin-top:3px;letter-spacing:.06em}#prompt i{font-style:normal}#prompt .up{color:#5ad86a}#prompt .dn{color:#ff6a6a}
+#specn .kb{display:block;font:700 .56rem var(--mono,monospace);letter-spacing:.18em;color:#ff4d6d}#specn .sc{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:6px 0 0;font:700 .62rem/1.6 var(--mono,monospace);color:#ddd}
+#specn .sc em{font-style:normal;background:rgba(255,255,255,.07);padding:0 7px;border-radius:999px}#specn .sc .shv{color:#7cc8ff}#specn .w{font-style:normal;padding:0 7px;border-radius:999px;border:1px solid var(--rc,#888);color:var(--rc,#ddd)}

@@ -17,8 +17,9 @@ async def main():
         if '--all' not in sys.argv:
             ids = [g for g in ids if not os.path.exists(os.path.join(OUT, g + '.jpg'))]  # resume; pass --all to redo every thumbnail
         for i, gid in enumerate(ids):
-            d = await page.evaluate("""id=>{const el=document.querySelector('.cab[data-id="'+id+'"]');el.__live();
-              const c=el.querySelector('canvas');return c.toDataURL('image/jpeg',0.82);}""", gid)
+            d = await page.evaluate("""id=>{const gm=A.games.find(g=>g.id===id),c=document.createElement('canvas');
+              c.width=320;c.height=240;return A.shelf.live(gm,c)?c.toDataURL('image/jpeg',0.82):null;}""", gid)
+            if not d: print('no render for', gid); continue
             open(os.path.join(OUT, gid + '.jpg'), 'wb').write(base64.b64decode(d.split(',')[1]))
             if i % 50 == 0: print(i, gid, flush=True)
         print('wrote', len(ids), 'thumbnails to', OUT)

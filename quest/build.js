@@ -2,6 +2,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {POI,heightAt,mulberry,noise2} from './terrain.js';
 import {U,stoneMat,merge,M4,blob,ctex,detailTex} from './world.js';
+import {campTex} from './tex.js';
 const V=THREE.Vector3,C=(r,g,b)=>new THREE.Color().setRGB(r,g,b);
 const rng=mulberry(77),rnd=(a=1)=>rng()*a;
 
@@ -25,8 +26,8 @@ function tileMat(){const m=new THREE.MeshStandardMaterial({vertexColors:true,rou
   .replace('#include <map_fragment>','vec2 tuv=abs(vWN3.y)>.5?vWP3.xz:abs(vWN3.x)>.5?vWP3.zy:vWP3.xy;tuv/=6.;diffuseColor.rgb*=texture2D(uTile,tuv).rgb*2.2;')
   .replace('#include <emissivemap_fragment>','float gl=texture2D(uGlow,tuv).g;float pulse=.55+.45*sin(uTime*1.3-length(vWP3.xz-vec2(floor(vWP3.x/200.+.5)*200.,0.))*.25);totalEmissiveRadiance=vec3(.25,.95,1.)*gl*pulse*1.4;');};
  m.customProgramCacheKey=()=>'tile';return m;}
-export function mats(){return{tile:tileMat(),stone:stoneMat({scale:.22}),rock:stoneMat({natural:true,rough:.92}),crag:(()=>{const m=stoneMat({natural:true,rough:.95,crag:true});m.flatShading=true;return m;})(),dark:stoneMat({scale:.3,rough:.6}),wood:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9}),
- roof:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7,metalness:.1}),hide:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95,side:THREE.DoubleSide}),
+export function mats(){return{tile:tileMat(),stone:stoneMat({scale:.22}),rock:stoneMat({natural:true,rough:.92}),crag:(()=>{const m=stoneMat({natural:true,rough:.95,crag:true});m.flatShading=true;return m;})(),dark:stoneMat({scale:.3,rough:.6}),wood:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.88,map:campTex().wood,bumpMap:campTex().wood,bumpScale:1.2,color:new THREE.Color(3.2,3.2,3.2)}),
+ roof:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7,metalness:.1}),hide:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95,side:THREE.DoubleSide,map:campTex().hide,bumpMap:campTex().hide,bumpScale:.8,color:new THREE.Color(2.2,2.2,2.2)}),
  ember:glowMat(0xff4a10,2.2),rune:glowMat(0x38e0e8,2.4)};}
 
 export function buildStructures(scene,phys){const B=new Builder(phys),M=mats();const out={fires:[],chests:[],towers:[],shrines:[],seals:[],anim:[]};
@@ -63,7 +64,7 @@ export function buildStructures(scene,phys){const B=new Builder(phys),M=mats();c
   // barrier dome
   const bm=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,uniforms:{uTime:U.uTime,uA:{value:1}},
    vertexShader:'varying vec3 vP,vN,vV;void main(){vP=position;vec4 w=modelMatrix*vec4(position,1.);vN=normalize(mat3(modelMatrix)*normal);vV=normalize(cameraPosition-w.xyz);gl_Position=projectionMatrix*viewMatrix*w;}',
-   fragmentShader:'uniform float uTime,uA;varying vec3 vP,vN,vV;float h(vec2 p){return fract(sin(dot(p,vec2(12.9,78.2)))*43758.5);}void main(){float f=pow(1.-abs(dot(vN,vV)),2.5);vec2 g=vec2(atan(vP.z,vP.x)*14.,vP.y*.35);vec2 c=fract(g)-.5;float hex=smoothstep(.42,.5,max(abs(c.x),abs(c.y)));float flow=sin(vP.y*.4-uTime*1.6+h(floor(g))*6.)*.5+.5;gl_FragColor=vec4(vec3(1.,.28,.06)*(f*.9+hex*.35*flow+.04)*uA,1.);}'});
+   fragmentShader:'uniform float uTime,uA;varying vec3 vP,vN,vV;float h(vec2 p){return fract(sin(dot(p,vec2(12.9,78.2)))*43758.5);}void main(){float f=pow(1.-abs(dot(vN,vV)),3.);vec2 g=vec2(atan(vP.z,vP.x)*14.,vP.y*.35);vec2 c=fract(g)-.5;float hex=smoothstep(.44,.5,max(abs(c.x),abs(c.y)));float flow=pow(sin(vP.y*.4-uTime*1.6+h(floor(g))*6.)*.5+.5,3.);gl_FragColor=vec4(vec3(1.,.3,.07)*(f*.75+hex*.22*flow+.008)*uA,1.);}'});
   const dome=new THREE.Mesh(new THREE.SphereGeometry(52,48,24,0,Math.PI*2,0,Math.PI/2),bm);dome.position.set(x0,h-8,z0);dome.scale.y=1.25;dome.renderOrder=3;scene.add(dome);
   const barrier=phys.cyl(x0,z0,52,-50,200,{dyn:true,climb:false,tag:'barrier'});
   // swirling ash vortex over the keep
@@ -84,8 +85,10 @@ export function buildStructures(scene,phys){const B=new Builder(phys),M=mats();c
  POI.camps.forEach((cp,ci)=>{const h=heightAt(cp.x,cp.z),cam={x:cp.x,z:cp.z,h,towers:[]};
   for(let i=0;i<9;i++){const a=i/9*6.283;B.add('stone',new THREE.DodecahedronGeometry(.32,0),M4(cp.x+Math.cos(a)*1.1,h+.1,cp.z+Math.sin(a)*1.1,a,a,0),C(.55,.53,.5));}
   for(let i=0;i<3;i++)B.add('wood',new THREE.CylinderGeometry(.09,.09,1.4,6),M4(cp.x,h+.25,cp.z,Math.PI/2-.3,i*2.1,0),WOOD);
+  for(let i=0;i<3;i++){const la=i/3*6.283+ci+.5,lx=cp.x+Math.cos(la)*2.7,lz=cp.z+Math.sin(la)*2.7;B.add('wood',new THREE.CylinderGeometry(.22,.24,1.9,8).rotateZ(Math.PI/2),M4(lx,heightAt(lx,lz)+.18,lz,0,-la+Math.PI/2,0),WOOD2);}
+  {const ra=ci*2.3+4.1,rx2=cp.x+Math.cos(ra)*5.6,rz2=cp.z+Math.sin(ra)*5.6,rh=heightAt(rx2,rz2);for(const sx of[-1,1])B.add('wood',new THREE.CylinderGeometry(.05,.06,1.9,5),M4(rx2+Math.cos(ra+1.57)*sx*.9,rh+.9,rz2+Math.sin(ra+1.57)*sx*.9),WOOD);B.add('wood',new THREE.CylinderGeometry(.04,.04,2,5).rotateZ(Math.PI/2),M4(rx2,rh+1.75,rz2,0,-ra,0),WOOD);for(let q=0;q<3;q++)B.add('hide',new THREE.PlaneGeometry(.5,.7),M4(rx2+Math.cos(ra+1.57)*(q-1)*.55,rh+1.35,rz2+Math.sin(ra+1.57)*(q-1)*.55,0,-ra+1.57,0),C(.6,.25,.2));}
   out.fires.push({x:cp.x,y:h+.3,z:cp.z,camp:ci,lit:true});
-  const nt=2+(ci%2);for(let i=0;i<nt;i++){const a=i/nt*6.283+ci,tx=cp.x+Math.cos(a)*7.5,tz=cp.z+Math.sin(a)*7.5,th=heightAt(tx,tz);B.add('hide',new THREE.ConeGeometry(2.4,3.2,5,1,true),M4(tx,th+1.5,tz,0,a,0),C(.42,.3,.18));B.add('wood',new THREE.CylinderGeometry(.06,.06,4.2,5),M4(tx,th+2,tz),WOOD);phys.cyl(tx,tz,2.1,th-1,th+2.2,{climb:false,tag:'tent'});}
+  const nt=2+(ci%2);for(let i=0;i<nt;i++){const a=i/nt*6.283+ci,tx=cp.x+Math.cos(a)*7.5,tz=cp.z+Math.sin(a)*7.5,th=heightAt(tx,tz);B.add('hide',new THREE.LatheGeometry([[2.55,0],[2.35,.25],[1.85,1.05],[1.15,2.05],[.55,2.85],[.16,3.35]].map(([r,y])=>new THREE.Vector2(r,y)),7,a,Math.PI*1.72),M4(tx,th-.05,tz),C(.5,.38,.26));for(let q=0;q<4;q++){const qa=a+q*1.57;B.add('wood',new THREE.CylinderGeometry(.045,.06,4.3,5),M4(tx+Math.cos(qa)*.32,th+2.05,tz+Math.sin(qa)*.32,Math.sin(qa)*.16,0,-Math.cos(qa)*.16),WOOD);}B.add('hide',new THREE.PlaneGeometry(1.2,1.6),M4(tx+Math.cos(a+1.4)*1.9,th+.8,tz+Math.sin(a+1.4)*1.9,0,-(a+1.4)+Math.PI/2+.5,0),C(.4,.3,.2));phys.cyl(tx,tz,2.1,th-1,th+2.2,{climb:false,tag:'tent'});}
   for(let i=0;i<cp.towers;i++){const a=i*2.6+ci*1.3+1.2,tx=cp.x+Math.cos(a)*10.5,tz=cp.z+Math.sin(a)*10.5,th=heightAt(tx,tz),TH=5.6;
    for(const[sx,sz]of[[-1,-1],[1,-1],[-1,1],[1,1]])B.box('wood',tx+sx*1.2,th-1,tz+sz*1.2,.32,TH+1+1.2,.32,{col:WOOD,climb:true});
    B.box('wood',tx,th+TH,tz,3.2,.3,3.2,{col:WOOD2,climb:false});for(const[sx,sz,w,d]of[[0,-1.5,3.2,.12],[0,1.5,3.2,.12],[-1.5,0,.12,3.2],[1.5,0,.12,3.2]])B.box('wood',tx+sx,th+TH+.6,tz+sz,w,.12,d,{col:WOOD2,coll:false});
