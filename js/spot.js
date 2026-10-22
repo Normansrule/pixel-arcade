@@ -6,13 +6,13 @@
  document.querySelectorAll('.spot [data-play]').forEach(b=>b.addEventListener('click',()=>{const gm=byId(b.dataset.play);if(gm)A.shelf.play(gm);}));
  // the repainted row: prerendered box art, a name and the shelf it lives on
  const fresh=document.getElementById('fresh');
- if(fresh)['fps','beatjumper','moonbuggy','jetpack','shield','digger'].map(byId).filter(Boolean).forEach(gm=>{
+ if(fresh)['fruitslice','defender','spellcaster','bowling','hoops','digger'].map(byId).filter(Boolean).forEach(gm=>{
   const b=document.createElement('button');b.type='button';b.className='fr';b.setAttribute('aria-label','Play '+tc(gm.name));
   const art=document.createElement('span');art.className='fr-art';A.shelf.art(gm,art);
   const nm=document.createElement('b');nm.textContent=tc(gm.name);const ct=document.createElement('em');ct.textContent=tc(gm.cat);
   b.append(art,nm,ct);b.addEventListener('click',()=>A.shelf.play(gm));fresh.appendChild(b);});
  // the live demo, drawn at three times the cabinet's resolution so the fruit stays crisp
- const gm=byId('melondrop');if(!gm)return;
+ const gm=byId('sinkhole');if(!gm)return;
  const S=3,off=document.createElement('canvas');off.width=320*S;off.height=240*S;const o=off.getContext('2d'),x=cv.getContext('2d');
  let g=null,f=0,on=false,timer=0;
  // a new round starts a minute in, so the jars are already busy when the section scrolls into view

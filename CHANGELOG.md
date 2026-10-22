@@ -2,7 +2,15 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round16`, which includes rounds 11 to 15)
+## Unreleased (on branch `round17`, which includes rounds 11 to 16)
+
+### Round 17 (v40)
+
+- **New game: SINKHOLE CITY** (VERSUS, 2:00 rounds, VS CPU with easy/normal/hard or 2 players, mouse or keys). Steer a hole round a busy top-down city block of roads, crossings and a park. Anything smaller than your hole drops in: people (who run from you), cones, bins, benches, trees, cars, buses, kiosks, houses, shops and finally whole towers, each worth more the bigger it is. A hole well over a size bigger can swallow its rival, who comes back smaller with a few seconds' shield. People and traffic return soon and buildings are rebuilt, so the city never runs dry. Search "hole io".
+- **New game: RIDGE RUNNER** (VERSUS, 2:30 rounds, VS CPU with easy/normal/hard or 2 players). A split-screen hill-climb race on one shared track through meadow, dusk dunes and a frosty night pass, 1,100 m to the flag. Real jeep physics with springy suspension: gas and brake drive on the ground and tilt you in the air, a roof landing is a crash back to your last checkpoint, and full flips and coins add to your score. Your rival shows as a ghost in your half. Search "hill climb".
+- **SPACE DEFENDER, more to play:** three smart bombs on B that clear the screen and drop any pods being carried, landers that escape with a pod now come back as fast mutants that hunt you, green tractor beams when a lander locks on, the first wave arrives straight away, and a lit city skyline on the horizon.
+- **FRUIT SLICE, repainted and livelier:** fruit is painted with the same shaded fruit as MELON DROP instead of emoji, sliced halves show their juicy cut faces, the first fruit flies at once, and a golden star fruit every 25 seconds starts a fruit frenzy thrown in from both sides.
+- **The front-page "New on the shelf" spotlight** now plays Sinkhole City against itself, with Ridge Runner beside it, and the "Freshly repainted" row shows this round's and last round's repaints.
 
 ### Round 16 (v39)
 
