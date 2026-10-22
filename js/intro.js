@@ -28,7 +28,7 @@ if (intro && !RM.matches) {
   const [{EffectComposer}, {RenderPass}, {UnrealBloomPass}, {OutputPass}, {arcadeScene}] = await Promise.all([
    import('../vendor/jsm/postprocessing/EffectComposer.js'), import('../vendor/jsm/postprocessing/RenderPass.js'),
    import('../vendor/jsm/postprocessing/UnrealBloomPass.js'), import('../vendor/jsm/postprocessing/OutputPass.js'), import('./arcade-scene.js')]);
-  await document.fonts.load('64px "PA Pixel"').catch(() => {});
+  await Promise.all(['64px "PA Pixel"', '64px Anton'].map(f => document.fonts.load(f))).catch(() => {});
   const cv = document.getElementById('introgl'), stage = cv.parentElement;
   const r = new THREE.WebGLRenderer({canvas: cv, antialias: true, powerPreference: 'high-performance'});
   let dpr = Math.min(devicePixelRatio || 1, 1.5);
@@ -37,6 +37,7 @@ if (intro && !RM.matches) {
   const shown = () => {intro.classList.add('gl'); if (matchMedia('(pointer: fine)').matches) intro.querySelector('.icue span').textContent = 'Click a cabinet to play, or scroll to insert coin'; if (view) view.kick();};
   THREE.DefaultLoadingManager.onLoad = shown;
   const room = arcadeScene(THREE, {base: '', live: document.getElementById('cdemo'), cones: true});
+  room.useRenderer(r);
   const {scene, cam, start: a, target: b} = room;
   const comp = new EffectComposer(r); comp.addPass(new RenderPass(scene, cam));
   const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), .4, .5, .86); comp.addPass(bloom); comp.addPass(new OutputPass());

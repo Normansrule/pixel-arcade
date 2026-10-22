@@ -2,7 +2,15 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round15`, which includes rounds 11 to 14)
+## Unreleased (on branch `round16`, which includes rounds 11 to 15)
+
+### Round 16 (v39)
+
+- **A real arcade machine at the heart of the front page.** The intro's 3D room now centres on a fully modelled PIXEL ARCADE cabinet, a little forward and taller than the rest, with glowing orange T-molding, a lit ring on the floor and an orange underglow. Its screen still plays the console's attract demo and the camera still flies into it as you scroll.
+- **Every cabinet in the room is rebuilt in detail** (`js/cabinet3d.js`): rounded side panels with printed art (sweeping stripes, a sliced synth sun, a pixel invader) edged in T-molding; a two-player control panel with a printed overlay, ball-top joysticks on dust washers, twelve domed buttons in bezels and lit start buttons; a curved CRT behind glass with scanlines that fade with distance, a slight barrel, rounded corners and a rolling band; an art bezel with neon corner brackets; a speaker visor; a backlit marquee with sunburst art and bevelled lettering between chrome retainers; and a steel coin door with lit 25¢ price plates. Chrome, glass and buttons reflect a small baked room map. Static parts are merged per material and shared between cabinets, so a cabinet costs about twenty draw calls, and the floor reflection leaves out lights and small parts.
+- **The room is dressed:** a blacklight arcade carpet that glows faintly under the polish, a lighting truss with a hanging lamp over every front cabinet (the light shafts now fall from them), and a back wall with a PIXEL ARCADE neon sign, a high-score board, an OPEN ALL NIGHT sign and a TOKENS arrow, with a slight neon flicker.
+- **New still of the room** (`docs/intro.jpg`) for phones, reduced motion and slow connections. The README header image is unchanged.
+- **Graphics pass on three games shown on the cabinet screens**, draw code only: SPELL CASTER (aurora, crescent moon, moonlit ridges, pines, dressed-stone tower with a lit window and banner), BOWLING 3D (neighbouring lanes, gloss streak, ball returns, ceiling lights and a neon PIXEL LANES masking unit) and HOOPS 1 ON 1 (painted keys and three-point arcs, light reflections in the varnish, an LED ribbon board, padded courtside barrier and a hanging jumbotron). Their thumbnails are regenerated.
 
 ### Round 15 (v38)
 

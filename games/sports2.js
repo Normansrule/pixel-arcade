@@ -33,11 +33,28 @@ A.add({id:'bowling',name:'BOWLING 3D',cat:'SPORTS',vs:1,how:'A x3: POSITION, ANG
    let endFrame=false;if(rl===0&&dn===10){msg='STRIKE!';endFrame=true;}else if(rl===1){msg=dn===10?'SPARE!':got+' DOWN';endFrame=true;}else msg=got?got+' DOWN':'GUTTER!';mt=70;if(dn===10){S('score');fx.spark(160,60,K.y,24,3);fx.flash('#ffffff',8);}
    if(endFrame){rl=0;down0=0;rack();if(p===1){fr++;p=0;}else p=1;if(fr>=NF){const a=total(rolls[0]),b=total(rolls[1]);g.over=a===b?'DRAW!':A.win(a>b?0:1);}}else{rl=1;down0=dn;pins=pins.filter(q=>q.up);}
    fresh();}};
- const bg=()=>{X.sky(['#140c28','#24164a']);const c=A.c;X.glow(160,30,120,'#ffd890',.2);const q=(a,b)=>[a[0],a[1]];X.poly([pr(-1.4,0),pr(1.4,0),pr(1.4,19),pr(-1.4,19)].map(v=>[v[0],v[1]]),'#1a1020');
-   X.poly([pr(-1.25,0),pr(-1,0),pr(-1,19),pr(-1.25,19)].map(v=>[v[0],v[1]]),'#3a3a48');X.poly([pr(1,0),pr(1.25,0),pr(1.25,19),pr(1,19)].map(v=>[v[0],v[1]]),'#3a3a48');
-   const ln=[pr(-1,0),pr(1,0),pr(1,19),pr(-1,19)];X.poly(ln.map(v=>[v[0],v[1]]),X.lg(0,ln[2][1],0,ln[0][1],['#a8743a','#e8b878','#f4cc90']));c.strokeStyle='rgba(120,70,20,.25)';c.lineWidth=.6;for(let i=-9;i<=9;i++){const a=pr(i/9.5,0),b=pr(i/9.5,19);c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();}
+ // the alley: two neighbouring lanes, polished maple with a gloss streak and approach arrows, ball returns, and a
+ // neon masking unit over the pin deck under a row of ceiling lights (cached)
+ const bg=()=>{X.sky(['#07051a','#171034','#22164a']);const c=A.c,Q=(pts,f)=>X.poly(pts.map(v=>[v[0],v[1]]),f);
+   for(let i=0;i<6;i++){const x=20+i*56;X.glow(x,6,40,'#cfd8ff',.12);X.rr(x-12,0,24,4,2,'#e8ecff');}
+   const lane=(o,dim)=>{Q([pr(o-1.4,0),pr(o+1.4,0),pr(o+1.4,19),pr(o-1.4,19)],'#120a1a');
+    for(const s of[-1,1]){Q([pr(o+s*1.25,0),pr(o+s*1,0),pr(o+s*1,19),pr(o+s*1.25,19)],X.lg(0,pr(0,19)[1],0,H,['#20202c','#454558']));}
+    const ln=[pr(o-1,0),pr(o+1,0),pr(o+1,19),pr(o-1,19)];Q(ln,X.lg(0,ln[2][1],0,ln[0][1],dim?['#5a3c20','#86603a','#9a7046']:['#a8743a','#e8b878','#f6d29a']));
+    c.strokeStyle=dim?'rgba(60,30,10,.3)':'rgba(120,70,20,.25)';c.lineWidth=.6;for(let i=-9;i<=9;i++){const a=pr(o+i/9.5,0),b=pr(o+i/9.5,19);c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();}
+    c.globalAlpha=dim?.08:.2;Q([pr(o-.22,0),pr(o+.12,0),pr(o+.04,19),pr(o-.06,19)],'#ffffff');c.globalAlpha=1;
+    // pin deck: a paler square under the pins
+    Q([pr(o-1,17),pr(o+1,17),pr(o+1,19),pr(o-1,19)],dim?'#a08060':'#fbe2b8');};
+   lane(-2.75,1);lane(2.75,1);lane(0,0);
+   // ball returns between the lanes
+   for(const s of[-1,1]){const a=pr(s*1.38,0),b=pr(s*1.38,6);c.strokeStyle='#2a2a38';c.lineWidth=5;c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();c.strokeStyle='rgba(255,255,255,.15)';c.lineWidth=1;c.stroke();}
    for(let i=-2;i<=2;i++){const a=pr(i*.35,4.3),b=pr(i*.35-.05,4.9),d=pr(i*.35+.05,4.9);X.poly([[a[0],a[1]],[b[0],b[1]],[d[0],d[1]]],'#7a3a1a');X.disc(pr(i*.2,1.5)[0],pr(i*.2,1.5)[1],1.2,'#7a3a1a');}
-   const bk=pr(0,19.5);X.vg(bk[0]-60,bk[1]-50,120,50,['#000','#1a1020']);X.glow(bk[0],bk[1]-30,50,'#ffffff',.08);};
+   // the masking unit: a dark panel with neon stars and the alley name, glowing onto the deck below
+   const mL=pr(-4.4,19.4),mR=pr(4.4,19.4),top=mL[1]-58,bot=mL[1]-16;
+   X.vg(mL[0],top,mR[0]-mL[0],bot-top,['#120c2c','#24185a']);X.rrs(mL[0]+1,top+1,mR[0]-mL[0]-2,bot-top-2,2,'#ff5ad8',1.5);
+   for(let i=0;i<9;i++){const x=mL[0]+12+i*(mR[0]-mL[0]-24)/8,y=top+8+(i%2)*6;X.glow(x,y,6,'#ffd27a',.5);X.disc(x,y,1.2,'#fff');}
+   X.glow(160,(top+bot)/2,70,'#ff5ad8',.18);X.ot('PIXEL LANES',160,top+22,'#ffd27a',2,'c');
+   X.vg(mL[0],bot,mR[0]-mL[0],mL[1]-bot+2,['#000','#1a1020']);const bk=pr(0,19.5);X.glow(bk[0],bk[1]-10,60,'#ffe6b0',.16);
+   X.vignette(.4);};
  const pin=(v,s,down,rot)=>{const c=A.c;c.save();c.translate(v[0],v[1]);if(down){c.rotate(rot*1.4);c.translate(0,-3*s);}X.shadow(0,0,6*s,2*s,.3);X.ell(0,-9*s,5*s,9*s,X.lg(-5*s,0,5*s,0,['#c8c8d0','#ffffff','#b0b0b8']));X.ell(0,-21*s,2.5*s,4*s,'#f8f8f8');X.disc(0,-27*s,3*s,X.rg(-1*s,-28*s,0,0,-27*s,3*s,['#ffffff','#d8d8e0']));c.fillStyle='#e03040';c.fillRect(-2.6*s,-22*s,5.2*s,1.6*s);c.fillRect(-2.4*s,-19*s,4.8*s,1.4*s);c.restore();};
  g.draw=()=>{X.cache('bowl_bg',bg);const c=A.c;
   pins.slice().sort((a,b)=>b.d-a.d).forEach(q=>{const v=pr(q.x,Math.min(q.d,19)),s=v[2];pin(v,s,!q.up,q.rot);});

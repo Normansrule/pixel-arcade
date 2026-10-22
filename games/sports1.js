@@ -102,6 +102,16 @@ A.add({id:'hoops',name:'HOOPS 1 ON 1',cat:'SPORTS',vs:1,how:'A SHOOTS / STEALS. 
  const bg=()=>{X.sky(['#140c30','#2a1a50','#3a2050'],GY);crowd(60,130,7);X.glow(160,40,150,'#ffd890',.18);const c=A.c;for(const lx of[60,160,260]){X.glow(lx,22,30,'#fff0c0',.35);X.disc(lx,22,3,'#fffbe8');}
   X.vg(0,GY,W,H-GY,['#d89a5a','#b0703a','#7a4a24']);for(let x=0;x<W;x+=14){c.fillStyle='rgba(0,0,0,.12)';c.fillRect(x,GY,1,H-GY);}c.fillStyle='rgba(255,240,200,.18)';c.fillRect(0,GY+6,W,3);c.fillStyle='#fff';c.fillRect(0,GY,W,1.5);c.fillRect(159.5,GY,1,H-GY);
   c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=1;c.beginPath();if(c.ellipse){c.ellipse(160,GY+16,26,8,0,0,6.283);}c.stroke();
+  // painted keys and three-point arcs at both ends, the lights mirrored in the varnish, an LED ribbon board along the
+  // front of the stands and a jumbotron hanging over centre court
+  for(const s of[0,1]){const x0=s?W-58:0;c.fillStyle=s?'rgba(255,77,0,.42)':'rgba(36,67,255,.42)';c.fillRect(x0,GY+2,58,H-GY-2);c.strokeStyle='rgba(255,255,255,.85)';c.strokeRect(x0+.5,GY+2.5,57,H-GY-3);
+   c.beginPath();if(c.ellipse)c.ellipse(s?W:0,GY+18,110,26,0,s?Math.PI*.5:-Math.PI*.5,s?Math.PI*1.5:Math.PI*.5,s);c.stroke();}
+  for(const lx of[60,160,260]){c.globalAlpha=.5;X.ell(lx,GY+22,22,4,'rgba(255,240,200,.5)');c.globalAlpha=1;}
+  const RB=131;X.vg(0,RB,W,12,['#10101c','#05050a']);c.fillStyle='#ff7a3d';for(let x=4;x<W;x+=2)for(let y=RB+2;y<RB+10;y+=2)if(((x*7+y*3)>>3)%5===0){c.globalAlpha=.25;c.fillRect(x,y,1,1);}c.globalAlpha=1;
+  X.ot('PIXEL ARCADE  HOOPS  PIXEL ARCADE',160,RB+3,'#ffb347',1,'c');X.glow(160,RB+6,120,'#ff7a3d',.1);X.vg(0,RB+12,W,GY-RB-12,['#241a44','#3a2556']);
+  for(let x=0;x<W;x+=40)X.vg(x,GY-14,38,14,['#2443ff','#14206a']);c.fillStyle='rgba(255,255,255,.2)';c.fillRect(0,GY-14,W,1);
+  L(160,0,160,38,'#2a2a38');X.rr(128,38,64,24,3,X.lg(0,38,0,62,['#2c2f40','#14161f']));X.rr(132,42,26,15,1,'#0a1630');X.rr(162,42,26,15,1,'#300a0a');
+  X.glow(145,49,16,'#4dabff',.3);X.glow(175,49,16,'#ff6a3a',.3);X.ot('P1',145,46,'#9fd0ff',1,'c');X.ot('CPU',175,46,'#ffb0a0',1,'c');c.fillStyle='rgba(255,255,255,.25)';c.fillRect(130,39,60,1);
   HX.forEach((hx,i)=>{const bx=i?4:W-8;X.vg(bx+1,HY+10,2,GY-HY-10,['#9aa0b0','#5a6070']);c.fillStyle='rgba(220,240,255,.35)';c.fillRect(bx-(i?0:2),HY-34,6,44);c.strokeStyle='#fff';c.lineWidth=1;c.strokeRect(bx-(i?0:2),HY-34,6,44);c.fillStyle='#ff6a3a';c.fillRect(bx+(i?4:-16),HY,16,2);});};
  g.draw=()=>{X.cache('hoopsbg',bg);const c=A.c;
   HX.forEach((hx,i)=>{const sw=net[i]?Math.sin(net[i]*.8)*2:0;c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=.7;c.beginPath();for(let n=0;n<4;n++){c.moveTo(hx-9+n*6,HY+2);c.lineTo(hx-6+n*4+sw,HY+14);}for(let y=HY+5;y<HY+14;y+=4){c.moveTo(hx-9+(y-HY)*.25,y);c.lineTo(hx+9-(y-HY)*.25+sw,y);}c.stroke();X.vg(hx-10,HY,20,2.5,['#ff9a5a','#d0401a']);});

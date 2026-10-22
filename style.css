@@ -152,10 +152,10 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
    the stage, and drives --p from 0 to 1; with .gl the live Three.js room fades in over the still. */
 .intro{--p:0;position:relative;margin:0 calc(50% - 50vw);color:#eceae3}
 .istage{position:relative;height:calc(100svh - var(--topbar-h));min-height:520px;overflow:hidden;isolation:isolate;
- background:#0c0f17 url(docs/intro.jpg) 62% 50%/cover no-repeat}
+ background:#0c0f17 url(docs/intro.jpg) 72% 50%/cover no-repeat}
 .intro.scrub{height:calc(280svh)}
 .intro.scrub .istage{position:sticky;top:var(--topbar-h)}
-.intro.scrub:not(.gl) .istage{background-position:62% calc(50% - var(--p) * 6%)}
+.intro.scrub:not(.gl) .istage{background-position:72% calc(50% - var(--p) * 6%)}
 #introgl{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity 900ms var(--ease-out)}
 .intro.gl #introgl{opacity:1}
 /* the screen-wide finish from the README header: vignette and faint scanlines, then the fade into the console stage */

@@ -984,10 +984,26 @@ A.add({id:'spellcaster',name:'SPELL CASTER',cat:'ACTION',mouse:1,time:420,how:'A
   else{glow(x,y-24,30,EL[e.aff].c,.2+.1*sin(t*.1));A.person(x,y,{s:1.5,c:w,pants:'#2a1a3a',skin:'#c8c8b0',hair:'#e0e0e0',d:-1,arm1:1.4,arm2:1.6,id:5});L(x-12,y-50,x-12,y,'#4a3a2a',2);C(x-12,y-52,4,EL[e.aff].c);}
   if(e.hp<e.mh)bar(x-10,y-(e.k==='lich'?62:e.k==='golem'?34:28),20,3,e.hp/e.mh,K.r,'#300010');if(e.aff&&e.k!=='lich')C(x+8,y-(e.k==='golem'?30:22),2,EL[e.aff].c);
   if(e.frz){GA(.45);R(x-9,y-24,18,24,'#a0e8ff');GA1();}if(e.burn&&t%6<3)spark(x,y-10,K.o,1,.6,8);};
- g.draw=()=>{fillG(0,0,W,H,grad(0,0,0,H,[[0,'#140a30'],[.6,'#3a2a5a'],[1,'#5a3a4a']]));for(let i=0;i<30;i++){GA(.5+.5*sin(t*.02+i));R(hash(i,7)*W,hash(i,8)*100,1,1,'#ffffff');}GA1();C(270,40,14,'#e8e0c0');C(276,36,12,'#2a1a40');
-  P([[60,GY],[120,150],[170,GY]],'#2a2040',1);P([[150,GY],[230,130],[310,GY]],'#2a2040',1);fillG(0,GY,W,H-GY,grad(0,GY,0,H,[[0,'#3a3028'],[1,'#1a1410']]));fillG(0,GY,W,2,'#5a4a3a');
+ g.draw=()=>{const X=A.gx;
+  // night over the pass: aurora, a crescent moon with a halo, three ridges with moonlit rims, pines and a rocky ground (cached)
+  X.cache('spellcaster-bg',()=>{X.sky(['#07051a','#1f1446','#57336f','#a65670']);
+   for(let b=0;b<3;b++){const c=A.c;c.globalAlpha=.16-b*.04;for(let x=0;x<W;x+=2){const y=30+b*14+Math.sin(x*.025+b*1.7)*12+Math.sin(x*.07)*4;X.vg(x,y,2,34+Math.sin(x*.04+b)*10,[b===1?'#ff7ad8':'#4dffc3','rgba(77,255,195,0)']);}c.globalAlpha=1;}
+   for(let i=0;i<70;i++){const x=hash(i,7)*W,y=hash(i,8)*120,r=hash(i,9);A.c.globalAlpha=.3+r*.7;R(x,y,r>.85?2:1,r>.85?2:1,'#ffffff');}A.c.globalAlpha=1;
+   const SKY=['#07051a','#1f1446','#57336f','#a65670'];C(270,40,14,'#f1e6c6');X.disc(276,36,12,X.lg(0,0,0,H,SKY));X.glow(270,40,46,'#f6e7c0',.3);
+   const ridge=(y0,amp,f,ph,col,rim)=>{const pts=[[0,GY]];for(let x=0;x<=W;x+=8)pts.push([x,y0-Math.abs(Math.sin(x*f+ph))*amp-Math.sin(x*f*2.7+ph)*amp*.25]);pts.push([W,GY]);P(pts,col,1);
+    if(rim){A.c.strokeStyle=rim;A.c.lineWidth=1;A.c.beginPath();pts.slice(1,-1).forEach(([x,y],i)=>i?A.c.lineTo(x,y):A.c.moveTo(x,y));A.c.stroke();}};
+   ridge(150,50,.018,1.2,'#1e1538','rgba(246,231,192,.3)');X.vg(0,120,W,GY-120,['rgba(150,110,190,0)','rgba(150,110,190,.16)']);ridge(176,30,.026,.3,'#0f0a1f','rgba(246,231,192,.18)');
+   for(let i=0;i<26;i++){const x=hash(i,21)*W,h=14+hash(i,22)*18,y=GY-2;P([[x-6,y],[x,y-h],[x+6,y]],'#140e26',1);P([[x-4,y-h*.45],[x,y-h*1.02],[x+4,y-h*.45]],'#1b1433',1);}
+   X.vg(0,GY,W,H-GY,['#3d3230','#241c1a','#120d0c']);R(0,GY,W,2,'#6c5a4c');
+   for(let i=0;i<40;i++){const x=hash(i,31)*W,y=GY+4+hash(i,32)*(H-GY-6),w=4+hash(i,33)*10;X.ell(x,y,w,2+w*.2,'#2e2523');X.ell(x-1,y-1,w*.7,1.2,'rgba(255,255,255,.07)');}
+   // the tower: dressed stone with mortar shading, battlements, an arrow slit and a lit window
+   X.vg(4,120,46,GY-120,['#5a5470','#403b54']);for(let y=124;y<GY;y+=10)for(let x=6;x<48;x+=12){const bx=x+((y/10)%2)*6;X.block(bx,y,Math.min(10,50-bx),8,(hash(x,y)>.5?'#615a7a':'#56506c'),1);}
+   for(let i=0;i<4;i++)X.block(4+i*12,110,8,10,'#665f80',1);X.vg(46,120,4,GY-120,['rgba(0,0,0,.4)','rgba(0,0,0,.2)']);
+   X.glow(26,160,14,'#ffb347',.5);R(23,152,6,12,'#ffcf73');R(25,152,2,12,'#ff9a2f');R(12,176,2,10,'#14101f');
+   P([[50,126],[62,130],[50,134]],'#b0303a',1);L(50,124,50,150,'#3a2a20',1);
+   X.vignette&&X.vignette(.45);});
   for(const f of fx2)if(f.pool){GA(Math.min(1,f.t/40)*.8);A.c.fillStyle='#ff5a10';A.c.beginPath();A.c.ellipse(f.x,f.y,f.r,5,0,0,TAU);A.c.fill();GA1();}
-  R(4,120,46,GY-120,'#4a4458');for(let y=124;y<GY;y+=10)for(let x=6;x<48;x+=12)fillG(x+((y/10)%2)*6,y,10,8,'#5a5468');for(let i=0;i<4;i++)R(4+i*12,112,8,8,'#5a5468');R(BX-6,150,4,GY-150,'#6a5a8a');GA(.25+.1*sin(t*.1));R(BX-6,150,4,GY-150,K.c);GA1();
+  R(BX-6,150,4,GY-150,'#6a5a8a');GA(.25+.1*sin(t*.1));R(BX-6,150,4,GY-150,K.c);GA1();
   A.person(28,112,{s:.8,c:'#3a3ab0',pants:'#2a2a6a',skin:'#f1c7a3',hair:'#e0e0e0',d:1,arm2:-2.2,id:4});P([[20,90],[36,90],[30,72]],'#3a3ab0',1);R(19,90,18,2,'#2a2a80');L(36,96,40,118,'#6a4a2a',2);const oc=q.length?EL[q[q.length-1]].c:'#a0a0ff';glow(36,94,6+q.length*2,oc,.4+.1*sin(t*.3));C(36,94,3,oc);
   const sorted=mons.slice().sort((a,b)=>a.y-b.y);sorted.forEach(monD);
   for(const s of spells){glow(s.x,s.y,6+s.q.length*2,EL[s.q[0]].c,.4);C(s.x,s.y,2+s.q.length,EL[s.q[0]].c);if(s.q.length>1)C(s.x,s.y,1.5,EL[s.q[1]].c);}

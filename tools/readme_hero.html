@@ -55,7 +55,7 @@ const cv=document.getElementById('v'),W=1280,H=800;
 const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true});
 r.setPixelRatio(+(q.get('dpr')||1));r.setSize(W,H,false);r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.05;r.outputColorSpace=THREE.SRGBColorSpace;
 // the games on the screens; any canvas game with a thumbnail in docs/thumbs works (?ids=a,b,c to change them)
-const {scene,cam}=arcadeScene(THREE,{base:'../',ids:q.get('ids')?q.get('ids').split(','):undefined,aspect:W/H});
+const room=arcadeScene(THREE,{base:'../',ids:q.get('ids')?q.get('ids').split(','):undefined,aspect:W/H,cones:!!q.get('bare')}),{scene,cam}=room;room.useRenderer(r);
 
 const comp=new EffectComposer(r);comp.addPass(new RenderPass(scene,cam));
 comp.addPass(new UnrealBloomPass(new THREE.Vector2(W,H),.4,.5,.86));comp.addPass(new OutputPass());
