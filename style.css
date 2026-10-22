@@ -566,3 +566,34 @@ body.playing{overflow:hidden}body.playing #cab{display:flex}body.playing main,bo
 /* the intro title rises in on load, a line at a time */
 .fx .imark span{animation:rise 1.1s var(--ease-out) both}.fx .imark span+span{animation-delay:.12s}
 .fx .istats,.fx .itag,.fx .icue{animation:rise 1.1s var(--ease-out) .35s both}
+
+/* ---- "New on the shelf" spotlight: a warm, light product tile between the dark console and the dark worlds band ---- */
+.spot{--sp-ink:#2a1a10;--sp-ink-2:#6b4a33;--sp-accent:#e8433a;position:relative;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:var(--s6) var(--s7);align-items:center;
+ padding:clamp(28px,5vw,64px);border-radius:28px;overflow:hidden;color:var(--sp-ink);isolation:isolate;
+ background:radial-gradient(60% 80% at 85% 20%,rgba(255,196,120,.55),transparent 70%),radial-gradient(50% 60% at 10% 100%,rgba(140,210,120,.4),transparent 70%),linear-gradient(160deg,#f7f0e4,#efe2cd 60%,#e9d6bb);
+ box-shadow:0 30px 80px -40px rgba(80,40,10,.45),inset 0 1px 0 rgba(255,255,255,.6)}
+.spot::after{content:"";position:absolute;inset:auto -10% -40% 40%;height:70%;z-index:-1;background:radial-gradient(closest-side,rgba(255,120,90,.25),transparent);filter:blur(10px)}
+.spot-eye{margin:0 0 var(--s3);font:700 .78rem/1 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--sp-accent)}
+.spot h2{margin:0;font:400 clamp(2.8rem,7vw,5.6rem)/.9 var(--disp);letter-spacing:-.01em;color:var(--sp-ink)}
+.spot h2 i{font-style:normal;color:var(--sp-accent)}
+.spot-sub{margin:var(--s3) 0 0;font:600 clamp(1.15rem,2vw,1.6rem)/1.2 var(--text);color:var(--sp-ink)}
+.spot-lede{margin:var(--s4) 0 0;max-width:42ch;font-size:var(--t-sm);line-height:1.6;color:var(--sp-ink-2);text-wrap:pretty}
+.spot-acts{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s5)}
+.spot .spot-play{background:var(--sp-ink);color:#f7f0e4}.spot .spot-play:hover{background:#4a2c18}
+.spot .btn.ghost{color:var(--sp-ink);box-shadow:inset 0 0 0 1.5px rgba(42,26,16,.25)}.spot .btn.ghost:hover{background:rgba(42,26,16,.08);color:var(--sp-ink)}
+.spot-facts{display:flex;gap:var(--s6);margin:var(--s6) 0 0;padding-top:var(--s4);border-top:1px solid rgba(42,26,16,.14)}
+.spot-facts dt{font:700 .7rem/1 var(--text);letter-spacing:.12em;text-transform:uppercase;color:var(--sp-ink-2)}
+.spot-facts dd{margin:6px 0 0;font:600 1rem/1.2 var(--text)}
+.spot-stage{position:relative;border-radius:22px;padding:10px;background:linear-gradient(145deg,rgba(255,255,255,.75),rgba(255,255,255,.25));box-shadow:0 40px 70px -30px rgba(90,40,10,.55),0 0 0 1px rgba(255,255,255,.6) inset;
+ transform:perspective(1200px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.spot-stage canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;border-radius:14px;background:#cfe9f7}
+.spot-fresh{grid-column:1/-1}
+.fresh{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--s3)}
+.fr{display:flex;flex-direction:column;gap:4px;padding:6px 6px 10px;border:0;border-radius:14px;background:rgba(255,255,255,.55);color:var(--sp-ink);text-align:left;cursor:pointer;
+ box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 24px -18px rgba(80,40,10,.5);transition:transform .25s cubic-bezier(.2,.8,.2,1),background .25s}
+.fr:hover{transform:translateY(-3px);background:rgba(255,255,255,.8)}.fr:focus-visible{outline:3px solid var(--sp-accent);outline-offset:2px}
+.fr-art{display:block;aspect-ratio:4/3;border-radius:9px;overflow:hidden;background:#20242e}
+.fr-art img,.fr-art canvas{display:block;width:100%;height:100%;object-fit:cover}
+.fr b{margin:4px 4px 0;font:700 .85rem/1.2 var(--text)}.fr em{margin:0 4px;font:600 .66rem/1 var(--text);letter-spacing:.1em;text-transform:uppercase;font-style:normal;color:var(--sp-ink-2)}
+@media (max-width:900px){.spot{grid-template-columns:1fr}.fresh{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.spot{border-radius:20px;padding:24px 16px}.spot-facts{gap:var(--s4)}.fresh{grid-template-columns:repeat(2,minmax(0,1fr))}}

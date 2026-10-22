@@ -2,7 +2,15 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round14`, which includes rounds 11 to 13)
+## Unreleased (on branch `round15`, which includes rounds 11 to 14)
+
+### Round 15 (v38)
+
+- **New game: MELON DROP** (VERSUS, 3:00 rounds, VS CPU with easy/normal/hard or 2 players). Two glass jars side by side; drop fruit, and two of the same fruit touching merge into the next one up an 11-fruit chain from cherry to watermelon (two watermelons burst for 100). Real circle physics: fruits roll, stack, squash on landing and keep their smiling faces as they turn. Making a pear or bigger drops up to three cherries into your rival's jar. A jar that stays over the dashed line loses; otherwise the higher score wins when the clock runs out. The CPU reads the jar and looks for matching landings; easy is noisy and slow, hard is sharp. Search finds it as "suika" or "watermelon".
+- **FRUIT MERGE** (the solo version) now uses the same painted fruit with faces instead of emoji, and is tagged for search too.
+- **A "New on the shelf" spotlight** on the front page, between the console and the 3D worlds: a warm, light product tile with Melon Drop playing itself in high resolution, play buttons, round facts and a "Freshly repainted" row of upgraded cartridges.
+- **Graphics pass on 22 more games**, draw code only: soccer, air hockey, ice hockey, rugby run, slopestyle, sailing, figure skating, canoe, sky fury, cavern quest, pop defense, laser tag, lane rush, terra block, lane defense, count dots, snap, spiral, firebird, room robots, race duel and spacewar (turf stripes, crowds and ad boards, lit water and snow, shaded sprites, glows and trails). Two old drawing bugs fixed on the way: the path in pop defense and the far spires in cavern quest were drawn to the wrong canvas and never showed.
+- **Box art refreshed** for the 60 games repainted in rounds 14 and 15.
 
 ### Round 14 (v37)
 

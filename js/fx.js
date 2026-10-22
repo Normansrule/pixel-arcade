@@ -25,7 +25,7 @@
   el.querySelectorAll('[data-decode]').forEach(decode);if(el.matches('[data-decode]'))decode(el);}},{rootMargin:'0px 0px -10% 0px'});
  const tag=(sel,stagger)=>document.querySelectorAll(sel).forEach((el,i)=>{el.setAttribute('data-reveal','');if(stagger)el.style.setProperty('--d',(i%stagger)*70+'ms');io.observe(el);});
  document.querySelectorAll('.sec-head h2,.doc h2').forEach(h=>h.setAttribute('data-decode',''));
- tag('.sec-head,.mkcard,.sign,.doc>*:not(h1):not(.lead)',0);
+ tag('.sec-head,.mkcard,.sign,.spot-copy,.spot-fresh,.doc>*:not(h1):not(.lead)',0);
  tag('.fc',4);
  // posters and the console lean a few degrees toward the pointer
  if(matchMedia('(hover:hover) and (pointer:fine)').matches)document.querySelectorAll('.fc,[data-tilt]').forEach(c=>{

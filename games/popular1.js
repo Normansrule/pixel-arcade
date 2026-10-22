@@ -3,17 +3,17 @@ const X=new Proxy({},{get:(_,k)=>A.gx[k]});const hi=()=>A.gfx==='high',lo=()=>A.
 const ax=k=>(k.r?1:0)-(k.l?1:0),ay=k=>(k.d?1:0)-(k.u?1:0);
 
 const FR=[['🍒','#d0203a',7],['🍓','#e8384a',9],['🍇','#8a3ab8',11],['🍊','#ff8a1a',13],['🍋','#ffd83a',15],['🍎','#e0302a',18],['🍐','#b8d040',21],['🍑','#ffa080',24],['🍍','#f0c030',28],['🍈','#a8e070',32],['🍉','#3aa040',37]];
-A.add({id:'fruitmerge',name:'FRUIT MERGE',cat:'PUZZLE',mouse:1,how:'MOVE AND DROP WITH A OR CLICK. TWO OF THE SAME FRUIT MERGE. DON\'T OVERFILL.',make(){
+A.add({id:'fruitmerge',name:'FRUIT MERGE',cat:'PUZZLE',mouse:1,tags:'suika game watermelon fruit merge drop solo',how:'MOVE AND DROP WITH A OR CLICK. TWO OF THE SAME FRUIT MERGE. DON\'T OVERFILL.',make(){
  const g={over:null,score:0},BX=90,BW=140,BY=40,BH=190,fx=X.fx();let fr=[],x=160,next=ri(4),cur=ri(3),cd=0,over=0,best=0;
  g.update=()=>{const k=A.in(0);if(A.mouse.t>0)x+=(A.mouse.x-x)*.5;else x+=ax(k)*3.4;const r=FR[cur][2];x=cl(x,BX+r,BX+BW-r);if(cd>0)cd--;if(A.hit(0).a&&cd===0){fr.push({x:x+rnd(.2),y:BY+r+2,vx:0,vy:0,k:cur,age:0,sq:0,born:0});cur=next;next=ri(5);cd=24;S('blip');}
   for(let it=0;it<3;it++){for(const f of fr){if(it===0){f.vy+=.25;f.age++;if(f.sq>0)f.sq*=.85;if(f.born<10)f.born++;}f.x+=f.vx/3;f.y+=f.vy/3;const r=FR[f.k][2];if(f.x<BX+r){f.x=BX+r;f.vx*=-.3;}if(f.x>BX+BW-r){f.x=BX+BW-r;f.vx*=-.3;}if(f.y>BY+BH-r){if(f.vy>2.5)f.sq=Math.min(1,f.vy/7);f.y=BY+BH-r;f.vy*=-.2;f.vx*=.95;}}
    for(let i=0;i<fr.length;i++)for(let j=i+1;j<fr.length;j++){const a=fr[i],b=fr[j];if(a.dead||b.dead)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||.01,rr=FR[a.k][2]+FR[b.k][2];if(d<rr){if(a.k===b.k&&a.k<FR.length-1){a.dead=b.dead=1;const nk=a.k+1,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;fr.push({x:mx,y:my,vx:0,vy:-1,k:nk,age:60,sq:0,born:0});g.score+=(nk+1)*(nk+2);best=Math.max(best,nk);S('coin');A.burst(mx,my,FR[nk][1],12+nk*2,2+nk*.15);fx.ring(mx,my,'#ffffff',FR[nk][2]*1.8,16);fx.spark(mx,my,'#fff6c0',8,2);if(nk>=6){A.shake=3+nk/2;fx.flash('#fff3d6',6);}continue;}if(Math.abs(a.vy-b.vy)>2.5){a.sq=Math.max(a.sq,.4);b.sq=Math.max(b.sq,.4);}const o=(rr-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){a.vx+=rv*nx*.5;a.vy+=rv*ny*.5;b.vx-=rv*nx*.5;b.vy-=rv*ny*.5;}}}fr=fr.filter(f=>!f.dead);}
   fr.forEach(f=>{f.vx*=.99;});if(fr.some(f=>f.age>90&&f.y-FR[f.k][2]<BY+14))over++;else over=0;if(over>90){g.over='OVERFLOW';S('lose');}};
- const fruit=(f,x,y,k,sq,born)=>{const r=FR[k][2],c=A.c,s=born<10?.3+.7*(born/10)*(1.2-.2*born/10):1,sx=(1+sq*.3)*s,sy=(1-sq*.25)*s;c.save();c.translate(x,y+r*(1-sy));c.scale(sx,sy);X.orb(0,0,r,FR[k][1]);E(FR[k][0],0,1,r*1.5);c.restore();};
+ const fruit=(f,x,y,k,sq,born)=>{const r=FR[k][2],c=A.c,s=born<10?.3+.7*(born/10)*(1.2-.2*born/10):1,sx=(1+sq*.3)*s,sy=(1-sq*.25)*s;if(A.fruitArt){A.fruitArt(x,y,k,r*s,f?f.x/r:0,sq,{face:1});return;}c.save();c.translate(x,y+r*(1-sy));c.scale(sx,sy);X.orb(0,0,r,FR[k][1]);E(FR[k][0],0,1,r*1.5);c.restore();};
  g.draw=()=>{X.cache('fm_bg',()=>{X.sky(['#ffeccc','#fbd6a4','#eeb184']);const c=A.c;for(let y=0;y<180;y+=14)for(let x=(y/14%2)*7;x<W;x+=14){c.fillStyle='rgba(255,255,255,.22)';c.fillRect(x+1,y+1,12,12);c.fillStyle='rgba(170,90,40,.08)';c.fillRect(x+1,y+12,12,1);}
    X.vg(0,214,W,26,['#a8643a','#6a3a1e']);c.fillStyle='rgba(255,255,255,.25)';c.fillRect(0,214,W,1.5);
    X.panel(4,14,44,210,'#ff9838');X.panel(244,30,70,56,'#ffcf3f');X.panel(244,96,70,74,'#2fd6c3');X.vignette(.3);});
-  FR.forEach((f,i)=>{const yy=24+i*18.6;if(i<=best)X.glow(26,yy,10,f[1],.5);c_alpha(i<=best?1:.35,()=>E(f[0],26,yy,13));});
+  FR.forEach((f,i)=>{const yy=24+i*18.6;if(i<=best)X.glow(26,yy,10,f[1],.5);c_alpha(i<=best?1:.35,()=>A.fruitArt?A.fruitArt(26,yy,i,4+i*.42,0,0,null):E(f[0],26,yy,13));});
   const c=A.c;X.rr(BX,BY,BW,BH,4,X.lg(BX,0,BX+BW,0,['rgba(255,255,255,.42)','rgba(255,255,255,.18)','rgba(255,255,255,.32)']));
   const r=FR[cur][2];c.fillStyle='rgba(120,60,30,.22)';for(let yy=BY+r*2+4;yy<BY+BH;yy+=8)c.fillRect(x-.5,yy,1,4);
   for(const f of fr)X.shadow(f.x,Math.min(BY+BH-1,f.y+FR[f.k][2]*.85),FR[f.k][2]*.8,2,.12);
