@@ -2,7 +2,15 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round17`, which includes rounds 11 to 16)
+## Unreleased (on branch `round18`, which includes rounds 11 to 17)
+
+### Round 18 (v41)
+
+- **New game: ROOFTOP SCRAMBLE** (VERSUS, 2:30 rounds, VS CPU with easy/normal/hard or 2 players). Two agents race across the rooftops of a city at dusk to reach the rope ladder hanging from an escape helicopter. Movement is a wobbly hop (left and right hop, up jumps high), so you lean, flail and sometimes land on your back and tumble. Crates parachute in with a pistol, a shotgun or a rocket launcher; with empty hands A is a shove. Every hit knocks the rival back, and a knock off the roof costs them time. Grabbing the ladder starts a two-second climb, and a hit on the way up knocks the climber off. A freight train runs along an elevated line below, and fire escapes lead back up. First to 3 escapes wins. Search "getaway shootout".
+- **New game: NEBULA RUN** (VERSUS, 2:30 rounds, VS CPU with easy/normal/hard or 2 players on a split screen). Race down the inside of an eight-sided tile tunnel strung across deep space, 1,800 m to the gate. Whichever lane you stand on is the floor, so you run up the walls round the holes, and the tunnel rolls to follow you. Sections of holes, stripes, spirals and full gaps to jump, amber tiles that drop away as you come near, green boost pads and power cells. A fall into space costs a second and drops you back a few metres, and three falls at the same spot skip you ahead. Three sectors (teal, rose, amber) and a nebula backdrop with a ringed planet. Search "run 3".
+- **ROCK BLASTER, rebuilt:** bigger asteroids lit from one side with sunlit rims and shaded craters, a ringed planet and a moon in the background, a new ship with wings and cockpit, and dust clouds when rocks break. New: flying saucers that fire at you (the small one aims well), power-ups from destroyed saucers (triple shot, rapid fire and a shield), and hyperspace on B.
+- **TANK DUEL, rebuilt:** shells now ricochet off walls up to three times (and can hit you), wooden crates break after two hits, power-ups (spread shot, rapid fire, shield) appear on the field, and each round moves to the next of three maps (field, quarry and maze). Smoke, scorch marks and bigger tanks. The CPU now routes round the walls, dodges incoming shells and banks its shots off walls; on easy it aims loosely.
+- **The front-page "New on the shelf" spotlight** now plays Nebula Run, with Rooftop Scramble beside it, and the "Freshly repainted" row starts with Rock Blaster and Tank Duel.
 
 ### Round 17 (v40)
 

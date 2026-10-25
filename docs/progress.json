@@ -1,7 +1,9 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
-    {"v": "v40", "date": "22 Oct 2026", "branch": "round17", "round": 17,
+    {"v": "v41", "date": "25 Oct 2026", "branch": "round18", "round": 18,
+     "added": "Two new versus games, ROOFTOP SCRAMBLE (a wobbly rooftop race to a helicopter ladder, with guns and a moving train) and NEBULA RUN (a race down a tile tunnel floating in deep space), a rebuilt ROCK BLASTER with flying saucers and power-ups, a rebuilt TANK DUEL with ricochet shells, crates and three maps, and Nebula Run in the front-page spotlight."},
+    {"v": "v40", "date": "22 Oct 2026", "branch": "round17", "round": 17, "games": 513, "worlds": 55,
      "added": "Two new versus games, SINKHOLE CITY (a growing-hole duel over a city block) and RIDGE RUNNER (a split-screen hill-climb jeep race), smart bombs and mutants in SPACE DEFENDER, painted fruit and a frenzy fruit in FRUIT SLICE, and a new front-page spotlight."},
     {"v": "v39", "date": "22 Oct 2026", "branch": "round16", "round": 16, "games": 511, "worlds": 55,
      "added": "A fully modelled PIXEL ARCADE machine at the heart of the front-page intro, every cabinet rebuilt in detail (printed side art, T-molding, joysticks and buttons, curved CRT screens, coin doors), a dressed arcade room with neon signs, hanging lamps and blacklight carpet, and a graphics pass on 3 games."},
