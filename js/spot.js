@@ -6,16 +6,16 @@
  document.querySelectorAll('.spot [data-play]').forEach(b=>b.addEventListener('click',()=>{const gm=byId(b.dataset.play);if(gm)A.shelf.play(gm);}));
  // the repainted row: prerendered box art, a name and the shelf it lives on
  const fresh=document.getElementById('fresh');
- if(fresh)['trench','starrun','rocks','tanks','fruitslice','defender'].map(byId).filter(Boolean).forEach(gm=>{
+ if(fresh)['lander','bricks','trench','starrun','rocks','tanks'].map(byId).filter(Boolean).forEach(gm=>{
   const b=document.createElement('button');b.type='button';b.className='fr';b.setAttribute('aria-label','Play '+tc(gm.name));
   const art=document.createElement('span');art.className='fr-art';A.shelf.art(gm,art);
   const nm=document.createElement('b');nm.textContent=tc(gm.name);const ct=document.createElement('em');ct.textContent=tc(gm.cat);
   b.append(art,nm,ct);b.addEventListener('click',()=>A.shelf.play(gm));fresh.appendChild(b);});
- // the live demo, drawn at three times the cabinet's resolution so the fighters stay crisp
- const gm=byId('morphband');if(!gm)return;
+ // the live demo, drawn at three times the cabinet's resolution so the city stays crisp
+ const gm=byId('heatrun');if(!gm)return;
  const S=3,off=document.createElement('canvas');off.width=320*S;off.height=240*S;const o=off.getContext('2d'),x=cv.getContext('2d');
  let g=null,f=0,on=false,timer=0;
- // a new round starts well under way, so the fight is on when the section scrolls into view
+ // a new round starts well under way, so the chase is on when the section scrolls into view
  const fresh_=()=>{const sv=A.silent,sc=A.cpu,sh=A.shake,sf=A.fx;A.silent=true;A.cpu=true;A.fx=[];try{g=gm.make();g.auto=true;for(let i=0;i<1500&&!g.over;i++){A.bot({});g.update();}if(g.over)g=null;else if(g.fxClear)g.fxClear();}catch(e){g=null;}A.silent=sv;A.cpu=sc;A.shake=sh;A.fx=sf;};
  const frame=()=>{if(!g)fresh_();if(!g)return;const E=A._e;if(E&&E.state!=="hub")return;
   const k={c:A.c,t:A.t,cpu:A.cpu,two:A.two,silent:A.silent,fx:A.fx,shake:A.shake};

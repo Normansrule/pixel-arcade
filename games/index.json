@@ -68,7 +68,8 @@
   "games/orchard.js",
   "games/roadside.js",
   "games/skyway.js",
-  "games/powerup.js"
+  "games/powerup.js",
+  "games/rush.js"
  ],
  "after": [
   "js/net.js"

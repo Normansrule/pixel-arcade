@@ -1,7 +1,9 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
-    {"v": "v42", "date": "26 Oct 2026", "branch": "round19", "round": 19,
+    {"v": "v43", "date": "26 Oct 2026", "branch": "round20", "round": 20,
+     "added": "Two new versus games: HEAT RUN (a night-time getaway through a city full of police, with drifting, nitro, wanted stars and a helicopter) and FLOPPY HOOPS (one-button wobbly basketball, two players a side, with new rules and a new court after every basket). MOON LANDER rebuilt with a camera that zooms in for touchdown, three scored pads, dust and a flag; BRICK BUSTER rebuilt with six brick maps, metal, gold and bomb bricks, lasers, fireballs and combos. Heat Run plays in the front-page spotlight."},
+    {"v": "v42", "date": "26 Oct 2026", "branch": "round19", "round": 19, "games": 518, "worlds": 55,
      "added": "Three new hero and space versus games: MORPHBAND (a wrist band that turns you into four different aliens), OVERDRIVE AGENT (an energy suit with four modes, raced through a robot-filled city) and NOVA REBELLION (a starfighter battle, then a light-blade duel on the enemy flagship). TRENCH RUN 3D gets a steel trench, turrets that shoot back and reactor ports to hit; STAR RUN 3D gets lumpy lit asteroids, raider fighters and shield rings. Morphband plays in the front-page spotlight."},
     {"v": "v41", "date": "25 Oct 2026", "branch": "round18", "round": 18, "games": 515, "worlds": 55,
      "added": "Two new versus games, ROOFTOP SCRAMBLE (a wobbly rooftop race to a helicopter ladder, with guns and a moving train) and NEBULA RUN (a race down a tile tunnel floating in deep space), a rebuilt ROCK BLASTER with flying saucers and power-ups, a rebuilt TANK DUEL with ricochet shells, crates and three maps, and Nebula Run in the front-page spotlight."},

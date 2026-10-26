@@ -2,7 +2,16 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round19`, which includes rounds 11 to 18)
+## Unreleased (on branch `round20`, which includes rounds 11 to 19)
+
+### Round 20 (v43)
+
+- **New game: HEAT RUN** (VERSUS, 2:30 rounds, VS CPU with easy/normal/hard or 2 players). Two getaway drivers loose in a city at night, seen from above with buildings that lean out in 3D as the camera passes. Up is gas, down brakes and reverses, left and right steer, A burns nitro and B pulls a handbrake drift that leaves tyre marks on the road. Drive over cash bags (+100) and the gold case (+400), but every bag raises your wanted stars and the police send more cars, up to nine, plus a helicopter with a searchlight at four stars. Cops ram you and route round the city to cut you off; stop with one on your bumper and you are busted, run out of health and you are wrecked, and either way you drop 30% of your cash for your rival to grab. Ram a cop car until it burns for +50. Repair and nitro pickups appear on the streets. The camera frames both drivers and zooms out as they split up. The most cash at the end wins.
+- **New game: FLOPPY HOOPS** (VERSUS, 2:00 rounds, VS CPU with easy/normal/hard or 2 players). Wobbly two-a-side basketball on one button: hold A to make both your players jump and swing their arms up, let go to throw. Bodies lean toward the ball (or the far hoop when you have it), so timing is everything; land badly and you fall flat. Grab the ball with a hand, swat it out of a rival's grip, dunk, or shoot from beyond the line for three. After every basket the rules change (big ball, moon gravity, beach ball, long arms, ice court, tall teams, bowling ball, mini players, super bounce) and so does the court (gym, beach at sunset, rooftop at night, street). First to 11 wins.
+- **MOON LANDER, rebuilt:** three landing pads that pay x2, x3 and x5 (the smaller the pad, the bigger the score, with a 50% bonus for a perfect touchdown), a camera that zooms in when you are close to the ground, rough lit terrain with craters and boulders, a detailed lander with gold foil, thruster puffs when you tilt and a flame that blasts dust off the surface, a flag and an astronaut after a landing, the Earth and Milky Way in the sky, and three landers per game with fuel carried over.
+- **BRICK BUSTER, rebuilt:** six brick maps (rainbow, pyramid, invader, heart, fortress, diamond) that drop in at the start of each level, metal bricks that crack, gold bricks that never break, bomb bricks that blow up their neighbours and mystery bricks that always drop a capsule; new capsules for twin lasers, catch, fireball (the ball smashes straight through) and extra life; combo scoring, shattering bricks, and a ball that lights the bricks around it.
+- **The front-page "New on the shelf" spotlight** now plays Heat Run, with Floppy Hoops beside it, and the "Freshly repainted" row starts with Moon Lander and Brick Buster.
+
 
 ### Round 19 (v42)
 
