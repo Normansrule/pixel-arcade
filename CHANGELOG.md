@@ -2,7 +2,16 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round18`, which includes rounds 11 to 17)
+## Unreleased (on branch `round19`, which includes rounds 11 to 18)
+
+### Round 19 (v42)
+
+- **New game: MORPHBAND** (VERSUS, 2:00 rounds, VS CPU with easy/normal/hard or 2 players). Two kids who found wrist bands in a crashed alien pod battle in the junkyard around it. Tap B to morph into the next of four aliens: EMBERCLAW throws fireballs, STONEHIDE takes half damage and slams the floor to send quake waves along it, RIPSTREAK runs fast, double jumps and dash-strikes, and HOWLWING flies while UP is held and screams a sonic cone. Down+B turns you back. Aliens drain the band; when it runs dry you time out back into the kid, who has to recharge before morphing again. The pod spits out energy orbs that refill the band and a little health. First to 5 knockouts, or the most when time runs out. The CPU picks the alien that suits the range, keeps that range, and dodges fireballs.
+- **New game: OVERDRIVE AGENT** (VERSUS, 2:00 rounds, VS CPU with easy/normal/hard or 2 players on stacked lanes). An agent in an energy suit races a rival across a city freeway at dusk, and the suit's four modes each beat one kind of obstacle: STRENGTH (down) smashes steel walls and punches drones, SPEED (right) blitzes through laser gates, FLIGHT (up) hovers over gaps in the deck, and CANNON (left) shoots down drones before they shoot you. A jumps the low rails in any mode (and fires in cannon mode). Speed and flight burn turbo, the other two recharge it, and turbo cells along the road top it up. The wrong mode costs you time; first to the beacon tower wins. Easy CPUs react late and sometimes pick the wrong mode.
+- **New game: NOVA REBELLION** (VERSUS, 2:30 rounds, VS CPU with easy/normal/hard or 2 players), a space saga in two acts. Act one is a starfighter battle under the enemy flagship: turn, thrust, fire twin cannons, barrel-roll on B, shoot down the rival ace (+3) and the flagship's drones (+1) while its guns lob plasma. After 70 seconds both pilots land in the flagship's hangar for act two, a light-blade duel: three-hit combos on A, guard on B (raise it at the last moment to parry and stagger the attacker), blades that clash and throw both fighters back, and a force push on Down+A once the focus meter is half full. Blade hits score 1, a defeat scores 4. Highest total wins.
+- **TRENCH RUN 3D, rebuilt:** a steel trench with dark panel seams, pipes, vents and coloured wall lights instead of flat purple; barriers are now translucent energy curtains between pylons; turrets fire aimed bolts back at you; and every so often a reactor port sits in the floor. Fly low over the centre line and put a shot into it for 1,000 points and a speed-up.
+- **STAR RUN 3D, rebuilt:** lumpy asteroids in three kinds of rock, lit from one side with shaded craters; raider fighters that swoop in, weave and fire plasma back down the lane (150 points each, two hits to kill); shield rings that restore a shield; and a wheel station in the nebula.
+- **The front-page "New on the shelf" spotlight** now plays Morphband, with Nova Rebellion and Overdrive Agent beside it, and the "Freshly repainted" row starts with Trench Run 3D and Star Run 3D.
 
 ### Round 18 (v41)
 

@@ -50,7 +50,7 @@ const fruit=(x,y,k,r,a,sq,o)=>{const c=A.c,col=FR[k][1],s1=1+(sq||0)*.16,s2=1-(s
 A.fruitArt=fruit;   // shared with the solo FRUIT MERGE
 
 A.add({id:'melondrop',name:'MELON DROP',cat:'VERSUS',vs:1,mouse:1,time:180,tags:'suika game watermelon fruit merge drop physics stack 2048 jar',
- how:'MOVE, A OR CLICK DROPS. SAME FRUITS MERGE. A PEAR OR BIGGER SENDS CHERRIES TO YOUR RIVAL. DON\'T OVERFILL.',make(){
+ how:'MOVE, A DROPS. SAME FRUITS MERGE. A PEAR OR BIGGER SENDS CHERRIES TO YOUR RIVAL.',make(){
  const g={over:null,score:0},fx=X.fx(),JX=[22,186],JW=112,JY=50,JH=172,LY=JY+14,CY=JY-14,SUB=4,G=.24/(SUB*SUB);
  let t=0,top=4,uid=0;
  const demo=()=>!!(g.auto||A._e&&A._e.state==='title');
