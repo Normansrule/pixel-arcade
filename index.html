@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pixel Arcade</title>
-<meta name="description" content="520 original browser games and 55 full-3D worlds. Play solo, against the CPU, or two players on one keyboard.">
+<meta name="description" content="521 original browser games and 55 full-3D worlds. Play solo, against the CPU, or two players on one keyboard.">
 <link rel="icon" href="docs/icons/favicon-64.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="docs/icons/apple-touch-icon.png">
@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="og:description" content="520 original browser games, 55 full-3D worlds and a 2D/3D game builder. Free, open source, plays offline as an app.">
+<meta name="og:description" content="521 original browser games, 55 full-3D worlds and a 2D/3D game builder. Free, open source, plays offline as an app.">
 <script>try{const t=localStorage.getItem('pxd_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="style.css">
@@ -22,7 +22,7 @@
 <nav class="topbar" aria-label="Site">
   <a class="brand" href="#top" aria-label="Pixel Arcade, back to top"><i aria-hidden="true"></i><span>PIXEL ARCADE</span></a>
   <div class="tools">
-    <label class="search"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="sr">Search games</span><input id="q" type="search" placeholder="Search 520 games" autocomplete="off" aria-controls="library"><kbd aria-hidden="true">/</kbd></label>
+    <label class="search"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="sr">Search games</span><input id="q" type="search" placeholder="Search 521 games" autocomplete="off" aria-controls="library"><kbd aria-hidden="true">/</kbd></label>
     <button class="ico" data-random type="button" title="Play a random game" aria-label="Play a random game"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></button>
   </div>
   <a class="btn ghost buildlink" href="builder/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Build</a>
@@ -79,14 +79,14 @@
   <section class="sect spot" id="spot" aria-labelledby="spot-h">
     <div class="spot-copy">
       <p class="spot-eye">New on the shelf</p>
-      <h2 id="spot-h">Heat Run<i aria-hidden="true">.</i></h2>
-      <p class="spot-sub">Grab the cash. Lose the cops.</p>
-      <p class="spot-lede">Two getaway drivers loose in a city at night. Scoop up cash bags, drift round corners and burn nitro, while every bag you grab brings more police after you. Get boxed in and you are busted, wreck your car and you drop your money. The driver holding the most cash when the clock runs out wins.</p>
-      <div class="spot-acts"><button class="btn spot-play" type="button" data-play="heatrun">Play Heat Run</button><button class="btn ghost" type="button" data-play="floppyhoops">Also new: Floppy Hoops</button></div>
-      <dl class="spot-facts"><div><dt>Round</dt><dd>2:30</dd></div><div><dt>Rival</dt><dd>CPU or a friend</dd></div><div><dt>Wanted level</dt><dd>5 stars</dd></div></dl>
+      <h2 id="spot-h">Xenoshift<i aria-hidden="true">.</i></h2>
+      <p class="spot-sub">One band. Seven aliens. One stolen star.</p>
+      <p class="spot-lede">Jax finds an alien band in the woods, and a warlord wants it back. Fight through a seaside town, glowing caves and a warship in orbit, turning into the right alien for every obstacle: burn thorns as Blaze, smash rockslides as Granite, outrun falling bridges as Ziptail, fly pits as Skywing, crawl through vents as Mite, power gates as Voltex and freeze lakes as Frostbyte. Every chapter ends in a boss fight.</p>
+      <div class="spot-acts"><button class="btn spot-play" type="button" data-play="xenoshift">Play Xenoshift</button><button class="btn ghost" type="button" data-play="morphband">Repainted: Morphband</button></div>
+      <dl class="spot-facts"><div><dt>Round</dt><dd>4:30</dd></div><div><dt>Aliens</dt><dd>7 forms</dd></div><div><dt>Story</dt><dd>3 chapters, 3 bosses</dd></div></dl>
     </div>
     <div class="spot-stage" data-tilt>
-      <canvas id="spotcv" width="960" height="720" aria-label="Heat Run playing itself: two getaway cars racing through a city at night with police in pursuit"></canvas>
+      <canvas id="spotcv" width="960" height="720" aria-label="Xenoshift playing itself: a boy with an alien band transforms into different aliens to get past obstacles and fight bosses"></canvas>
     </div>
     <div class="spot-fresh">
       <p class="spot-eye">Freshly repainted</p>
@@ -287,6 +287,7 @@
 <script src="games/skyway.js"></script>
 <script src="games/powerup.js"></script>
 <script src="games/rush.js"></script>
+<script src="games/saga.js"></script>
 <script src="js/net.js"></script>
 <!-- scripts:end -->
 <script src="js/lobby.js"></script>

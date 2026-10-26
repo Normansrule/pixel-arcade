@@ -2,7 +2,15 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round20`, which includes rounds 11 to 19)
+## Unreleased (on branch `round21`, which includes rounds 11 to 20)
+
+### Round 21 (v44)
+
+- **New game: XENOSHIFT** (ACTION, 4:30 rounds, solo with easy/normal/hard). A story-driven side-scrolling adventure in three chapters. Jax finds an alien band in the woods of Bramble Bay, and the warlord Kragg wants it back. Press DOWN to pick an alien on the band's dial and B to transform (B again turns you back); aliens burn energy, the boy recharges it, and an empty band times you out. Seven aliens, each the answer to one obstacle: BLAZE burns thorn walls, GRANITE smashes rockslides, ZIPTAIL outruns bridges that crumble behind you, SKYWING flies over pits, MITE crawls through vents, VOLTEX powers laser gates and FROSTBYTE freezes water into a path of ice. A hint bubble over each obstacle shows which alien it wants. Chapters: Bramble Bay at dusk (boss SCRAPJAW, a drill tank that charges into the walls and lobs bombs), the Glowroot Caves (boss GLASSMAW, a crystal spider that drops from the roof), and Kragg's warship in orbit (KRAGG himself, a sword fighter who takes to his jetpack at half health). Story cards with portraits between chapters, enemies that drop energy orbs, three lives, and a time bonus for finishing. The difficulty setting changes how hard enemies and bosses hit, how fast they shoot and how much health the bosses have.
+- **MORPHBAND, repainted:** bigger fighters with a rim light in their player colour, the pod lighting whoever stands near it, a living aurora over the junkyard, the pod's light beam reaching up into it, rolling ground fog, rain puddles, a far town skyline, a spinning DNA helix when you morph, and alien icons on the band dial.
+- **BYTE SNAKE, rebuilt:** a sunny walled garden with mown stripes, daisies and clover; a snake that glides smoothly between cells, with a patterned body, a head that watches the food and a flicking tongue; apples, cherries (+1 length) and grapes (+2); mice that scurry away from you for 40 points; and mossy rocks that appear as you grow.
+- **INVADER WAVE, rebuilt:** painted squid, crab and octopus aliens with two-frame animation, aliens that break formation and dive at you from wave 2 (bonus points if you shoot them mid-dive), shields as glowing domes, a city skyline under a ringed planet, and a double-cannon capsule dropped by the saucer.
+- **The front-page "New on the shelf" spotlight** now plays Xenoshift, with Morphband beside it, and the "Freshly repainted" row starts with Byte Snake, Invader Wave and Morphband.
 
 ### Round 20 (v43)
 

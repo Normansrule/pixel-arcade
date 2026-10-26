@@ -136,12 +136,14 @@ A.add({id:'morphband',name:'MORPHBAND',cat:'VERSUS',vs:1,time:120,warm:160,tags:
  g._P=P;g.fxClear=fx.clear;
 
  /* ---- scene ---- */
- const back=()=>X.cache('morph_bg',()=>{const c=A.c;
+ const back=()=>X.cache('morph_bg2',()=>{const c=A.c;
   X.sky(['#060818','#10183a','#24305a','#3a4a6a'],GY);X.stars(70,11,0,0,140,.9);
   // a big cratered moon and a green aurora from the pod
   X.glow(236,84,56,'#cfe8ff',.18);X.disc(236,84,18,X.rg(229,77,2,236,84,18,['#ffffff','#d8e2ee','#8a98ae']));
   for(const[x,y,r]of[[230,79,3.4],[242,89,4],[240,76,2],[227,91,1.8]])X.disc(x,y,r,'rgba(110,124,150,.45)');
   c.globalCompositeOperation='lighter';for(let i=0;i<4;i++){const y=40+i*10;c.strokeStyle='rgba(90,255,140,'+(.08-i*.015)+')';c.lineWidth=8-i;c.beginPath();for(let x=0;x<=W;x+=10)c[x?'lineTo':'moveTo'](x,y+Math.sin(x*.025+i)*10);c.stroke();}c.globalCompositeOperation='source-over';
+  // a far town skyline with its lights still on
+  X.skyline(172,'#10162e',0,3,'rgba(255,214,140,.22)');
   X.hills(150,30,'#1a2440',0,.018,2);X.hills(172,24,'#141a30',40,.026,5);
   // junk piles: car hulks, tyres and a crane on the skyline
   c.fillStyle='#0e1222';c.fillRect(278,94,3,80);c.fillRect(250,94,60,3);c.fillRect(296,97,1,26);X.rr(290,122,12,8,1,'#0e1222');
@@ -159,6 +161,8 @@ A.add({id:'morphband',name:'MORPHBAND',cat:'VERSUS',vs:1,time:120,warm:160,tags:
   c.fillStyle='rgba(60,70,90,.6)';for(let x=6;x<W;x+=48)c.fillRect(x,146,2,50);c.fillRect(0,148,W,1);
   X.vg(0,GY,W,H-GY,['#3a3428','#221e18','#141210']);c.fillStyle='rgba(255,255,255,.12)';c.fillRect(0,GY,W,1);
   for(let i=0;i<60;i++){c.fillStyle='rgba(0,0,0,'+(.1+hash(i,1)*.2)+')';c.fillRect(hash(i,2)*W,GY+3+hash(i,3)*30,1+hash(i,4)*4,1);}
+  // rain puddles that catch the pod's glow and the moon
+  for(const[x,w]of[[40,22],[112,14],[214,18],[286,20]]){X.ell(x,GY+12,w,2.2,'rgba(10,14,28,.5)');X.ell(x,GY+12,w-2,1.6,x>90&&x<230?'rgba(110,255,160,.22)':'rgba(190,210,255,.14)');c.fillStyle='rgba(255,255,255,.3)';c.fillRect(x-w/3,GY+11.5,w/3,.5);}
   c.strokeStyle='rgba(110,255,150,.35)';c.lineWidth=.8;c.beginPath();c.moveTo(130,GY+2);c.lineTo(122,GY+10);c.lineTo(126,GY+18);c.moveTo(190,GY+2);c.lineTo(200,GY+12);c.lineTo(194,GY+22);c.stroke();
   // the platforms: a wrecked bus roof, a truck bed and a girder bridge over the pod
   MPL.forEach((p,i)=>{const w=p.x1-p.x0;
@@ -174,8 +178,10 @@ A.add({id:'morphband',name:'MORPHBAND',cat:'VERSUS',vs:1,time:120,warm:160,tags:
   const F=h.form,col=FORM[F].col,pc=PC[h.i],mv=h.gnd&&Math.abs(h.vx)>.3,run=mv?Math.sin(t*(F===3?.9:.45)):0,at=h.act/12;
   // afterimages behind the speed alien
   for(const tr of h.trail){c.globalAlpha=tr.t/24;X.ell(tr.x,tr.y-11,7,9,'#3a8cff');}c.globalAlpha=1;
-  X.shadow(h.x,h.gnd?h.gnd.y:GY,F===2?11:7,1.8,h.gnd?.4:.18);
-  c.save();c.translate(h.x,h.y);c.scale(h.face*1.2,1.2);
+  X.shadow(h.x,h.gnd?h.gnd.y:GY,F===2?13:8,2,h.gnd?.45:.18);
+  // the pod lights whoever stands near it from below, and each fighter carries a soft rim in their colour
+  if(lo()){X.glow(h.x,h.y-16,24,pc,.16);const pd=Math.abs(h.x-160);if(pd<90&&h.y>140)X.glow(h.x,h.y-6,16,'#4dff7a',.3*(1-pd/90));}
+  c.save();c.translate(h.x,h.y);c.scale(h.face*1.4,1.4);
   if(h.flash>0){c.globalAlpha=.6+.4*Math.sin(t);}
   if(h.morph>0){const m=h.morph/18;c.globalAlpha=.4+.6*(1-m);X.glow(0,-14,26,'#7dff6a',.7*m);}
   if(F===0){
@@ -230,19 +236,30 @@ A.add({id:'morphband',name:'MORPHBAND',cat:'VERSUS',vs:1,time:120,warm:160,tags:
    emblem(0,-12,2,pc);}
   c.restore();c.globalAlpha=1;
   // transformation: green rings climbing up the body
-  if(h.morph>0){const m=1-h.morph/18;for(let k=0;k<3;k++){const yy=h.y-((m*36+k*10)%34);c.strokeStyle='rgba(125,255,106,'+(.8-k*.2)+')';c.lineWidth=1.2;c.beginPath();c.ellipse(h.x,yy,10,2.6,0,0,TAU);c.stroke();}
-   if(lo())X.glow(h.x,h.y-14,30*(1-m)+6,'#ffffff',.5*(1-m));}
-  if(h.stun>0&&!h.morph)for(let k=0;k<3;k++){const a=t*.15+k*2.1;X.disc(h.x+Math.cos(a)*6,h.y-(F===2?42:35)+Math.sin(a)*1.5,.9,'#ffcf3f');}
-  X.ot(A.nm(h.i),cl(h.x,8,W-8),Math.max(20,h.y-(F===2?48:F===4?46:42)),pc,1,'c');};
+  if(h.morph>0){const m=1-h.morph/18;for(let k=0;k<4;k++){const yy=h.y-((m*44+k*11)%42);c.strokeStyle='rgba(125,255,106,'+(.85-k*.18)+')';c.lineWidth=1.3;c.beginPath();c.ellipse(h.x,yy,12,3,0,0,TAU);c.stroke();}
+   // a double helix of light spins up the body while the band rewrites the DNA
+   if(lo())for(let k=0;k<16;k++){const a=k*.45+t*.35,yy=h.y-k*2.8;X.disc(h.x+Math.sin(a)*10,yy,1.2,'#bfffb0');X.disc(h.x-Math.sin(a)*10,yy,1.2,'#7dff6a');}
+   if(lo()){X.glow(h.x,h.y-16,36*(1-m)+8,'#ffffff',.55*(1-m));c.strokeStyle='rgba(200,255,190,'+(.5*(1-m)).toFixed(2)+')';c.lineWidth=1;c.beginPath();c.moveTo(h.x,h.y-60);c.lineTo(h.x,h.y+2);c.stroke();}}
+  if(h.stun>0&&!h.morph)for(let k=0;k<3;k++){const a=t*.15+k*2.1;X.disc(h.x+Math.cos(a)*6,h.y-(F===2?48:41)+Math.sin(a)*1.5,1,'#ffcf3f');}
+  X.ot(A.nm(h.i),cl(h.x,8,W-8),Math.max(48,h.y-(F===2?56:F===4?54:49)),pc,1,'c');};
  // the HUD's band dial: four alien icons around the emblem, the energy ring and health
  const dial=(h,x)=>{const c=A.c,r=h.i?-1:1,pc=PC[h.i];
   X.panel(x,20,96,24,pc);
   X.meter(x+22,23,70,5,h.hp/100,h.hp>35?'#3dff8b':'#ff4f4f');
   X.meter(x+22,30,70,4,h.en/100,h.en>=MMIN?'#7dff6a':'#ff9a3a');
-  for(let f=1;f<=4;f++){const fx_=x+26+(f-1)*17,on=h.form===f,sel=!h.form&&h.sel===f;X.rr(fx_,36,13,6,2,on?FORM[f].col:sel?X.rgba(FORM[f].col,.45):'rgba(255,255,255,.12)');if(on)X.rrs(fx_,36,13,6,2,'#ffffff',.6);}
+  for(let f=1;f<=4;f++){const fx_=x+32+(f-1)*17,on=h.form===f,sel=!h.form&&h.sel===f,cc=on?FORM[f].col:sel?X.rgba(FORM[f].col,.6):'rgba(255,255,255,.14)';
+   X.disc(fx_,39,3.4,cc);if(f===1)X.poly([[fx_-2,37],[fx_,33],[fx_+2,37]],on?'#ffe08a':cc);else if(f===2)X.gem(fx_-2,36,3,on?'#7dffd8':cc);else if(f===3)X.poly([[fx_+1,37],[fx_+5,38],[fx_+1,40]],cc);else{X.poly([[fx_-3,37],[fx_-4,33],[fx_-1,36]],cc);X.poly([[fx_+3,37],[fx_+4,33],[fx_+1,36]],cc);}
+   if(on||sel){c.strokeStyle=on?'#ffffff':'rgba(255,255,255,.4)';c.lineWidth=.7;c.beginPath();c.arc(fx_,39,4.6,0,TAU);c.stroke();}}
   emblem(x+11,32,8,h.en>=MMIN||h.form?'#7dff6a':'#ff6a5a');if(lo()&&(h.en>=MMIN||h.form))X.glow(x+11,32,12,'#7dff6a',.25+.1*Math.sin(t*.1));
   A.text(FORM[h.form].n,x+48,46,h.form?FORM[h.form].col:'#e8e2d0',1,'c');void r;void c;};
  g.draw=()=>{const c=A.c;back();
+  if(lo()){c.globalCompositeOperation='lighter';
+   // a living aurora, the pod's beam reaching up into it, and the beam's pool of light on the junk
+   for(let i=0;i<3;i++){c.strokeStyle='rgba('+(i===1?'120,140,255':'80,255,150')+','+(.07+.03*Math.sin(t*.02+i)).toFixed(3)+')';c.lineWidth=10-i*2;c.beginPath();for(let x=0;x<=W;x+=12)c[x?'lineTo':'moveTo'](x,34+i*12+Math.sin(x*.02+t*.012+i*1.7)*12+Math.sin(x*.05-t*.02)*4);c.stroke();}
+   const bw=10+3*Math.sin(t*.05);c.fillStyle=X.lg(0,20,0,170,['rgba(120,255,160,0)','rgba(120,255,160,.14)','rgba(160,255,190,.32)']);c.beginPath();c.moveTo(160-bw*.3,20);c.lineTo(160+bw*.3,20);c.lineTo(160+bw,168);c.lineTo(160-bw,168);c.fill();
+   X.ell(160,GY+6,90,8,'rgba(77,255,122,.08)');c.globalCompositeOperation='source-over';
+   // ground fog rolling through the yard
+   for(let i=0;i<5;i++){const fx_=((i*90+t*.15*(1+i%2))%(W+160))-80;X.ell(fx_,GY-3+i%3*2,60,6,'rgba(170,190,220,.07)');}}
   // the pod's pulse and the drifting spores
   if(lo()){X.glow(160,170,46+6*Math.sin(t*.06),'#4dff7a',.16);for(const m of motes){if(m.dust){c.globalAlpha=m.dust/16*.6;X.disc(m.x,m.y,1.4,'#b8a888');}else if(m.ember){c.globalAlpha=m.ember/18;X.disc(m.x,m.y,1,'#ffb34a');}else{c.globalAlpha=.4+.4*Math.sin(t*.05+m.p*3);X.disc(m.x,m.y,.8,'#9dff8a');}}c.globalAlpha=1;}
   for(const b of orbs){const bob=b.gnd?Math.sin(t*.12)*1.5:0;if(lo())X.glow(b.x,b.y+bob,12,'#7dff6a',.55);X.orb(b.x,b.y+bob,4.5,'#5dff6a');emblem(b.x,b.y+bob,2,'#0a3a12');}
