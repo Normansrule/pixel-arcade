@@ -2,7 +2,16 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round21`, which includes rounds 11 to 20)
+## Unreleased (on branch `round22`, which includes rounds 11 to 21)
+
+### Round 22 (v45)
+
+- **BLOCK DROP, rebuilt:** cut-glass tiles with lit and shaded bevels, a well with rim lights, a sky behind it that changes with every level (violet nebula, deep sea, ember dusk, aurora, crimson storm) and slow aurora ribbons. New: a hold slot (UP), a three-piece preview, the seven-piece bag so no shape goes missing for long, a short lock delay so you can slide a piece into place, combos, back-to-back bonuses for clearing four rows twice in a row, a light beam across cleared rows, a stack that settles smoothly, and a red warning when the stack gets high.
+- **MUNCH MAZE, rebuilt:** neon tube walls that glow and turn violet while you are powered up, a shaded chomping muncher with a light trail, jelly-like bugs with wobbling skirts, and a fourth bug. Each bug hunts its own way: one chases, one cuts you off, one is shy and one closes the pincer with the chaser. Bonus fruit appears twice a level, eaten bugs score 200, 400, 800 and 1600, and getting caught plays a death animation.
+- **HELIX DROP, rebuilt:** a spinning 3D tower seen from above, with floors of twelve slices around a striped pole. Floors shatter outward when you drop through them, paint splats mark where you bounced, the colours change every five floors, and three clean drops in a row turn the ball into a fireball that smashes through the next floor, even a red one. Fifty floors to the finish.
+- **ROAD HOPPER, rebuilt:** turtle rows where some turtles dive under (step off before they sink), a fly that sometimes waits in a lily dock for 200 points, logs with bark and moss, cars, racers and trucks with headlight beams, a dusk road with kerbs and puddles, a hop animation, and a time bonus for reaching a dock quickly.
+- **The front-page "Freshly repainted" row** now starts with Helix Drop, Block Drop, Munch Maze and Road Hopper.
+
 
 ### Round 21 (v44)
 
