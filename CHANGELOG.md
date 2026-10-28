@@ -2,7 +2,15 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round22`, which includes rounds 11 to 21)
+## Unreleased (on branch `round23`, which includes rounds 11 to 22)
+
+### Round 23 (v46)
+
+- **NEON FIGHTERS, rebuilt:** a rain-soaked rooftop at night with a moonlit skyline, neon signs (one of them flickers), a hologram billboard, a water tower, steam vents, a sweeping searchlight, lightning, puddles and a wet floor that reflects the fighters. The four fighters are now jointed figures in glowing suits with their own looks (Volta's spiky hair and visor, Brick's shoulder pads and headband, Sable's ponytail and scarf, Moss's hood and leaf cape). New moves and feel: DOWN+B sweep (knocks down, block it crouching), jump attacks, hit-stop on every blow, knockdowns, combo counter, chip damage, specials that clash in mid-air, and four elemental specials (arc ball and moon blade go high so you can duck them; rock roll and thorn wave go low so you jump them). Health bars with a white damage trail, special meters, round diamonds, a ROUND / FIGHT! / K.O. / PERFECT K.O. / TIME! banner and a winner's pose. The select screen shows each fighter on a card with speed, power and special, and picks for you after ten seconds.
+- **CRATE PUSHER, rebuilt:** a lamp-lit warehouse with shelving in the dark around each room, raised walls with brick faces and hazard paint, scuffed concrete floors, yellow loading bays, wooden crates with metal corners that light up green on a bay, and a worker in a hard hat. A now undoes a move (B still resets), the score rewards solving a room in few moves, and three new rooms bring it to eight (all checked solvable by the test suite).
+- **GOLF DUEL, rebuilt:** three themed holes (a meadow with a pond, a desert canyon with cacti, and a lantern-lit pond garden at dusk) with raised rails, mown stripes, brick and stone walls, sand traps that slow the ball, water that costs a stroke and puts you back, and bumpers that kick the ball away. A scorecard with par for every hole, birdie and hole-in-one calls, a power ring and aim arrow, and a ball trail. The CPU now plans a bank shot around walls instead of putting straight into them.
+- **FIRE FIGHTER, rebuilt:** a suburban block that turns from dusk to night over the 90-second shift, houses with lit windows, fences, trees and street lamps, a fire truck with flashing lights where you refill, and a hose that trails behind you. Fires grow from the windows to the roof, blacken the house, throw smoke and embers and light up the street; water arcs, mists and hisses into steam. A fire left too long now spreads to the house next door, and lost houses smoulder as ruins.
+- **The front-page "Freshly repainted" row** now starts with Neon Fighters, Crate Pusher, Golf Duel and Fire Fighter.
 
 ### Round 22 (v45)
 
