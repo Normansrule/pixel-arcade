@@ -2,7 +2,21 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round23`, which includes rounds 11 to 22)
+## Unreleased (on branch `round24`, which includes rounds 11 to 23)
+
+### Round 24 (v47): unfinished games fixed
+
+Games that ended within seconds or had only one rule got real gameplay this round: health instead of one-touch deaths, stages, pickups, combos and a reason to keep playing until the clock runs out.
+
+- **CANYON RUN 3D, rebuilt:** up and down now change altitude, A boosts. Rock pillars, low rubble and high stone bridges to fly around, under or over; crystal trails that fill boost and build a combo up to X5; close passes and wall skimming score extra. Three hull points instead of instant death, a gate every 300 m that repairs the hull, and four sectors (Red Gorge, Dusk Pass, Moon Rift, Ember Deep) with their own sky, rock and river colours.
+- **ROLLER 3D, rebuilt:** a five-lane floating track built from nine hand-made pieces (gaps, single-lane snakes, split paths, checkerboards, zigzags, bumpers, boost pads and launch pads), gems to collect, checkpoint flags and three balls: falling sends you back to the last flag instead of ending the game. Four zones that get faster.
+- **CUBE FIELD 3D, rebuilt:** three shields, A brakes, walls of cubes with one gap from zone 2, near misses build a combo up to X8, gems, shield orbs and slow-motion pickups, and a fifth colour zone.
+- **RING RACE 3D, rebuilt:** rings follow a flowing ribbon; every five in a row raises the multiplier, gold rings give a speed boost, floating mines cost three seconds, and the course moves through Green Valley, Sapphire Bay and Neon Night with trees, palms and towers.
+- **DASH RUNNER, rebuilt:** three hearts, a double jump, tall crate stacks, drones to duck, pits and spikes, coin arcs, magnet and shield pickups, and four stages (Dusk Desert, Neon City, Snow Peaks, Ember Wastes) that each give a heart back.
+- **FLAP BOT:** three batteries instead of one-touch deaths, bolts to collect (every eight refill a battery), moving pipes and narrower gaps as you go, and morning, sunset and night skies.
+- **COLOR WHEEL:** three lives, rainbow balls that match any colour, and a streak bonus.
+- **BALLOON BLITZ, rebuilt:** pumping on a steady beat gives big puffs while mashing heats the balloon until it pops. First to three rounds, each with a twist (leaky valves, a hot day, a golden beat), a beat ring around each pump, a crowd and confetti.
+- The "Fresh on the shelf" row shows Canyon Run, Roller, Cube Field, Dash Runner, Balloon Blitz and Flap Bot.
 
 ### Round 23 (v46)
 
