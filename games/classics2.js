@@ -310,11 +310,11 @@ A.add({id:'runner',name:'DASH RUNNER',cat:'CLASSICS',tags:'runner endless run ju
   if(banner){c.globalAlpha=Math.min(1,banner/20);X.ot('STAGE '+(stage+1),160,50,'#ffffff',1,'c');X.ot(P.n,160,60,P.top,3,'c');c.globalAlpha=1;}};
  return g;}});
 /* ---- CAVE COPTER ---- */
-A.add({id:'copter',name:'CAVE COPTER',cat:'CLASSICS',how:'HOLD A TO RISE. RELEASE TO SINK.',make(){
+A.add({id:'copter',name:'CAVE COPTER',cat:'CLASSICS',tags:'copter cave helicopter one button',how:'HOLD A TO RISE, RELEASE TO SINK. 3 LIVES: A CRASH PUTS YOU BACK IN THE TUNNEL.',make(){
  const g={over:null,score:0},fx=X.fx();let y=120,vy=0,cave=[],d=0,mid=120,blocks=[],puffs=[];for(let i=0;i<82;i++)cave.push([30,210]);
  let go=false;g.update=()=>{const up=A.in(0).a||A.in(0).u;if(up)go=true;if(!go){y=120+Math.sin(A.t*.08)*5;if(A.t%3===0)puffs.push({x:46,y:y+1,t:30});puffs.forEach(p=>{p.x-=2;p.t--;});puffs=puffs.filter(p=>p.t>0);return;}d++;g.score=d/6|0;vy+=up?-.16:.14;vy=cl(vy,-3,3);y+=vy;if(d%3===0)puffs.push({x:46,y:y+1,t:30});puffs.forEach(p=>{p.x-=2;p.y-=.15;p.t--;});puffs=puffs.filter(p=>p.t>0);
   if(d%2===0){mid=cl(mid+rnd(14)-7,70,170);const gap=Math.max(62,150-d/60);cave.shift();cave.push([mid-gap/2,mid+gap/2]);blocks.forEach(b=>b.x-=4);if(d%90===0)blocks.push({x:W,y:mid-gap/2+rnd(gap-24)});blocks=blocks.filter(b=>b.x>-10);}
-  const c=cave[15];if(y-5<c[0]||y+5>c[1]||blocks.some(b=>b.x<70&&b.x+8>50&&y+5>b.y&&y-5<b.y+24)){g.over='GAME OVER';S('boom');fx.flash(K.o,10);fx.debris(56,y,'#ffcf3f',14,2.5);fx.spark(56,y,K.o,16,3);fx.ring(58,y,'#ffcf3f',34,18);A.shake=8;}};
+  const c=cave[15];if(y-5<c[0]||y+5>c[1]||blocks.some(b=>b.x<70&&b.x+8>50&&y+5>b.y&&y-5<b.y+24)){if(!inv){fx.debris(56,y,'#ffcf3f',14,2.5);fx.spark(56,y,K.o,16,3);fx.ring(58,y,'#ffcf3f',34,18);}hurt('CRASHED',()=>{y=(c[0]+c[1])/2;vy=0;blocks=blocks.filter(b=>b.x>120);});if(inv){y=cl(y,c[0]+6,c[1]-6);}}};
  g.draw=()=>{X.cache('copterbg2',()=>{X.sky(['#0a0814','#141428','#1a1e30','#0a0c14']);X.glow(160,120,170,'#2a5a7a',.22);X.glow(240,90,60,'#8a3aaa',.12);X.glow(70,160,50,'#2ab8a0',.1);for(let i=0;i<9;i++){const px=i*38+(i*17)%20,pw=10+(i*7)%10;A.c.fillStyle=X.lg(px,0,px+pw,0,['#16162a','#20203a','#141426']);A.c.fillRect(px,0,pw,H);}});const c=A.c,off=(d%2)*2,lo=()=>A.gfx!=='off',sh=d>>1;
   c.save();c.translate(0,H);c.scale(1,-1);X.hills(150,50,'rgba(30,30,56,.55)',d*.6,.03,2);c.restore();X.hills(170,50,'rgba(30,30,56,.55)',d*.6,.03,4);c.save();c.translate(0,H);c.scale(1,-1);X.hills(190,40,'rgba(40,40,72,.7)',d*1.2,.04,7);c.restore();X.hills(214,40,'rgba(40,40,72,.7)',d*1.2,.035,5);
   for(let i=0;i<14;i++){const mx=((i*67-d*1.5)%(W+20)+W+20)%(W+20)-10,my=40+(i*53)%160,tw=.4+.4*Math.sin(A.t*.05+i);c.fillStyle='rgba(190,230,255,'+(tw*.5).toFixed(2)+')';c.fillRect(mx,my+Math.sin(A.t*.02+i)*4,1.2,1.2);}
@@ -328,6 +328,7 @@ A.add({id:'copter',name:'CAVE COPTER',cat:'CLASSICS',how:'HOLD A TO RISE. RELEAS
   c.save();c.translate(58,y);c.rotate(vy*.08);c.scale(1.3,1.3);X.rr(-8,-4,17,9,4,X.lg(0,-4,0,5,['#fff0a0','#ffcf3f','#b07a10']));X.rr(2,-3,6,5,2,X.lg(0,-3,0,2,['#d8f8ff','#4aa0d0']));c.fillStyle='#b07a10';c.fillRect(-16,-1,9,2.4);c.fillRect(-17,-4,2,5);c.fillStyle='#555';c.fillRect(-1,-7,2,3);c.fillRect(-4,5,10,1.2);
   const bw=A.t%3;c.fillStyle='rgba(230,240,255,'+(bw?.5:.85)+')';c.fillRect(-10+bw*2,-8,21-bw*4,1.2);c.fillStyle='rgba(230,240,255,.5)';c.fillRect(-18,-4+bw,1,5-bw*2);c.restore();X.glow(66,y,8,'#ffe080',.2);
   if(!go&&A.t%50<35)X.ot('HOLD A TO FLY',160,150,K.w,2,'c');fx.draw();X.bar('DIST '+g.score,'','',K.y);if(g.score>0&&g.score%100<3&&go)X.ot(Math.floor(g.score/100)*100+'M!',160,40,'#5af0d0',2,'c');};
+ let lives=3,inv=0;const hurt=(why,fix)=>{if(inv||g.over)return false;lives--;inv=90;S('boom');A.shake=7;fx.flash('#ff3030',8);if(lives<=0){g.over=why;return true;}fx.pop(160,90,lives===1?'LAST LIFE!':why,'#ff6a6a');if(fix)fix();return true;};g._lives=()=>lives;const _u=g.update,_d=g.draw;g.update=()=>{if(inv)inv--;_u();};g.draw=()=>{_d();const c=A.c;if(inv&&inv%12<6){c.fillStyle='rgba(255,40,40,.12)';c.fillRect(0,0,W,H);}for(let i=0;i<3;i++)X.heart(10+i*12,228,1.1,i<lives?'#ff4f6d':'rgba(255,255,255,.25)');};
  return g;}});
 
 /* ---- NEON TRAILS ---- */

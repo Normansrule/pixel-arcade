@@ -4,6 +4,19 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round24`, which includes rounds 11 to 23)
 
+### Round 24, batch 2 (v48): no more button mashing or one-touch deaths
+
+- **100M DASH:** a steady left-right stride beats mashing (mashing tires you and halves your push), a reaction start (go too early and you false-start, go on the gun for a great start), a stamina bar, B dips at the line, and best of three heats.
+- **ROWING:** one press per stroke as the marker crosses the green catch zone; perfect strokes surge, early ones are weak, and an extra press "catches a crab" and stops the boat. The zone narrows towards the finish.
+- **ARM WRESTLE:** hold A to push and let go to rest; stamina runs out if you never rest. Arrow prompts appear and the first to hit the right arrow gets a surge (a wrong one slips).
+- **CARD WAR:** now has decisions. Both players hold their top three cards face up and play one at the same time, so you read the rival's hand. The CPU reads yours on harder levels.
+- **JAVELIN and SPEED SKATE:** the same steady-stride running as the dash.
+- **LASER DODGE:** three shields, energy cells to collect, grazing a laser scores, and from wave 3 triple-laser walls; every wave gives a shield back.
+- **PING BOUNCE:** three lives, stars to collect (every ten give a life back).
+- **WALL JUMP:** three hearts, gems along the shaft, swinging saw blades, and falling puts you back on the last safe wall.
+- **Three lives instead of one touch** in fifteen more quick-play games that used to end on the first mistake: Cave Copter, Paper Plane, Gravity Flip, Dash Jump, Color Switch, Piano Tiles, Rope Swing, Tower Stack, Frost Peak, Tunnel Run 3D, Jetpack Run, Temple Dash 3D, Meteor Shower, Bounce Ball and Cloud Hop. A hit costs a heart, flashes the screen red and puts you somewhere safe (back in the tunnel, on a fresh platform, or with a high bounce), and the hearts sit in the bottom-left corner.
+- The "Fresh on the shelf" row now shows Arm Wrestle, Card War, Rowing, 100M Dash, Laser Dodge and Wall Jump.
+
 ### Round 24 (v47): unfinished games fixed
 
 Games that ended within seconds or had only one rule got real gameplay this round: health instead of one-touch deaths, stages, pickups, combos and a reason to keep playing until the clock runs out.

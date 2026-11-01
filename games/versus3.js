@@ -113,15 +113,26 @@ A.add({id:'filler',name:'HEX FILLER',cat:'BOARD',vs:1,how:'LEFT/RIGHT PICK A COL
   const n=[0,1].map(i=>own.filter(v=>v===i).length);hudv(n[0],n[1],A.nm(p)+(A.cpu&&p===1?' THINKS...':' PICKS'));const fr=n[0]/(NX*NY),fr2=n[1]/(NX*NY);X.rr(60,227,200,5,2.5,'rgba(0,0,0,.5)');X.rr(60,227,200*fr,5,2.5,K.c);X.rr(260-200*fr2,227,200*fr2,5,2.5,K.p);A.line(160,225,160,234,'#ffffff',1);fx.draw();};
  return g;}});
 
-A.add({id:'armwrestle',name:'ARM WRESTLE',cat:'VERSUS',vs:1,how:'TAP A AS FAST AS YOU CAN. PIN YOUR RIVAL\'S HAND. BEST OF 3.',make(){
- const g={over:null,score:0},fx=X.fx();let pos=0,sc=[0,0],t=-80,pw=[0,0],tap=[0,0];
- g.update=()=>{t++;for(let i=0;i<2;i++)if(tap[i]>0)tap[i]--;if(t<0)return;for(let i=0;i<2;i++){if(A.cpu&&i===1){pw[1]+=(.08+.1*A.ai)*(Math.random()<.9?1:0);if(A.t%7===0)tap[1]=4;}else if(A.hit(i).a){pw[i]+=1.1;tap[i]=4;}pw[i]*=.9;}pos+=(pw[1]-pw[0])*.03;pos*=.998;
-  if(Math.abs(pos)>1){const w=pos<0?0:1;sc[w]++;S('score');const hx=w?100:220;fx.spark(hx,150,'#ffffff',18,3);fx.ring(hx,150,w?K.p:K.c,30);fx.pop(160,80,A.nm(w)+' PINS!',w?K.p:K.c);fx.flash('#ffffff',6);A.shake=7;pos=0;pw=[0,0];t=-60;if(sc[w]>=2)g.over=A.win(w);}};
+A.add({id:'armwrestle',name:'ARM WRESTLE',cat:'VERSUS',vs:1,tags:'arm wrestling strength duel',how:'HOLD A TO PUSH, LET GO TO REST. HIT THE ARROW FIRST FOR A SURGE. BEST OF 3.',make(){
+ const g={over:null,score:0},fx=X.fx();let pos=0,sc=[0,0],t=-80,pw=[0,0],tap=[0,0],st=[1,1],ex=[0,0],qte=null,qn=150,cpuR=0,slip=[0,0];const DIRS=['l','r','u','d'];g._s=()=>({pos,sc,t,st,ex,qte,pw});
+ g.update=()=>{t++;for(let i=0;i<2;i++){if(tap[i]>0)tap[i]--;if(slip[i])slip[i]--;}if(t<0)return;
+  // QTE: an arrow shows for both; first correct press surges, a wrong one slips
+  if(!qte&&--qn<=0){qte={d:DIRS[ri(4)],t:0};cpuR=Math.round(46-30*A.ai+ri(14));S('blip');}
+  if(qte){qte.t++;let won=-1;for(let i=0;i<2;i++){if(slip[i])continue;let pr=null;if(A.cpu&&i===1){if(qte.t===cpuR)pr=Math.random()<.85+A.ai*.13?qte.d:DIRS[(DIRS.indexOf(qte.d)+1)%4];}else{const h=A.hit(i);for(const d of DIRS)if(h[d])pr=d;}
+    if(pr){if(pr===qte.d){won=i;break;}else{slip[i]=30;fx.pop(i?240:80,60,'SLIP!','#ff6a5a');S('lose');}}}
+   if(won>=0){pos+=won?.28:-.28;st[won]=Math.min(1,st[won]+.15);tap[won]=10;fx.pop(won?240:80,60,'SURGE!',K.y);fx.ring(won?240:80,120,won?K.p:K.c,40,14);A.shake=4;S('power');qte=null;qn=120+ri(90);}
+   else if(qte.t>90){qte=null;qn=100+ri(80);}}
+  for(let i=0;i<2;i++){let hold;if(A.cpu&&i===1){const th=.2+.25*(1-A.ai);hold=ex[1]?false:(g._cpuHold?st[1]>th:st[1]>th+.35);g._cpuHold=hold;}else hold=A.in(i).a;
+   if(ex[i]){ex[i]--;pw[i]+=(.15-pw[i])*.2;st[i]=Math.min(1,st[i]+.007);continue;}
+   if(hold&&st[i]>0){pw[i]+=(1-pw[i])*.15;st[i]-=.0085;if(A.t%7===i)tap[i]=4;if(st[i]<=0){st[i]=0;ex[i]=70;fx.pop(i?240:80,60,'EXHAUSTED!','#ff9a6a');S('lose');}}
+   else{pw[i]+=(.38-pw[i])*.15;st[i]=Math.min(1,st[i]+.0065);}}
+  pos+=(pw[1]-pw[0])*.012;pos*=.999;
+  if(Math.abs(pos)>1){const w=pos<0?0:1;sc[w]++;S('score');const hx=w?100:220;fx.spark(hx,150,'#ffffff',18,3);fx.ring(hx,150,w?K.p:K.c,30);fx.pop(160,80,A.nm(w)+' PINS!',w?K.p:K.c);fx.flash('#ffffff',6);A.shake=7;pos=0;pw=[0,0];st=[1,1];ex=[0,0];qte=null;qn=150;t=-60;g.score=sc[0]*100;if(sc[w]>=2)g.over=A.win(w);}};
  const bg=()=>{X.vg(0,0,W,H,['#2a1a10','#4a2e1a','#2a1a0c']);X.wood(0,0,W,120,'#4a2e1a',true);const cx=A.c;cx.fillStyle='rgba(0,0,0,.25)';cx.fillRect(0,116,W,4);
   [[30,40],[250,40]].forEach(([x,y])=>{X.rr(x,y+18,44,4,1,'#6a4228');for(let k=0;k<4;k++){const bc=['#3a8a4a','#8a3a2a','#c8a040','#3a5a9a'][k];X.rr(x+3+k*10,y+(k%2?4:0),7,18-(k%2?4:0),2,X.lg(x+3+k*10,0,x+10+k*10,0,[X.lt(bc,1.4),bc,X.lt(bc,.5)]));cx.fillStyle='rgba(255,255,255,.3)';cx.fillRect(x+4+k*10,y+4+(k%2?4:0),1,10);}});
   X.glow(160,10,110,'#ffc070',.35);X.poly([[150,0],[170,0],[176,14],[144,14]],'#3a2a1a');X.disc(160,15,4,'#fff0c0');X.poly([[144,14],[176,14],[230,120],[90,120]],'rgba(255,220,150,.05)');
   X.ot('ARM WRESTLING',160,24,'#ffcf3f',1,'c');X.vg(20,150,280,90,['#8a5c33','#6a4220','#3a2410']);X.wood(20,150,280,8,'#9a6a3c');cx.fillStyle='rgba(255,255,255,.12)';cx.fillRect(20,150,280,1);X.vignette(.55);};
- const wrestler=(i,hx,hy)=>{const d=i?-1:1,col=i?K.p:K.c,cx=A.c,bx=i?240:80,strain=Math.min(1,pw[i]*.25),skin=i?'#c88a5a':'#f0c090',ex=160-d*12,ey=152;
+ const wrestler=(i,hx,hy)=>{const d=i?-1:1,col=i?K.p:K.c,cx=A.c,bx=i?240:80,strain=Math.min(1,pw[i]),skin=i?'#c88a5a':'#f0c090',ex=160-d*12,ey=152;
   X.rr(bx-30,96,60,64,18,X.lg(bx-30,0,bx+30,0,[X.lt(col,1.25),col,X.lt(col,.55)]));cx.fillStyle='rgba(0,0,0,.15)';cx.fillRect(bx-2,104,4,40);
   X.stroke([[bx+d*20,108],[ex-d*10,ey-4],[ex,ey]],col,13);X.stroke([[ex,ey],[hx,hy]],skin,10);X.stroke([[ex,ey],[hx,hy]],X.lt(skin,1.15),4);
   X.stroke([[bx-d*22,110],[bx-d*34,146]],col,11);X.orb(bx-d*34,150,6,skin);
@@ -133,8 +144,8 @@ A.add({id:'armwrestle',name:'ARM WRESTLE',cat:'VERSUS',vs:1,how:'TAP A AS FAST A
   X.rr(84,146,30,8,3,'#ff4f6d');X.rr(206,146,30,8,3,K.c);X.ell(160,154,10,3,'rgba(0,0,0,.4)');
   wrestler(0,hx,hy);wrestler(1,hx,hy);X.orb(hx,hy,10,'#e0a878',0);A.line(hx-5,hy-4,hx+5,hy-4,'rgba(80,40,20,.5)',1);A.line(hx-6,hy,hx+6,hy,'rgba(80,40,20,.5)',1);if(tap[0]||tap[1])X.glow(hx,hy,16,'#ffffff',.25);
   hudv(sc[0],sc[1],'BEST OF 3');X.panel(58,34,204,14,'#ffffff');X.rr(62,38,196,6,3,'rgba(0,0,0,.6)');const f=cl(-pos,-1,1);if(f>0)X.rr(160,38,96*f,6,3,X.lg(160,0,256,0,[K.c,X.lt(K.c,1.5)]));else if(f<0)X.rr(160+96*f,38,-96*f,6,3,X.lg(64,0,160,0,[X.lt(K.p,1.5),K.p]));A.line(160,36,160,46,'#ffffff',1.5);
-  for(let i=0;i<2;i++){const x=i?W-14:8,hgt=Math.min(1,pw[i]*.25)*40;X.rr(x,100,6,42,3,'rgba(0,0,0,.5)');if(hgt>0)X.rr(x+1,141-hgt,4,hgt,2,i?K.p:K.c);}
-  if(t<0){X.ot(t<-20?'READY...':'GRIP!',160,60,K.y,2,'c');}else{const pul=1+(A.t>>3)%2;X.ot('TAP A!',160,60,pul>1?K.y:'#ffffff',2,'c');}fx.draw();};
+  for(let i=0;i<2;i++){const x=i?W-14:8,hgt=st[i]*40;X.rr(x,100,6,42,3,'rgba(0,0,0,.5)');if(hgt>0)X.rr(x+1,141-hgt,4,hgt,2,ex[i]?'#ff6a5a':st[i]<.25?'#ffcf3f':'#3dff8b');T('STAMINA',i?W-4:4,92,'#ffffff',1,i?'r':'l');}
+  if(t<0){X.ot(t<-20?'READY...':'GRIP!',160,60,K.y,2,'c');}else{if(qte){const sc2=1+Math.max(0,8-qte.t)*.1;X.panel(136,52,48,40,K.y);const ang={l:3.1416,r:0,u:-1.5708,d:1.5708}[qte.d],c=A.c;c.save();c.translate(160,72);c.rotate(ang);c.scale(sc2,sc2);X.poly([[12,0],[-2,-11],[-2,-5],[-12,-5],[-12,5],[-2,5],[-2,11]],A.t%10<5?'#ffcf3f':'#ffffff');c.restore();}else X.ot(ex[0]?'REST...':'HOLD A!',160,60,ex[0]?'#ff9a6a':'#ffffff',2,'c');}fx.draw();};
  return g;}});
 
 A.add({id:'rps',name:'RPS SHOWDOWN',cat:'VERSUS',vs:1,how:'LEFT ROCK, UP PAPER, RIGHT SCISSORS. THE CPU LEARNS YOUR HABITS. FIRST TO 5.',make(){
