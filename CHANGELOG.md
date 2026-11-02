@@ -4,6 +4,18 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round24`, which includes rounds 11 to 23)
 
+### Round 24, batch 3 (v49): second chances and real puzzles
+
+- **CUBE HOP, rebuilt:** an on-screen compass shows which arrow hops where (up and left go up the pyramid, down and right go down it). From pyramid 2 every cube needs two hops (orange, then yellow, then cyan), a purple coil hops after you and always picks the cube nearest you, and green orbs freeze every enemy for three seconds. Falling off or getting hit costs one of three hearts with a moment of safety, and a fast pyramid scores a time bonus.
+- **STACK TOWER:** the overhang is now cut off like a real stacker, so the floor shrinks when you miss the middle. Three perfect drops in a row widen it again.
+- **STACK 3D:** a missed block costs one of three spare blocks instead of ending the game, and every 10 floors gives a spare back.
+- **ORBIT HOP:** the difficulty now really ramps (pads shrink and rings spin faster; before, every new ring was as easy as the first). A miss no longer moves you up a ring, a streak of landings multiplies the score up to X4, and the view smoothly follows you so you can always see the next two rings.
+- **ROCKET LANDING:** three rockets; a crash retries the same ship instead of ending the run, and from ship 3 a crosswind pushes you sideways.
+- **FRUIT SLICE:** a bomb is a strike (and -10 points) instead of an instant game over; three strikes from drops or bombs end it.
+- **WORM ARENA:** three lives with a respawn at half length and a moment of safety, and +10 for every worm you cut off.
+- **SORT IT:** now shows the par (fewest swaps possible) and scores each level, with a bonus for matching par. Before, the score was the number of swaps, so worse play scored higher.
+- **SUM TEN:** quick pairs chain up to X5, each pair adds half a second, a wrong pick costs a second, and the board reshuffles if no pair is left.
+
 ### Round 24, batch 2 (v48): no more button mashing or one-touch deaths
 
 - **100M DASH:** a steady left-right stride beats mashing (mashing tires you and halves your push), a reaction start (go too early and you false-start, go on the gun for a great start), a stamina bar, B dips at the line, and best of three heats.

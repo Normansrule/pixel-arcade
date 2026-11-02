@@ -6,7 +6,7 @@
  document.querySelectorAll('.spot [data-play]').forEach(b=>b.addEventListener('click',()=>{const gm=byId(b.dataset.play);if(gm)A.shelf.play(gm);}));
  // the repainted row: prerendered box art, a name and the shelf it lives on
  const fresh=document.getElementById('fresh');
- if(fresh)['armwrestle','war','rowing','dash100','laserdodge','walljump'].map(byId).filter(Boolean).forEach(gm=>{
+ if(fresh)['cubehop','stacktower','orbit','rocket','wormarena','sortit'].map(byId).filter(Boolean).forEach(gm=>{
   const b=document.createElement('button');b.type='button';b.className='fr';b.setAttribute('aria-label','Play '+tc(gm.name));
   const art=document.createElement('span');art.className='fr-art';A.shelf.art(gm,art);
   const nm=document.createElement('b');nm.textContent=tc(gm.name);const ct=document.createElement('em');ct.textContent=tc(gm.cat);

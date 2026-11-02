@@ -38,9 +38,10 @@ A.add({id:'spotodd',name:'SPOT THE ODD',cat:'PUZZLE',how:'ONE TILE IS A SLIGHTLY
   X.bar('FOUND '+g.score,ts,'',K.y,ts<=10?'#ff4f6d':'#fff3d6');X.meter(112,6,96,6,time/3600,ts<=10?'#ff4f6d':'#2fd6c3');};
  return g;}});
 
-A.add({id:'sortit',name:'SORT IT',cat:'PUZZLE',low:1,how:'A PICKS A BAR, A AGAIN SWAPS. SORT SHORT TO TALL IN FEW SWAPS.',make(){
- const g={over:null,score:0},fx=X.fx(),bp=bpop();let n=6,bars,sel=-1,c=0,lvl=0,dx={};const bh=v=>10+v*150/n;const gen=()=>{lvl++;n=Math.min(10,5+lvl);bars=shuf([...Array(n).keys()].map(i=>i+1));if(bars.every((v,i)=>v===i+1))[bars[0],bars[1]]=[bars[1],bars[0]];sel=-1;c=0;dx={};bars.forEach((v,i)=>dx[v]=i);};gen();
- g.update=()=>{bars.forEach((v,i)=>{dx[v]+=(i-dx[v])*.25;});const h=A.hit(0);if(h.l)c=(c+n-1)%n;if(h.r)c=(c+1)%n;if(h.l||h.r)S('blip');if(h.a){if(sel<0){sel=c;S('blip');}else{if(sel!==c){[bars[sel],bars[c]]=[bars[c],bars[sel]];g.score++;S('hit');A.shake=1;const w=260/n;[sel,c].forEach(i=>{const bx=30+i*w+w/2;fx.ring(bx,212,'#ffffff',w*.6,12);if(bars[i]===i+1)fx.spark(bx,210-bh(bars[i]),'#3dff8b',8,1.8);});}sel=-1;if(bars.every((v,i)=>v===i+1)){S('win');A.confetti();fx.flash('#3dff8b',6);const w=260/n;for(let i=0;i<n;i++)fx.spark(30+i*w+w/2,210-bh(i+1),'#3dff8b',4,1.6);bp.add(160,100,lvl>=5?'ALL SORTED!':'SORTED!','#3dff8b');if(lvl>=5)g.over='SORTED IN '+g.score+' SWAPS! WIN';else gen();}}}};
+A.add({id:'sortit',name:'SORT IT',cat:'PUZZLE',low:1,how:'A PICKS A BAR, A AGAIN SWAPS. SORT SHORT TO TALL. MATCH PAR SWAPS FOR A BONUS.',make(){
+ const g={over:null,score:0},fx=X.fx(),bp=bpop();let n=6,bars,sel=-1,c=0,lvl=0,dx={},sw=0,par=0,tot=0;const cyc=a=>{const seen=Array(a.length).fill(0);let k=0;for(let i=0;i<a.length;i++){if(seen[i])continue;k++;let j=i;while(!seen[j]){seen[j]=1;j=a[j]-1;}}return a.length-k;};const bh=v=>10+v*150/n;const gen=()=>{lvl++;n=Math.min(10,5+lvl);bars=shuf([...Array(n).keys()].map(i=>i+1));if(bars.every((v,i)=>v===i+1))[bars[0],bars[1]]=[bars[1],bars[0]];sel=-1;c=0;dx={};sw=0;par=cyc(bars);bars.forEach((v,i)=>dx[v]=i);};gen();
+ g._s=()=>({bars,sel,c,sw,par,lvl});
+ g.update=()=>{bars.forEach((v,i)=>{dx[v]+=(i-dx[v])*.25;});const h=A.hit(0);if(h.l)c=(c+n-1)%n;if(h.r)c=(c+1)%n;if(h.l||h.r)S('blip');if(h.a){if(sel<0){sel=c;S('blip');}else{if(sel!==c){[bars[sel],bars[c]]=[bars[c],bars[sel]];sw++;tot++;S('hit');A.shake=1;const w=260/n;[sel,c].forEach(i=>{const bx=30+i*w+w/2;fx.ring(bx,212,'#ffffff',w*.6,12);if(bars[i]===i+1)fx.spark(bx,210-bh(bars[i]),'#3dff8b',8,1.8);});}sel=-1;if(bars.every((v,i)=>v===i+1)){S('win');A.confetti();fx.flash('#3dff8b',6);const w=260/n;for(let i=0;i<n;i++)fx.spark(30+i*w+w/2,210-bh(i+1),'#3dff8b',4,1.6);const pts=Math.max(20,100+n*10-(sw-par)*20)+(sw===par?50:0);g.score+=pts;bp.add(160,100,(sw===par?'PERFECT! +':'SORTED +')+pts,sw===par?'#ffcf3f':'#3dff8b');if(lvl>=5)g.over='SORTED IN '+tot+' SWAPS! WIN';else gen();}}}};
  g.draw=()=>{stg('p4_sort2','#28184f','#160e34','#08061a','#ff4f9a');const c2=A.c,w=260/n;X.rr(30+c*w+2,24,w-4,186,6,'rgba(255,255,255,.05)');
   X.rr(18,210,284,8,3,X.lg(0,210,0,218,['#7a6ab8','#3a2c70','#1a1238']));c2.fillStyle='rgba(255,255,255,.4)';c2.fillRect(22,210,276,1);
   bars.forEach((v,i)=>{const x=30+dx[v]*w,hh=bh(v),ok=v===i+1,col=i===sel?'#ffcf3f':ok?'#3dff8b':hm('#ff3f8e','#2fe8d0',v/n),lift=i===sel?10+2*Math.sin(A.t*.2):0,y=210-hh-lift;
@@ -48,7 +49,7 @@ A.add({id:'sortit',name:'SORT IT',cat:'PUZZLE',low:1,how:'A PICKS A BAR, A AGAIN
    X.rr(x+3,y,w-6,hh,4,X.lg(x+3,0,x+w-3,0,[X.lt(col,1.3),col,col,X.lt(col,.5)]));X.rr(x+3,y,w-6,6,3,X.lt(col,1.55));c2.fillStyle='rgba(255,255,255,.35)';c2.fillRect(x+6,y+8,2,Math.max(0,hh-12));c2.fillStyle='rgba(0,0,0,.18)';for(let k=y+16;k<y+hh-4;k+=12)c2.fillRect(x+9,k,w-15,1);
    X.ot(v,x+w/2,y-14,ok?'#3dff8b':'#fff3d6',2,'c');c2.globalAlpha=.18;X.rr(x+3,219,w-6,Math.min(14,hh*.15),3,X.lg(0,219,0,233,[col,X.rgba(col,0)]));c2.globalAlpha=1;});
   const ax=30+c*w+w/2,ay=224+Math.sin(A.t*.2)*1.5;X.poly([[ax,ay],[ax-6,ay+8],[ax+6,ay+8]],sel>=0?'#ffcf3f':'#ffffff');
-  fx.draw();bp.draw();X.bar('LEVEL '+lvl+'/5','SWAPS '+g.score,sel>=0?'PICK A BAR TO SWAP':'',K.y,'#ffcf3f');};
+  fx.draw();bp.draw();X.bar('LEVEL '+lvl+'/5','SWAPS '+sw+' / PAR '+par,sel>=0?'PICK A BAR TO SWAP':'SCORE '+g.score,K.y,sw>par?'#ff9a6a':'#ffcf3f');};
  return g;}});
 
 A.add({id:'symmetry',name:'SYMMETRY',cat:'PUZZLE',how:'MIRROR THE LEFT PATTERN ONTO THE RIGHT GRID. A TOGGLES A CELL.',make(){
