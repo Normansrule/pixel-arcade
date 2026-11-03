@@ -144,7 +144,7 @@ A.add({id:'cavediver',name:'CAVE DIVER',cat:'CLASSICS',how:'SWIM WITH THE ARROWS
  return g;}});
 
 /* ---- FIRE FIGHTER (rebuilt round 23: dusk-to-night street block, hose line, spreading fires, smoke) ---- */
-A.add({id:'firefighter',name:'FIRE FIGHTER',cat:'SIM',how:'MOVE. HOLD A TO SPRAY THE HOSE. REFILL AT THE TRUCK. FIRES SPREAD IF LEFT. SAVE THE BLOCK FOR 90 SEC.',make(){
+A.add({id:'firefighter',name:'FIRE FIGHTER',cat:'SIM',how:'MOVE, HOLD A TO SPRAY. REFILL AT THE TRUCK. FIRES SPREAD. SAVE THE BLOCK FOR 90 SEC.',make(){
  const g={over:null,score:0},fx=X.fx(),lo=()=>A.gfx!=='off';let p={x:160,y:196,fx:0,fy:-1,st:0},water=100,fires=[],time=5400,burnt=0,saved=0,drops=[],ash=[],smoke=[],steam=[];
  const HOUSES=[[40,50],[120,50],[200,50],[280,50],[40,120],[120,120],[200,120],[280,120]],HC=[['#e8c08a','#b8484a'],['#c8d8e8','#4a5a7a'],['#f0d0a8','#7a4a8a'],['#d8e8b8','#3a6a5a']],TRUCK={x:160,y:224};
  g._f=()=>({get fires(){return fires;},get ash(){return ash;},set water(v){water=v;},get time(){return time;},set time(v){time=v;},ignite:i=>{fires.push({h:HOUSES[i],s:60});}});

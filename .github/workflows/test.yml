@@ -9,8 +9,8 @@ jobs:
       matrix:
         range: ['0:115', '115:230', '230:345', '345:9999']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - run: node tests/test.js
         env:
@@ -18,8 +18,8 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - run: node tests/quality.js
       - run: node tests/scorecheck.js

@@ -4,6 +4,16 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round24`, which includes rounds 11 to 23)
 
+### Round 24, batch 4 (v50): no more one-mistake endings in the puzzle corner
+
+- **HI-LO:** now has a real decision. Right guesses grow a pot (bigger with every step of the streak), a wrong guess loses the whole pot and a life, and B banks the pot into your score. The odds of higher and lower are shown for the cards left in the deck.
+- **ECHO PADS:** three lives. A wrong pad, or waiting more than four seconds, replays the pattern instead of ending the game. Rounds with no mistake score double.
+- **CHAIN REACTION:** three tries; a chain that comes up short replays the level. From level 2 a white super orb blasts almost twice as wide.
+- **TERRITORY:** three lives. Getting cut off now costs a life and your trail but you keep the land you claimed, and you respawn inside it with a moment of safety.
+- **CANDY ROPE:** three candies; a lost candy retries the level.
+- **TIMING BAR:** from 10 points the green zone slides, eight hits in a row give a life back, and a miss is followed by a short pause so one panicked press cannot cost two lives.
+- **GitHub checks fixed:** the `test` workflow failed because the Golf Duel and Fire Fighter how-to texts were longer than the 90 characters the quality check allows; both are shortened. The `desktop app` workflow failed on Linux because electron-builder needs an author email and a repository in `desktop/package.json` to build the .deb; both are added (a GitHub no-reply address). Workflows now use `actions/checkout@v5` and `actions/setup-node@v5`, which removes the Node.js 20 deprecation warnings.
+
 ### Round 24, batch 3 (v49): second chances and real puzzles
 
 - **CUBE HOP, rebuilt:** an on-screen compass shows which arrow hops where (up and left go up the pyramid, down and right go down it). From pyramid 2 every cube needs two hops (orange, then yellow, then cyan), a purple coil hops after you and always picks the cube nearest you, and green orbs freeze every enemy for three seconds. Falling off or getting hit costs one of three hearts with a moment of safety, and a fast pyramid scores a time bonus.

@@ -105,17 +105,18 @@ A.add({id:'eights',name:'CRAZY EIGHTS',cat:'CARDS',vs:1,how:'MATCH SUIT OR RANK.
  return g;}});
 
 /* ---- HI-LO ---- */
-A.add({id:'hilo',name:'HI-LO',cat:'CARDS',how:'UP = NEXT IS HIGHER. DOWN = LOWER. BUILD A STREAK.',make(){
- const g={over:null,score:0},fx=X.fx();let d=deck(),cur=d.pop(),nxt=null,mt=0,msg='',streak=0,lives=3,gs=0,res=0;
- g.update=()=>{if(mt>0){mt--;if(mt===0){cur=nxt;nxt=null;if(d.length<2)d=deck();}return;}const h=A.hit(0);if(h.u||h.d){gs=h.u?1:-1;nxt=d.pop();const hi=nxt.r>cur.r,lo=nxt.r<cur.r;if((h.u&&hi)||(h.d&&lo)){streak++;g.score+=streak*10;msg='+'+streak*10;res=1;S('coin');fx.spark(227,105,K.y,10+streak*2,2.5);fx.ring(227,105,K.y,50);}else if(nxt.r===cur.r){msg='TIE';res=0;S('blip');}else{streak=0;lives--;msg='WRONG';res=-1;S('lose');A.shake=5;fx.flash('#ff2040',6);if(lives<=0){g.over='OUT OF LIVES';return;}}mt=45;}};
+A.add({id:'hilo',name:'HI-LO',cat:'CARDS',how:'UP = NEXT IS HIGHER, DOWN = LOWER. RIGHT GUESSES GROW THE POT, B BANKS IT. 3 LIVES.',make(){
+ const g={over:null,score:0},fx=X.fx();let d=deck(),cur=d.pop(),nxt=null,mt=0,msg='',streak=0,lives=3,gs=0,res=0,pot=0;
+ g._s=()=>({cur,pot,streak,lives,d:d.length});
+ g.update=()=>{if(mt>0){mt--;if(mt===0){if(nxt)cur=nxt;nxt=null;if(d.length<2)d=deck();}return;}const h=A.hit(0);if(h.b&&pot>0){g.score+=pot;fx.pop(160,150,'BANKED '+pot,K.g);fx.ring(160,166,K.g,60);S('win');msg='BANKED';res=1;pot=0;streak=0;mt=30;nxt=null;return;}if(h.u||h.d){gs=h.u?1:-1;nxt=d.pop();const hi=nxt.r>cur.r,lo=nxt.r<cur.r;if((h.u&&hi)||(h.d&&lo)){streak++;pot+=streak*10;msg='POT +'+streak*10;res=1;S('coin');fx.spark(227,105,K.y,10+streak*2,2.5);fx.ring(227,105,K.y,50);}else if(nxt.r===cur.r){msg='TIE';res=0;S('blip');}else{msg=pot?'LOST '+pot:'WRONG';streak=0;pot=0;lives--;res=-1;S('lose');A.shake=5;fx.flash('#ff2040',6);if(lives<=0){g.over='OUT OF LIVES';return;}}mt=45;}};
  const extra=()=>{X.rr(40,50,240,112,14,'rgba(0,0,0,.16)');X.rrs(40.5,50.5,239,111,14,'rgba(255,255,255,.08)',1);};
  g.draw=()=>{felt('hilo_bg','#3a1a6a','#0d0626',extra);
   X.glow(93,105,60,'#9a8aff',.15);card(60,60,cur,true,false,3);
   const f=mt>0?Math.min(1,(45-mt)/8):0,sx=nxt?Math.abs(Math.cos(f*3.1416)):1,face=nxt&&f>.5,cxp=A.c;cxp.save();cxp.translate(227,0);cxp.scale(Math.max(.04,sx),1);cxp.translate(-227,0);card(194,60,face?nxt:{},!!face,false,3);cxp.restore();if(!nxt){X.ot('?',227,96,'#ffffff',4,'c');}
   const up=Math.sin(A.t*.15)*2;X.poly([[160,72-up],[150,84-up],[170,84-up]],gs>0&&mt?K.g:'rgba(255,255,255,.7)');X.poly([[160,138+up],[150,126+up],[170,126+up]],gs<0&&mt?K.g:'rgba(255,255,255,.7)');T('UP',160,88,'#ffffff',1,'c',1);T('DN',160,116,'#ffffff',1,'c',1);
-  X.bar('SCORE '+g.score,'','STREAK '+streak,K.y);for(let i=0;i<3;i++)X.heart(W-12-i*13,7,1.3,i<lives?'#ff4f6d':'rgba(255,255,255,.2)');
+  X.bar('BANK '+g.score,'POT '+pot,'STREAK '+streak,K.y,pot?K.g:K.w);{const r=cur.r,hiC=d.filter(c=>c.r>r).length,loC=d.filter(c=>c.r<r).length,n=Math.max(1,d.length);T('HIGHER '+Math.round(hiC/n*100)+'%',160,40,'#c8ffd8',1,'c');T('LOWER '+Math.round(loC/n*100)+'%',160,146,'#ffd0d8',1,'c');}for(let i=0;i<3;i++)X.heart(W-12-i*13,26,1.3,i<lives?'#ff4f6d':'rgba(255,255,255,.2)');
   for(let i=0;i<Math.min(10,streak);i++)X.orb(115+i*10,166,3.5,i<5?K.c:i<8?K.y:K.o);
-  if(mt){X.panel(90,180,140,26,res>0?K.y:res<0?'#ff4f6d':'#ffffff');X.ot(msg,160,187,res>0?K.y:res<0?'#ff8a9a':'#ffffff',2,'c');}else{X.panel(56,182,208,22,'#ffffff');T('UP HIGHER     DOWN LOWER',160,189,'#ffffff',1,'c',1);}fx.draw();};
+  if(mt){X.panel(90,180,140,26,res>0?K.y:res<0?'#ff4f6d':'#ffffff');X.ot(msg,160,187,res>0?K.y:res<0?'#ff8a9a':'#ffffff',2,'c');}else{X.panel(56,182,208,22,'#ffffff');T(pot?'UP/DOWN GUESS   B BANKS '+pot:'UP HIGHER     DOWN LOWER',160,189,'#ffffff',1,'c',1);}fx.draw();};
  return g;}});
 
 /* ---- CARD CLASH ---- */

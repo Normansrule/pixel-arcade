@@ -4,9 +4,16 @@
   "version": "1.2.0",
   "description": "Pixel Arcade: 521 original games, 55 full-3D worlds and a game builder, as a desktop app.",
   "main": "main.js",
-  "author": "Normansrule",
+  "author": {
+    "name": "Normansrule",
+    "email": "Normansrule@users.noreply.github.com"
+  },
   "license": "MIT",
   "homepage": "https://normansrule.github.io/pixel-arcade/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Normansrule/pixel-arcade.git"
+  },
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --publish never",
@@ -89,7 +96,8 @@
         "deb"
       ],
       "category": "Game",
-      "artifactName": "Pixel-Arcade-${version}-${arch}.${ext}"
+      "artifactName": "Pixel-Arcade-${version}-${arch}.${ext}",
+      "maintainer": "Normansrule <Normansrule@users.noreply.github.com>"
     }
   }
 }

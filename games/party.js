@@ -238,7 +238,7 @@ A.add({id:'quadpong',name:'QUAD PONG',cat:'PARTY',vs:1,how:'GUARD TWO WALLS. LEF
  return g;}});
 
 /* ---- GOLF DUEL (rebuilt round 23: three themed mini-golf holes with sand, water and bumpers) ---- */
-A.add({id:'golfduel',name:'GOLF DUEL',cat:'PARTY',vs:1,tags:'mini golf putt putt',how:'TAKE TURNS. LEFT/RIGHT AIM, HOLD A FOR POWER, RELEASE TO PUTT. SAND SLOWS, WATER COSTS A STROKE. FEWEST STROKES OVER 3 HOLES.',make(){
+A.add({id:'golfduel',name:'GOLF DUEL',cat:'PARTY',vs:1,tags:'mini golf putt putt',how:'LEFT/RIGHT AIM, HOLD A FOR POWER, RELEASE TO PUTT. WATER COSTS A STROKE. 3 HOLES.',make(){
  const g={over:null,score:0},fx=X.fx(),lo=()=>A.gfx!=='off';
  const HO=[{n:'MEADOW',par:2,s:[40,125],c:[280,125],w:[[150,70,20,110]],sand:[[228,92,22,12]],water:[[86,44,30,11]],bump:[[110,160,7]]},
   {n:'CANYON',par:3,s:[40,200],c:[280,50],w:[[100,24,16,130],[200,100,16,130]],sand:[[150,190,26,14],[256,92,20,12]],water:[],bump:[[160,70,7],[60,90,7],[250,170,7]]},
