@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round25`, which includes rounds 11 to 24)
 
+### Round 24, batch 5 (v52): three more lives where one touch ended it
+
+- **CROSSY 3D:** three lives. Getting squashed, splashing or falling behind sends you back to the last grass row with a moment of safety, instead of ending the run.
+- **KNIFE HIT:** hitting another knife restarts the log (three lives) instead of ending the game.
+- **FIREFLY:** three lives. When a spider catches you, a flare throws every spider back and refills your light.
+- **LANE DODGE:** skimming past a car in the next lane scores a bonus that grows with distance, and after 2,000 metres a heart sometimes appears to win a life back.
+
 ### Round 25 (v51): racing-game realism pass
 
 - **Camera lens for the 3D worlds (js/fx3d.js):** an optional lens pass adds speed motion blur toward the screen edges and a real camera's reaction to the sun: glare, a horizontal streak, a starburst and a chain of coloured flare ghosts. The flare reads the frame's own brightness at the sun, so trees, stands, bridges and buildings cut it off as they pass in front.
