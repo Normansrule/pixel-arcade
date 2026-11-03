@@ -3,7 +3,7 @@ import {THREE,cl,lerp,wrapA,fmtCash,fmtRace,rng,sstep} from './util.js';
 import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import {World,DNAME,WL,RW,FWY_Y,BOUND,XS,ZS} from './world.js';
 import {buildCity} from './build.js';
-import {Env,nightOf} from './env.js';
+import {Env,nightOf,sunDir} from './env.js';
 import {Vehicle,Wheels,SPECS,SHOP,buildModel,setCarDetail} from './vehicles.js';
 import {Crowd,Walker,Peds,animate,newPose,randLook} from './people.js';
 import {Traffic,Police,lightState} from './traffic.js';
@@ -59,7 +59,7 @@ function applyQuality(q){gfx=q;fx=null;setCarDetail(q);R.setPixelRatio(Math.min(
  if(G.city){for(const p of G.city.props){p.R0=p.R0||p.R;p.R=p.qR?p.qR[q]:p.R0;p.lx=1e9;}G.city.bmat.userData.q.value=q;
   // LOW: no curbside parked cars (5 draw calls); their collision boxes go with them
   for(const c of G.city.parked){if(c.dead)continue;if(c.sy1==null)c.sy1=c.solid.y1;c.solid.y1=q===0?-1e9:c.sy1;}}}
-const POST={exposure:1,bloom:.5,bloomThreshold:.88,bloomRadius:.55,vignette:.3,saturation:1.08,grain:.02,ao:false};
+const POST={contrast:1.05,exposure:1,bloom:.5,bloomThreshold:.88,bloomRadius:.55,vignette:.3,saturation:1.08,grain:.02,ao:false};
 
 /* ================= vehicles: spawn / enter / exit ================= */
 function spawnVehicle(id,x,z,a,o={}){const v=new Vehicle(id,{mode:'parked',paint:o.paint??G.paint[id],owned:o.owned});v.attach(scene,U);v.place(x,z,a,G.W,o.y);v.traffic=!o.owned;if(o.owned)v.keep=true;G.vehicles.push(v);if(v.traffic)G.traffic.cars.push(v);return v;}
@@ -305,13 +305,15 @@ function menuCam(dt){const n=MENU_PATH.length,t=menuT/18,i=Math.floor(t)%n,f=sst
 function overCam(dt){const P=G.player;const a=overT*.08;cam.position.set(P.x+Math.cos(a)*190,P.y+175,P.z+Math.sin(a)*190);cam.lookAt(P.x,P.y+10,P.z);cam.fov=50;cam.updateProjectionMatrix();}
 
 /* ================= render ================= */
+let cityLens=0;const CITY_SUN=new THREE.Vector3();
 function render(){const w=innerWidth,h=innerHeight;
  // empty instanced sets still cost a draw call each: hide them until they hold something
  for(const o of scene.children){if(!o.isInstancedMesh)continue;if(o.count===0&&o.visible){o.visible=false;o.userData.autoHid=true;}else if(o.count>0&&o.userData.autoHid){o.visible=true;o.userData.autoHid=false;}}if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);if(fx)fx.setSize(w,h);}
  cam.aspect=w/h;cam.updateProjectionMatrix();const P=G.player;
  const focus=G.app==='play'||G.app==='paused'?new V(P.x,P.y,P.z):new V(cam.position.x,0,cam.position.z).add(new V(0,0,0).copy(cam.getWorldDirection(new V())).multiplyScalar(60));
  G.env.update(0,G.hour,G.weatherRain,focus,cam,gfx);const pal=G.env.pal,night=nightOf(G.hour);
- R.toneMappingExposure=pal.exp;if(!fx){fx=cinematic(R,scene,cam,{...POST,quality:gfx});}
+ R.toneMappingExposure=pal.exp;if(!fx){fx=cinematic(R,scene,cam,{...POST,quality:gfx,lens:{flare:.85,occ:1.8}});}
+ if(fx.setLens){const pv=G.app==='play'&&P.veh;cityLens+=((pv?cl((pv.speed-18)/30,0,1)*.75:0)-cityLens)*.08;const sd=sunDir(G.hour,CITY_SUN);fx.setLens({speed:cityLens,sun:sd.y>.02&&G.weatherRain<.3?sd:null,sunPower:cl(1-night*2,0,1)});}
  if(fx.bloom){fx.bloom.strength=lerp(.3,.62,night)+G.weatherRain*.06;fx.bloom.threshold=lerp(.93,.78,night);}
  G.smoke.U.uScale.value=G.glow.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));
  mirror.on=gfx>=2&&U.uWet.value>.06;G.city.reflU.uReflStr.value=mirror.on?.85:0;if(mirror.on){mirror.render(R,scene,cam,w*R.getPixelRatio(),h*R.getPixelRatio(),mirrorHide(),G.city.reflU);}

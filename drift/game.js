@@ -10,6 +10,7 @@ import {Smoke,Sparks,Skids,Rain,makeFlame,NL,HazeShader} from './fx.js';
 import {ShaderPass} from '../vendor/jsm/postprocessing/ShaderPass.js';
 import {Lead,Bot} from './ai.js';
 import {Scorer} from './score.js';
+import {LiveReflections} from '../js/kit3d/reflect.js';
 import {Sound} from './sound.js';
 import {ctex,merge,M4,cl,lerp} from './util.js';
 import {addRound,bestScore,saveBest} from '../js/kit3d/score.js';
@@ -24,7 +25,7 @@ const num=n=>Math.round(n).toLocaleString('en-US');
 /* ================= renderer + scene ================= */
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance',antialias:false});
 let gfx=quality();R.setPixelRatio(Math.min(devicePixelRatio,gfx>=2?1.5:1));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
-const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(62,1,.1,6000);
+const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(62,1,.1,6000);const liveRefl=new LiveReflections(R,scene,{near:.3,far:700});
 const smoke=new Smoke(scene,gfx>=2?4200:3600),sparks=new Sparks(scene,1800),skids=new Skids(scene,7000);let rain=null;smoke.lifeK=gfx>=2?1.45:1;
 const snd=new Sound();
 
@@ -60,7 +61,7 @@ function own(){return save.owned[save.sel];}
 // parts tagged minQ (cabin interior, grille, plates, hub backplates) only draw at MEDIUM and up
 function qVis(root){root.traverse(o=>{const u=o.userData;if(!u)return;if(u.minQ!=null)o.visible=gfx>=u.minQ;else if(u.maxQ!=null)o.visible=gfx<=u.maxQ;});}
 function spec(){return CARS.find(c=>c.id===save.sel)||CARS[0];}
-function buildPlayer(){if(carMesh){scene.remove(carMesh);disposeCar(carMesh);}const sp=spec(),o=own();carMesh=makeCar(sp,o.look,7+CARS.indexOf(sp)*11);qVis(carMesh);scene.add(carMesh);
+function buildPlayer(){if(carMesh){{const u=carMesh.userData;liveRefl.detach(u.paint,u.glass,u.rimMat);}scene.remove(carMesh);disposeCar(carMesh);}const sp=spec(),o=own();carMesh=makeCar(sp,o.look,7+CARS.indexOf(sp)*11);qVis(carMesh);scene.add(carMesh);{const u=carMesh.userData;liveRefl.attach(u.paint,u.glass,u.rimMat);}
  const p=buildParams(sp,o);if(!car)car=new Car(p);else car.p=p;car.assist=opt.assist/100;car.auto=!!opt.auto;car.cyl=sp.cyl;}
 function buildLead(){if(leadMesh)return;const sp=CARS[3];leadMesh=makeCar(sp,{paint:'#2b3038',rims:'#d4a63a',rim:1,livery:2,liv:'#3de0ff'},1);qVis(leadMesh);scene.add(leadMesh);leadMesh.visible=false;}
 buildLead();
@@ -409,18 +410,21 @@ function updateHaze(w,h){const U=haze.uniforms;U.uT.value=time;U.uAspect.value=w
  carMesh.updateMatrixWorld();src(u.exhaust.x,u.exhaust.y+.25,u.exhaust.z-.2,0,heat);if(slip>0){src(u.tw,.35,u.zR+.9,1,slip*.9);src(-u.tw,.35,u.zR+.9,2,slip*.9);}
  if(app==='run'&&camMode===0)U.uSpeed.value=cl((c.speed-22)/30,0,1)*.9;}
 
-const POST={bloom:.62,bloomThreshold:.82,bloomRadius:.55,vignette:.4,saturation:1.12,grain:.035,aoStrength:.8};
+const POST={contrast:1.07,warm:.02,bloom:.62,bloomThreshold:.82,bloomRadius:.55,vignette:.4,saturation:1.12,grain:.035,aoStrength:.8};
 let fx=null,fxW=0,fxH=0,oldFx=null;
 function applyShadow(){R.shadowMap.enabled=gfx>0;if(W){W.sun.castShadow=gfx>0;W.sun.shadow.mapSize.set(gfx>=2?2048:1024,gfx>=2?2048:1024);if(W.sun.shadow.map){W.sun.shadow.map.dispose();W.sun.shadow.map=null;}}}
 function applyQuality(q){gfx=q;smoke.lifeK=q>=2?1.45:1;if(carMesh)qVis(carMesh);if(leadMesh)qVis(leadMesh);if(app==='menu'&&W){const mc=runCfg();loadVenue(mc.track,true,mc.tod);startAttract();}R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:1));fx=null;applyShadow();scene.traverse(o=>{if(o.material&&o.material.needsUpdate!==undefined)o.material.needsUpdate=true;});}
 bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);fx=null;}
  cam.aspect=w/h;if(app==='over'&&w>900)cam.setViewOffset(w,h,-w*.17,0,w,h);else if(cam.view&&cam.view.enabled)cam.clearViewOffset();cam.updateProjectionMatrix();const pr=R.getPixelRatio();smoke.U.uScale.value=h*pr/(2*Math.tan(cam.fov*Math.PI/360));sparks.U.uScale.value=smoke.U.uScale.value;smoke.U.uMax.value=Math.min(1024,h*pr*.9);
- if(!fx||fx.garage!==(app==='garage')){if(oldFx&&oldFx.composer){oldFx.composer.dispose();}const gar=app==='garage',ex=gar?.85:W.time.exposure;fx=cinematic(R,scene,cam,{...POST,exposure:ex,quality:gfx,ao:gfx>=2,bloom:gar?.3:POST.bloom,bloomThreshold:gar?.95:POST.bloomThreshold,grain:gar?.015:POST.grain});fx.garage=gar;oldFx=fx;fx.setSize(w,h);fxW=w;fxH=h;
+ if(!fx||fx.garage!==(app==='garage')){if(oldFx&&oldFx.composer){oldFx.composer.dispose();}const gar=app==='garage',ex=gar?.85:W.time.exposure;fx=cinematic(R,scene,cam,{...POST,exposure:ex,quality:gfx,ao:gfx>=2,bloom:gar?.3:POST.bloom,bloomThreshold:gar?.95:POST.bloomThreshold,grain:gar?.015:POST.grain,lens:gar?null:{flare:1,occ:1.4}});fx.garage=gar;oldFx=fx;fx.setSize(w,h);fxW=w;fxH=h;
   haze=null;if(gfx>=2&&fx.composer&&!gar){haze=new ShaderPass(HazeShader);fx.composer.insertPass(haze,fx.ao?2:1);}}
  if(haze)updateHaze(w,h);
  const showRefl=W.mirror&&gfx>0&&app!=='garage';if(W.mirror){W.mirror.on=showRefl;W.mirror.scale=gfx>=2?.5:.33;if(showRefl){smoke.pts.visible=false;W.mirror.render(R,scene,cam,w*pr,h*pr,W.hideRefl);smoke.pts.visible=true;}}
+ liveRefl.setQuality(app==='garage'?0:gfx);if(carMesh&&carMesh.visible&&app!=='garage'){LR_P.copy(carMesh.position);LR_P.y+=1.1;liveRefl.update(LR_P,[carMesh]);}
+ if(fx.setLens){const sp=car&&app==='run'?Math.abs(car.speed||0):attract?18:0;fx.setLens({speed:haze?0:cl((sp-16)/38,0,1)*.6,sun:app==='garage'||W.tod==='night'||W.tod==='rain'?null:LENS_SUN.set(...W.time.sunPos)});}
  fx.render();}
+const LENS_SUN=new THREE.Vector3(),LR_P=new THREE.Vector3();
 addEventListener('resize',()=>{fx=null;});
 
 /* ================= menu wiring ================= */

@@ -334,11 +334,12 @@ function menuCam(dt){menuT+=dt;if(!C)return;
  const B=C.B,f=(menuT*.012)%1,i=f*B.n;const p=at(C,i,0),q=at(C,i+40,0);mainCam.position.set(p.x-B.nx[Math.floor(i)%B.n]*12,p.y+26+Math.sin(menuT*.2)*4,p.z-B.nz[Math.floor(i)%B.n]*12);mainCam.lookAt(q.x,q.y+2,q.z);mainCam.fov=55;mainCam.updateProjectionMatrix();}
 
 /* ================= rendering ================= */
-const POST={exposure:1.0,bloom:.32,bloomThreshold:.92,bloomRadius:.45,vignette:.26,saturation:1.1,grain:.012,aoStrength:.8};
-let fxFull=null,fxSplit=[];
+const POST={contrast:1.05,exposure:1.0,bloom:.32,bloomThreshold:.92,bloomRadius:.45,vignette:.26,saturation:1.1,grain:.012,aoStrength:.8};
+let fxFull=null,fxSplit=[],lensSpd=0;const LENS_SUN=new THREE.Vector3();
 function applyQuality(q){gfx=q;R.shadowMap.enabled=true;if(W){W.sun.castShadow=q>0;W.sun.shadow.mapSize.set(q>=2?2048:1024,q>=2?2048:1024);if(W.sun.shadow.map){W.sun.shadow.map.dispose();W.sun.shadow.map=null;}}R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));fxFull=null;fxSplit=[];}
 bindQualityKey(()=>gfx,q=>applyQuality(q));
-function getFx(i,w,h,cam){const exp=(T&&T.exp)||1;if(i<0){if(!fxFull||fxFull.cam!==cam){fxFull=cinematic(R,scene,cam,{...POST,exposure:exp,ao:gfx>=2});fxFull.cam=cam;fxFull.w=0;}if(fxFull.w!==w*9999+h){fxFull.w=w*9999+h;fxFull.setSize(w,h);}return fxFull;}
+function getFx(i,w,h,cam){const exp=(T&&T.exp)||1;if(i<0){if(!fxFull||fxFull.cam!==cam){fxFull=cinematic(R,scene,cam,{...POST,exposure:exp,ao:gfx>=2,lens:{flare:.85,occ:2.2}});fxFull.cam=cam;fxFull.w=0;}if(fxFull.w!==w*9999+h){fxFull.w=w*9999+h;fxFull.setSize(w,h);}
+  if(fxFull.setLens&&T){const r=views[0]&&views[0].r,v=r&&(app==='race'||app==='hub')?Math.abs(r.v||0):0;lensSpd+=(cl((v-24)/22,0,1)*.7+(r&&r.zipT>0?.3:0)-lensSpd)*.1;fxFull.setLens({speed:lensSpd,sun:T.night?null:LENS_SUN.set(...T.sun)});}return fxFull;}
  let f=fxSplit[i];if(!f||f.cam!==cam){f=fxSplit[i]=cinematic(R,scene,cam,{...POST,exposure:exp,ao:false,bloom:.28});f.cam=cam;f.w=0;}if(f.w!==w*9999+h){f.w=w*9999+h;f.setSize(w,h);}return f;}
 function renderView(cam,x,y,w,h,i){cam.aspect=w/h;cam.updateProjectionMatrix();fx.scale(cam,h*R.getPixelRatio());R.setViewport(x,y,w,h);R.setScissor(x,y,w,h);getFx(i,w,h,cam).render();}
 function render(){const w=innerWidth,h=innerHeight;if(R.domElement.width!==Math.floor(w*R.getPixelRatio())||R.domElement.height!==Math.floor(h*R.getPixelRatio())){R.setSize(w,h,false);fxFull&&(fxFull.w=0);fxSplit.forEach(f=>f&&(f.w=0));}

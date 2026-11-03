@@ -1,5 +1,6 @@
 // NIGHT DRIVE — car models (merged geometry: paint + glow) and arcade car physics with drift, handbrake, ramps, air time, collisions, damage.
 import * as THREE from '../vendor/three.module.min.js';
+import {addFlakes} from '../js/kit3d/paint.js';
 const V=THREE.Vector3,cl=(v,a,b)=>v<a?a:v>b?b:v;
 
 export const CARS=[
@@ -64,7 +65,9 @@ function bodyParts(s,P,body){const S=SHP[s],{L,W,wb,r}=S,h=L/2,sill=S.sill??.3,a
  body.push([geoBox(W+.03,.16,.14,0,sill+.14,h-.04),DARK]);body.push([geoBox(W+.03,.18,.14,0,sill+.15,-h+.04),DARK]);body.push([geoBox(W*.42,.13,.04,0,S.hl-.04,h+.005),0x0a0a0c]);body.push([geoBox(W*.42,.02,.03,0,S.hl+.04,h+.02),CHROME]);
  return S;}
 const paintCache=new Map();
-function paintMat(){if(!paintCache.has('p'))paintCache.set('p',new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.32,metalness:.3,clearcoat:.85,clearcoatRoughness:.08,envMapIntensity:.7}));return paintCache.get('p');}
+// own material for the player's car so only it takes the live reflections
+export function freshPaint(){return addFlakes(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.3,metalness:.45,clearcoat:1,clearcoatRoughness:.04,envMapIntensity:.95}));}
+function paintMat(){if(!paintCache.has('p'))paintCache.set('p',freshPaint());return paintCache.get('p');}
 const glowMat=new THREE.MeshBasicMaterial({vertexColors:true});
 // wheel: tyre (rounded lathe) + 5-spoke alloy + hub in one vertex-coloured mesh
 const wheelGeo=(()=>{const r=.37,w=.27,pr=[];for(let k=0;k<=4;k++){const a=-Math.PI/2+Math.PI*k/4;pr.push(new THREE.Vector2(r-.05+Math.cos(a)*.05,Math.sin(a)*w/2));}pr.unshift(new THREE.Vector2(.25,-w/2+.02));pr.push(new THREE.Vector2(.25,w/2-.02));

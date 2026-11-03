@@ -8,8 +8,8 @@ const V=THREE.Vector3;
 
 // time of day. sky: zenith / horizon / ground colours (linear HDR), sun colour + direction, cloud cover + type, haze
 export const TIMES={
- day:{fog:0xa9bccb,fogD:.0013,amb:[0xbfd8ff,0x6a5d4c,.95],sun:[0xfff1dc,3.4],sunPos:[-260,330,-180],exposure:.78,smokeAmb:[.5,.52,.56],lampCol:0xfff0d8,lampsOn:0,headI:0,wet:0,
-  sky:{zen:[.16,.36,.86],hor:[.78,.86,.95],gnd:[.42,.44,.42],sun:[3.2,2.95,2.6],cloud:.42,ctype:0,lit:[1.25,1.22,1.18],dark:[.55,.6,.7],size:.0006,night:0}},
+ day:{fog:0xa9bccb,fogD:.0009,amb:[0xbfd8ff,0x6a5d4c,.95],sun:[0xfff1dc,3.4],sunPos:[-260,330,-180],exposure:.78,smokeAmb:[.5,.52,.56],lampCol:0xfff0d8,lampsOn:0,headI:0,wet:0,
+  sky:{zen:[.1,.28,.82],hor:[.74,.84,.96],gnd:[.42,.44,.42],sun:[3.2,2.95,2.6],cloud:.42,ctype:0,lit:[1.25,1.22,1.18],dark:[.55,.6,.7],size:.0006,night:0}},
  sunset:{fog:0xd08a60,fogD:.0019,amb:[0xffb080,0x3a2a2a,.75],sun:[0xffa060,2.4],sunPos:[-420,70,-260],exposure:.92,smokeAmb:[.62,.48,.42],lampCol:0xffd8a0,lampsOn:1,headI:.35,wet:0,
   sky:{zen:[.1,.17,.42],hor:[1.15,.6,.3],gnd:[.32,.2,.16],sun:[4,1.9,.75],cloud:.5,ctype:1,lit:[1.6,.75,.42],dark:[.32,.16,.2],size:.0011,night:0}},
  night:{fog:0x070b16,fogD:.0042,amb:[0x3a4a78,0x0c0c10,.32],sun:[0x9ab0ff,.55],sunPos:[-160,220,120],exposure:1.05,smokeAmb:[.07,.08,.12],lampCol:0xffa04a,lampsOn:1,headI:1,wet:.22,

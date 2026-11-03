@@ -26,7 +26,12 @@ function facade(kind){const cols=kind==='glass'?8:kind==='brick'?5:kind==='ind'?
    if(kind==='glass'){lw(c*cw+3,r*fh+4,cw-6,fh-10,col,lvl*.85);x.fillStyle='#000';x.fillRect(c*cw+cw/2-2,r*fh+4,4,fh-10);}
    else if(kind==='office')lw(c*cw+8,r*fh+14,cw-16,fh*.55,col,lvl);else if(kind==='brick')lw(c*cw+22,r*fh+22,cw-44,fh*.62-4,col,lvl);else if(kind==='house')lw(c*cw+20,r*fh+26,cw-40,fh*.5-2,col,lvl);else lw(c*cw+20,fh*.3,cw-40,fh*.35,col,lvl*.8);
    if(R()<.06){x.globalAlpha=.5;x.fillStyle='#6080ff';x.fillRect(c*cw+cw*.3,r*fh+fh*.3,cw*.4,fh*.3);x.globalAlpha=1;}}}});
- return{map:base,em};}
+ // surface map for the curtain-wall towers (G = roughness, B = metalness): mirror-smooth panes with a slight per-pane
+ // waviness, satin aluminium mullions, so the glass picks up the sky and the sun the way real office glass does
+ let orm=null;if(kind==='glass'||kind==='office')orm=ctex(W,H,(x)=>{const px=(r,g,b)=>`rgb(0,${g|0},${b|0})`;
+  if(kind==='glass'){x.fillStyle=px(0,130,235);x.fillRect(0,0,W,H);for(let r=0;r<4;r++)for(let c=0;c<cols;c++){x.fillStyle=px(0,8+R()*26,215+R()*30);x.fillRect(c*cw+3,r*fh+4,cw-6,fh-10);}}
+  else{x.fillStyle=px(0,215,0);x.fillRect(0,0,W,H);for(let r=0;r<4;r++)for(let c=0;c<cols;c++){x.fillStyle=px(0,20+R()*30,90);x.fillRect(c*cw+8,r*fh+14,cw-16,fh*.55);}}},{srgb:false});
+ return{map:base,em,orm};}
 
 export function makeTextures(){const T={};
  for(const k of['glass','office','brick','ind','house'])T[k]=facade(k);

@@ -435,14 +435,14 @@ function ghostVis(){const g=ghost,n=g.f.length/4;if(app!=='race'&&app!=='intro'|
  const fi=Math.min(n-1.001,raceT*20),i=Math.floor(fi),f=fi-i;if(i>=n-1){g.m.visible=false;return;}g.m.visible=true;const o=i*4,o2=o+4;g.m.position.set(lerp(g.f[o],g.f[o2],f),lerp(g.f[o+1],g.f[o2+1],f),lerp(g.f[o+2],g.f[o2+2],f));g.m.rotation.y=g.f[o+3]+wrapA(g.f[o2+3]-g.f[o+3])*f;}
 
 /* ================= rendering ================= */
-let fxAll=null,fxSplit=[];const POST=()=>({ao:false,exposure:T?T.exp:1,bloom:T&&T.night?.7:.42,bloomThreshold:T&&T.night?.8:.92,bloomRadius:.5,vignette:.3,saturation:1.12,grain:.02,aoStrength:.7});
+let fxAll=null,fxSplit=[];const POST=()=>({contrast:1.05,ao:false,exposure:T?T.exp:1,bloom:T&&T.night?.7:.42,bloomThreshold:T&&T.night?.8:.92,bloomRadius:.5,vignette:.3,saturation:1.12,grain:.02,aoStrength:.7});
 function applyQuality(q){gfx=q;syncLights();W&&W.sun&&(W.sun.castShadow=q>0);R.shadowMap.needsUpdate=true;fxAll=null;fxSplit=[];R.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.25:1));}
 bindQualityKey(()=>gfx,q=>applyQuality(q));syncLights();
 const RADIAL={uniforms:{tDiffuse:{value:null},uS:{value:0}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
  fragmentShader:'uniform sampler2D tDiffuse;uniform float uS;varying vec2 vUv;void main(){vec2 d=vUv-vec2(.5,.45);float w=smoothstep(.12,.75,length(d))*uS;if(w<.001){gl_FragColor=texture2D(tDiffuse,vUv);return;}vec4 c=vec4(0.);for(int i=0;i<6;i++)c+=texture2D(tDiffuse,vUv-d*w*float(i)*.014);gl_FragColor=c/6.;}'};
 let blurS=0;
-function getFx(i,w,h,cam){const o=POST();if(i<0){if(!fxAll||fxAll.cam!==cam){fxAll=cinematic(R,scene,cam,{...o,quality:gfx});fxAll.cam=cam;fxAll.w=0;if(gfx>=2&&fxAll.composer){const p=new ShaderPass(RADIAL);fxAll.composer.insertPass(p,fxAll.ao?2:1);fxAll.blur=p;}}
-  if(fxAll.blur){const me=views[0]&&app==='race'?views[0].k:null;const tgt=me?(me.boost>0?.9:0)+cl(Math.abs(me.spd)/G.cc.v-.8,0,.4)*.5:0;blurS+=(tgt-blurS)*.12;fxAll.blur.uniforms.uS.value=blurS;fxAll.blur.enabled=blurS>.01;}if(fxAll.w!==w*9999+h){fxAll.w=w*9999+h;fxAll.setSize(w,h);}return fxAll;}
+function getFx(i,w,h,cam){const o=POST();if(i<0){if(!fxAll||fxAll.cam!==cam){fxAll=cinematic(R,scene,cam,{...o,quality:gfx,lens:{flare:.9,occ:2.2}});fxAll.cam=cam;fxAll.w=0;if(gfx>=2&&fxAll.composer){const p=new ShaderPass(RADIAL);fxAll.composer.insertPass(p,fxAll.ao?2:1);fxAll.blur=p;}}
+  if(fxAll.blur){const me=views[0]&&app==='race'?views[0].k:null;const tgt=me?(me.boost>0?.9:0)+cl(Math.abs(me.spd)/G.cc.v-.8,0,.4)*.5:0;blurS+=(tgt-blurS)*.12;fxAll.blur.uniforms.uS.value=blurS;fxAll.blur.enabled=blurS>.01;}if(fxAll.setLens&&W)fxAll.setLens({sun:T&&T.night?null:W.sunDir});if(fxAll.w!==w*9999+h){fxAll.w=w*9999+h;fxAll.setSize(w,h);}return fxAll;}
  let f=fxSplit[i];if(!f||f.cam!==cam){f=fxSplit[i]=cinematic(R,scene,cam,{...o,ao:false,quality:Math.min(gfx,1)});f.cam=cam;f.w=0;}if(f.w!==w*9999+h){f.w=w*9999+h;f.setSize(w,h);}return f;}
 function renderView(cam,x,y,w,h,fi,focus){cam.aspect=w/h;cam.updateProjectionMatrix();sparks.U.uScale.value=dust.U.uScale.value=h*R.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));
  if(W){const t=focus||cam.position;W.sun.target.position.copy(t);W.sun.position.copy(t).addScaledVector(W.sunDir,160);W.sun.updateMatrixWorld();W.sun.target.updateMatrixWorld();R.shadowMap.needsUpdate=true;

@@ -4,7 +4,8 @@ import {cinematic,bindQualityKey,quality} from '../js/fx3d.js';
 import {City,N,SP,HALF,WORLD,HY} from './city.js';
 import {makeTextures} from './tex.js';
 import {buildWorld,todAt} from './world.js';
-import {CARS,Car,carModel,setCarFx} from './car.js';
+import {CARS,Car,carModel,setCarFx,freshPaint} from './car.js';
+import {LiveReflections} from '../js/kit3d/reflect.js';
 import {Traffic,Peds,Police} from './traffic.js';
 import {Jobs} from './missions.js';
 import {Sound,STATIONS} from './sound.js';
@@ -44,7 +45,8 @@ const jobs=new Jobs(scene,city,G);G.jobs=jobs;
 
 /* ================= player car ================= */
 let car=null,headL=null,tailL=null;const flameM=new THREE.MeshBasicMaterial({color:new THREE.Color(.6,1.6,4),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});let flames=[];
-function buildCar(id){const spec=CARS.find(c=>c.id===id)||CARS[0];if(car)scene.remove(car.model);const m=carModel(spec);scene.add(m);car=new Car(spec,m);G.car=car;
+let playerPaint=null;const liveRefl=new LiveReflections(Rr,scene,{near:.4,far:500});
+function buildCar(id){const spec=CARS.find(c=>c.id===id)||CARS[0];if(car)scene.remove(car.model);const m=carModel(spec);if(!playerPaint){playerPaint=freshPaint();liveRefl.attach(playerPaint);}m.userData.body.material=playerPaint;scene.add(m);car=new Car(spec,m);G.car=car;
  headL=new THREE.SpotLight(0xfff0d8,0,90,.5,.55,1.4);headL.position.set(0,.9,2.0);m.add(headL);m.add(headL.target);headL.target.position.set(0,-.4,24);
  tailL=new THREE.PointLight(0xff2020,0,6,2);tailL.position.set(0,.75,-m.userData.L/2-.5);m.add(tailL);
  flames=[];for(const s of[-.45,.45]){const f=new THREE.Mesh(new THREE.ConeGeometry(.16,1.2,10).rotateX(-Math.PI/2),flameM);f.position.set(s,.42,-m.userData.L/2-.6);f.visible=false;m.add(f);flames.push(f);}
@@ -192,9 +194,13 @@ applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(Rr.domElement.width!==Math.floor(w*Rr.getPixelRatio())||Rr.domElement.height!==Math.floor(h*Rr.getPixelRatio()))Rr.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();
  const sc=h*Rr.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));smoke.U.uScale.value=sparks.U.uScale.value=world.splU.uScale.value=sc;setCarFx(world.state.night,world.state.wet);
  frameN++;if(gfx>=2||(gfx===1&&frameN%2===0)||frameN<3)Rr.shadowMap.needsUpdate=true;
- const key=w+'x'+h;if(!fxStack){fxStack=cinematic(Rr,scene,cam,{exposure:1,bloom:.85,bloomThreshold:.82,bloomRadius:.6,saturation:1.12,vignette:.38,grain:.03,aoStrength:.75,quality:gfx});fxSize='';}if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);}
+ const key=w+'x'+h;if(!fxStack){fxStack=cinematic(Rr,scene,cam,{contrast:1.06,exposure:1,bloom:.85,bloomThreshold:.82,bloomRadius:.6,saturation:1.12,vignette:.38,grain:.03,aoStrength:.75,quality:gfx,lens:{flare:.9,occ:1.8}});fxSize='';}if(fxSize!==key){fxSize=key;fxStack.setSize(w,h);}
  Rr.toneMappingExposure=(world.state.exp||1);if(scene.environment!==world.state.env)scene.environment=world.state.env;if(fxStack.bloom){const n=world.state.night;fxStack.bloom.strength=lerp(.4,.75,n);fxStack.bloom.threshold=lerp(.92,.86,n);}
+ liveRefl.setQuality(gfx);if(car&&car.model.visible){LR_P.set(car.x,(car.y||0)+1.3,car.z);liveRefl.update(LR_P,[car.model]);}
+ if(fxStack.setLens){const play=G.app==='play'&&car;const v=play?car.speed:0;lensSpd+=(cl((v-20)/40,0,1)*.8+(play&&car.nitroOn?.25:0)-lensSpd)*.08;
+  const n=world.state.night;LENS_SUN.copy(world.sun.position).sub(world.sun.target.position);fxStack.setLens({speed:lensSpd,sun:n>.55||world.state.rain>.3?null:LENS_SUN,sunPower:cl(1-n*1.8,0,1)});}
  fxStack.render();}
+let lensSpd=0;const LENS_SUN=new THREE.Vector3(),LR_P=new THREE.Vector3();
 
 /* ================= menus ================= */
 const hud=new HUD(G,city);G.hud=hud;

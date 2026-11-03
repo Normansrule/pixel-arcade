@@ -2,7 +2,16 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round24`, which includes rounds 11 to 23)
+## Unreleased (on branch `round25`, which includes rounds 11 to 24)
+
+### Round 25 (v51): racing-game realism pass
+
+- **Camera lens for the 3D worlds (js/fx3d.js):** an optional lens pass adds speed motion blur toward the screen edges and a real camera's reaction to the sun: glare, a horizontal streak, a starburst and a chain of coloured flare ghosts. The flare reads the frame's own brightness at the sun, so trees, stands, bridges and buildings cut it off as they pass in front.
+- **Sharper picture everywhere:** every 3D world gets a light sharpen after anti-aliasing (textures and edges no longer look soft), and the grade gains contrast and warmth controls that the racing games use.
+- **Live car reflections (js/kit3d/reflect.js):** the player's car in SIDEWAYS and NIGHT DRIVE now reflects its real surroundings (walls, trees, containers, other cars) from a small cube camera, instead of only a sky map. ULTRA updates it every 2nd frame at 128 px, MEDIUM every 4th at 64 px, LOW keeps the old map.
+- **Metallic flake paint (js/kit3d/paint.js):** NIGHT DRIVE car paint now has glittering metal under a mirror-smooth clear coat.
+- **NIGHT DRIVE:** downtown glass towers are now mirror-like curtain walls with satin mullions that pick up the sky and the sun; office blocks get glossy windows. New sky with a brighter horizon band, deeper zenith, hot sun disc and sun-lit cloud edges.
+- **SIDEWAYS, KART GRAND PRIX, CRITTER KART, NIGHT DRIVE, NEON BAY:** sun flare on, more contrast, speed blur in Critter Kart, Night Drive and Neon Bay (Sideways and Kart Grand Prix keep their own). SIDEWAYS daytime sky is clearer and bluer with less haze.
 
 ### Round 24, batch 4 (v50): no more one-mistake endings in the puzzle corner
 

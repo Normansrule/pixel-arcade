@@ -39,7 +39,7 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
   line:std({color:0xe8e4d8,roughness:.6,emissive:0xffffff,emissiveIntensity:.02}),yline:std({color:0xe0b020,roughness:.6,emissive:0xffb000,emissiveIntensity:.02}),
   roof:std({map:T.roof,roughness:.9}),concrete:std({map:T.concrete,roughness:.85}),deck:std({map:T.asphalt,roughnessMap:T.asphaltR,normalMap:T.asphaltN,normalScale:new THREE.Vector2(.55,.55),roughness:.9,metalness:.15}),planks:std({map:T.planks,roughness:.9}),rock:std({map:T.rock,roughness:1}),
   water:std({color:0x0a141c,roughness:.08,metalness:.9}),barrier:std({color:0xb0b0a8,roughness:.6,map:T.concrete}),metal:std({color:0x50565c,roughness:.4,metalness:.8}),pole:std({color:0x2a2c30,roughness:.5,metalness:.7})};
- const FAC={};for(const k of['glass','office','brick','ind','house'])FAC[k]=std({map:T[k].map,emissiveMap:T[k].em,emissive:0xffffff,emissiveIntensity:0,roughness:k==='glass'?.3:.8,metalness:k==='glass'?.35:.05,envMapIntensity:k==='glass'?.6:.25,...(k==='brick'||k==='ind'||k==='house'?{bumpMap:T[k].map,bumpScale:k==='brick'?3:1.5}:{})});
+ const FAC={};for(const k of['glass','office','brick','ind','house'])FAC[k]=std({map:T[k].map,emissiveMap:T[k].em,emissive:0xffffff,emissiveIntensity:0,...(T[k].orm?{roughnessMap:T[k].orm,metalnessMap:T[k].orm,roughness:1,metalness:k==='glass'?.85:1,envMapIntensity:k==='glass'?1.35:.8}:{roughness:.8,metalness:.05,envMapIntensity:.25}),...(k==='brick'||k==='ind'||k==='house'?{bumpMap:T[k].map,bumpScale:k==='brick'?3:1.5}:{})});
  FAC.shop=std({map:T.shopfront.map,emissiveMap:T.shopfront.em,emissive:0xffffff,emissiveIntensity:0,roughness:.35,metalness:.2,envMapIntensity:.6});
  const wetMats=[M.road,M.deck];
 
@@ -202,8 +202,14 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
   vertexShader:'varying vec3 vd;void main(){vd=normalize(position);vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_Position=p.xyww;}',
   fragmentShader:`uniform float uT,night,rain;uniform vec3 top,hor,sunDir,sunCol;varying vec3 vd;${NOISE}
   void main(){float y=vd.y;vec3 c=mix(hor,top,pow(clamp(y,0.,1.),.55));c=mix(c,hor*.6,smoothstep(.0,-.2,y));
-   float sd=max(0.,dot(vd,normalize(sunDir)));c+=sunCol*(pow(sd,600.)*6.+pow(sd,12.)*.35)*(1.-night*.9)*(1.-rain*.8);
-   vec2 q=vd.xz/(y+.25);float cl=fbm(q*1.4+vec2(uT*.01,0.));float cov=smoothstep(.45-rain*.3,.8,cl)*smoothstep(0.,.25,y);vec3 cc=mix(hor*1.1,top*1.6+vec3(.05),.5)*(1.-night*.6);c=mix(c,cc,cov*.7);
+   float sd=max(0.,dot(vd,normalize(sunDir)));float day=(1.-night*.9)*(1.-rain*.8);
+   // brighter, whiter band at the horizon (more air to look through) and a deeper zenith, like real Rayleigh sky
+   c+=mix(hor,vec3(1.),.35)*exp(-max(y,0.)*9.)*.22*day;c*=mix(1.,.82,smoothstep(.35,1.,y)*day);
+   // sun: hot disc (drives bloom and the lens flare), tight halo and a wide warm Mie glow
+   c+=sunCol*(pow(sd,2400.)*30.+pow(sd,180.)*.9+pow(sd,10.)*.32+pow(sd,2.)*.06)*day;
+   vec2 q=vd.xz/(y+.25);float cl=fbm(q*1.4+vec2(uT*.01,0.));float cov=smoothstep(.45-rain*.3,.8,cl)*smoothstep(0.,.25,y);
+   // clouds: denser cores darker, edges facing the sun lit with a silver lining
+   vec3 cc=mix(hor*1.1,top*1.6+vec3(.05),.5)*(1.-night*.6);cc*=mix(1.05,.72,smoothstep(.62,.95,cl));cc+=sunCol*(pow(sd,6.)*.55*(1.-smoothstep(.5,.85,cl))+.08)*day;c=mix(c,cc,cov*.75);
    // stars + moon at night
    vec3 sp=floor(vd*300.);float st=step(.9975,h21(sp.xy+sp.z*7.))*smoothstep(.1,.5,y)*night*(1.-cov)*(1.-rain);c+=vec3(st)*1.2;
    vec3 md=normalize(vec3(-.4,.45,-.6));float m=dot(vd,md);c+=vec3(1.,.95,.85)*smoothstep(.9994,.9997,m)*night*1.6*(1.-rain*.7)+vec3(.4,.45,.6)*pow(max(0.,m),40.)*.25*night;

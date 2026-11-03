@@ -9,12 +9,50 @@ import {SMAAPass} from '../vendor/jsm/postprocessing/SMAAPass.js';
 import {ShaderPass} from '../vendor/jsm/postprocessing/ShaderPass.js';
 import {GTAOPass} from '../vendor/jsm/postprocessing/GTAOPass.js';
 
-const Grade={uniforms:{tDiffuse:{value:null},vig:{value:.35},sat:{value:1.12},tint:{value:new THREE.Color(1,1,1)},grain:{value:.03},time:{value:0},ca:{value:.0012}},
+const Grade={uniforms:{tDiffuse:{value:null},vig:{value:.35},sat:{value:1.12},tint:{value:new THREE.Color(1,1,1)},grain:{value:.03},time:{value:0},ca:{value:.0012},con:{value:1},warm:{value:0}},
  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
- fragmentShader:`uniform sampler2D tDiffuse;uniform float vig,sat,grain,time,ca;uniform vec3 tint;varying vec2 vUv;
+ fragmentShader:`uniform sampler2D tDiffuse;uniform float vig,sat,grain,time,ca,con,warm;uniform vec3 tint;varying vec2 vUv;
  float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233))+time)*43758.5453);}
  void main(){vec2 d=vUv-.5;float r=dot(d,d);vec3 c;c.r=texture2D(tDiffuse,vUv+d*ca).r;c.g=texture2D(tDiffuse,vUv).g;c.b=texture2D(tDiffuse,vUv-d*ca).b;
-  float l=dot(c,vec3(.299,.587,.114));c=mix(vec3(l),c,sat)*tint;c*=1.-vig*smoothstep(.1,.7,r*1.6);c+=(h(vUv*999.)-.5)*grain;gl_FragColor=vec4(c,1.);}`};
+  float l=dot(c,vec3(.299,.587,.114));c=mix(vec3(l),c,sat)*tint;c=clamp((c-.5)*con+.5,0.,1.);c*=vec3(1.+warm,1.+warm*.35,1.-warm*.6);c*=1.-vig*smoothstep(.1,.7,r*1.6);c+=(h(vUv*999.)-.5)*grain;gl_FragColor=vec4(c,1.);}`};
+
+// Lens: what a real camera adds at speed and into the sun (all in HDR, before tone mapping).
+//  - speed blur: radial streaks toward the edges, from a vanishing point, scaled by setLens({speed:0..1})
+//  - sun glare, anamorphic streak, starburst and ghost chain. The sun's screen position comes from setLens({sun:dir});
+//    whether it is hidden is read from the frame itself (a few taps of brightness at the sun), so trees, bridges and
+//    cars cut the flare off without a depth test.
+const Lens={uniforms:{tDiffuse:{value:null},uSpeed:{value:0},uC:{value:new THREE.Vector2(.5,.55)},uSun:{value:new THREE.Vector2(-9,-9)},uSunOn:{value:0},uSunC:{value:new THREE.Color(1,.92,.8)},uFlare:{value:1},uAsp:{value:1.78},uOccT:{value:1.6},uTaps:{value:8}},
+ vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:`uniform sampler2D tDiffuse;uniform float uSpeed,uSunOn,uFlare,uAsp,uOccT,uTaps;uniform vec2 uC,uSun;uniform vec3 uSunC;varying vec2 vUv;
+ float lum(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}
+ float disc(vec2 p,float r,float soft){return smoothstep(r,r*soft,length(p));}
+ void main(){vec3 c=texture2D(tDiffuse,vUv).rgb;
+  if(uSpeed>.002){vec2 d=vUv-uC;float m=smoothstep(.06,.62,length(d*vec2(uAsp,1.)));float s=uSpeed*m*.085;
+   if(s>.0005){vec3 a=c;float w=1.;for(int i=1;i<12;i++){if(float(i)>=uTaps)break;float t=float(i)/uTaps;float k=1.-t*.55;a+=texture2D(tDiffuse,vUv-d*s*t).rgb*k;w+=k;}c=a/w;}}
+  if(uSunOn>.001){
+   float o=0.;for(int i=0;i<6;i++){float a=float(i)*1.0472;vec2 q=uSun+vec2(cos(a),sin(a))*vec2(1./uAsp,1.)*.006*(i<3?1.:2.);
+    o+=smoothstep(uOccT*.5,uOccT,lum(texture2D(tDiffuse,clamp(q,.001,.999)).rgb));}
+   float vis=uSunOn*o/6.*uFlare;
+   if(vis>.001){vec2 dv=(vUv-uSun)*vec2(uAsp,1.);float r=length(dv);
+    vec3 f=uSunC*(exp(-r*9.)*.55+exp(-r*2.4)*.09);
+    f+=uSunC*vec3(.75,.85,1.)*exp(-abs(dv.y)*160.)*exp(-abs(dv.x)*2.2)*.22;
+    float an=atan(dv.y,dv.x);f+=uSunC*pow(abs(cos(an*7.+.4)),28.)*exp(-r*5.)*.18;
+    vec2 ax=vec2(.5)-uSun;
+    for(int i=0;i<5;i++){float t=i==0?-.35:i==1?.45:i==2?.8:i==3?1.25:1.7;float sz=i==0?.03:i==1?.06:i==2?.025:i==3?.09:.045;
+     vec3 tint=i==0?vec3(.4,.8,1.):i==1?vec3(1.,.55,.25):i==2?vec3(.5,1.,.6):i==3?vec3(.35,.45,1.):vec3(1.,.4,.7);
+     vec2 gp=(vUv-(uSun+ax*2.*t))*vec2(uAsp,1.);f+=tint*disc(gp,sz,.35)*.045*(1.-float(i)*.08);}
+    vec2 hp=(vUv-vec2(.5))*vec2(uAsp,1.);float hr=length(hp);vec2 sd=normalize((uSun-.5)*vec2(uAsp,1.)+1e-4);
+    f+=vec3(.9,.7,1.)*smoothstep(.06,0.,abs(hr-.55))*smoothstep(.2,1.,dot(normalize(hp+1e-4),sd))*.035;
+    c+=f*vis;}}
+  gl_FragColor=vec4(c,1.);}`};
+
+// Sharpen: a light unsharp mask after anti-aliasing, so textures and edges read crisp instead of soft.
+const Sharp={uniforms:{tDiffuse:{value:null},uAmt:{value:.18},uPx:{value:new THREE.Vector2(1/1280,1/720)}},
+ vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:`uniform sampler2D tDiffuse;uniform float uAmt;uniform vec2 uPx;varying vec2 vUv;
+ void main(){vec3 c=texture2D(tDiffuse,vUv).rgb;vec3 b=(texture2D(tDiffuse,vUv+vec2(uPx.x,0.)).rgb+texture2D(tDiffuse,vUv-vec2(uPx.x,0.)).rgb+texture2D(tDiffuse,vUv+vec2(0.,uPx.y)).rgb+texture2D(tDiffuse,vUv-vec2(0.,uPx.y)).rgb)*.25;
+  gl_FragColor=vec4(clamp(c+(c-b)*uAmt,0.,1.),1.);}`};
+const _sv=new THREE.Vector3();
 
 // Cheaper GTAO. The stock pass re-draws the scene with a normal material for its depth/normal G-buffer, and that
 // renderer.render() call also re-rendered every shadow map (whenever shadowMap.autoUpdate is on) and re-walked the
@@ -46,15 +84,23 @@ const renderers=new Set();
 export function cinematic(renderer,scene,camera,o={}){
  renderers.add(renderer);
  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=o.exposure??1;renderer.outputColorSpace=THREE.SRGBColorSpace;
- const q=o.quality??quality();if(q===0){return{render:()=>renderer.render(scene,camera),setSize:()=>{},grade:null,q};}
+ const q=o.quality??quality();if(q===0){return{render:()=>renderer.render(scene,camera),setSize:()=>{},setLens:()=>{},grade:null,q};}
  const size=renderer.getSize(new THREE.Vector2()),pr=renderer.getPixelRatio();
  const comp=new EffectComposer(renderer);comp.addPass(new RenderPass(scene,camera));
  let ao=null;if(q>=2&&o.ao!==false){ao=new LiteAO(scene,camera,size.x,size.y);ao.blendIntensity=o.aoStrength??1;comp.addPass(ao);}
  const bloom=new UnrealBloomPass(new THREE.Vector2(size.x,size.y),o.bloom??.55,o.bloomRadius??.5,o.bloomThreshold??.82);comp.addPass(bloom);
- comp.addPass(new OutputPass());const grade=new ShaderPass(Grade);if(o.vignette!==undefined)grade.uniforms.vig.value=o.vignette;if(o.saturation!==undefined)grade.uniforms.sat.value=o.saturation;if(o.tint)grade.uniforms.tint.value.set(o.tint);if(o.grain!==undefined)grade.uniforms.grain.value=o.grain;comp.addPass(grade);
+ let lens=null;if(o.lens){lens=new ShaderPass(Lens);const L=o.lens;if(L.flare!==undefined)lens.uniforms.uFlare.value=L.flare;if(L.occ!==undefined)lens.uniforms.uOccT.value=L.occ;if(L.sunColor)lens.uniforms.uSunC.value.set(L.sunColor);lens.uniforms.uTaps.value=q>=2?10:6;comp.addPass(lens);}
+ comp.addPass(new OutputPass());const grade=new ShaderPass(Grade);if(o.vignette!==undefined)grade.uniforms.vig.value=o.vignette;if(o.saturation!==undefined)grade.uniforms.sat.value=o.saturation;if(o.tint)grade.uniforms.tint.value.set(o.tint);if(o.grain!==undefined)grade.uniforms.grain.value=o.grain;if(o.contrast!==undefined)grade.uniforms.con.value=o.contrast;if(o.warm!==undefined)grade.uniforms.warm.value=o.warm;comp.addPass(grade);
  const smaa=new SMAAPass(size.x*pr,size.y*pr);comp.addPass(smaa);
+ const shAmt=o.sharpen??.16;let sharp=null;if(shAmt>0){sharp=new ShaderPass(Sharp);sharp.uniforms.uAmt.value=shAmt;sharp.uniforms.uPx.value.set(1/(size.x*pr),1/(size.y*pr));comp.addPass(sharp);}
  const t0=performance.now();
- return{q,bloom,ao,grade,composer:comp,render:()=>{grade.uniforms.time.value=(performance.now()-t0)/1000%100;comp.render();},setSize:(w,h)=>{comp.setSize(w,h);bloom.setSize(w,h);smaa.setSize(w*pr,h*pr);if(ao)ao.setSize(w,h);}};
+ // setLens({speed:0..1, sun:THREE.Vector3 direction towards the sun (world), center:[x,y] vanishing point in 0..1})
+ const setLens=(p={})=>{if(!lens)return;const U=lens.uniforms;if(p.speed!==undefined)U.uSpeed.value=Math.max(0,Math.min(1,p.speed));if(p.center)U.uC.value.set(p.center[0],p.center[1]);
+  if(p.sun){camera.updateMatrixWorld();_sv.copy(p.sun).normalize().multiplyScalar(1000).add(camera.position).project(camera);
+   const on=_sv.z<1&&Math.abs(_sv.x)<1.25&&Math.abs(_sv.y)<1.25;U.uSun.value.set(_sv.x*.5+.5,_sv.y*.5+.5);
+   U.uSunOn.value=on?Math.min(1,(1.25-Math.max(Math.abs(_sv.x),Math.abs(_sv.y)))*2.5)*(p.sunPower??1):0;}
+  else if(p.sun===null)U.uSunOn.value=0;};
+ return{q,bloom,ao,grade,lens,sharp,setLens,composer:comp,render:()=>{grade.uniforms.time.value=(performance.now()-t0)/1000%100;comp.render();},setSize:(w,h)=>{comp.setSize(w,h);bloom.setSize(w,h);smaa.setSize(w*pr,h*pr);if(ao)ao.setSize(w,h);if(lens)lens.uniforms.uAsp.value=w/Math.max(1,h);if(sharp)sharp.uniforms.uPx.value.set(1/(w*pr),1/(h*pr));}};
 }
 
 // G cycles graphics quality (ultra -> medium -> low); rebuild(q) recreates the post stack.
