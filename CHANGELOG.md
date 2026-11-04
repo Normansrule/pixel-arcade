@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round25`, which includes rounds 11 to 24)
 
+### Round 26 (v54): a new README front page
+
+- **Animated header:** the cabinet room and the big PIXEL ARCADE title, now a seamless loop. The camera drifts under light shafts, the neon hums, and the middle cabinet flips between real games in attract mode. The counts are live again (they still said 510).
+- **LED ticker** of game names with chase lights, **arcade-button links** (Play now, Desktop app, Build a game) and a **counts strip**, all as SVG files in the repo instead of shields.io badges.
+- **Feature grid** at the top of "What you get": 3D worlds, a wall of cabinet screens, the round clock, CPU levels, light hardware, the builder, online codes and platforms.
+- `tools/readme_intro.js` draws all of it and replaces `tools/readme_hero.py`; `tools/gen_docs.py` keeps the ticker and counts in step with the registry.
+
 ### Round 24, batch 6 (v53): rivals, power-ups and changing rules
 
 - **BLACK HOLE:** three rival holes (red, blue and orange) roam the city eating things too. Swallow a smaller rival for a big bonus, and run from a bigger one, because it can swallow you (three lives, and you shrink). Arrows at the screen edge show where the rivals are.

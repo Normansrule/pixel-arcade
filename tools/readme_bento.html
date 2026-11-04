@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>README feature grid</title>
+<!-- The README feature grid (docs/readme/bento.webp), rendered by tools/readme_intro.js at 2x on a transparent page,
+     so the rounded tiles sit on GitHub's light or dark background. Counts come in on the URL (?games=&cabs=&worlds=&cats=&vs=).
+     Open through a local server to tweak by eye: python3 -m http.server 8765 then http://127.0.0.1:8765/tools/readme_bento.html -->
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+ :root{--ink:#eceae3;--mute:#959aa8;--tile:#11151f;--line:rgba(236,234,227,.1);--org:#ff4d00;--cob:#8f9fff;--grn:#19c37d}
+ html,body{margin:0;background:transparent}
+ #grid{width:1280px;display:grid;grid-template-columns:repeat(12,1fr);gap:14px;font-family:'Atkinson Hyperlegible Next',sans-serif;color:var(--ink)}
+ .t{position:relative;overflow:hidden;border-radius:22px;background:var(--tile);border:1px solid var(--line);padding:30px 32px;box-sizing:border-box}
+ .k{font:13px/1 'PA Pixel';letter-spacing:.16em;color:var(--mute);margin:0 0 14px}
+ .k b{color:var(--org);font-weight:400}
+ .big{font:400 112px/.86 Anton,sans-serif;margin:0;letter-spacing:-.01em}
+ .h{font:400 40px/1 Anton,sans-serif;margin:0 0 12px;text-transform:uppercase;letter-spacing:.01em}
+ p.d{margin:0;font-size:19px;line-height:1.4;color:#c9cbd3;max-width:30em}
+ .s7{grid-column:span 7}.s5{grid-column:span 5}.s4{grid-column:span 4}.s3{grid-column:span 3}
+ .r1{height:380px}.r2{height:270px}.r3{height:300px}
+ /* full-bleed screenshot tiles: the picture fills the tile and a gradient lifts the words off it */
+ .shot{padding:0}.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+ .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(9,11,17,.97) 0,rgba(9,11,17,.78) 40%,rgba(9,11,17,.15) 75%,rgba(9,11,17,.3) 100%)}
+ .shot .c{position:absolute;left:32px;right:32px;bottom:28px;z-index:1}
+ /* the cabinet wall: a tilted grid of real 320x240 screens fading into the tile */
+ .wall{position:absolute;right:-90px;top:-40px;width:640px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;transform:perspective(900px) rotateY(-24deg) rotateX(10deg) rotateZ(-4deg);transform-origin:right top}
+ .wall img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;image-rendering:pixelated;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+ .fade{position:absolute;inset:0;background:linear-gradient(90deg,var(--tile) 0,rgba(17,21,31,.92) 34%,rgba(17,21,31,.2) 70%,transparent),linear-gradient(0deg,var(--tile) 0,transparent 42%)}
+ .over{position:absolute;left:32px;bottom:28px;right:32px;z-index:1}
+ /* round clock */
+ .clock{position:absolute;right:26px;top:24px;width:118px;height:118px}
+ .clock svg{width:100%;height:100%}
+ .time{font:400 92px/.86 Anton,sans-serif;color:var(--org);text-shadow:0 0 30px rgba(255,77,0,.45);margin:0 0 16px}
+ /* CPU switch */
+ .seg{display:flex;gap:0;margin:4px 0 22px;border:1px solid var(--line);border-radius:14px;overflow:hidden;width:max-content}
+ .seg span{font:15px/1 'PA Pixel';letter-spacing:.12em;padding:16px 18px;color:var(--mute)}
+ .seg span+span{border-left:1px solid var(--line)}
+ .seg .on{background:var(--org);color:#0c0f17}
+ /* light on hardware: a chip readout */
+ .meter{display:flex;gap:6px;align-items:flex-end;height:64px;margin:2px 0 18px}
+ .meter i{display:block;width:16px;border-radius:3px;background:#2a3040}
+ .meter i.on{background:var(--grn);box-shadow:0 0 14px rgba(25,195,125,.5)}
+ /* code + pixel grid */
+ .code{font:400 64px/1 Anton,sans-serif;letter-spacing:.06em;margin:0 0 14px}
+ .code em{font-style:normal;color:var(--cob)}
+ .qr{position:absolute;right:28px;top:28px;width:104px;height:104px;display:grid;grid-template-columns:repeat(13,1fr);gap:1px;padding:8px;background:var(--ink);border-radius:10px}
+ .qr i{background:#0c0f17;border-radius:1px}.qr i.o{background:transparent}
+ ul.pl{list-style:none;margin:0;padding:0}
+ ul.pl li{display:flex;align-items:center;gap:12px;font:15px/1 'PA Pixel';letter-spacing:.12em;padding:11px 0;border-bottom:1px solid var(--line)}
+ ul.pl li:last-child{border:0}
+ ul.pl li::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--grn);box-shadow:0 0 10px rgba(25,195,125,.6)}
+</style>
+</head>
+<body>
+<div id="grid">
+ <div class="t s7 r1 shot"><img src="../docs/drive.png" alt="">
+  <div class="c"><p class="k"><b>●</b> REAL-TIME 3D IN A BROWSER TAB</p><p class="big"><span id="w">55</span> <span style="font-size:.5em;vertical-align:.62em">FULL-3D WORLDS</span></p>
+  <p class="d">Shadows, bloom, rain and filmic colour, with three graphics levels on <b>G</b>. Racing, shooters, sport, open cities and more.</p></div></div>
+ <div class="t s5 r1"><div class="wall" id="wall"></div><div class="fade"></div>
+  <div class="over"><p class="k"><b>●</b> <span id="ct">13</span> SHELVES OF CLASSICS</p><p class="big" id="c">466</p><p class="h" style="margin-top:10px">arcade cabinets</p>
+  <p class="d">Sports, puzzles, board games, cards, party games and sims. Every name and level is our own.</p></div></div>
+
+ <div class="t s4 r2"><div class="clock"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#2a3040" stroke-width="10"/>
+  <circle cx="60" cy="60" r="50" fill="none" stroke="#ff4d00" stroke-width="10" stroke-linecap="round" stroke-dasharray="78 400" transform="rotate(-90 60 60)" style="filter:drop-shadow(0 0 8px rgba(255,77,0,.7))"/></svg></div>
+  <p class="k">ROUND CLOCK</p><p class="time">0:09</p><p class="h">every round is timed</p><p class="d">A results screen at the buzzer. A session takes minutes, not evenings.</p></div>
+ <div class="t s4 r2"><p class="k">CPU OPPONENT</p><div class="seg"><span>EASY</span><span>NORMAL</span><span class="on">HARD</span></div>
+  <p class="h">a real rival</p><p class="d"><span id="vs">300</span> games against the computer or a friend on one keyboard. Board games use proper search.</p></div>
+ <div class="t s4 r2"><p class="k">LIGHT ON HARDWARE</p><div class="meter" id="meter"></div>
+  <p class="h">school-laptop ready</p><p class="d">Cabinets draw a crisp 320×240 screen and scale it up. Nothing to install.</p></div>
+
+ <div class="t s5 r3 shot"><img src="../docs/builder3d.png" alt="" style="object-position:50% 30%">
+  <div class="c"><p class="k"><b>●</b> 2D + 3D GAME BUILDER</p><p class="h">make your own</p><p class="d">Build a game in the same tab and publish it straight into the arcade.</p></div></div>
+ <div class="t s4 r3"><div class="qr" id="qr"></div><p class="k">ONLINE WITH CODES</p><p class="code">K7<em>·</em>4QX</p>
+  <p class="h">play a friend</p><p class="d">Swap a short code or scan it. Same network, no server, no account.</p></div>
+ <div class="t s3 r3"><p class="k">PLAYS ANYWHERE</p><ul class="pl"><li>BROWSER</li><li>OFFLINE APP</li><li>WINDOWS · MAC</li><li>LINUX</li><li>GITHUB SCORES</li></ul></div>
+</div>
+<script>
+const q=new URLSearchParams(location.search);
+for(const [k,id] of [['worlds','w'],['cabs','c'],['cats','ct'],['vs','vs']])if(q.get(k))document.getElementById(id).textContent=q.get(k);
+// the wall: a spread of cabinet screens across the shelves
+const ids=['hoops','artillery','boxing','bowling','spellcaster','darts','roadagent','digger','volley','penalty','starrun','bounceball','blackjack','battleship','backgammon','airhockey','archery','bmx','blocks','bingo','badminton','balloons','beatlanes','blobdrop','amazons'];
+const wall=document.getElementById('wall');
+for(const id of ids){const im=new Image();im.src='../docs/thumbs/'+id+'.jpg';wall.appendChild(im);}
+// signal bars: mostly lit, like a meter that barely moves
+const m=document.getElementById('meter');[18,26,34,42,50,58,64].forEach((h,i)=>{const e=document.createElement('i');e.style.height=h+'px';if(i<3)e.className='on';m.appendChild(e);});
+// a QR-like pixel square (decorative): three finder corners and a seeded scatter
+const qr=document.getElementById('qr');let s=11;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+// a 5x5 finder (ring, gap, centre) in three corners
+const F=[[0,0],[8,0],[0,8]];
+for(let y=0;y<13;y++)for(let x=0;x<13;x++){const e=document.createElement('i'),f=F.find(([a,b])=>x>=a&&x<a+5&&y>=b&&y<b+5);
+ let on;if(f){const u=x-f[0],v=y-f[1];on=u===0||v===0||u===4||v===4||(u===2&&v===2);}else on=rnd()>.52;
+ if(!on)e.className='o';qr.appendChild(e);}
+Promise.all([...[...document.images].map(im=>im.decode().catch(()=>0)),document.fonts.ready]).then(()=>window.BENTO_READY=true);
+</script>
+</body>
+</html>

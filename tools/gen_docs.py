@@ -308,6 +308,9 @@ def main():
     games_md(games, n)
     if '--art' in sys.argv:
         art(games, n)
+    if not CHECK:
+        # the README's counts strip and LED ticker are SVGs drawn from the registry (fast, no browser)
+        subprocess.run(['node', rel('tools/readme_intro.js'), 'svg'], check=True, cwd=ROOT, stdout=subprocess.DEVNULL)
     print(f"{n['total']} games ({n['canvas']} canvas, {n['worlds']} 3D).",
           ('Out of date: ' if CHECK else 'Updated: ') + (', '.join(changed) or 'nothing'))
     if CHECK and changed:
