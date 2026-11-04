@@ -2,6 +2,7 @@
 // park, harbour, kickers, garages, skyline; plus time of day (sky, sun/moon, fog, window lights), rain and wet-road neon reflections.
 import * as THREE from '../vendor/three.module.min.js';
 import {N,SP,ROAD,HALF,WALK,HY,WORLD,rng} from './city.js';
+import {Placer} from '../js/kit3d/place.js';
 const V=THREE.Vector3,cl=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
 
 class GB{constructor(){this.p=[];this.n=[];this.u=[];this.i=[];this.c=[];}
@@ -84,19 +85,24 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
   if(L.kind==='tower'&&(L.d==='strip'||L.d==='midtown'&&R()<.75||L.d==='downtown'&&R()<.6)){const o=.07;FB.shop.box(L.x0-o,0,L.z0-o,L.x1+o,4.2,L.z1+o,{us:16,vs:4.2,noTop:1});roofB.box(L.x0-.3,4.2,L.z0-.3,L.x1+.3,4.55,L.z1+.3,{us:8});
    if(L.d==='strip'){const c=AWN[(R()*AWN.length)|0],aw=(x0,z0,x1,z1,nx,nz)=>{const e=1.7;awnB.quad([x0+nx*e,3.75,z0+nz*e],[x1+nx*e,3.75,z1+nz*e],[x1,4.15,z1],[x0,4.15,z0],[nx*.3,.95,nz*.3],[0,0,1,0,1,1,0,1],c);awnB.quad([x1+nx*e,3.75,z1+nz*e],[x0+nx*e,3.75,z0+nz*e],[x0+nx*e,3.4,z0+nz*e],[x1+nx*e,3.4,z1+nz*e],[nx,0,nz],[0,0,1,0,1,1,0,1],c);};
     const ins=1.5;if(R()<.8)aw(L.x0+ins,L.z1+.08,L.x1-ins,L.z1+.08,0,1);if(R()<.8)aw(L.x1-ins,L.z0-.08,L.x0+ins,L.z0-.08,0,-1);if(R()<.6)aw(L.x1+.08,L.z1-ins,L.x1+.08,L.z0+ins,1,0);if(R()<.6)aw(L.x0-.08,L.z0+ins,L.x0-.08,L.z1-ins,-1,0);}}
-  if(L.kind==='tower'){const top=L.setback?L.h+.6:L.h+.5;const n=1+(R()*3|0);for(let k=0;k<n;k++){const x=lerp(L.x0+2.5,L.x1-2.5,R()),z=lerp(L.z0+2.5,L.z1-2.5,R());const w=.8+R()*1.4;roofB.box(x-w,top,z-.7,x+w,top+.9+R()*.6,z+.7,{us:4});}
-   if(L.h<60&&L.d!=='downtown'&&R()<.45&&!L.setback)tanks.push([lerp(L.x0+3,L.x1-3,R()),top,lerp(L.z0+3,L.z1-3,R()),.8+R()*.5]);
-   if(R()<.3){const x=lerp(L.x0+2,L.x1-2,R()),z=lerp(L.z0+2,L.z1-2,R());roofB.box(x-.06,top,z-.06,x+.06,top+3+R()*4,z+.06,{us:4});}
+  // roof furniture packed onto the actual top slab (the inset upper block on setback towers) so units never overlap each other,
+  // the parapet or the beacon mast, and never hang off the edge of a setback.
+  if(L.kind==='tower'){const top=L.setback?L.h+.6:L.h+.5;const ix=L.setback?(L.x1-L.x0)*.18:0,iz=L.setback?(L.z1-L.z0)*.18:0;const rx0=L.x0+ix,rx1=L.x1-ix,rz0=L.z0+iz,rz1=L.z1-iz;
+   const items=[];if(L.h>70)items.push([.9,.9,'mast']);const tank=L.h<60&&L.d!=='downtown'&&R()<.45&&!L.setback;if(tank)items.push([1.9,1.9,'tank']);
+   const n=1+(R()*3|0);for(let k=0;k<n;k++){const w=.8+R()*1.4;items.push([w,.7,'ac']);}if(L.h>30){const m=2+(R()*3|0);for(let k=0;k<m;k++)items.push([1.5,1,'box']);}if(R()<.3)items.push([.3,.3,'ant']);
+   const mast=L.h>70?{x:(rx0+rx1)/2,z:(rz0+rz1)/2}:null;const placed=[];const PR2=new Placer(4);if(mast)PR2.circle(mast.x,mast.z,1.4);
+   for(const[hw,hd,kind]of items){if(kind==='mast')continue;for(let t=0;t<16;t++){const ax=rx0+1+hw,bx=rx1-1-hw,az=rz0+1+hd,bz=rz1-1-hd;if(ax>bx||az>bz)break;const x=lerp(ax,bx,R()),z=lerp(az,bz,R());if(PR2.takeBox(x-hw,z-hd,x+hw,z+hd,.5)){placed.push([x,z,hw,hd,kind]);break;}}}
+   for(const[x,z,hw,hd,kind]of placed){if(kind==='ac')roofB.box(x-hw,top,z-hd,x+hw,top+.9+R()*.6,z+hd,{us:4});else if(kind==='box')roofB.box(x-hw,top,z-hd,x+hw,top+1.6,z+hd,{us:4});else if(kind==='tank')tanks.push([x,top,z,.8+R()*.5]);else roofB.box(x-.06,top,z-.06,x+.06,top+3+R()*4,z+.06,{us:4});}
    // parapet
-   if(!L.setback&&L.h<70){const t=.3;roofB.box(L.x0,top,L.z0,L.x1,top+.7,L.z0+t,{us:8});roofB.box(L.x0,top,L.z1-t,L.x1,top+.7,L.z1,{us:8});roofB.box(L.x0,top,L.z0+t,L.x0+t,top+.7,L.z1-t,{us:8});roofB.box(L.x1-t,top,L.z0+t,L.x1,top+.7,L.z1-t,{us:8});}}
-  // rooftop clutter + beacons
-  if(L.kind==='tower'&&L.h>30){const n=2+(R()*3|0);for(let k=0;k<n;k++){const x=lerp(L.x0+3,L.x1-3,R()),z=lerp(L.z0+3,L.z1-3,R());const top=L.setback?L.h+.6:L.h+.5;roofB.box(x-1.5,top,z-1,x+1.5,top+1.6,z+1,{us:4});}if(L.h>70){const cx=(L.x0+L.x1)/2,cz=(L.z0+L.z1)/2;roofB.box(cx-.2,L.h,cz-.2,cx+.2,L.h+10,cz+.2,{us:4});beacons.push(new V(cx,L.h+10.4,cz));}}
+   if(!L.setback&&L.h<70){const t=.3;roofB.box(L.x0,top,L.z0,L.x1,top+.7,L.z0+t,{us:8});roofB.box(L.x0,top,L.z1-t,L.x1,top+.7,L.z1,{us:8});roofB.box(L.x0,top,L.z0+t,L.x0+t,top+.7,L.z1-t,{us:8});roofB.box(L.x1-t,top,L.z0+t,L.x1,top+.7,L.z1-t,{us:8});}
+   if(mast){roofB.box(mast.x-.2,top,mast.z-.2,mast.x+.2,L.h+10,mast.z+.2,{us:4});beacons.push(new V(mast.x,L.h+10.4,mast.z));}}
   // neon: strip gets blade signs + marquees, downtown gets big rooftop/high signs
   const faces=[['pz',(L.x0+L.x1)/2,L.z1],['nz',(L.x0+L.x1)/2,L.z0],['px',L.x1,(L.z0+L.z1)/2],['nx',L.x0,(L.z0+L.z1)/2]];
-  if(L.d==='strip'){for(const[f,x,z]of faces){if(R()<.85){const w=Math.min(10,(f==='pz'||f==='nz'?L.x1-L.x0:L.z1-L.z0)*.6);addSign(x,4.8+R()*.8,z,w,w/2,f,(R()*T.signCount)|0);}if(R()<.6&&L.h>14)addSign(x+(f==='pz'||f==='nz'?(R()-.5)*4:0),7+R()*(L.h-12),z+(f==='px'||f==='nx'?(R()-.5)*4:0),5,2.5,f,(R()*T.signCount)|0);}}
-  else if(L.d==='downtown'&&R()<.6){const[f,x,z]=faces[(R()*4)|0];addSign(x,L.h*(.55+R()*.35),z,14,7,f,(R()*T.signCount)|0);}
-  else if((L.d==='midtown')&&R()<.35){const[f,x,z]=faces[(R()*4)|0];addSign(x,3.4,z,8,4,f,(R()*T.signCount)|0);}
-  else if(L.kind==='warehouse'&&R()<.5){const[f,x,z]=faces[(R()*4)|0];addSign(x,L.h-4,z,10,5,f,14);}}
+  const fw=f=>f==='pz'||f==='nz'?L.x1-L.x0:L.z1-L.z0;// signs never wider than the wall they hang on
+  if(L.d==='strip'){for(const[f,x,z]of faces){if(R()<.85){const w=Math.min(10,(f==='pz'||f==='nz'?L.x1-L.x0:L.z1-L.z0)*.6);addSign(x,4.8+R()*.8,z,w,w/2,f,(R()*T.signCount)|0);}if(R()<.6&&L.h>14){const sw=Math.min(5,fw(f)*.7),sl=Math.max(0,(fw(f)-sw)/2-.5),o=(R()-.5)*2*Math.min(2,sl);addSign(x+(f==='pz'||f==='nz'?o:0),7+R()*(L.h-12),z+(f==='px'||f==='nx'?o:0),sw,sw/2,f,(R()*T.signCount)|0);}}}
+  else if(L.d==='downtown'&&R()<.6){const[f,x,z]=faces[(R()*4)|0];{const sw=Math.min(14,fw(f)*.8);addSign(x,L.h*(.55+R()*.35),z,sw,sw/2,f,(R()*T.signCount)|0);}}
+  else if((L.d==='midtown')&&R()<.35){const[f,x,z]=faces[(R()*4)|0];{const sw=Math.min(8,fw(f)*.8);addSign(x,4.8,z,sw,sw/2,f,(R()*T.signCount)|0);}}
+  else if(L.kind==='warehouse'&&R()<.5){const[f,x,z]=faces[(R()*4)|0];{const sw=Math.min(10,fw(f)*.8);addSign(x,L.h-sw/2-1,z,sw,sw/2,f,14);}}}
  for(const k in FB){if(FB[k].empty)continue;const m=new THREE.Mesh(FB[k].geo(),FAC[k]);m.castShadow=k!=='shop';m.receiveShadow=true;group.add(m);}
  if(!awnB.empty){const m=new THREE.Mesh(awnB.geo(),std({vertexColors:true,roughness:.7,side:THREE.DoubleSide}));m.castShadow=true;m.receiveShadow=true;group.add(m);}
  // water tanks (instanced: legs + barrel + cone cap)
@@ -125,9 +131,12 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
    m4.compose(new V(lx,.2,lz),q,s.set(13,1,13));pools.setMatrixAt(k,m4);m4.compose(new V(lx,.2,lz),q,s.set(1,1,1));cones.setMatrixAt(k,m4);});}
  poles.castShadow=true;group.add(poles,heads,pools,cones);
  /* ---------- street furniture (instanced): hydrants, bins, newspaper boxes, benches ---------- */
- {const PR=rng(77);const spots={hyd:[],bin:[],box:[],bench:[]};const near=(x,z)=>lamps.some(l=>Math.abs(l.x-x)<2.6&&Math.abs(l.z-z)<2.6)||city.shops.some(o=>Math.hypot(o.x-x,o.z-z)<9);
+ {const PR=rng(77);const spots={hyd:[],bin:[],box:[],bench:[]};const PL=new Placer(8);for(const l of lamps)PL.circle(l.x,l.z,1.1);for(const t of city.trees)PL.circle(t.x,t.z,1.3*t.s);
+  const near=(x,z)=>city.shops.some(o=>Math.hypot(o.x-x,o.z-z)<9);
   for(const b of city.blocks){if(!(b.d==='downtown'||b.d==='midtown'||b.d==='strip'||b.d==='suburb'))continue;const e=.75;const sides=[[b.x0,b.z0+e,b.x1,b.z0+e,0],[b.x0,b.z1-e,b.x1,b.z1-e,Math.PI],[b.x0+e,b.z0,b.x0+e,b.z1,Math.PI/2],[b.x1-e,b.z0,b.x1-e,b.z1,-Math.PI/2]];
-   for(const[x0,z0,x1,z1,a]of sides){const n=2+(PR()*3|0);for(let k=0;k<n;k++){const t=.12+PR()*.76,x=lerp(x0,x1,t),z=lerp(z0,z1,t);if(near(x,z))continue;const r=PR();const kind=b.d==='suburb'?(r<.5?'hyd':'bin'):r<.3?'hyd':r<.6?'bin':r<.8?'box':'bench';spots[kind].push([x,z,a]);city.addSolid(x-.35,z-.35,x+.35,z+.35,{kind:'lamp',y1:1.2});}}}
+   for(const[x0,z0,x1,z1,a]of sides){const n=2+(PR()*3|0);for(let k=0;k<n;k++){const t=.12+PR()*.76,x=lerp(x0,x1,t),z=lerp(z0,z1,t);const r=PR();const kind=b.d==='suburb'?(r<.5?'hyd':'bin'):r<.3?'hyd':r<.6?'bin':r<.8?'box':'bench';
+    const rad=kind==='bench'?1.2:.6;if(near(x,z)||!PL.free(x,z,rad))continue;PL.circle(x,z,rad);spots[kind].push([x,z,a]);
+    const along=Math.abs(Math.sin(a))<.5,hw=kind==='bench'?.95:.35;city.addSolid(x-(along?hw:.35),z-(along?.35:hw),x+(along?hw:.35),z+(along?.35:hw),{kind:'lamp',y1:1.2});}}}
   const G={hyd:[mergeG([new THREE.CylinderGeometry(.16,.18,.6,10).translate(0,.3,0),new THREE.SphereGeometry(.17,10,6,0,Math.PI*2,0,Math.PI/2).translate(0,.6,0),new THREE.CylinderGeometry(.07,.07,.42,8).rotateZ(Math.PI/2).translate(0,.42,0),new THREE.CylinderGeometry(.22,.22,.06,10).translate(0,.03,0)]),std({color:0xb01a14,roughness:.45,metalness:.3})],
    bin:[mergeG([new THREE.CylinderGeometry(.3,.26,.95,12,1,true).translate(0,.48,0),new THREE.CylinderGeometry(.33,.33,.08,12).translate(0,.97,0)]),std({color:0x1e3a2c,roughness:.55,metalness:.5,side:THREE.DoubleSide})],
    box:[mergeG([new THREE.BoxGeometry(.5,1.0,.45).translate(0,.5,0),new THREE.BoxGeometry(.52,.06,.5).rotateX(-.25).translate(0,1.03,.02)]),std({color:0x2050a0,roughness:.4,metalness:.4})],
@@ -136,8 +145,14 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
   city.hash();}
 
  /* ---------- trees (instanced) ---------- */
- {const tr=city.trees;const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.18,.26,2.4,6).translate(0,1.2,0),std({color:0x3a2a1e,roughness:1}),tr.length);const crown=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2,1),std({color:0xffffff,roughness:.9,flatShading:true}),tr.length);
-  const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),sv=new V();tr.forEach((t,k)=>{m4.compose(new V(t.x,0,t.z),q,sv.set(t.s,t.s,t.s));trunk.setMatrixAt(k,m4);q.setFromEuler(new THREE.Euler(R(),R()*6,R()));m4.compose(new V(t.x,2.4*t.s+1.5*t.s,t.z),q,sv.set(t.s*1.1,t.s*(1+R()*.4),t.s*1.1));crown.setMatrixAt(k,m4);crown.setColorAt(k,new THREE.Color().setHSL(.25+R()*.08,.45,.18+R()*.1));q.identity();});
+ {const tr=city.trees;const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.14,.26,2.6,7).translate(0,1.3,0),std({color:0x3a2a1e,roughness:1}),tr.length);
+  // three overlapping foliage lobes per tree (one shared instanced mesh), tinted per lobe so the canopy reads as leaves, not a single blob
+  const lobeG=new THREE.IcosahedronGeometry(1.5,2);{const P=lobeG.attributes.position,v=new V();for(let i=0;i<P.count;i++){v.fromBufferAttribute(P,i);const n=1+.13*Math.sin(v.x*3.1+v.z*2.3)+.1*Math.sin(v.y*4.7+v.x*1.3);v.multiplyScalar(n);if(v.y<0)v.y*=.72;P.setXYZ(i,v.x,v.y,v.z);}lobeG.computeVertexNormals();}
+  const crown=new THREE.InstancedMesh(lobeG,std({color:0xffffff,roughness:.9,flatShading:true}),tr.length*3);
+  const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),sv=new V(),c=new THREE.Color();const LOBE=[[0,0,0,1.15],[.85,-.45,.35,.82],[-.6,-.3,-.7,.86]];
+  tr.forEach((t,k)=>{m4.compose(new V(t.x,0,t.z),q,sv.set(t.s,t.s,t.s));trunk.setMatrixAt(k,m4);const yaw=R()*6.28,h=.25+R()*.08,l=.17+R()*.08,cy=3.5*t.s;
+   LOBE.forEach(([ox,oy,oz,sc],j)=>{const cx=Math.cos(yaw)*ox-Math.sin(yaw)*oz,cz=Math.sin(yaw)*ox+Math.cos(yaw)*oz;q.setFromEuler(new THREE.Euler(R()*.6,R()*6,R()*.6));
+    m4.compose(new V(t.x+cx*t.s,cy+oy*t.s+(j?0:.3*t.s),t.z+cz*t.s),q,sv.set(t.s*sc*1.2,t.s*sc*(1+R()*.25),t.s*sc*1.2));crown.setMatrixAt(k*3+j,m4);crown.setColorAt(k*3+j,c.setHSL(h+j*.012,.42,l*(j?.9:1.05)));});q.identity();});
   trunk.castShadow=crown.castShadow=true;crown.receiveShadow=true;group.add(trunk,crown);}
 
  /* ---------- highway, ramps, pillars, bridges ---------- */

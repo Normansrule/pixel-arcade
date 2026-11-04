@@ -103,7 +103,7 @@ function dressHouse(H,T,theme,bounds,out,r){const{x0,z0,x1,z1,y0,h}=H,top=y0+h;c
  if(H.roof==='gable'){const R=gableRoof(x0,z0,x1,z1,top);out.roof.push([R.roof]);out.roof.push([R.ridge]);out[mat].push([R.ends,null,wc]);}
  else{const pt=.3,ph=.7;for(const[cx,cz,w,d]of[[(x0+x1)/2,z0+pt/2,x1-x0,pt],[(x0+x1)/2,z1-pt/2,x1-x0,pt],[x0+pt/2,(z0+z1)/2,pt,z1-z0],[x1-pt/2,(z0+z1)/2,pt,z1-z0]]){const p=BX(w,ph,d);p.translate(cx,top+ph/2,cz);boxUV(p,.25);out[mat].push([p,null,wc.clone().multiplyScalar(.92)]);}
   // rooftop clutter
-  const n=Math.max(1,((x1-x0)*(z1-z0)/60)|0);for(let i=0;i<n;i++){const ax=x0+1.5+r()*(x1-x0-3),az=z0+1.5+r()*(z1-z0-3);if(r()<.5){const a=BX(1.4,1,1.1);a.translate(ax,top+.5,az);out.grate.push([a]);}else{const t=new THREE.CylinderGeometry(.7,.7,1.6,12);t.translate(ax,top+.8,az);out.iron.push([t]);}}}
+  const n=Math.max(1,((x1-x0)*(z1-z0)/60)|0);const used=[];for(let i=0;i<n;i++){const ax=x0+1.5+r()*(x1-x0-3),az=z0+1.5+r()*(z1-z0-3);if(used.some(([a,b])=>Math.hypot(a-ax,b-az)<2)){r();continue;}used.push([ax,az]);if(r()<.5){const a=BX(1.4,1,1.1);a.translate(ax,top+.5,az);out.grate.push([a]);}else{const t=new THREE.CylinderGeometry(.7,.7,1.6,12);t.translate(ax,top+.8,az);out.iron.push([t]);}}}
  // windows per face (skip faces that look out of the playable area)
  const faces=[[x0,z0,x1,z0,0,-1],[x1,z1,x0,z1,0,1],[x0,z1,x0,z0,-1,0],[x1,z0,x1,z1,1,0]];const[b0,b1,b2,b3]=bounds;
  const shutC=col(H.shut||'#3c8a6a');let best=null,bestD=1e9;

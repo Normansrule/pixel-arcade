@@ -49,7 +49,8 @@ export class Level{
   // awnings
   if(o.awn)for(const[side,off,w,c]of o.awn)this.awnings.push({side,x0,z0,x1,z1,off,w,col:c,y:2.55});
   // roof clutter on flat roofs
-  if(roof==='flat'&&o.clutter!==false){const n=Math.max(1,Math.floor((x1-x0)*(z1-z0)/40));for(let i=0;i<n;i++){const r=this.rnd();const kind=r<.45?'ac':r<.75?'watertank':'dish';this.props.push({kind,x:x0+1.2+this.rnd()*(x1-x0-2.4),z:z0+1.2+this.rnd()*(z1-z0-2.4),y:h+.3,rot:(this.rnd()*4|0)*PI/2,s:kind==='dish'?.45:1,col:null});}}
+  if(roof==='flat'&&o.clutter!==false){const n=Math.max(1,Math.floor((x1-x0)*(z1-z0)/40));const used=[];for(let i=0;i<n;i++){const r=this.rnd();const kind=r<.45?'ac':r<.75?'watertank':'dish';const px=x0+1.2+this.rnd()*(x1-x0-2.4),pz=z0+1.2+this.rnd()*(z1-z0-2.4),rot=(this.rnd()*4|0)*PI/2,pr=kind==='watertank'?1.6:1.1;
+    if(used.some(([a,b,c])=>Math.hypot(a-px,b-pz)<c+pr))continue;used.push([px,pz,pr]);this.props.push({kind,x:px,z:pz,y:h+.3,rot,s:kind==='dish'?.45:1,col:null});}}
   if(o.light)this.lamps.push({x:(x0+x1)/2,y:Math.min(h-.4,3),z:(z0+z1)/2,light:true,inside:true,col:o.lightCol||0xffc890});
   this.blds.push({x0,z0,x1,z1,h});}
  prop(kind,x,z,rot=0,o={}){const q=Math.round(rot/(PI/2))&3,f=PROPS[kind];let[w,h,d]=f;if(o.s){w*=o.s;h*=o.s;d*=o.s;}if(q&1)[w,d]=[d,w];const y0=o.y0||0;
@@ -289,6 +290,8 @@ float th(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float t
  if(L.wires.length){const parts=[];for(const w of L.wires){const a=new V(w.a[0],w.y,w.a[1]),b=new V(w.b[0],w.y,w.b[1]);const pts=[];for(let i=0;i<=12;i++){const t=i/12;pts.push(new V().lerpVectors(a,b,t).add(new V(0,-Math.sin(t*PI)*1.2,0)));}
    parts.push({geo:new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),16,.02,4,false),m:new THREE.Matrix4()});}G.add(new THREE.Mesh(merge(parts),std({color:0x1a1a1a,roughness:.6})));}
  // ----- instanced props
+ // outer-ring greenery is scattered at random: drop trees/rocks that would grow inside one another
+ {const G2=['tree','pine','palm','shrub','rock'],kept=[];L.props=L.props.filter(p=>{if(!G2.includes(p.kind)||p.y>.3)return true;const r=(p.kind==='shrub'||p.kind==='rock'?1:1.8)*(p.s||1);if(kept.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<o.r+r))return false;kept.push({x:p.x,z:p.z,r});return true;});}
  const groups={};for(const p of L.props)(groups[p.kind]=groups[p.kind]||[]).push(p);
  const inst=(geo,mat,list,cast=true,fn)=>{const im=new THREE.InstancedMesh(geo,mat,list.length);const m=new THREE.Matrix4(),qq=new THREE.Quaternion(),e=new THREE.Euler(),c=new THREE.Color();
   list.forEach((p,i)=>{const s=p.s||1;if(fn)fn(p,m,i);else m.compose(new V(p.x,p.y,p.z),qq.setFromEuler(e.set(0,p.rot,0)),new V(s,s,s));im.setMatrixAt(i,m);c.set(p.col!=null?p.col:0xffffff);im.setColorAt(i,c);});

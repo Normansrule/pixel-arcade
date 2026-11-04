@@ -1,8 +1,12 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v57", "date": "4 Nov 2026", "branch": "round28-carts", "round": 28, "games": 521, "worlds": 55,
+     "added": "Rounds 27 and 28 in one build: the cleaner 3D worlds from v55 (no more trees, rocks, rooftop units and parked cars spawning inside each other) and the colourful cartridges with pixel icons from v56."},
     {"v": "v56", "date": "4 Nov 2026", "branch": "round28-carts", "round": 28, "games": 521, "worlds": 55,
      "added": "Colourful cartridges: every one of the 521 cartridges on the shelf now has its own shell colour (18 bright plastics, never the same twice in a row) and a pixel icon on its label (60 icons, picked from the game's name and tags), in the same cartridge shape. Spines and boxes are bigger, the console tray cartridges match, and the shelf planks line up under every row again."},
+    {"v": "v55", "date": "4 Nov 2026", "branch": "round27", "round": 27, "games": 521, "worlds": 55,
+     "added": "A clean-up round for the worlds around the player. Trees, rocks, rooftop units, street furniture, parked cars and distant skylines no longer spawn inside each other, on pavements or hanging off roofs, using a new shared placement guard (js/kit3d/place.js). Night Drive, Kart Grand Prix, Sideways, Kart, Courier, Royale, Warfront, Nightfall, Plaza, Drop Zone, Strike, Frontline, Siege and Zenith are cleaner, and Night Drive trees get fuller canopies."},
     {"v": "v54", "date": "4 Nov 2026", "branch": "round26-readme", "round": 26, "games": 521, "worlds": 55,
      "added": "A new README front page: an animated header that drifts through the arcade under light shafts while the middle cabinet flips between real games, a scrolling LED ticker of game names, arcade-button links, a counts strip, and a feature grid of the 3D worlds, cabinets, round clock, CPU levels, builder, online codes and platforms. All of it is drawn by tools/readme_intro.js."},
     {"v": "v46", "date": "28 Oct 2026", "branch": "round23", "round": 23, "games": 521, "worlds": 55,

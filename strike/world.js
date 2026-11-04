@@ -133,7 +133,7 @@ function decor(L,group,M,mood,anim,dyn){const D=L.decor;const steel=pbr('steel',
 
 function buildCity(group,L,anim){const n=260,geo=new THREE.BoxGeometry(1,1,1);geo.translate(0,.5,0);const tex=fxTex('windows').clone();tex.needsUpdate=true;tex.repeat.set(1,2.5);
  const m=new THREE.InstancedMesh(geo,std({color:0x0e0f16,roughness:.7,metalness:.3,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.95}),n);let k=0;
- for(let i=0;i<n;i++){const a=R()*Math.PI*2,r=60+Math.pow(R(),.7)*260;const x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.abs(x)<45&&Math.abs(z)<35)continue;const w=10+R()*18,d=10+R()*18,h=30+R()*120*(r<150?1:.7);m.setMatrixAt(k++,M4(x,-70,z,0,R()*.4,0,w,h,d));}m.count=k;group.add(m);
+ const sky=[];for(let i=0;i<n;i++){const a=R()*Math.PI*2,r=60+Math.pow(R(),.7)*260;const x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.abs(x)<45&&Math.abs(z)<35)continue;const w=10+R()*18,d=10+R()*18,h=30+R()*120*(r<150?1:.7),ry=R()*.4;const rad=Math.hypot(w,d)/2;if(sky.some(([px,pz,pr])=>Math.hypot(px-x,pz-z)<pr+rad+2))continue;sky.push([x,z,rad]);m.setMatrixAt(k++,M4(x,-70,z,0,ry,0,w,h,d));}m.count=k;group.add(m);
  // the gap between the two towers: a lit street far below
  const st=new THREE.Mesh(new THREE.PlaneGeometry(14,400),new THREE.MeshBasicMaterial({color:new THREE.Color(.5,.32,.12)}));st.rotation.x=-Math.PI/2;st.position.set(0,-68,0);group.add(st);
  const cars=[];const cg=new THREE.SphereGeometry(.4,6,4);const cm=new THREE.InstancedMesh(cg,new THREE.MeshBasicMaterial({color:new THREE.Color(3,2.2,1.4)}),40);for(let i=0;i<40;i++)cars.push({z:(R()-.5)*400,v:(R()<.5?-1:1)*(10+R()*12),x:R()<.5?-3:3});group.add(cm);
@@ -148,7 +148,8 @@ function backdrop(group,M,mood,L){// a ring of distant hills / silhouettes tinte
   const fb=new THREE.Mesh(new THREE.BoxGeometry(60,16,24),cm);fb.position.set(-150,6,40);group.add(fb);const fb2=new THREE.Mesh(new THREE.BoxGeometry(40,22,30),cm);fb2.position.set(120,9,-110);group.add(fb2);}
  if(mood==='noon'){const sea=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),std({color:0x2a5a78,roughness:.15,metalness:.2,envMapIntensity:1.4}));sea.rotation.x=-Math.PI/2;sea.position.y=-16;group.add(sea);
   const hill=std({color:0x8a8a62,roughness:1});for(let i=0;i<26;i++){const a=R()*Math.PI*2,r=60+R()*90;const s=10+R()*22;const h=new THREE.Mesh(new THREE.SphereGeometry(s,10,6,0,Math.PI*2,0,Math.PI/2),hill);h.scale.y=.35+R()*.3;h.position.set(Math.cos(a)*r,-9,Math.sin(a)*r);group.add(h);}
-  const town=std({color:0xe8dcc8,roughness:.9});for(let i=0;i<70;i++){const a=R()*Math.PI*2,r=48+R()*70;if(Math.abs(Math.cos(a)*r)<40&&Math.abs(Math.sin(a)*r)<40)continue;const b=new THREE.Mesh(new THREE.BoxGeometry(4+R()*6,3+R()*7,4+R()*6),town);b.position.set(Math.cos(a)*r,-4+R()*3,Math.sin(a)*r);b.rotation.y=R()*3;group.add(b);}}
+  const town=std({color:0xe8dcc8,roughness:.9});const placed=[];for(let i=0;i<70;i++){const a=R()*Math.PI*2,r=48+R()*70;if(Math.abs(Math.cos(a)*r)<40&&Math.abs(Math.sin(a)*r)<40)continue;const bw=4+R()*6,bh=3+R()*7,bd=4+R()*6,x=Math.cos(a)*r,z=Math.sin(a)*r,y=-4+R()*3,ry=R()*3;const rad=Math.hypot(bw,bd)/2;
+   if(placed.some(([px,pz,pr])=>Math.hypot(px-x,pz-z)<pr+rad+1))continue;placed.push([x,z,rad]);const b=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),town);b.position.set(x,y,z);b.rotation.y=ry;group.add(b);}}
  if(mood==='dusk'||mood==='noon'){const outer=new THREE.Mesh(new THREE.PlaneGeometry(900,900),std({color:mood==='noon'?0x8c8460:0x2e2a2a,roughness:1}));outer.rotation.x=-Math.PI/2;outer.position.y=-.06;group.add(outer);}}
 
 /* ---------- light fixtures ---------- */

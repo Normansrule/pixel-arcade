@@ -4,6 +4,7 @@ import {V,cl,lerp,sstep,rng,fbm,ctex,speckle,merge,M4,lumpy,textSprite} from './
 import {SEA,at,atK,yawAt} from './course.js';
 import {podMesh,berryGeo,coinGeo,ringMesh,balloonMesh,mat,makeCritter} from './models.js';
 import {DRIVERS} from './data.js';
+import {Placer} from '../js/kit3d/place.js';
 
 const TONE='\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n';
 const col=c=>new THREE.Color(c);
@@ -111,12 +112,17 @@ function propGeo(kind,T){const r=rng(kind.length*31+7);
   case'shroom':return merge([[new THREE.CylinderGeometry(.35,.5,3,8),M4(0,1.5,0),0xe8e0ff],[new THREE.SphereGeometry(1.8,14,8,0,Math.PI*2,0,Math.PI/2),M4(0,2.8,0,0,0,0,1,.7,1),0x60c0ff],[new THREE.CylinderGeometry(.2,.3,1.6,6),M4(1.4,.8,.6),0xe8e0ff],[new THREE.SphereGeometry(.8,10,6,0,Math.PI*2,0,Math.PI/2),M4(1.4,1.5,.6,0,0,0,1,.7,1),0xff70e0]]);
   case'crystal':{const L=[];for(let k=0;k<4;k++){const a=r()*6.28,h=2+r()*4;L.push([new THREE.OctahedronGeometry(1,0),M4(Math.cos(a)*1,h*.45,Math.sin(a)*1,(r()-.5)*.6,r(),(r()-.5)*.6,.6,h*.5,.6),[0x8a6aff,0x4ac8ff,0xff6ae0][k%3]]);}return merge(L);}
   case'lamp':return merge([[new THREE.CylinderGeometry(.12,.16,4,6),M4(0,2,0),0x2a2a3a],[new THREE.SphereGeometry(.45,10,8),M4(0,4.2,0),0xfff0a0]]);}}
+// footprint radius (m at scale 1) of each scatter prop, used to keep props apart and their canopies off the track
+const PROP_R={palm:4.6,pine:2.8,jtree:5.5,hut:3,rock:2,ruin:3,flower:1.1,ice:1.8,crystal:1.6,shroom:2,lamp:.6,cactus:1.2,fern:1.4,igloo:3};
 function scatter(C,T,TR,grp,count){const B=C.B,r=rng((C.def.seed||1)*77),w=C.def.wd,kinds=T.props,L={};kinds.forEach(k=>L[k]=[]);
- const x0=TR.x0,z0=TR.z0,W=(TR.nx-1)*TR.cs,H=(TR.nz-1)*TR.cs;let tries=0;
+ const x0=TR.x0,z0=TR.z0,W=(TR.nx-1)*TR.cs,H=(TR.nz-1)*TR.cs;let tries=0;const PL=new Placer(10);
  while(tries++<count*8){const x=x0+r()*W,z=z0+r()*H,d=TR.d(x,z),h=TR.h(x,z);if(h<.9||d<w+(C.def.veh==='plane'?2:7)||d>200)continue;
   const kind=kinds[d<w+30?(r()<.55?0:r()<.5?1:3):(r()*kinds.length|0)];if(kind==='hut'&&d<w+14)continue;if(kind==='lamp'&&d>w+12)continue;
-  L[kind].push([x,h-.15,z,r()*6.28,.7+r()*.7]);if(Object.values(L).reduce((a,b)=>a+b.length,0)>=count)break;}
- if(T.props.includes('lamp'))for(let i=0;i<B.n;i+=14){if(B.wet[i])continue;for(const s of[-1,1]){const u=(w+3)*s,x=B.x[i]+B.nx[i]*u,z=B.z[i]+B.nz[i]*u;L.lamp.push([x,TR.h(x,z)-.1,z,0,1]);}}
+  const ry=r()*6.28,sc=.7+r()*.7,rad=(PROP_R[kind]||2)*sc;if(d<w+3+rad||!PL.free(x,z,rad*.9))continue;PL.circle(x,z,rad*.9);
+  // sink the base to the lowest ground under the footprint so nothing floats on a slope
+  let hb=h;for(let a=0;a<6.28;a+=1.26)hb=Math.min(hb,TR.h(x+Math.cos(a)*rad*.5,z+Math.sin(a)*rad*.5));
+  L[kind].push([x,hb-.15,z,ry,sc]);if(Object.values(L).reduce((a,b)=>a+b.length,0)>=count)break;}
+ if(T.props.includes('lamp'))for(let i=0;i<B.n;i+=14){if(B.wet[i])continue;for(const s of[-1,1]){const u=(w+3)*s,x=B.x[i]+B.nx[i]*u,z=B.z[i]+B.nz[i]*u;if(!PL.free(x,z,.6))continue;L.lamp.push([x,TR.h(x,z)-.1,z,0,1]);}}
  for(const k of kinds){if(!L[k].length)continue;const glow=k==='shroom'||k==='crystal'||k==='lamp'||k==='ice';
   const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:glow?.3:.85,metalness:0,emissive:glow?(k==='ice'?0x2a5a8a:k==='lamp'?0x8a7a30:0x5a4aff):0,emissiveIntensity:glow?(T.night?1.1:.35):0,flatShading:k==='rock'||k==='ice'||k==='crystal'||k==='ruin'});
   const im=new THREE.InstancedMesh(propGeo(k,T),m,L[k].length);L[k].forEach((p,i)=>im.setMatrixAt(i,M4(p[0],p[1],p[2],0,p[3],0,p[4])));im.castShadow=true;im.receiveShadow=true;grp.add(im);}

@@ -4,12 +4,24 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round25`, which includes rounds 11 to 24)
 
+### Rounds 27 and 28 together (v57)
+
+- One build with both rounds: the cleaner worlds from v55 and the colourful cartridges from v56.
+
 ### Round 28 (v56): colourful cartridges with icons
 
 - **Every cartridge has its own colour:** the grey spines are now bright plastic shells in 18 colours (red, orange, yellow, lime, green, teal, sky, blue, violet, purple, pink, coral and more). Colours are fixed per game and never repeat next to each other on a shelf.
 - **A pixel icon on every label:** 60 pixel icons (ball, racket, car, rocket, ghost, sword, cards, dice, puzzle piece and so on), chosen from each game's name and tags, with hand picks where the words mislead. Drawn as crisp SVG (Scalable Vector Graphics) from 12 by 12 bitmaps in `js/carts.js`.
 - **Bigger cartridges:** spines are wider and taller with a cream label sticker, a corner notch and a moulded edge; boxes view tiles are larger with the icon beside the name. The console tray cartridges use the same colours and icons.
 - **Fix:** the black shelf planks drifted out of line from the third row down (on phones from the second); they now sit under every row.
+
+### Round 27 (v55): cleaner worlds, no more clipping scenery
+
+- **Shared placement guard:** `js/kit3d/place.js` reserves the footprint of every tree, rock, bin, bench, rooftop unit and parked car, so scenery no longer spawns inside other scenery, on pavements or on the track.
+- **Night Drive:** rooftop units are packed onto the real roof (they used to hang in the air off setback towers and overlap the beacon masts), neon signs fit the wall they hang on, yard trees stay off the pavement and clear of houses, street furniture is spaced out, and every tree has a fuller three-part canopy.
+- **Racing:** Kart Grand Prix props sit on the lowest ground under them and keep apart (palms through umbrellas are gone); Kart and Courier keep tree canopies off the track; Sideways spaces its forests and lays the distant city on a street grid so lit towers no longer cut through each other.
+- **3D worlds:** trees and rocks no longer grow inside one another in Royale, Warfront, Nightfall and Plaza; Drop Zone rooftop units, park trees and parked cars keep clear of each other and of the fountains; Zenith and Frontline rooftops, Strike's background town and skyline, Frontline's outer greenery and the Siege skyline are tidied.
+- Measured with a scene overlap scan: objects sunk inside each other dropped from 103 to 0 in Courier, 179 to 48 in Warfront, 186 to 85 in Royale (the rest is grass under trees), 35 to 4 in Plaza and 14 to 1 in Sideways.
 
 ### Round 26 (v54): a new README front page
 

@@ -111,15 +111,18 @@ export function buildMap(mats){const geo=new Geo();geo.uvs=UVS;const W=new World
   Vb(x0-.2,3.2,z0-.2,x1+.2,3.6,z1+.2,'conc',pick([0x2a2e34,0x6a2a22,0x2a4a6a,0xb8b0a0]),{});
   foot.push({x0,z0,x1,z1,h,k:'tower'});const wx=x1-x0,wz=z1-z0;
   if(h>14){props.push({k:'water',x:x0+wx*.3,y:h+.4,z:z0+wz*.35,r:0});Cb(x0+wx*.3-1.3,h+.4,z0+wz*.35-1.3,x0+wx*.3+1.3,h+5,z0+wz*.35+1.3,3,1);}
-  for(let i=0;i<Math.floor(wx*wz/120);i++){const ux=x0+2+R()*(wx-4),uz=z0+2+R()*(wz-4);props.push({k:'ac',x:ux,y:h+.4,z:uz,r:(R()*4|0)*Math.PI/2});}
+  {const taken=h>14?[[x0+wx*.3,z0+wz*.35,2.2]]:[];if(h>24)taken.push([x0+wx/2,z0+wz/2,1.2]);// rooftop units keep clear of each other, the water tank and the mast
+   for(let i=0;i<Math.floor(wx*wz/120);i++){const ux=x0+2+R()*(wx-4),uz=z0+2+R()*(wz-4),rr=(R()*4|0)*Math.PI/2;if(taken.some(([a,b,c])=>Math.hypot(a-ux,b-uz)<c+1.1))continue;taken.push([ux,uz,1.1]);props.push({k:'ac',x:ux,y:h+.4,z:uz,r:rr});}}
   if(h>24&&R()<.6){Vb(x0+wx/2-.15,h+.4,z0+wz/2-.15,x0+wx/2+.15,h+9,z0+wz/2+.15,'steel',0xb0b0b0);Vb(x0+wx/2-.25,h+8.8,z0+wz/2-.25,x0+wx/2+.25,h+9.2,z0+wz/2+.25,'glow',0xff4040);}}
  function shipCont(x,z,q,t,y=0){const sw=q%2,L=6.06,Wd=2.44,Hh=2.59;const hx=sw?Wd/2:L/2,hz=sw?L/2:Wd/2;S(x-hx,y,z-hz,x+hx,y+Hh,z+hz,'corr',t,{s:2.6,su:sw?2.6:1.3});Vb(x-hx-.04,y+Hh-.12,z-hz-.04,x+hx+.04,y+Hh,z+hz+.04,'steel',t);Vb(x-hx-.04,y,z-hz-.04,x+hx+.04,y+.14,z+hz+.04,'steel',0x2a2a2a);foot.push({x0:x-hx,z0:z-hz,x1:x+hx,z1:z+hz,h:y+Hh,k:'cont',col:t});}
  function barrier(x,z,q){const sw=q%2;S(x-(sw?.3:1),0,z-(sw?1:.3),x+(sw?.3:1),.85,z+(sw?1:.3),'conc',0xb0aca2);}
  function fence(x0,z0,x1,z1,h=2.3){const ax=Math.abs(x1-x0)>Math.abs(z1-z0)?'x':'z';const L=ax==='x'?Math.abs(x1-x0):Math.abs(z1-z0);
   if(ax==='x'){const zz=z0;Vb(Math.min(x0,x1),0,zz-.01,Math.max(x0,x1),h,zz+.01,'fence',0xffffff,{s:2.4});W.add(Math.min(x0,x1),0,zz-.08,Math.max(x0,x1),h,zz+.08,1,1);for(let a=0;a<=L;a+=3)geo.cyl(Math.min(x0,x1)+a,0,zz,.05,h+.1,'steel',0x777,6);}
   else{const xx=x0;Vb(xx-.01,0,Math.min(z0,z1),xx+.01,h,Math.max(z0,z1),'fence',0xffffff,{s:2.4});W.add(xx-.08,0,Math.min(z0,z1),xx+.08,h,Math.max(z0,z1),1,1);for(let a=0;a<=L;a+=3)geo.cyl(xx,0,Math.min(z0,z1)+a,.05,h+.1,'steel',0x777,6);}}
- function tree(x,z,s=1){props.push({k:'tree',x,y:0,z,r:R()*6,s});Cb(x-.25*s,0,z-.25*s,x+.25*s,5*s,z+.25*s,3,2);}
- function car(x,z,rot){const sw=Math.abs(Math.sin(rot))>.5;props.push({k:'car',x,y:0,z,r:rot,c:pick([0x8a2a22,0x2a4a7a,0xd8d8d0,0x3a3e44,0x5a6a4a,0x9a8a5a,0x1a1c20,0x6a6e74])});const hx=sw?2.15:.9,hz=sw?.9:2.15;Cb(x-hx,0,z-hz,x+hx,1.45,z+hz,3,1);}
+ // trees never spawn inside another tree, a parked car, a building footprint or a keep-out circle (fountains)
+ const keepOut=[];function tree(x,z,s=1){const r=R()*6;if(props.some(p=>(p.k==='tree'&&Math.hypot(p.x-x,p.z-z)<2.4*(p.s+s)/2+.6)||(p.k==='car'&&Math.hypot(p.x-x,p.z-z)<3.4))||foot.some(f=>x>f.x0-1.5*s&&x<f.x1+1.5*s&&z>f.z0-1.5*s&&z<f.z1+1.5*s)||keepOut.some(([a,b,c])=>Math.hypot(a-x,b-z)<c+1.5*s))return;
+  props.push({k:'tree',x,y:0,z,r,s});Cb(x-.25*s,0,z-.25*s,x+.25*s,5*s,z+.25*s,3,2);}
+ function car(x,z,rot){const sw=Math.abs(Math.sin(rot))>.5;const cc=pick([0x8a2a22,0x2a4a7a,0xd8d8d0,0x3a3e44,0x5a6a4a,0x9a8a5a,0x1a1c20,0x6a6e74]);if(props.some(p=>(p.k==='tree'||p.k==='car')&&Math.hypot(p.x-x,p.z-z)<3.4))return;props.push({k:'car',x,y:0,z,r:rot,c:cc});const hx=sw?2.15:.9,hz=sw?.9:2.15;Cb(x-hx,0,z-hz,x+hx,1.45,z+hz,3,1);}
  function dumpster(x,z,rot){props.push({k:'dump',x,y:0,z,r:rot,c:pick([0x2a5a3a,0x2a3e6a,0x6a4a2a])});const sw=Math.abs(Math.sin(rot))>.5;Cb(x-(sw?.7:1),0,z-(sw?1:.7),x+(sw?.7:1),1.3,z+(sw?1:.7),3,1);}
  function barrel(x,z,y=0){props.push({k:'barrel',x,y,z,r:0,c:pick([0x3a5a8a,0x8a3a2a,0x4a5a3a,0x6a6a6a])});Cb(x-.3,y,z-.3,x+.3,y+.92,z+.3,3,1);}
  function lamp(x,z,r){props.push({k:'lamp',x,y:0,z,r});Cb(x-.12,0,z-.12,x+.12,7,z+.12,3,1);}
@@ -156,7 +159,7 @@ export function buildMap(mats){const geo=new Geo();geo.uvs=UVS;const W=new World
    // yard fence + trees
    const fx0=hx-2,fz0=hz-2,fx1=hx+26,fz1=hz+24;if(R()<.7){fence(fx0,j?fz0:fz1,fx1,j?fz0:fz1,1.4);}tree(hx+w+5+R()*6,hz+3+R()*12,.8+R()*.5);tree(hx+3+R()*8,hz+dd+4+R()*6,.8+R()*.5);
    if(R()<.5)car(hx+w+4,hz+dd/2,0);spots.push({x:hx+w+3,y:0,z:hz+dd+3,lvl:0});}}
- function park(b){const{x0,x1,z0,z1}=b;parks.push([x0,z0,x1,z1]);for(let i=0;i<26;i++)tree(x0+4+R()*(x1-x0-8),z0+4+R()*(z1-z0-8),.9+R()*.7);
+ function park(b){const{x0,x1,z0,z1}=b;parks.push([x0,z0,x1,z1]);keepOut.push([(x0+x1)/2,(z0+z1)/2,5.5]);for(let i=0;i<26;i++)tree(x0+4+R()*(x1-x0-8),z0+4+R()*(z1-z0-8),.9+R()*.7);
   const cx=(x0+x1)/2,cz=(z0+z1)/2;geo.cyl(cx,0,cz,5,.6,'conc',0xb8b4aa,24);geo.cyl(cx,.6,cz,4.4,.05,'paint',0x4a7a8a,24);W.add(cx-4,0,cz-4,cx+4,.6,cz+4,1,0);
   for(let i=0;i<4;i++){const a=i*Math.PI/2;props.push({k:'bench',x:cx+Math.cos(a)*9,y:0,z:cz+Math.sin(a)*9,r:-a+Math.PI/2});}
   // small pavilion

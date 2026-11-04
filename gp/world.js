@@ -307,18 +307,22 @@ function startGantry(W,C,T){const B=C.main,i=0,w=B.w[i]+B.sh[i]*.6,yaw=Math.atan
 
 function buildProps(W,C,T,rnd,hgt,q){const list=T.props,cnt=q>=2?340:q===1?220:120;const per={};list.forEach(k=>per[k]=[]);const M0=C.main;
  const free=(x,z,r)=>{if(W.occupied&&W.occupied.some(o=>(o.x-x)**2+(o.z-z)**2<(o.r+r)**2))return false;const qq=query(C,x,z);if(!qq.ok)return true;return Math.abs(qq.u)>qq.lim+r+2.5;};
- const place=(k,x,z,s,ry)=>{per[k].push({x,z,y:hgt(x,z),s,ry});};
+ // props sit on the lowest ground under their footprint so no edge floats on a slope, and reserve their footprint so later props
+ // never spawn inside them (palms through umbrellas, rocks through tents)
+ const base=(x,z,r)=>{let y=hgt(x,z);for(let a=0;a<6.28;a+=1.05)y=Math.min(y,hgt(x+Math.cos(a)*r,z+Math.sin(a)*r));return y;};
+ const place=(k,x,z,s,ry,rad=3)=>{const fr=Math.min(rad,12)*s*.55;per[k].push({x,z,y:base(x,z,fr)-.05,s,ry});(W.occupied||(W.occupied=[])).push({x,z,r:Math.min(rad,40)*s*.5});};
  for(let n=0;n<cnt*3&&Object.values(per).reduce((a,b)=>a+b.length,0)<cnt;n++){const k=list[(rnd()*list.length)|0];const big=PROP_SIZE[k];if(big===1&&per[k].length)continue;if(big&&rnd()>big)continue;
-  const i=(rnd()*M0.n)|0,side=rnd()<.5?-1:1,e=(big===1?60:6)+rnd()*(big?110:60)+(k==='tower'||k==='tower2'?6:0),u=side*(M0.w[i]+M0.sh[i]+e),x=M0.x[i]+M0.nx[i]*u,z=M0.z[i]+M0.nz[i]*u;const rad={tower:12,tower2:10,mesa:9,manor:22,cone:130,island:10,lighthouse:3}[k]||3;
+  const i=(rnd()*M0.n)|0,side=rnd()<.5?-1:1,e=(big===1?60:6)+rnd()*(big?110:60)+(k==='tower'||k==='tower2'?6:0),u=side*(M0.w[i]+M0.sh[i]+e),x=M0.x[i]+M0.nx[i]*u,z=M0.z[i]+M0.nz[i]*u;const rad={tower:12,tower2:10,mesa:9,manor:22,cone:130,island:10,lighthouse:3,palm:5.5,jtree:6.5,deadtree:4,windmill:6,cabin:5,hut:4,tent:4,billboard:6}[k]||3;
   if(!free(x,z,rad))continue;if(C.seaY!==undefined&&hgt(x,z)<C.seaY-.5&&!['boat','rock'].includes(k))continue;if(k==='boat'&&(C.seaY===undefined||hgt(x,z)>C.seaY-1.5))continue;
-  place(k,x,z,(k==='cone'?1:.8+rnd()*.6),rnd()*6.28);}
+  place(k,x,z,(k==='cone'?1:.8+rnd()*.6),rnd()*6.28,rad);}
  if(T.key==='volcano'&&!per.cone.length)per.cone.push({x:(C.bbox[0]+C.bbox[2])/2+40,z:C.bbox[1]-260,y:-30,s:1,ry:0});
  if(T.key==='sky'){per.cloud=per.cloud||[];for(let n=0;n<90;n++){const i=(rnd()*M0.n)|0,side=rnd()<.5?-1:1,u=side*(M0.w[i]+20+rnd()*160);per.cloud.push({x:M0.x[i]+M0.nx[i]*u,z:M0.z[i]+M0.nz[i]*u,y:M0.y[i]-10-rnd()*40,s:1+rnd()*2.4,ry:rnd()*6});}
   for(const k of['island','balloon','pylon','ring'])for(const p of per[k]||[]){const qq=query(C,p.x,p.z);p.y=(qq.ok?qq.y:60)+(k==='pylon'?-2:k==='ring'?14+rnd()*10:-8+rnd()*20);if(k==='pylon'){p.y=qq.y;}}
   // pylons along the road edges
   per.pylon=per.pylon||[];for(let i=0;i<M0.n;i+=22){if(M0.flag[i]&F.gap)continue;for(const s of[-1,1]){const u=s*(M0.w[i]+1.2);per.pylon.push({x:M0.x[i]+M0.nx[i]*u,z:M0.z[i]+M0.nz[i]*u,y:M0.y[i],s:.6,ry:0});}}}
  if(T.key==='city'){// skyline ring of towers
-  for(let n=0;n<60;n++){const a=rnd()*6.28,r=420+rnd()*300,cx=(C.bbox[0]+C.bbox[2])/2,cz=(C.bbox[1]+C.bbox[3])/2;per[rnd()<.5?'tower':'tower2'].push({x:cx+Math.cos(a)*r,z:cz+Math.sin(a)*r,y:0,s:1.5+rnd()*2.5,ry:rnd()*6});}}
+  const sky=[];for(let n=0;n<60;n++){const a=rnd()*6.28,r=420+rnd()*300,cx=(C.bbox[0]+C.bbox[2])/2,cz=(C.bbox[1]+C.bbox[3])/2,k=rnd()<.5?'tower':'tower2',x=cx+Math.cos(a)*r,z=cz+Math.sin(a)*r,sc=1.5+rnd()*2.5,ry=rnd()*6;
+   if(sky.some(o=>Math.hypot(o.x-x,o.z-z)<(o.s+sc)*9))continue;sky.push({x,z,s:sc});per[k].push({x,z,y:0,s:sc,ry});}}
  const tint={palm:[.85,1.1],umbrella:[0,1],rock:[.7,1],tomb:[.8,1.05],pumpkin:[.85,1.1],balloon:[0,1],sign:[0,1],tent:[.85,1.05]};
  const palette={umbrella:[0xff4060,0x3a8aff,0xffd23a,0x2ad0a0],balloon:[0xff6a4a,0x6a8aff,0xffd23a,0xd05aff],sign:[0xff2a9a,0x2ae0ff,0xffd040,0x8a6aff],rock:{seaside:0xb8a080,jungle:0x7a7a6a,snow:0x8a96aa,desert:0xa86a40,city:0x4a4a5a,volcano:0x2a2224,haunted:0x4a4a58,sky:0xd8d0e8}};
  for(const k in per){const L=per[k];if(!L.length)continue;const r2=rng(k.length*31+7),pg=propGeo(k,r2);const tc=new THREE.Color();

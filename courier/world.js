@@ -2,6 +2,7 @@
 // quay walls, the arched Tide Bridge and plank bridge, the lighthouse, the Post House landmark with its clock tower,
 // pastel town houses, trees, lamps, bunting, boats, shoal buoys, numbered checkpoint gates and the parcel pads.
 import * as THREE from '../vendor/three.module.min.js';
+import {Placer} from '../js/kit3d/place.js';
 import {V,cl,lerp,sstep,rng,fbm,ctex,speckle,merge,M4,label} from './util.js';
 import {SEA,LAND,ROADY,at,yawAt,runs,query} from './track.js';
 
@@ -182,10 +183,11 @@ function treeGeo(kind,seed){const r=rng(seed);
  if(kind===1){const L=[];let x=0,y=0;for(let k=0;k<6;k++){L.push([new THREE.CylinderGeometry(.24-k*.02,.28-k*.02,1.3,7),M4(x,y+.65,0,0,0,-k*.07),k%2?0xa07a50:0x8c6844]);x+=Math.sin(k*.07)*1.3+.1;y+=1.25;}
   for(let k=0;k<7;k++){const a=k/7*Math.PI*2;L.push([new THREE.ConeGeometry(.5,3.6,4),M4(x+Math.cos(a)*1.5,y-.4,Math.sin(a)*1.5,0,-a,Math.PI/2+.5,1,1,.25),k%2?0x48b048:0x3a9a40]);}return merge(L);}
  const L=[];for(let k=0;k<5;k++){const a=k/5*6.28;L.push([new THREE.IcosahedronGeometry(.7+r()*.3,1),M4(Math.cos(a)*.7,.5,Math.sin(a)*.7),0x6dbd52],[new THREE.SphereGeometry(.18,6,5),M4(Math.cos(a)*.9,1,Math.sin(a)*.9),[0xff6a8a,0xffd04a,0xffffff][k%3]]);}return merge(L);}
-function buildNature(T,grp,keep,cols){const B=T.B,D=T.H,r=rng(5),L=[[],[],[]],q={};const W=(D.nx-1)*D.cs,H=(D.nz-1)*D.cs;let tries=0;
+function buildNature(T,grp,keep,cols){const B=T.B,D=T.H,r=rng(5),L=[[],[],[]],q={},PL=new Placer(8);const W=(D.nx-1)*D.cs,H=(D.nz-1)*D.cs;let tries=0;
  while(tries++<9000&&L[0].length+L[1].length+L[2].length<420){const x=D.x0+r()*W,z=D.z0+r()*H,h=D.h(x,z);if(h<.55)continue;
   query(T,x,z,-1,q);const d=Math.abs(q.u)-q.w;if(d<6)continue;if(q.wall>0&&d<q.wall+1)continue;if(!keep.every(k=>Math.hypot(k[0]-x,k[1]-z)>k[2]+1.5))continue;if(D.kind(x,z)===1&&r()<.75)continue;
-  const kind=h<.75&&r()<.6?1:r()<.25?2:r()<.7?0:1;L[kind].push([x,h-.1,z,r()*6.28,.8+r()*.6]);if(kind<2&&d<14)cols.push({x,z,r:.55});}
+  const kind=h<.75&&r()<.6?1:r()<.25?2:r()<.7?0:1;const ry=r()*6.28,sc=.8+r()*.6,rad=[2.2,3.6,1.5][kind]*sc;// keep canopies off the track and out of each other
+  if(d<3+rad||!keep.every(k=>Math.hypot(k[0]-x,k[1]-z)>k[2]+rad*.8)||!PL.take(x,z,rad*.85))continue;L[kind].push([x,h-.1,z,ry,sc]);if(kind<2&&d<14)cols.push({x,z,r:.55});}
  const vm=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85});
  L.forEach((list,k)=>{if(!list.length)return;const im=new THREE.InstancedMesh(treeGeo(k,k*13+3),vm,list.length);list.forEach((p,i)=>im.setMatrixAt(i,M4(p[0],p[1],p[2],0,p[3],0,p[4])));im.castShadow=true;im.receiveShadow=true;grp.add(im);});}
 function buildLamps(T,grp){const B=T.B,n=B.n,P=[],Fl=[];for(let i=2;i<n;i+=9){if(B.bridge[i])continue;for(const s of[1,-1]){const wall=s>0?B.wallL[i]:B.wallR[i];if(!wall)continue;const u=s*(B.w[i]+wall+.25);P.push([B.x[i]+B.nx[i]*u,B.y[i]+1,B.z[i]+B.nz[i]*u]);}}

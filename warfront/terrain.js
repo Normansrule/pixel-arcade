@@ -2,6 +2,7 @@
 // Owns all gameplay geometry: terrain + box colliders (buildings, bridge, trunks, destructibles), raycasts, ground / water
 // queries, circle collision and a coarse 4 m navigation grid with weighted A*.
 import {V,PI,cl,lerp,sstep,mulberry,fbm,rayAABB} from './util.js';
+import {Placer} from '../js/kit3d/place.js';
 
 export const EXT=400,N=257,STEP=2*EXT/(N-1),PLAY=350,WL=-.6,DECK=2.7,RIVER_HW=12,STEPUP=.55;
 export const riverZ=x=>16*Math.sin(x*.0105+.4)+9*Math.sin(x*.024+1.3)-4;
@@ -110,13 +111,14 @@ export class World{
  forestK(x,z){let k=fbm(x*.0085+40,z*.0085,3,4)*1.6;k+=gauss(x+272,z-10,70)*1.1+gauss(x-260,z+30,60)*1.2+gauss(x-80,z+60,45)*.9+gauss(x+70,z-60,45)*.9+gauss(x+120,z+260,50)*.8+gauss(x-130,z-260,55)*.8+gauss(x-280,z+220,60)*.7+gauss(x+290,z-230,60)*.7;
   const e=Math.max(Math.abs(x),Math.abs(z));if(e>PLAY-10)k+=.6;return k;}
  scatter(){const r=this.r;let tries=0;this.nStruct=this.boxes.length;
-  while(this.trees.length<2100&&tries++<26000){const x=(r()*2-1)*(EXT-14),z=(r()*2-1)*(EXT-14),k=this.forestK(x,z);if(r()>k-.18)continue;if(!this.clearOf(x,z,3))continue;
-   const y=this.height(x,z);if(y<WL+.6)continue;const pine=r()<.62||y>20,s=.8+r()*.55;const t={x,z,y,s,kind:pine?0:1,rot:r()*PI*2,alive:true,i:this.trees.length};this.trees.push(t);
+  const TP=new Placer(8);while(this.trees.length<2100&&tries++<26000){const x=(r()*2-1)*(EXT-14),z=(r()*2-1)*(EXT-14),k=this.forestK(x,z);if(r()>k-.18)continue;if(!this.clearOf(x,z,3))continue;
+   const y=this.height(x,z);if(y<WL+.6)continue;const pine=r()<.62||y>20,s=.8+r()*.55;if(!TP.take(x,z,1.15*s))continue;// no trunk grows inside another tree
+   const t={x,z,y,s,kind:pine?0:1,rot:r()*PI*2,alive:true,i:this.trees.length};this.trees.push(t);
    if(Math.max(Math.abs(x),Math.abs(z))<PLAY+20)this.box(x-.32*s,y-1,z-.32*s,x+.32*s,y+(pine?8.5:6)*s,z+.32*s,{mat:'wood',tree:t.i});}
   // lone trees in fields
-  for(let i=0;i<90;i++){const x=(r()*2-1)*PLAY,z=(r()*2-1)*PLAY;if(!this.clearOf(x,z,5))continue;const y=this.height(x,z);const t={x,z,y,s:1+r()*.5,kind:1,rot:r()*6,alive:true,i:this.trees.length};this.trees.push(t);this.box(x-.35*t.s,y-1,z-.35*t.s,x+.35*t.s,y+6*t.s,z+.35*t.s,{mat:'wood',tree:t.i});}
-  tries=0;while(this.bushes.length<1700&&tries++<20000){const x=(r()*2-1)*(EXT-10),z=(r()*2-1)*(EXT-10);const k=this.forestK(x,z);if(r()>k+.25)continue;if(!this.clearOf(x,z,1))continue;const y=this.height(x,z);if(y<WL+.3)continue;this.bushes.push({x,z,y,s:.6+r()*.9,rot:r()*6});}
-  tries=0;while(this.rocks.length<180&&tries++<6000){const x=(r()*2-1)*(EXT-10),z=(r()*2-1)*(EXT-10);if(!this.clearOf(x,z,2))continue;const n=this.normal(x,z);if(n.y>.93&&r()<.85)continue;const y=this.height(x,z),s=.8+r()*2.2;this.rocks.push({x,z,y,s,rot:r()*6});
+  for(let i=0;i<90;i++){const x=(r()*2-1)*PLAY,z=(r()*2-1)*PLAY;if(!this.clearOf(x,z,5))continue;const y=this.height(x,z);const t={x,z,y,s:1+r()*.5,kind:1,rot:r()*6,alive:true,i:this.trees.length};if(!TP.take(x,z,1.2*t.s))continue;this.trees.push(t);this.box(x-.35*t.s,y-1,z-.35*t.s,x+.35*t.s,y+6*t.s,z+.35*t.s,{mat:'wood',tree:t.i});}
+  tries=0;while(this.bushes.length<1700&&tries++<20000){const x=(r()*2-1)*(EXT-10),z=(r()*2-1)*(EXT-10);const k=this.forestK(x,z);if(r()>k+.25)continue;if(!this.clearOf(x,z,1))continue;const y=this.height(x,z);if(y<WL+.3)continue;const bs=.6+r()*.9,brot=r()*6;if(!TP.free(x,z,bs*.6))continue;this.bushes.push({x,z,y,s:bs,rot:brot});}
+  tries=0;while(this.rocks.length<180&&tries++<6000){const x=(r()*2-1)*(EXT-10),z=(r()*2-1)*(EXT-10);if(!this.clearOf(x,z,2))continue;const n=this.normal(x,z);if(n.y>.93&&r()<.85)continue;const y=this.height(x,z),s=.8+r()*2.2;if(!TP.take(x,z,s*.7))continue;this.rocks.push({x,z,y,s,rot:r()*6});
    if(s>1.3)this.box(x-.8*s,y-1,z-.8*s,x+.8*s,y+.55*s,z+.8*s,{mat:'stone',vis:false});}
   // reeds along the river banks
   for(let i=0;i<500;i++){const x=(r()*2-1)*(EXT-20);const side=r()<.5?-1:1,d=RIVER_HW-1+r()*7,z=riverZ(x)+side*d;if(Math.abs(x)<12)continue;const y=this.height(x,z);if(y<WL-.4||y>WL+1.6)continue;this.decor.push({kind:'reed',x,z,y,s:.7+r()*.6,rot:r()*6});}}
