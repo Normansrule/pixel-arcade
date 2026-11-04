@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round25`, which includes rounds 11 to 24)
 
+### Round 24, batch 6 (v53): rivals, power-ups and changing rules
+
+- **BLACK HOLE:** three rival holes (red, blue and orange) roam the city eating things too. Swallow a smaller rival for a big bonus, and run from a bigger one, because it can swallow you (three lives, and you shrink). Arrows at the screen edge show where the rivals are.
+- **GALAXY WAVE:** shooting a diving enemy can drop a capsule: D gives a double shot for ten seconds, S a shield that takes one hit, L an extra ship. The top row now takes two hits.
+- **COLOR RUSH:** the rule changes as the match goes on. Press on a match, then on a mismatch, then whenever the ink is gold, with a "NEW RULE!" banner each time.
+- **SAFARI SNAP:** an album of species. A first photo of a species scores a bonus, more animals in the frame multiply the score, three sharp shots in a row add a streak bonus, and a full album scores +200.
+
 ### Round 24, batch 5 (v52): three more lives where one touch ended it
 
 - **CROSSY 3D:** three lives. Getting squashed, splashing or falling behind sends you back to the last grass row with a moment of safety, instead of ending the run.

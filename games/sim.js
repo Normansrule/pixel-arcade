@@ -54,11 +54,12 @@ A.add({id:'zoo',name:'PIXEL ZOO',cat:'SIM',how:'A BUYS AN ANIMAL. B FEEDS. HAPPY
  return g;}});
 
 /* ---- SAFARI SNAP ---- */
-A.add({id:'safari',name:'SAFARI SNAP',cat:'SIM',how:'MOVE THE CAMERA. A SNAPS. CLOSER + CENTRED = MORE POINTS. 24 SHOTS.',make(){
- const g={over:null,score:0},fx=X.fx();let cx=160,cy=120,an=[],shots=24,fl=0,msg='',mt=0,t=0,snap=null;
+A.add({id:'safari',name:'SAFARI SNAP',cat:'SIM',how:'MOVE THE CAMERA, A SNAPS. CENTRED, NEW SPECIES AND GROUP SHOTS SCORE MORE. 24 SHOTS.',make(){
+ const g={over:null,score:0},fx=X.fx();let cx=160,cy=120,an=[],shots=24,fl=0,msg='',mt=0,t=0,snap=null,seen=new Set(),streak=0;
  const spawn=()=>{const a=ri(AN.length),z=.5+rnd(.9);an.push({a,x:Math.random()<.5?-30:W+30,y:100+z*60,z,v:(.4+rnd(.8))*(z),d:0});an[an.length-1].d=an[an.length-1].x<0?1:-1;};for(let i=0;i<3;i++)spawn();
+ g._s=()=>({shots,seen:seen.size,streak});
  g.update=()=>{t++;if(fl>0)fl--;if(mt>0)mt--;const k=A.in(0);if(A.mouse.t>0){cx=cl(A.mouse.x,20,W-20);cy=cl(A.mouse.y,60,200);}else{cx=cl(cx+ax(k)*3,20,W-20);cy=cl(cy+ay(k)*3,60,200);}an.forEach(o=>{o.x+=o.d*o.v;});an=an.filter(o=>o.x>-40&&o.x<W+40);if(t%90===0&&an.length<5)spawn();
-  if(A.hit(0).a&&shots>0){shots--;fl=6;S('shoot');let best=null,bd=1e9;for(const o of an){const d=Math.hypot(o.x-cx,o.y-cy);if(d<40*o.z&&d<bd){bd=d;best=o;}}if(best){const p=Math.round((40*best.z-bd)/(40*best.z)*50*best.z+10);g.score+=p;msg=AN[best.a].n+' +'+p;S('coin');snap={a:best.a,p,t:60};fx.pop(cx,cy-30,'+'+p,K.y);}else{msg='EMPTY SHOT';snap=null;}mt=50;if(shots===0)g.over='FILM FULL';}};
+  if(A.hit(0).a&&shots>0){shots--;fl=6;S('shoot');let best=null,bd=1e9;for(const o of an){const d=Math.hypot(o.x-cx,o.y-cy);if(d<40*o.z&&d<bd){bd=d;best=o;}}if(best){const q=(40*best.z-bd)/(40*best.z),fresh=!seen.has(best.a),near=an.filter(o=>o!==best&&Math.hypot(o.x-cx,o.y-cy)<40*o.z).length;streak=q>.7?streak+1:0;let p=Math.round(q*50*best.z+10)*(1+near)+(fresh?40:0)+(streak>=3?20:0);seen.add(best.a);g.score+=p;msg=(near?'GROUP SHOT X'+(1+near)+' ':'')+(fresh?'NEW: ':'')+AN[best.a].n+' +'+p;if(fresh)fx.pop(160,60,'NEW SPECIES '+seen.size+'/'+AN.length,K.g);if(streak>=3)fx.pop(160,74,'SHARP X'+streak,K.c);if(seen.size===AN.length&&fresh){g.score+=200;fx.pop(160,88,'FULL ALBUM +200',K.y);}S('coin');snap={a:best.a,p,t:60};fx.pop(cx,cy-30,'+'+p,K.y);}else{msg='EMPTY SHOT';snap=null;streak=0;}mt=50;if(shots===0)g.over='FILM FULL';}};
  const acacia=(x,y,s)=>{X.stroke([[x,y],[x+2*s,y-14*s],[x-6*s,y-22*s]],'#3a2414',2*s);X.stroke([[x+2*s,y-14*s],[x+8*s,y-22*s]],'#3a2414',1.6*s);X.ell(x,y-24*s,20*s,4*s,'#2a4a1a');X.ell(x+4*s,y-26*s,14*s,3*s,'#3a5a24');};
  const bg=()=>{X.sky(['#ff7a38','#ffb060','#ffe0a0'],100);X.disc(230,62,22,X.rg(230,62,0,230,62,22,['#fff8d0','#ffd060','#ffb040']));X.glow(230,62,70,'#ffd080',.4);
   X.hills(96,14,'#c47a48',0,.02,3);X.hills(100,8,'#a86a3a',80,.04,6);X.vg(0,92,W,H-92,['#d8b058','#c4a54a','#a8883a']);const c=A.c;c.fillStyle='rgba(120,80,20,.25)';for(let i=0;i<220;i++)c.fillRect((i*53)%W,94+(i*29)%146,2+(i%3),1);
@@ -70,7 +71,7 @@ A.add({id:'safari',name:'SAFARI SNAP',cat:'SIM',how:'MOVE THE CAMERA. A SNAPS. C
   A.line(cx-6,cy,cx-2,cy,bc,1);A.line(cx+2,cy,cx+6,cy,bc,1);A.line(cx,cy-6,cx,cy-2,bc,1);A.line(cx,cy+2,cx,cy+6,bc,1);if(foc)T('FOCUS',cx,cy+14,K.g,1,'c',1);if(A.t%40<26)X.disc(cx-24,cy-16,1.6,'#ff3040');
   if(snap&&mt>0){const sx=8,sy=150,sl=Math.min(1,(50-mt)/8);c.save();c.translate(sx+28,sy+30-(1-sl)*30);c.rotate(-.12);X.rr(-28,-30,56,62,2,'#fffaf0');X.rr(-24,-26,48,40,1,X.lg(0,-26,0,14,['#ffb060','#d8b058']));c.save();c.translate(0,-4);c.scale(.9,.9);AN[snap.a].d(0,0,t);c.restore();T(AN[snap.a].n,0,18,'#3a2a1a',1,'c',1);c.restore();}
   if(fl>0){c.fillStyle='rgba(255,255,255,'+fl/7+')';c.fillRect(0,0,W,H);}
-  X.bar('SCORE '+g.score,'','',K.y);for(let i=0;i<24;i++)X.rr(W-8-i*5,5,4,7,1,i<shots?'#f4f0e6':'rgba(255,255,255,.15)');if(mt>0){X.panel(90,212,140,18,snap?K.y:'#ffffff');X.ot(msg,160,217,snap?K.y:'#ffffff',1,'c');}fx.draw();};
+  X.bar('SCORE '+g.score,'','',K.y);T('ALBUM '+seen.size+'/'+AN.length,150,6,K.g,1,'c');for(let i=0;i<24;i++)X.rr(W-8-i*5,5,4,7,1,i<shots?'#f4f0e6':'rgba(255,255,255,.15)');if(mt>0){X.panel(90,212,140,18,snap?K.y:'#ffffff');X.ot(msg,160,217,snap?K.y:'#ffffff',1,'c');}fx.draw();};
  return g;}});
 
 /* ---- POCKET PET ---- */
