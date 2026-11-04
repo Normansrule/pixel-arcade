@@ -21,7 +21,9 @@ addEventListener('arcade-ready',()=>{
   tray.forEach((gm,i)=>{
    const b=document.createElement('button');b.type='button';b.className='cart';b.setAttribute('role','option');b.dataset.cid=gm.id;b.tabIndex=-1;
    b.setAttribute('aria-label',tc(gm.name)+', '+S.fmt(A.limitOf(gm))+' round');
-   b.innerHTML='<span class="lbl"></span><b></b><small></small>';b.querySelector('b').textContent=tc(gm.name);b.querySelector('small').textContent=S.fmt(A.limitOf(gm));
+   b.innerHTML='<span class="lbl"></span><b></b><small></small>';
+   b.querySelector('b').textContent=tc(gm.name);b.querySelector('small').textContent=S.fmt(A.limitOf(gm));
+   if(A.carts){const lk=A.carts.look(gm);b.style.setProperty('--cc',lk.c);b.style.setProperty('--con',lk.on);b.style.setProperty('--cdk',lk.dk);const g=document.createElement('span');g.className='gl';g.setAttribute('aria-hidden','true');g.innerHTML=lk.icon;b.querySelector('small').prepend(g);}
    S.art(gm,b.querySelector('.lbl'));drag(b,gm);b.onfocus=()=>{if(cur!==i)tune(i);};carts.appendChild(b);
   });
   tune(0,true);

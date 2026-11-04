@@ -133,7 +133,7 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .tray-head p{margin:0;font-size:var(--t-xs);color:var(--ink-3)}
 .carts{display:flex;gap:var(--s3);overflow-x:auto;padding:var(--s4) 2px var(--s2);margin:-12px 0 0;scrollbar-width:thin;touch-action:pan-x}
 /* a cartridge: notched shell in print ink, a label sticker with the game's screen, a pixel-lettered name */
-.cart{position:relative;flex:none;width:112px;padding:10px 10px 12px;border:0;border-radius:6px 6px 10px 10px;background:var(--cobalt-fill);color:var(--on-cobalt);cursor:grab;text-align:left;touch-action:none;user-select:none;-webkit-user-select:none;
+.cart{position:relative;flex:none;width:112px;padding:10px 10px 12px;border:0;border-radius:6px 6px 10px 10px;background:var(--cc,var(--cobalt-fill)) linear-gradient(90deg,rgba(255,255,255,.3) 0 3px,transparent 3px calc(100% - 5px),rgba(0,0,0,.16) calc(100% - 5px));color:var(--con,var(--on-cobalt));box-shadow:inset 0 -5px 0 var(--cdk,rgba(0,0,0,.2));cursor:grab;text-align:left;touch-action:none;user-select:none;-webkit-user-select:none;
  clip-path:polygon(0 0,74% 0,80% 7%,100% 7%,100% 100%,0 100%);
  transition:transform var(--pull) var(--spring),box-shadow var(--base) ease}
 .cart:hover{transform:translateY(-8px)}
@@ -142,10 +142,12 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .cart.back{transition:transform var(--pull) var(--spring)}
 .cart.lift{opacity:.25}
 .cart.gone{transition:transform 260ms var(--ease-out),opacity 200ms ease;opacity:0}
-.cart .lbl{display:block;margin-top:12px;aspect-ratio:4/3;border-radius:3px;overflow:hidden;background:var(--screen)}
+.cart .lbl{display:block;margin-top:12px;aspect-ratio:4/3;border-radius:3px;overflow:hidden;background:var(--screen);box-shadow:0 0 0 2px #f2efe6}
 .cart .lbl img,.cart .lbl canvas{display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
 .cart b{display:block;margin-top:8px;font:.78rem/1.1 var(--pixel);letter-spacing:.05em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400}
-.cart small{display:block;margin-top:4px;font:.72rem/1 var(--pixel);letter-spacing:.05em;opacity:.85}
+.cart small{display:flex;align-items:center;gap:6px;margin-top:4px;font:.72rem/1 var(--pixel);letter-spacing:.05em;opacity:.85}
+
+.cart .gl{display:block;flex:none;width:22px;height:22px;padding:2px;border-radius:3px;background:#f2efe6}.cart .gl svg{display:block;width:100%;height:100%}
 
 /* ---------- the intro: the README's arcade room, flown into as you scroll ----------
    Static by default (one screen, the still render). js/intro.js adds .scrub, which makes the section tall and pins
@@ -286,22 +288,30 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .shelf .sec-head{margin-bottom:var(--s4)}
 
 /* spines stand on planks: a thick ink bar under every row */
-.spines{--sh:236px;--gap:var(--s4);display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--gap) 6px;padding:22px 0 0;
- background:linear-gradient(to top,var(--plank) 0 8px,transparent 8px) 0 0/100% calc(var(--sh) + 22px + var(--gap))}
+.spines{--sh:276px;--gap:var(--s5);display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--gap) 8px;padding:26px 0 0;
+ /* one plank under each wrapped row: a tile per row (spine, its 8px plank, the gap), starting where the first row starts */
+ background:linear-gradient(transparent var(--sh),var(--plank) var(--sh) calc(var(--sh) + 8px),transparent calc(var(--sh) + 8px)) 0 26px/100% calc(var(--sh) + 8px + var(--gap)) repeat-y}
 .spines>*{margin-bottom:8px}
-.spine{--pat:none;position:relative;flex:none;display:flex;flex-direction:column;align-items:center;width:48px;height:var(--sh);padding:8px 0 10px;border:0;border-radius:3px 3px 0 0;
- background-color:var(--paper-2);background-image:var(--pat);color:var(--ink);cursor:pointer;box-shadow:inset 0 0 0 1px var(--line);
- transition:transform var(--pull) var(--spring),background-color var(--fast) ease,color var(--fast) ease}
-.spine .cap{display:flex;align-items:center;justify-content:center;min-width:30px;height:20px;padding:2px 4px 0;border-radius:2px;background:var(--paper);font:.72rem/1 var(--pixel);letter-spacing:.04em;color:var(--ink-2)}
-.spine .nm{flex:1;min-height:0;margin:8px 0;padding:8px 3px;width:30px;border-radius:2px;background:var(--paper);writing-mode:vertical-rl;font:1.05rem/1 var(--pixel);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:start}
-.spine .clk{padding:3px 4px 1px;border-radius:2px;background:var(--paper);font:.72rem/1 var(--pixel);letter-spacing:.04em;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.spine .fav{position:absolute;top:-10px;right:-4px;width:12px;height:12px;background:var(--signal);clip-path:polygon(50% 0,63% 35%,100% 38%,70% 60%,80% 100%,50% 76%,20% 100%,30% 60%,0 38%,37% 35%)}
-@media (hover:hover){.spine:hover{transform:translateY(-14px)}}
+/* a cartridge: one shape for all of them, each in its own plastic (--cc, set per game by js/carts.js),
+   a cream label sticker with the game's pixel icon at the top, the name down the middle and the round clock below */
+.spine{--cc:var(--paper-2);--con:var(--ink);--cdk:var(--paper-3);--pat:none;--cobalt-soft:rgba(255,255,255,.1);--lab:#f2efe6;--lab-ink:#12151d;
+ position:relative;flex:none;display:flex;flex-direction:column;align-items:center;width:58px;height:var(--sh);padding:8px 0 10px;border:0;border-radius:6px 6px 2px 2px;
+ background-color:var(--cc);background-image:linear-gradient(90deg,rgba(255,255,255,.34) 0 3px,rgba(255,255,255,.08) 3px 9px,transparent 9px calc(100% - 6px),rgba(0,0,0,.18) calc(100% - 6px)),var(--pat);
+ color:var(--con);cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22),inset 0 -5px 0 var(--cdk),0 1px 0 rgba(0,0,0,.12);
+ transition:transform var(--pull) var(--spring),box-shadow var(--fast) ease,filter var(--fast) ease}
+/* the notch a cartridge has on its top corner */
+.spine::before{content:"";position:absolute;top:0;right:0;width:12px;height:7px;background:var(--cdk);border-radius:0 6px 0 3px;opacity:.9}
+.spine .gl{display:block;flex:none;width:44px;height:44px;margin:4px 0 6px;padding:5px;border-radius:5px;background:var(--lab);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18),0 2px 0 var(--cdk)}
+.spine .gl svg{display:block;width:100%;height:100%}
+.spine .cap{display:flex;align-items:center;justify-content:center;min-width:34px;height:20px;padding:2px 4px 0;border-radius:2px;background:var(--lab);font:.72rem/1 var(--pixel);letter-spacing:.04em;color:var(--lab-ink)}
+.spine .nm{flex:1;min-height:0;margin:8px 0;padding:8px 4px;width:36px;border-radius:3px;background:var(--lab);color:var(--lab-ink);writing-mode:vertical-rl;font:1.1rem/1 var(--pixel);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:start;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.spine .clk{padding:3px 4px 1px;border-radius:2px;background:rgba(0,0,0,.28);font:.72rem/1 var(--pixel);letter-spacing:.04em;color:#fff;font-variant-numeric:tabular-nums}
+.spine .fav{position:absolute;top:-10px;right:-4px;width:14px;height:14px;background:var(--signal);clip-path:polygon(50% 0,63% 35%,100% 38%,70% 60%,80% 100%,50% 76%,20% 100%,30% 60%,0 38%,37% 35%)}
+@media (hover:hover){.spine:hover{transform:translateY(-14px);filter:saturate(1.12) brightness(1.04)}}
 .spine:active{transform:translateY(-8px)}
-.spine[aria-pressed=true]{transform:translateY(-22px);background-color:var(--cobalt-fill);color:var(--on-cobalt)}
-.spine[aria-pressed=true] .nm,.spine[aria-pressed=true] .cap,.spine[aria-pressed=true] .clk{background:transparent;color:var(--on-cobalt)}
-.spine:focus-visible{outline-offset:2px}
-/* one-ink print patterns, one per shelf */
+.spine[aria-pressed=true]{transform:translateY(-22px);box-shadow:inset 0 0 0 1px rgba(0,0,0,.22),inset 0 -5px 0 var(--cdk),0 0 0 3px var(--paper),0 0 0 6px var(--ink),0 18px 24px -10px var(--shade)}
+.spine:focus-visible{outline-offset:4px}
+/* faint print patterns pressed into the plastic, one per shelf */
 .spine[data-cat="SPORTS"]{--pat:repeating-linear-gradient(0deg,var(--cobalt-soft) 0 3px,transparent 3px 9px)}
 .spine[data-cat="CLASSICS"]{--pat:conic-gradient(var(--cobalt-soft) 25%,transparent 0 50%,var(--cobalt-soft) 0 75%,transparent 0) 0 0/10px 10px}
 .spine[data-cat="VERSUS"]{--pat:repeating-linear-gradient(45deg,var(--cobalt-soft) 0 4px,transparent 4px 10px)}
@@ -312,27 +322,30 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .spine[data-cat="CARDS"]{--pat:linear-gradient(45deg,transparent 42%,var(--cobalt-soft) 42% 58%,transparent 58%) 0 0/14px 14px,linear-gradient(-45deg,transparent 42%,var(--cobalt-soft) 42% 58%,transparent 58%) 0 0/14px 14px}
 .spine[data-cat="SIM"]{--pat:radial-gradient(circle at 50% 0,transparent 5px,var(--cobalt-soft) 5px 7px,transparent 7px) 0 0/14px 8px}
 .spine[data-cat="PARTY"]{--pat:radial-gradient(var(--cobalt-soft) 2px,transparent 2.5px) 0 0/9px 13px,radial-gradient(var(--cobalt-soft) 3.5px,transparent 4px) 4px 6px/17px 15px}
-.spine.world{background-color:var(--ink);color:var(--paper);--pat:linear-gradient(transparent 70%,var(--cobalt-fill) 70%)}
-.spine.world .nm{background:var(--paper);color:var(--ink)}
+/* 3D worlds: the same cartridge with a dark lower band and a cobalt 3D chip */
+.spine.world{--pat:linear-gradient(transparent 72%,rgba(0,0,0,.34) 72%)}
 .spine.world .cap{background:var(--cobalt-fill);color:var(--on-cobalt)}
 
-/* boxes view: the same cartridges, face out */
-.spines.boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s4);padding:0;background:none}
+/* boxes view: the same cartridges, face out, a bit bigger */
+.spines.boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:var(--s5) var(--s4);padding:0;background:none}
 .spines.boxes>*{margin:0}
-.spines.boxes .spine{width:auto;height:auto;display:grid;grid-template-columns:1fr auto;grid-template-areas:"art art" "nm nm" "cap clk";gap:6px 4px;padding:8px 8px 10px;border-radius:6px 6px 10px 10px;align-items:center;justify-items:start;
+.spines.boxes .spine{width:auto;height:auto;display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"art art art" "gl nm nm" "cap . clk";gap:8px 8px;padding:10px 10px 14px;border-radius:8px 8px 12px 12px;align-items:center;justify-items:start;
  clip-path:polygon(0 0,74% 0,80% 10px,100% 10px,100% 100%,0 100%)}
-.spines.boxes .spine .art{grid-area:art;display:block;width:100%;margin-top:10px;aspect-ratio:4/3;border-radius:3px;overflow:hidden;background:var(--screen)}
+.spines.boxes .spine::before{display:none}
+.spines.boxes .spine[aria-pressed=true]{clip-path:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22),inset 0 -5px 0 var(--cdk),0 0 0 3px var(--paper),0 0 0 6px var(--ink)}
+.spines.boxes .spine .art{grid-area:art;display:block;width:100%;margin-top:10px;aspect-ratio:4/3;border-radius:4px;overflow:hidden;background:var(--screen);box-shadow:0 0 0 3px var(--lab)}
 .spines.boxes .spine .art img,.spines.boxes .spine .art canvas{object-fit:cover;display:block;width:100%;height:100%;image-rendering:pixelated}
-.spines.boxes .spine .nm{grid-area:nm;writing-mode:horizontal-tb;width:100%;margin:0;padding:0;background:none;font-size:.95rem;line-height:1.15;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.spines.boxes .spine .gl{grid-area:gl;width:38px;height:38px;margin:0;padding:4px}
+.spines.boxes .spine .nm{grid-area:nm;writing-mode:horizontal-tb;width:100%;margin:0;padding:0;background:none;box-shadow:none;color:var(--con);font-size:.95rem;line-height:1.15;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .spines.boxes .spine .cap{grid-area:cap}.spines.boxes .spine .clk{grid-area:clk;justify-self:end}
 .spines.boxes .spine:hover,.spines.boxes .spine[aria-pressed=true]{transform:translateY(-6px)}
 .spine .art{display:none}
 .art.loading{background:repeating-linear-gradient(90deg,var(--paper-3) 0 6px,var(--paper-2) 6px 12px)!important}
 
 /* loading skeleton before the engine has filled the shelves */
-.skeleton{display:flex;gap:6px;align-items:flex-end;height:250px;padding-bottom:8px;background:linear-gradient(to top,var(--plank) 0 8px,transparent 8px)}
-.skeleton i{width:48px;height:236px;border-radius:3px 3px 0 0;background:var(--paper-2)}
-.skeleton i:nth-child(3n){height:212px}.skeleton i:nth-child(4n){height:224px}
+.skeleton{display:flex;gap:8px;align-items:flex-end;height:290px;padding-bottom:8px;background:linear-gradient(to top,var(--plank) 0 8px,transparent 8px)}
+.skeleton i{width:58px;height:276px;border-radius:6px 6px 2px 2px;background:var(--paper-2)}
+.skeleton i:nth-child(3n){background:var(--paper-3)}
 @media (prefers-reduced-motion:no-preference){.skeleton i{animation:breathe 1.4s ease-in-out infinite alternate}.skeleton i:nth-child(2n){animation-delay:.3s}}
 @keyframes breathe{to{opacity:.45}}
 
@@ -438,7 +451,8 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
  main{padding:0 var(--s4) var(--s7)}
  .libbar{gap:var(--s2);padding:0 var(--s4)}
  .views span{display:none}.views button{padding:0 10px}
- .spines{--sh:208px}.spine{width:42px}.spine .nm{width:26px;font-size:.95rem}
+ .spines{--sh:240px;--gap:var(--s4);column-gap:6px}.spine{width:50px}.spine .gl{width:38px;height:38px;padding:4px}.spine .nm{width:30px;font-size:1rem}.spine .cap{min-width:30px}
+ .spines.boxes{grid-template-columns:repeat(2,minmax(0,1fr))}
  .fgrid{grid-template-columns:1fr;grid-auto-rows:200px}.fc.big{grid-column:auto}.fc:first-child{grid-row:auto}
  .console{padding:var(--s6) var(--s4) var(--s4)}
  .foot{flex-direction:column;align-items:flex-start}}

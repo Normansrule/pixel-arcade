@@ -1,7 +1,9 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
-    {"v": "v54", "date": "4 Nov 2026", "branch": "round26-readme", "round": 26,
+    {"v": "v56", "date": "4 Nov 2026", "branch": "round28-carts", "round": 28, "games": 521, "worlds": 55,
+     "added": "Colourful cartridges: every one of the 521 cartridges on the shelf now has its own shell colour (18 bright plastics, never the same twice in a row) and a pixel icon on its label (60 icons, picked from the game's name and tags), in the same cartridge shape. Spines and boxes are bigger, the console tray cartridges match, and the shelf planks line up under every row again."},
+    {"v": "v54", "date": "4 Nov 2026", "branch": "round26-readme", "round": 26, "games": 521, "worlds": 55,
      "added": "A new README front page: an animated header that drifts through the arcade under light shafts while the middle cabinet flips between real games, a scrolling LED ticker of game names, arcade-button links, a counts strip, and a feature grid of the 3D worlds, cabinets, round clock, CPU levels, builder, online codes and platforms. All of it is drawn by tools/readme_intro.js."},
     {"v": "v46", "date": "28 Oct 2026", "branch": "round23", "round": 23, "games": 521, "worlds": 55,
      "added": "A graphics round for four games that still looked plain. NEON FIGHTERS rebuilt on a rain-soaked neon rooftop with jointed fighters in glowing suits, a wet floor that reflects them, hit-stop, combos, sweeps, knockdowns and four elemental specials you duck or jump; CRATE PUSHER rebuilt as a lamp-lit warehouse with wooden crates, an undo button and three new rooms; GOLF DUEL rebuilt with three themed holes (meadow, canyon, lantern pond), sand, water, bumpers and a smarter CPU; FIRE FIGHTER rebuilt as a street block that turns from dusk to night, with a fire truck, a hose, smoke, steam and fires that spread. The front-page repainted row shows all four."},

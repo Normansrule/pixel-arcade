@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round25`, which includes rounds 11 to 24)
 
+### Round 28 (v56): colourful cartridges with icons
+
+- **Every cartridge has its own colour:** the grey spines are now bright plastic shells in 18 colours (red, orange, yellow, lime, green, teal, sky, blue, violet, purple, pink, coral and more). Colours are fixed per game and never repeat next to each other on a shelf.
+- **A pixel icon on every label:** 60 pixel icons (ball, racket, car, rocket, ghost, sword, cards, dice, puzzle piece and so on), chosen from each game's name and tags, with hand picks where the words mislead. Drawn as crisp SVG (Scalable Vector Graphics) from 12 by 12 bitmaps in `js/carts.js`.
+- **Bigger cartridges:** spines are wider and taller with a cream label sticker, a corner notch and a moulded edge; boxes view tiles are larger with the icon beside the name. The console tray cartridges use the same colours and icons.
+- **Fix:** the black shelf planks drifted out of line from the third row down (on phones from the second); they now sit under every row.
+
 ### Round 26 (v54): a new README front page
 
 - **Animated header:** the cabinet room and the big PIXEL ARCADE title, now a seamless loop. The camera drifts under light shafts, the neon hums, and the middle cabinet flips between real games in attract mode. The counts are live again (they still said 510).

@@ -62,7 +62,10 @@ A.lobby=()=>{
  A.games.forEach(gm=>{
   const el=document.createElement('button');el.type='button';el.className='spine'+(gm.href?' world':'');el.dataset.cat=gm.cat;el.dataset.id=gm.id;el.tabIndex=-1;el.setAttribute('aria-pressed','false');
   el._tags=((gm.tags||'')+' '+(gm.how||'')).toLowerCase();el._name=tc(gm.name);
-  el.innerHTML='<span class="cap"></span><span class="nm"></span><span class="clk"></span>';
+  // every cartridge has its own shell colour and label icon (js/carts.js)
+  const lk=A.carts?A.carts.look(gm):null;
+  el.innerHTML='<span class="gl" aria-hidden="true"></span><span class="cap"></span><span class="nm"></span><span class="clk"></span>';
+  if(lk){el.style.setProperty('--cc',lk.c);el.style.setProperty('--con',lk.on);el.style.setProperty('--cdk',lk.dk);el.querySelector('.gl').innerHTML=lk.icon;el.dataset.icon=lk.k;}
   el.querySelector('.cap').textContent=capOf(gm);el.querySelector('.nm').textContent=el._name;
   el.querySelector('.clk').textContent=gm.href?'FREE':fmt(A.limitOf(gm));
   el.setAttribute('aria-label',el._name+', '+tc(gm.cat)+', '+(gm.href?'3D world':fmt(A.limitOf(gm))+' round')+', '+modeOf(gm));

@@ -1,0 +1,814 @@
+/* PIXEL ARCADE · Cartridge looks: every game gets its own shell colour and a little pixel icon on its label.
+   Same cartridge shape for all of them, lots of colour, like a shelf of handheld game cards.
+   A.carts.look(gm) -> {c, on, dk, icon} where c is the shell colour, on the text colour that reads on it,
+   dk a darker edge shade and icon an inline SVG string. Used by js/lobby.js (shelves, boxes) and js/console.js (tray). */
+(function(){
+'use strict';
+if(typeof window==='undefined'||!window.A)return;
+const A=window.A;
+
+/* shell colours: bright, saturated plastics; [shell, text on it] */
+const PAL=[
+ ['#ff3b30','#fff'],['#ff8a00','#1a1206'],['#ffcc00','#1a1606'],['#9be22d','#0f1a05'],['#1ec74b','#04170a'],
+ ['#00c2a8','#031a17'],['#14b8f0','#04141b'],['#2f6bff','#fff'],['#5b3cff','#fff'],['#a23cff','#fff'],
+ ['#ff3fa4','#fff'],['#ff6f61','#1f0907'],['#e0204f','#fff'],['#0e8f6e','#fff'],['#283b9c','#fff'],['#f2efe6','#12151d'],
+ ['#2b2f3a','#fff'],['#c98a00','#fff']
+];
+const shade=(hex,k)=>{const n=parseInt(hex.slice(1),16),f=v=>Math.max(0,Math.min(255,Math.round(v*k)));return '#'+[(n>>16)&255,(n>>8)&255,n&255].map(f).map(v=>v.toString(16).padStart(2,'0')).join('');};
+const hash=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
+
+/* pixel icons: '#' is drawn in label ink, '+' in the cartridge's own colour, anything else is empty */
+const I={
+ball:`
+....####....
+..##++++##..
+.#+++##+++#.
+.#++####++#.
+#++######++#
+#+++####+++#
+#+#++##++#+#
+#+##++++##+#
+.#+#++++#+#.
+.#++####++#.
+..##++++##..
+....####....`,
+hoop:`
+....####....
+..##++#+##..
+.#++++#+++#.
+.##+++#++##.
+#++#++#+#++#
+############
+#++#++#+#++#
+.##+++#++##.
+.#++++#+++#.
+..##++#+##..
+....####....`,
+racket:`
+..######....
+.#++#+#+#...
+#+#+#+#+##..
+##+#+#+#+#..
+#+#+#+#+##..
+##+#+#+#+#..
+.#+#+#+##...
+..######....
+.....###....
+......###...
+.......###..
+........###.`,
+paddle:`
+##.........
+##......##.
+##......##.
+##..++..##.
+##..++..##.
+##......##.
+##......##.
+........##.`,
+golf:`
+...#++......
+...#++++....
+...#++++++..
+...#++++....
+...#++......
+...#........
+...#........
+...#........
+..###.......
+++++++++++++
+++++++.#++++`,
+pin:`
+....##....
+...#++#...
+...#++#...
+....##....
+...#++#...
+..#++++#..
+..######..
+..#++++#..
+..#++++#..
+...####...`,
+bat:`
+.........###
+........####
+.......####.
+......####..
+.....####...
+....####....
+...####.....
+..###.......
+.##..+++....
+##..+++++...
+....+++++...
+.....+++....`,
+glove:`
+..######....
+.#++++++#...
+#++++++++#..
+#++++++++##.
+#++++++++#+#
+#++++++++#+#
+.#++++++++#.
+..#++++++#..
+...######...
+...#++++#...
+...######...`,
+target:`
+...######...
+..#++++++#..
+.#++####++#.
+#++#....#++#
+#+#..##..#+#
+#+#.####.#+#
+#+#.####.#+#
+#+#..##..#+#
+#++#....#++#
+.#++####++#.
+..#++++++#..
+...######...`,
+snow:`
+.....#.....
+...#.#.#...
+....###....
+.#..+#+..#.
+..#.+#+.#..
+###########
+..#.+#+.#..
+.#..+#+..#.
+....###....
+...#.#.#...
+.....#.....`,
+wave:`
+......####..
+....##++++#.
+...#++##+++#
+..#++#..#++#
+.#++#....##.
+.#+#..##....
+#++#.#++#...
+#++##++++#.#
+#+++++++++#+
+.##########.`,
+car:`
+...######...
+..#++#+++#..
+.#+++#++++#.
+############
+#++++++++++#
+#+##++++##+#
+############
+.##......##.
+.##......##.`,
+plane:`
+.....##.....
+....#++#....
+....#++#....
+.##########.
+############
+....#++#....
+....#++#....
+.....##.....
+...######...
+...######...`,
+rocket:`
+.....##.....
+....#++#....
+....#++#....
+...#++++#...
+...#+##+#...
+...#+##+#...
+...#++++#...
+..##++++##..
+.#+#++++#+#.
+.###.##.###.
+.....++.....
+....+..+....`,
+alien:`
+..#......#..
+...#....#...
+..########..
+.##+####+##.
+############
+#.########.#
+#.#......#.#
+...##..##...`,
+ghost:`
+...######...
+..#++++++#..
+.#++++++++#.
+.#+##++##+#.
+.#+##++##+#.
+.#++++++++#.
+.#++++++++#.
+.#++++++++#.
+.#+#+##+#+#.
+.##.#..#.##.`,
+snake:`
+.######.....
+#++++++#....
+#+#####.....
+#+#.........
+#++#####....
+.#++++++#...
+..#####+#...
+......#+#...
+.######+#.#.
+#++++++++##.
+.########...`,
+blocks:`
+.....####...
+.....#++#...
+.....#++#...
+..#######...
+..#++#++#...
+..#######...
+####.####...
+#++#.#++####
+####.#++#++#
+.....#######`,
+gem:`
+..########..
+.#++#++#++#.
+############
+.#++#++#++#.
+..#++#+#+#..
+...#+#+#+#..
+....#+#+#...
+.....#+#....
+......#.....`,
+bomb:`
+........#+..
+.......#.+..
+......#.....
+...####.....
+..#++++#....
+.#++++++#...
+#+#+++++#...
+#+#+++++#...
+#++++++++#..
+.#++++++#...
+..######....`,
+sword:`
+..........##
+.........#+#
+........#+#.
+.......#+#..
+......#+#...
+.....#+#....
+.#..#+#.....
+..##+#......
+..###.......
+.##.##......
+##..........`,
+gun:`
+.###########
+############
+#+++++++##..
+#++####.....
+#++#.#......
+#++#........
+#++#........
+####........`,
+tank:`
+.......#####
+.....###....
+..######....
+.#++++++#...
+############
+#++++++++++#
+############
+.#+#+#+#+#..
+..########..`,
+shield:`
+############
+#++++##++++#
+#++++##++++#
+#++++##++++#
+############
+#++++##++++#
+.#+++##+++#.
+..#++##++#..
+...#+##+#...
+....####....`,
+crown:`
+#....##....#
+##..#++#..##
+#+#.#++#.#+#
+#++##++##++#
+#++++++++++#
+############
+#+#+#+#+#+##
+############`,
+card:`
+.#########..
+#+++++++++#.
+#+#++++++##.
+#++++#+++##.
+#+++###++##.
+#++#####+##.
+#+++###++##.
+#++++#+++##.
+#++++++++##.
+#++++++#+##.
+.#########..`,
+dice:`
+.##########.
+#++++++++++#
+#+##++++##+#
+#+##++++##+#
+#++++##++++#
+#++++##++++#
+#+##++++##+#
+#+##++++##+#
+#++++++++++#
+.##########.`,
+board:`
+############
+#++##++##++#
+#++##++##++#
+##++##++##+#
+##++##++##+#
+#++##++##++#
+#++##++##++#
+##++##++##+#
+############`,
+disc:`
+....####....
+..##++++##..
+.#++++++++#.
+#++######++#
+#+########+#
+#++######++#
+.#++++++++#.
+..##++++##..
+....####....`,
+puzzle:`
+.....##.....
+....#++#....
+.####++####.
+.#++++++++#.
+.#+++++++++#
+##+++++++++#
+#+++++++++#.
+##++++++++#.
+.#++++++++#.
+.####++####.
+....#++#....
+.....##.....`,
+brain:`
+...######...
+..#++#+++#..
+.#+++#++++#.
+#++##+#++#+#
+#+#++#+##++#
+#++++#++++##
+#+##+#+#++##
+.#++#+##++#.
+..##+#+++#..
+....####....`,
+note:`
+....########
+....#++++++#
+....########
+....#......#
+....#......#
+....#......#
+.####....###
+#++##...#++#
+#++##...####
+.###........`,
+clock:`
+...######...
+..#++++++#..
+.#+++#++++#.
+#++++#+++++#
+#++++#+++++#
+#++++###+++#
+#+++++++++++
+#++++++++++#
+.#++++++++#.
+..#++++++#..
+...######...`,
+paw:`
+..##....##..
+.#++#..#++#.
+.#++#..#++#.
+..##....##..
+##..####..##
+#+#######+#.
+##.#++++#.##
+..#++++++#..
+..#++++++#..
+...######...`,
+leaf:`
+........####
+......##+++#
+....##++++#.
+...#+++#++#.
+..#+++#+++#.
+.#+++#+++#..
+.#++#+++#...
+..##+++##...
+..#.###.....
+.#..........
+#...........`,
+skull:`
+...######...
+..#++++++#..
+.#++++++++#.
+#++++++++++#
+#+###++###+#
+#+###++###+#
+.#+++##+++#.
+..#++++++#..
+..#+#+#+##..
+...######...`,
+bulb:`
+...######...
+..#++++++#..
+.#++++++++#.
+.#+++##+++#.
+.#++#..#++#.
+..#++..++#..
+...#+..+#...
+...######...
+...######...
+....####....`,
+balloon:`
+...######...
+..#++++++#..
+.#+#++++++#.
+.#+#++++++#.
+.#++++++++#.
+..#++++++#..
+...#++++#...
+....####....
+.....##.....
+......#.....
+.....#......
+......#.....`,
+flag:`
+############
+#++##++##++#
+#++##++##++#
+##++##++##+#
+##++##++##+#
+############
+#...........
+#...........
+#...........
+#...........`,
+runner:`
+......###...
+......###...
+....####....
+..##.###.#..
+.....####...
+....###.....
+...##.##....
+..##...##...
+.##.....##..`,
+frog:`
+..##....##..
+.#+##..##+#.
+.#+##..##+#.
+#++########+
+#++++++++++#
+#+#++++++#+#
+#++######++#
+.#++++++++#.
+#+#......#+#
+##........##`,
+bird:`
+....####....
+...#++++#...
+..#++#+#+###
+..#++++++##.
+###+++++#...
+#+++++++#...
+.#+++++#....
+..#####.....
+...#..#.....`,
+fish:`
+....######..
+..##++++++#.
+.#++++++#++#
+#++#++++++##
+#+++++++++#.
+.#+++++++#.#
+..##+++##..#
+....###.....`,
+cube:`
+....####....
+..##++++##..
+##++++++++##
+#.##++++##+#
+#...####+++#
+#....#+++++#
+#....#+++++#
+#....#+++++#
+.##..#+++##.
+...###+##...
+.....##.....`,
+joystick:`
+....###.....
+...#+++#....
+...#+++#....
+....###.....
+.....#......
+.....#......
+..########..
+.#++++++++#.
+#++##++++++#
+############`,
+coin:`
+...######...
+..#++++++#..
+.#++####++#.
+#++#+++++++#
+#++#+++++++#
+#++#+++++++#
+#++#+++++++#
+.#++####++#.
+..#++++++#..
+...######...`,
+horse:`
+......###...
+.....#++##..
+....#++++##.
+...#+++#..#.
+..#++++#....
+.#+++++#....
+#++++++#....
+#+#++++#....
+#.#.#..#....
+..#.#..#....`,
+ship:`
+.....#......
+.....#++....
+.....#+++...
+.....#++++..
+.....#......
+############
+.#++++++++#.
+..#++++++#..
+...######...`,
+bolt:`
+......####..
+.....#++#...
+....#++#....
+...#++#.....
+..#+++####..
+..####++#...
+.....#+#....
+....#+#.....
+...#+#......
+...##.......`,
+people:`
+..##....##..
+.#++#..#++#.
+.#++#..#++#.
+..##....##..
+.####..####.
+#++++##++++#
+#++++##++++#
+#++++##++++#`,
+star:`
+.....##.....
+....#++#....
+....#++#....
+#####++#####
+#++++++++++#
+.#++++++++#.
+..#++++++#..
+..#++++++#..
+.#+++##+++#.
+.#++#..#++#.
+#++#....#++#
+###......###`,
+drone:`
+####....####
+.##......##.
+..##....##..
+...######...
+...#+##+#...
+...######...
+..##....##..
+.##......##.
+####....####`,
+mask:`
+.##########.
+#++++++++++#
+#+###++###+#
+#+###++###+#
+#++++++++++#
+.#+++##+++#.
+..##....##..`,
+robot:`
+.....##.....
+.....#......
+..########..
+.#++++++++#.
+.#+##++##+#.
+.#+##++##+#.
+.#++++++++#.
+.#+######+#.
+..########..
+###+#++#+###
+...######...`,
+trophy:`
+############
+#.#++++++#.#
+#.#++++++#.#
+.##++++++##.
+...#++++#...
+....#++#....
+.....##.....
+.....##.....
+...######...
+..########..`,
+brush:`
+.........###
+........#++#
+.......#++#.
+......#++#..
+.....####...
+....####....
+..++###.....
+.+++##......
+++++#.......
++++.........`,
+compass:`
+...######...
+..#++++++#..
+.#++++#+++#.
+#++++###+++#
+#+++#+##+++#
+#+++##+#+++#
+#+++###++++#
+.#+++#++++#.
+..#++++++#..
+...######...`,
+heart:`
+.###...###..
+#+++#.#+++#.
+#++++#++++#.
+#+++++++++#.
+.#+++++++#..
+..#+++++#...
+...#+++#....
+....#+#.....
+.....#......`,
+fire:`
+.....#......
+....#+#.....
+....#++#....
+...#++#+#...
+..#++#++#...
+.#++#+#++#..
+.#+#+++#+#..
+.#+#+++#+#..
+..#+++++#...
+...#####....`,
+pipe:`
+###.....###.
+#+#.....#+#.
+#+#######+#.
+#+++++++++#.
+#+#######+#.
+#+#.....#+#.
+#+#.....#+#.
+#+#######+#.
+#+++++++++#.
+###########.`,
+dart:`
+##..........
+.###........
+..#+#.......
+...#+#......
+....#+#.....
+.....#+#....
+......#+#...
+.......###..
+........###.
+.........##.`,
+stack:`
+...######...
+...#++++#...
+..########..
+..#++++++#..
+.##########.
+.#++++++++#.
+############
+#++++++++++#
+############`,
+zap:`
+#..#..#..#..
+.#.#..#.#...
+..#++++#....
+###++++####.
+..#++++#....
+.#.#..#.#...
+#..#..#..#..`
+};
+const ICON={};
+for(const k in I){
+ const rows=I[k].split('\n').filter(r=>r.length);const w=Math.max(...rows.map(r=>r.length)),h=rows.length;
+ const ox=(12-w)/2,oy=(12-h)/2;let ink='',acc='';
+ rows.forEach((r,y)=>{for(let x=0;x<r.length;x++){const ch=r[x],d='M'+(x+ox)+' '+(y+oy)+'h1v1h-1z';if(ch==='#')ink+=d;else if(ch==='+')acc+=d;}});
+ ICON[k]={ink,acc};
+}
+
+/* which icon: the first rule whose words appear in the game's id, name or tags; then a default per shelf */
+const RULES=[
+ ['card',/\b(blackjack|poker|klondike|solitaire|crazy eights|hi-lo|hilo|card clash|uno|rummy|cribbage|baccarat|spades|hearts card)\b/],
+ ['dice',/\b(dice|yahtzee|pig dice|craps|backgammon|ludo|snakes and ladders)\b/],
+ ['ship',/\b(battleship|sea battle|harbor|harbour|sail|pirate|boat|ferry|navy)\b/],
+ ['alien',/\b(invader|alien|ufo|galaxy|galaxian|xeno)\b/],
+ ['note',/\b(rhythm|music|dj|beat|piano|guitar|dance|song|echo pads|simon)\b/],
+ ['clock',/\b(timing|clock|reaction|reflex timer|stopwatch)\b/],
+ ['brain',/\b(memory|math|sudoku|nonogram|sum ten|kakuro|quiz|trivia|logic|mastermind|brain)\b/],
+ ['pipe',/\b(pipe|plumb|water sort|flow)\b/],
+ ['brush',/\b(paint|ink|splat|color flood|colour|color rush|color wheel|splatoon|turf|graffiti)\b/],
+ ['bulb',/\b(lights out|light|beacon|lighthouse|lamp|lantern|laser maze)\b/],
+ ['balloon',/\b(balloon|bubble|pop)\b/],
+ ['glove',/\b(boxing|punch|fight|fighter|fighting|fist|sumo|wrestle|wrestling|brawl|karate|kung fu|tekken)\b/],
+ ['zap',/\b(laser|neon|trails|tron|electric|spark)\b/],
+ ['frog',/\b(frog|hopper|crossy|road hopper|crossing)\b/],
+ ['bird',/\b(bird|flap|flappy|chicken|eagle|owl)\b/],
+ ['horse',/\b(horse|western|cowboy|outlaw|rodeo|dustwater|joust)\b/],
+ ['car',/\b(car|cars|kart|race|racing|drive|driving|drift|traffic|parking|taxi|road|courier|sideways|cruiser|truck|rally|highway|lane dodge|lanes)\b/],
+ ['fish',/\b(fish|fishing|sushi|reef|aquarium|abyss|diver|underwater|submarine|shark|depth)\b/],
+ ['wave',/\b(surf|swim|wave|ocean|rowing|regatta|tide|swell|beach|dive|water)\b/],
+ ['snow',/\b(ski|slalom|snow|frost|ice|skate|curling|hockey|penguin|winter|sled)\b/],
+ ['ball',/\b(soccer|football|penalty|goalie|goalkeeper|striker|fifa|pitch|futsal|kick)\b/],
+ ['hoop',/\b(hoops|basketball|free throw|dunk|court kings|basket|nba|netball)\b/],
+ ['racket',/\b(tennis|badminton|squash|racket|racquet|ping pong|table tennis)\b/],
+ ['golf',/\b(golf|putt|fairway|long drive)\b/],
+ ['pin',/\b(bowling|skee|bocce|shuffle|pins|cornhole|petanque)\b/],
+ ['bat',/\b(baseball|home run|cricket|softball|bat)\b/],
+ ['dart',/\b(darts|javelin|archery|bow|arrow|longbow)\b/],
+ ['target',/\b(target|gallery|sniper|scope|marksman|long shot|bullseye|aim|duck)\b/],
+ ['paddle',/\b(pong|paddle|air hockey|breakout|brick|bricks|arkanoid|foosball|table kick|pinball)\b/],
+ ['rocket',/\b(rocket|space|orbit|lander|moon|planet|asteroid|meteor|astro|starship|void|nova|kerbal|comet|satellite)\b/],
+ ['plane',/\b(plane|jet|flight|fly|flyer|sky|ace|dogfight|copter|chopper|helicopter|kite|glide|wing)\b/],
+ ['drone',/\b(drone)\b/],
+ ['ghost',/\b(ghost|maze|munch|haunt|haunted|manor|hollow|pac)\b/],
+ ['skull',/\b(zombie|zombies|undead|nightfall|skull|dead|horror|souls|vampire)\b/],
+ ['fire',/\b(fire|flame|lava|volcano|burn|inferno|ember|ashen)\b/],
+ ['snake',/\b(snake|millipede|centipede|worm|slither|serpent)\b/],
+ ['tank',/\b(tank|tanks|artillery|cannon|ironclad|panzer|armour|armor)\b/],
+ ['bomb',/\b(bomb|bomber|mine field|minesweeper|blast|missile|explode|demolition|tnt|chain reaction)\b/],
+ ['crown',/\b(royale|king|kings|queen|last bot|battle royale|throne|empire)\b/],
+ ['mask',/\b(heist|stealth|assassin|assassination|silent|shadow|thief|spy|ninja|hitman|contract)\b/],
+ ['robot',/\b(robot|bot|bots|mech|titan|android|cyborg|machine)\b/],
+ ['gun',/\b(shooter|shoot|fps|gun|rifle|strike|cod|tactical|breach|frontline|extraction|exfil|warzone|counter strike|halo|sniper)\b/],
+ ['shield',/\b(shield|defend|defender|defense|defence|guard|bastion|castle|fortress|siege|tower defense|tower line|wall)\b/],
+ ['sword',/\b(sword|dungeon|quest|knight|boss|keep|rpg|adventure|dragon|hero|heroes|legend)\b/],
+ ['compass',/\b(open world|explore|treasure|map|safari|expedition|frontier)\b/],
+ ['paw',/\b(pet|pets|zoo|critter|critters|animal|dog|cat|beast|beasts|pals|monster|creature|bee)\b/],
+ ['leaf',/\b(farm|plant|garden|grow|tree|forest|lemonade|crop|harvest|flower)\b/],
+ ['coin',/\b(coin|money|cash|bank|gold|shop|stand|tycoon|market)\b/],
+ ['gem',/\b(gem|jewel|match|merge|swap|miner|mining|crystal|diamond|tile pairs|mahjong)\b/],
+ ['blocks',/\b(block|blocks|tetris|tetromino|crate|crates|sokoban|blockfit|fit)\b/],
+ ['stack',/\b(stack|stacker|tower|hanoi|balance|jenga)\b/],
+ ['cube',/\b(cube|cubes|voxel|minecraft|3d)\b/],
+ ['runner',/\b(run|runner|dash|sprint|hurdles|jump|parkour|hop|climb|marathon|athletics|platform)\b/],
+ ['star',/\b(star|stars|catcher|wish)\b/],
+ ['heart',/\b(love|heart|date|social|hangout)\b/],
+ ['trophy',/\b(grand prix|cup|championship|derby|tournament|league)\b/],
+ ['people',/\b(party|tag|dodgeball|suspects|impostor|crew|team|friends|tug|versus)\b/],
+ ['board',/\b(chess|checkers|draughts|gomoku|go|reversi|othello|tic tac toe|nim|dots|mancala|hex|board|four in a row|connect)\b/],
+ ['disc',/\b(disk|disks|disc|frisbee|curl|puck)\b/]
+];
+/* hand-picked where the words mislead */
+const PICK={airhockey:'paddle',volley:'ball',halfpipe:'runner',runline:'runner',walljump:'runner',chain:'bomb',flap:'bird',shield:'shield',trials:'car',fighters:'glove',pool:'ball',bowman:'dart',voidwing:'rocket',zenith:'gun',tag:'people',suspects:'people',frisbee:'disc',hover:'tank',fishing:'fish',homerun:'bat',aeonfall:'sword',spacewar:'rocket',starrun:'rocket',trench:'rocket',neonbay:'car',dash100:'flag',hurdles:'flag',horserace:'horse',firefighter:'fire',cupstack:'stack',sling:'target'};
+const CATI={SPORTS:'ball',CLASSICS:'joystick',VERSUS:'people','RETRO 3D':'cube',BOARD:'board',PUZZLE:'puzzle',ACTION:'sword',CARDS:'card',SIM:'leaf',PARTY:'balloon'};
+function iconOf(gm){
+ if(gm.icon&&ICON[gm.icon])return gm.icon;
+ if(PICK[gm.id])return PICK[gm.id];
+ const nm=(gm.name||'').toLowerCase(),id=(gm.id||'').toLowerCase(),tg=(gm.tags||'').toLowerCase();
+ // the game's own name and id first, then its search tags, so "Rocket Arena" stays a rocket and not whatever its tags mention first
+ for(const src of [nm+' '+id,tg])for(const [k,re] of RULES)if(re.test(src))return k;
+ return CATI[gm.cat]||'joystick';
+}
+const svg=(k,c,ink)=>{const p=ICON[k]||ICON.joystick;return '<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path fill="'+c+'" d="'+p.acc+'"/><path fill="'+ink+'" d="'+p.ink+'"/></svg>';};
+
+/* colours: hashed from the id, then nudged so that no two neighbours on a shelf share one */
+let COL=null;
+function assign(){
+ COL={};const byCat={};
+ A.games.forEach(g=>{(byCat[g.cat]=byCat[g.cat]||[]).push(g);});
+ Object.values(byCat).forEach(list=>{const last=[];
+  list.forEach(g=>{let i=hash(g.id)%PAL.length,n=0;while(last.includes(i)&&n++<PAL.length)i=(i+7)%PAL.length;COL[g.id]=i;last.push(i);if(last.length>4)last.shift();});});
+}
+function look(gm){
+ if(!COL||!(gm.id in COL))assign();
+ const p=PAL[COL[gm.id]]||PAL[0],c=gm.color||p[0],on=gm.color?'#fff':p[1],k=iconOf(gm);
+ // the icon's accent uses the shell colour, except on the near-white and charcoal shells where it would vanish into the label
+ const acc=c==='#f2efe6'?'#ff3b30':c==='#2b2f3a'?'#ff8a00':c==='#283b9c'?'#4f7bff':c;
+ return {c,on,dk:shade(c,.72),hi:shade(c,1.18),k,icon:svg(k,acc,'#12151d')};
+}
+A.carts={look,iconOf,ICON,PAL,svg};
+})();
