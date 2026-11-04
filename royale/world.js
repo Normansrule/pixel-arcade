@@ -3,6 +3,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {SimplexNoise} from '../vendor/jsm/math/SimplexNoise.js';
 import {V,cl,lerp,smooth,rng,ctex,M,merge,lumpy,rayBox,rayCyl,boxNormal,wuv,normalFrom,tnoise,smoothNormals} from './util.js';
+import {Placer} from '../js/kit3d/place.js';
 import {CELL,H,D,GR} from './build.js';
 import {layoutProps,buildProps} from './props.js';
 import {skyMaterial,terrainTextures,terrainMaterial,foliageAtlas,pineGeo,broadGeo,bushGeo} from './nature.js';
@@ -105,17 +106,17 @@ export class World{
  /* ---------------- obstacles (trees, rocks, metal, props) ---------------- */
  addObs(o){o.alive=true;o.hp=o.max;this.obs.push(o);const bb=o.b||[o.x-o.r,0,o.z-o.r,o.x+o.r,0,o.z+o.r];for(let i=Math.floor(bb[0]/G);i<=Math.floor(bb[3]/G);i++)for(let k=Math.floor(bb[2]/G);k<=Math.floor(bb[5]/G);k++){const key=gk(i,k);let a=this.grid.get(key);if(!a){a=[];this.grid.set(key,a);}a.push(o);}return o;}
  clearOf(x,z,pad){for(const q of this.rects)if(x>q[0]-pad&&x<q[2]+pad&&z>q[1]-pad&&z<q[3]+pad)return false;return true;}
- scatter(){const r=rng(99);this.trees=[];this.rocks=[];this.metal=[];this.bushes=[];this.grass=[];
+ scatter(){const r=rng(99),TP=new Placer(8);this.trees=[];this.rocks=[];this.metal=[];this.bushes=[];this.grass=[];
   const slope=(x,z)=>1-this.normalAt(x,z).y;
   // trees
   for(let n=0;n<5200&&this.trees.length<720;n++){const x=(r()*2-1)*ISLAND*1.05,z=(r()*2-1)*ISLAND*1.05,h=this.heightAt(x,z);if(h<2.6||h>48||slope(x,z)>.3||!this.clearOf(x,z,6))continue;
    let near=null;for(const p of this.pois){if(Math.hypot(p.x-x,p.z-z)<p.r*.55&&p.kind!=='village'){near=p;break;}}if(near)continue;
    const dens=.35+.65*(this.fbm(x*.012+40,z*.012)*.5+.5)+(Math.hypot(x+95,z+140)<70?.6:0);if(r()>dens*.75)continue;
-   const pine=h>22||Math.hypot(x+95,z+140)<75?r()<.85:r()<.25,s=.8+r()*.55;
+   const pine=h>22||Math.hypot(x+95,z+140)<75?r()<.85:r()<.25,s=.8+r()*.55;if(!TP.take(x,z,1.25*s))continue;// no trunk grows inside another tree
    this.trees.push(this.addObs({k:'tree',pine,x,z,y:h,s,rot:r()*6.28,r:.55*s,y0:h-1,y1:h+4.5*s,max:pine?150:200,yield:0,tint:.85+r()*.3}));}
   // rocks (quarry is dense)
   for(let n=0;n<4000&&this.rocks.length<240;n++){const qz=n<900;const p=this.pois[2];const x=qz?p.x+(r()*2-1)*p.r*1.3:(r()*2-1)*ISLAND,z=qz?p.z+(r()*2-1)*p.r*1.3:(r()*2-1)*ISLAND,h=this.heightAt(x,z);
-   if(h<1.2||!this.clearOf(x,z,4)||(qz&&this.rocks.length>60))continue;if(!qz&&r()<.55)continue;const s=qz?1.4+r()*2.4:.9+r()*2.2;
+   if(h<1.2||!this.clearOf(x,z,4)||(qz&&this.rocks.length>60))continue;if(!qz&&r()<.55)continue;const s=qz?1.4+r()*2.4:.9+r()*2.2;if(!TP.take(x,z,s*.8))continue;// rocks never sit inside trees or each other
    this.rocks.push(this.addObs({k:'rock',x,z,y:h,s,rot:r()*6.28,r:s*.85,y0:h-2,y1:h+s*.72,max:Math.round(140+s*90),yield:1,tint:.8+r()*.35}));}
   // metal: shipping containers in the yard + scattered
   const cont=(x,z,y,alongX,stackOn)=>{const L=6.2,Wd=2.5,Ht=2.6,b=alongX?[x-L/2,y,z-Wd/2,x+L/2,y+Ht,z+Wd/2]:[x-Wd/2,y,z-L/2,x+Wd/2,y+Ht,z+L/2];const o=this.addObs({k:'metal',x,z,y,b,alongX,y0:y,y1:y+Ht,max:450,yield:2,tint:[0xc84a32,0x2f74c0,0x3aa08a,0xe0a030,0x8a5ac0][r()*5|0]});if(stackOn)stackOn.above=o;this.metal.push(o);return o;};
@@ -125,7 +126,7 @@ export class World{
   const hill=this.pois[5];hill.mill.y=this.heightAt(hill.mill.x,hill.mill.z);this.addObs({k:'prop',x:hill.mill.x,z:hill.mill.z,r:2.6,y0:hill.mill.y-1,y1:hill.mill.y+13,max:1e9});
   const dk=this.pois[0];if(dk.light)this.addObs({k:'prop',x:dk.light.x,z:dk.light.z,r:2.2,y0:dk.light.y-1,y1:dk.light.y+19,max:1e9});
   // decoration
-  for(let n=0;n<9000&&this.bushes.length<420;n++){const x=(r()*2-1)*ISLAND,z=(r()*2-1)*ISLAND,h=this.heightAt(x,z);if(h<2.4||h>40||!this.clearOf(x,z,2))continue;this.bushes.push([x,h,z,.7+r()*.9,r()*6.28]);}
+  for(let n=0;n<9000&&this.bushes.length<420;n++){const x=(r()*2-1)*ISLAND,z=(r()*2-1)*ISLAND,h=this.heightAt(x,z);if(h<2.4||h>40||!this.clearOf(x,z,2))continue;const bs=.7+r()*.9,br=r()*6.28;if(!TP.take(x,z,bs*.7))continue;this.bushes.push([x,h,z,bs,br]);}
   for(let n=0;n<40000&&this.grass.length<6500;n++){const x=(r()*2-1)*ISLAND,z=(r()*2-1)*ISLAND,h=this.heightAt(x,z);if(h<2.5||h>36||slope(x,z)>.35||!this.clearOf(x,z,.5))continue;this.grass.push([x,h,z,.6+r()*.8,r()*6.28,r()<.07?(r()*4|0)+1:0]);}
   layoutProps(this);
   // outdoor loot spots

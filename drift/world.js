@@ -226,7 +226,9 @@ function dressPass(R,B,out,time,q,rr){const g=out.group;
 function city(g,cx,cz,w,d,y,q,rr,time){const dayL=time&&!time.lampsOn;const n=q>=2?2600:1500,geo=new THREE.BoxGeometry(1,1,1);geo.translate(0,.5,0);
  const wt=ctex(64,128,(x,W,H)=>{x.fillStyle='#000';x.fillRect(0,0,W,H);for(let j=4;j<H;j+=8)for(let i=3;i<W;i+=7){if(Math.random()<.42){const c=Math.random();x.fillStyle=c<.6?'#ffcf86':c<.85?'#bfe0ff':'#ff9a5a';x.globalAlpha=.4+Math.random()*.6;x.fillRect(i,j,4,5);}}x.globalAlpha=1;});
  const m=new THREE.MeshStandardMaterial({color:dayL?0x9aa0aa:0x07080b,roughness:.8,emissiveMap:wt,emissive:0xffffff,emissiveIntensity:dayL?.03:1.4,map:dayL?null:wt,fog:true});
- const im=new THREE.InstancedMesh(geo,m,n);for(let i=0;i<n;i++){const x=cx+(rr()-.5)*w,z=cz+(rr()-.5)*d,dc=Math.hypot(x-cx,z-cz)/(w*.5),h=8+rr()*rr()*(dc<.4?160:60),bw=10+rr()*24;im.setMatrixAt(i,M4(x,y,z,0,rr()*.3,0,bw,h,10+rr()*22));}g.add(im);
+ // city blocks on a street grid: every tower gets its own lot, so lit windows never cut through a neighbour
+ const cs=q>=2?30:38,nx=Math.floor(w/cs),nz=Math.floor(d/cs),lots=[];for(let a=0;a<nx;a++)for(let b=0;b<nz;b++){if(a%5===2||b%4===1)continue;lots.push([a,b]);}
+ const cnt=Math.min(n,lots.length),im=new THREE.InstancedMesh(geo,m,cnt);for(let i=0;i<cnt;i++){const[a,b]=lots[i];const bw=10+rr()*(cs-14),bd=10+rr()*(cs-14),x=cx-w/2+(a+.5)*cs+(rr()-.5)*(cs-4-bw),z=cz-d/2+(b+.5)*cs+(rr()-.5)*(cs-4-bd),dc=Math.hypot(x-cx,z-cz)/(w*.5),h=8+rr()*rr()*(dc<.4?160:60);im.setMatrixAt(i,M4(x,y,z,0,0,0,bw,h,bd));}g.add(im);
  if(dayL){const gr=new THREE.Mesh(new THREE.PlaneGeometry(w*1.6,d*1.6),new THREE.MeshStandardMaterial({color:0x4a4c44,roughness:1}));gr.rotation.x=-Math.PI/2;gr.position.set(cx,y-.2,cz);g.add(gr);return;}
  const pts=[],cols=[];for(let i=0;i<(q>=2?9000:4000);i++){const x=cx+(rr()-.5)*w*1.3,z=cz+(rr()-.5)*d*1.3;pts.push(x,y+1+rr()*2,z);const c=rr();cols.push(1,c<.7?.62:.9,c<.7?.25:.8);}
  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));pg.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
@@ -305,8 +307,8 @@ function dressRing(R,B,out,time,q,rr){const g=out.group;
  const tower=new THREE.Mesh(merge([[new THREE.BoxGeometry(6,12,6),M4(0,6,0),C(0x3a3d42)],[new THREE.BoxGeometry(9,4,9),M4(0,14,0),C(0x2a2c30)],[new THREE.BoxGeometry(9.1,2.2,9.1),M4(0,14.2,0),C(0x0a0e14)],[new THREE.BoxGeometry(10,.3,10),M4(0,16.15,0),C(0xd8dadf)]]),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.35,metalness:.5,emissive:0xff8a40,emissiveIntensity:time.lampsOn?.05:0}));tower.position.set(120,0,-120);tower.castShadow=true;g.add(tower);
  // trees: broadleaf belt with a few pines
  const sp=[],fr={};for(let i=0;i<3000&&sp.length<(q>=2?700:q>=1?520:380);i++){const a=rr()*6.283,r=200+rr()*700,x=160+Math.cos(a)*r,z=-40+Math.sin(a)*r;const k=nearestGlobal(B,x,z),f=frame(B,x,z,k,fr);if(Math.abs(f.d)<B.wl[f.i]+14)continue;sp.push([x,-.1,z]);}
- for(let i=0;i<500&&sp.length<(q>=2?900:q>=1?680:480);i++){const x=-60+rr()*420,z=-320+rr()*560;const k=nearestGlobal(B,x,z),f=frame(B,x,z,k,fr);if(Math.abs(f.d)<B.wl[f.i]+10)continue;if(x<gx+2&&x>gx-24&&z>-110&&z<70)continue;sp.push([x,-.1,z]);}
- forest(g,sp.filter((p,i)=>i%5),'leaf',rr,true,q);forest(g,sp.filter((p,i)=>!(i%5)),'pine',rr,true,q);
+ for(let i=0;i<500&&sp.length<(q>=2?900:q>=1?680:480);i++){const x=-60+rr()*420,z=-320+rr()*560;const k=nearestGlobal(B,x,z),f=frame(B,x,z,k,fr);if(Math.abs(f.d)<B.wl[f.i]+10)continue;if(x<gx+2&&x>gx-24&&z>-110&&z<70)continue;if(Math.hypot(x-120,z+120)<12)continue;sp.push([x,-.1,z]);}
+ const sp2=spaced(sp,4.2);forest(g,sp2.filter((p,i)=>i%5),'leaf',rr,true,q);forest(g,sp2.filter((p,i)=>!(i%5)),'pine',rr,true,q);
  const tw=[],st=Math.round(120/B.step);for(let i=0,k=0;i<B.n;i+=st,k++){const side=k%2?1:-1,lat=side*(B.wl[i]+4),x=B.x[i]+B.nx[i]*lat,z=B.z[i]+B.nz[i]*lat;tw.push([new THREE.CylinderGeometry(.3,.45,22,8),M4(x,11,z)],[new THREE.BoxGeometry(4,2,.6),M4(x,22,z,0,Math.atan2(B.nx[i],B.nz[i]),0)]);
   out.lamps.push({x:x-B.nx[i]*side,y:21.5,z:z-B.nz[i]*side,gx:B.x[i],gz:B.z[i],pool:34,I:500,col:0xffe2b8});}
  g.add(new THREE.Mesh(merge(tw),new THREE.MeshStandardMaterial({color:0x6a6d72,metalness:.6,roughness:.5})));
@@ -370,7 +372,11 @@ function leafGeo(seed,tint=0x2f5222,lo){const r=seeded(seed),L=[[new THREE.Cylin
  return merge(L);}
 function treeMat(){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.88,normalMap:detailNormal('leaf',1.6,4),normalScale:new THREE.Vector2(1.2,1.2),envMapIntensity:.35});m.normalMap.repeat.set(3,3);return m;}
 // instanced trees: two variants share the slots
-function forest(g,spots,kind,rr,shadow=true,q=2){if(!spots.length)return;const lo=q<1;const geos=kind==='pine'?[pineGeo(11,lo),pineGeo(29,lo)]:[leafGeo(5,0x2f5222,lo),leafGeo(17,0x3a5a24,lo)];const mat=treeMat();
+// drop trees whose trunks would stand inside another tree (spacing hash), so the belts read as a forest, not a pile-up
+function spaced(spots,d){const H=new Map(),out=[];const k=(x,z)=>Math.floor(x/d)+','+Math.floor(z/d);
+ for(const p of spots){const cx=Math.floor(p[0]/d),cz=Math.floor(p[2]/d);let ok=true;for(let i=-1;i<=1&&ok;i++)for(let j=-1;j<=1&&ok;j++){const L=H.get((cx+i)+','+(cz+j));if(L)for(const o of L)if((o[0]-p[0])**2+(o[2]-p[2])**2<d*d){ok=false;break;}}
+  if(ok){out.push(p);const kk=k(p[0],p[2]);(H.get(kk)||H.set(kk,[]).get(kk)).push(p);}}return out;}
+function forest(g,spots,kind,rr,shadow=true,q=2){spots=spaced(spots,kind==='pine'?3.2:4.2);if(!spots.length)return;const lo=q<1;const geos=kind==='pine'?[pineGeo(11,lo),pineGeo(29,lo)]:[leafGeo(5,0x2f5222,lo),leafGeo(17,0x3a5a24,lo)];const mat=treeMat();
  geos.forEach((geo,v)=>{const mine=spots.filter((s,i)=>i%2===v);const im=new THREE.InstancedMesh(geo,mat,mine.length);
   mine.forEach((s,i)=>{const sc=s[3]||(.75+rr()*.6);im.setMatrixAt(i,M4(s[0],s[1],s[2],0,rr()*6.28,0,sc,sc*(.85+rr()*.35),sc));});im.castShadow=shadow;im.receiveShadow=true;g.add(im);});}
 // boulders: displaced dodecahedra, lichen-tinted

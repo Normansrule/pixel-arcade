@@ -1,7 +1,9 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
-    {"v": "v54", "date": "4 Nov 2026", "branch": "round26-readme", "round": 26,
+    {"v": "v55", "date": "4 Nov 2026", "branch": "round27", "round": 27,
+     "added": "A clean-up round for the worlds around the player. Trees, rocks, rooftop units, street furniture, parked cars and distant skylines no longer spawn inside each other, on pavements or hanging off roofs, using a new shared placement guard (js/kit3d/place.js). Night Drive, Kart Grand Prix, Sideways, Kart, Courier, Royale, Warfront, Nightfall, Plaza, Drop Zone, Strike, Frontline, Siege and Zenith are cleaner, and Night Drive trees get fuller canopies."},
+    {"v": "v54", "date": "4 Nov 2026", "branch": "round26-readme", "round": 26, "games": 521, "worlds": 55,
      "added": "A new README front page: an animated header that drifts through the arcade under light shafts while the middle cabinet flips between real games, a scrolling LED ticker of game names, arcade-button links, a counts strip, and a feature grid of the 3D worlds, cabinets, round clock, CPU levels, builder, online codes and platforms. All of it is drawn by tools/readme_intro.js."},
     {"v": "v46", "date": "28 Oct 2026", "branch": "round23", "round": 23, "games": 521, "worlds": 55,
      "added": "A graphics round for four games that still looked plain. NEON FIGHTERS rebuilt on a rain-soaked neon rooftop with jointed fighters in glowing suits, a wet floor that reflects them, hit-stop, combos, sweeps, knockdowns and four elemental specials you duck or jump; CRATE PUSHER rebuilt as a lamp-lit warehouse with wooden crates, an undo button and three new rooms; GOLF DUEL rebuilt with three themed holes (meadow, canyon, lantern pond), sand, water, bumpers and a smarter CPU; FIRE FIGHTER rebuilt as a street block that turns from dusk to night, with a fire truck, a hose, smoke, steam and fires that spread. The front-page repainted row shows all four."},

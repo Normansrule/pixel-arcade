@@ -202,7 +202,8 @@ export function buildWorld(L,TX,R){const group=new THREE.Group();const lamps=mak
  // distant skyline with lit windows
  {const c=document.createElement('canvas');c.width=256;c.height=256;const x=c.getContext('2d');x.fillStyle='#07080b';x.fillRect(0,0,256,256);for(let j=0;j<32;j++)for(let i=0;i<16;i++){if(Math.random()<.22){x.fillStyle=Math.random()<.7?'#ffcf86':'#a8c6ff';x.globalAlpha=.4+Math.random()*.6;x.fillRect(i*16+4,j*8+2,8,4);}}
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;const sm=new THREE.MeshBasicMaterial({map:t,color:0x9a9aa0,fog:false});
-  const P=[],U=[],I=[];for(let i=0;i<46;i++){const a=i/46*Math.PI*2+Math.random()*.05,r=95+Math.random()*60,wd=10+Math.random()*16,h=14+Math.random()*48;const g=new THREE.BoxGeometry(wd,h,wd).toNonIndexed();g.applyMatrix4(M4(Math.cos(a)*r,h/2-1,Math.sin(a)*r,0,-a,0));
+  const P=[],U=[],I=[];for(let i=0;i<46;i++){const a=i/46*Math.PI*2+Math.random()*.05,r=95+Math.random()*60,wd=Math.min(10+Math.random()*16,Math.PI*2*95/46-1.2),h=14+Math.random()*48;// never wider than its slot on the ring
+   const g=new THREE.BoxGeometry(wd,h,wd).toNonIndexed();g.applyMatrix4(M4(Math.cos(a)*r,h/2-1,Math.sin(a)*r,0,-a,0));
    const pa=g.attributes.position,ua=g.attributes.uv;const o=P.length/3;for(let k=0;k<pa.count;k++){P.push(pa.getX(k),pa.getY(k),pa.getZ(k));U.push(ua.getX(k)*wd/16,ua.getY(k)*h/16);I.push(o+k);}}
   const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));sg.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));sg.setIndex(I);group.add(new THREE.Mesh(sg,sm));}
  /* ---------- lights ---------- */

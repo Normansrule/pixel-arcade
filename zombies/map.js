@@ -266,7 +266,7 @@ export class GameMap{
   for(const[gg,col]of parts){const g2=gg.index?gg.toNonIndexed():gg;g2.computeVertexNormals();const pp=g2.attributes.position,nn=g2.attributes.normal;for(let i=0;i<pp.count;i++){P.set([pp.getX(i),pp.getY(i),pp.getZ(i)],o*3);N.set([nn.getX(i),nn.getY(i),nn.getZ(i)],o*3);const v=.8+Math.random()*.25;C.set([col.r*v,col.g*v,col.b*v],o*3);o++;}}
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));geo.setAttribute('color',new THREE.BufferAttribute(C,3));
   const spots=[];for(let z=0;z<H;z++)for(let x=0;x<W;x++)if(this.g[z][x]==='Y')spots.push([x+.5,z+.5]);
-  for(let k=0;k<420;k++){const a=rr()*TAU,r=38+rr()*70;const x=W/2+Math.cos(a)*r,z=H/2+Math.sin(a)*r;if(x>-2&&x<W+2&&z>-2&&z<H+2)continue;spots.push([x,z]);}
+  for(let k=0;k<420;k++){const a=rr()*TAU,r=38+rr()*70;const x=W/2+Math.cos(a)*r,z=H/2+Math.sin(a)*r;if(x>-2&&x<W+2&&z>-2&&z<H+2)continue;if(spots.some(([a,b])=>(a-x)**2+(b-z)**2<7))continue;spots.push([x,z]);}
   const im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95,flatShading:true}),spots.length);const m=new THREE.Matrix4();
   spots.forEach(([x,z],i)=>{const s=1.1+rr()*1.1;m.compose(new V(x,0,z),new THREE.Quaternion().setFromAxisAngle(new V(0,1,0),rr()*TAU),new V(s,s*(.9+rr()*.4),s));im.setMatrixAt(i,m);});
   im.castShadow=true;im.receiveShadow=true;G.add(im);

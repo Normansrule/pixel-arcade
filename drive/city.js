@@ -60,7 +60,8 @@ export class City{
    if(b.d==='hill')continue;// hill solids added below as one mass with the tunnel corridor carved out
    if(b.d==='suburb'){// 4 houses per block
     for(let a=0;a<2;a++)for(let c=0;c<2;c++){const w=12+R()*6,d=10+R()*5;const cx=bx0+(bx1-bx0)*(.25+a*.5),cz=bz0+(bz1-bz0)*(.25+c*.5);const lot={x0:cx-w/2,z0:cz-d/2,x1:cx+w/2,z1:cz+d/2,h:6+R()*3,kind:'house',d:b.d,roof:R()<.5?0:1,col:(R()*6)|0};this.lots.push(lot);this.addSolid(lot.x0,lot.z0,lot.x1,lot.z1);
-     for(let t=0;t<2;t++){const tx=cx+(R()-.5)*(bx1-bx0)*.4,tz=cz+(c?1:-1)*(d/2+3+R()*3);this.trees.push({x:tx,z:tz,s:.8+R()*.5,k:0});this.addSolid(tx-.5,tz-.5,tx+.5,tz+.5,{kind:'tree'});}}continue;}
+     for(let t=0;t<2;t++){const tx=cx+(R()-.5)*(bx1-bx0)*.4,tz0=cz+(c?1:-1)*(d/2+3+R()*3),ts=.8+R()*.5;// keep yard trees off the pavement and clear of the house, roof eaves and each other
+      const tz=cl(tz0,bz0+2.4*ts,bz1-2.4*ts);if(Math.abs(tz-cz)<d/2+2.2*ts+.6||this.trees.some(o=>Math.hypot(o.x-tx,o.z-tz)<2.4*(o.s+ts)))continue;this.trees.push({x:tx,z:tz,s:ts,k:0});this.addSolid(tx-.5,tz-.5,tx+.5,tz+.5,{kind:'tree'});}}continue;}
    if(b.d==='harbor'){const wh={x0:bx0+2,z0:bz0+2,x1:bx1-2,z1:bz0+(bz1-bz0)*.55,h:10+R()*5,kind:'warehouse',d:b.d,col:(R()*4)|0};this.lots.push(wh);this.addSolid(wh.x0,wh.z0,wh.x1,wh.z1);
     for(let s=0;s<3;s++){const cx=bx0+6+s*13+R()*2,cz=wh.z1+8+R()*(bz1-wh.z1-14);const st=1+((R()*3)|0);const L={x0:cx-6,z0:cz-1.3,x1:cx+6,z1:cz+1.3,h:2.6*st,kind:'containers',d:b.d,stack:st,col:(R()*5)|0};this.lots.push(L);this.addSolid(L.x0,L.z0,L.x1,L.z1);}continue;}
    const tall=b.d==='downtown',strip=b.d==='strip';const split=tall?(R()<.5?1:2):strip?2:(R()<.3?1:2);const lw=(bx1-bx0)/split,ld=(bz1-bz0)/split;
@@ -72,7 +73,7 @@ export class City{
   this.addSolid(SP-HALF,hz0,SP+HALF,SP-HALF-.5,{kind:'hill'});this.addSolid(SP-HALF,SP+HALF+.5,SP+HALF,hz1,{kind:'hill'});
   // park: trees + pond (pond is water, not solid)
   const px0=7*SP+HALF,px1=9*SP-HALF,pz0=6*SP+HALF,pz1=9*SP-HALF;this.park={x0:px0,z0:pz0,x1:px1,z1:pz1};
-  for(let t=0;t<70;t++){const x=px0+4+R()*(px1-px0-8),z=pz0+4+R()*(pz1-pz0-8);if(Math.hypot(x-this.pondC.x,z-this.pondC.z)<this.pondC.r+4)continue;if(Math.abs(z-(pz0+pz1)/2)<6||Math.abs(x-(px0+px1)/2+20)<5)continue;this.trees.push({x,z,s:.9+R()*.7,k:1});this.addSolid(x-.6,z-.6,x+.6,z+.6,{kind:'tree'});}
+  for(let t=0;t<70;t++){const x=px0+4+R()*(px1-px0-8),z=pz0+4+R()*(pz1-pz0-8);if(Math.hypot(x-this.pondC.x,z-this.pondC.z)<this.pondC.r+4)continue;if(Math.abs(z-(pz0+pz1)/2)<6||Math.abs(x-(px0+px1)/2+20)<5)continue;const ts=.9+R()*.7;if(this.trees.some(o=>o.k===1&&Math.hypot(o.x-x,o.z-z)<3.2*(o.s+ts)/2+1.2))continue;this.trees.push({x,z,s:ts,k:1});this.addSolid(x-.6,z-.6,x+.6,z+.6,{kind:'tree'});}
   // world edge: sea to the east beyond the harbour docks, walls elsewhere
   const E=WORLD+70;this.addSolid(-200,-200,-70,E+200,{kind:'edge'});this.addSolid(-200,-200,E+200,-70,{kind:'edge'});this.addSolid(-200,E,E+200,E+200,{kind:'edge'});this.addSolid(E,-200,E+200,E+200,{kind:'edge'});
   // street lamps along roads (also small solids)

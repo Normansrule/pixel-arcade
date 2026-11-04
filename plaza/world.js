@@ -261,7 +261,8 @@ export function buildWorld(R,scene,opts={}){
  /* ================= trees, rocks, mounds ================= */
  {const r=rng(42),pt=[];let n=0;const busy=[[0,0,24],[-50,18,22],[-48,-36,24],[70,4,16],[16,80,18],[40,98,14],[3,-44,10],[-13,-46,8],[10,-46,6],[-60,-20,7],[-48,36,10],[29,33,10]];
   while(pt.length<300&&n++<8000){const x=r()*230-115,z=r()*230-115,h=height(x,z);if(h<1.2||Math.hypot(x,z)>106)continue;if(busy.some(([a,b,c])=>Math.hypot(x-a,z-b)<c))continue;if(pathD(x,z)<4.5)continue;if(z<-48&&Math.abs(x-3)<9)continue;if(z<-44&&Math.abs(x-9)<4)continue;
-   pt.push({x,y:h-.2,z,s:.6+r()*.8});}
+   const s=.6+r()*.8;if(pt.some(o=>Math.hypot(o.x-x,o.z-z)<1.9*(o.s+s)))continue;// no pine grows inside another
+   pt.push({x,y:h-.2,z,s});}
   W.trees=instancedPines(scene,pt);for(const p of pt)if(p.s>.75)ob('out',{x:p.x,z:p.z,r:.7*p.s});
   const rk=[];for(let i=0;i<70;i++){const x=r()*220-110,z=r()*220-110,h=height(x,z);if(h<-.5||busy.some(([a,b,c])=>Math.hypot(x-a,z-b)<c)||pathD(x,z)<3)continue;const s=.5+r()*1.4;rk.push([new G.IcosahedronGeometry(1,0),M(x,h,z,r(),r()*7,r(),s*1.4,s*.8,s),0x7a808c]);snowB.add(new G.IcosahedronGeometry(1,1),M(x,h+s*.45,z,0,r()*7,0,s*1.1,s*.4,s*.8),0xffffff);if(s>.9)ob('out',{x,z,r:s});}
   const rm=new G.Mesh(merge(rk),new G.MeshStandardMaterial({vertexColors:true,roughness:.9,flatShading:true}));rm.castShadow=rm.receiveShadow=true;scene.add(rm);}

@@ -4,6 +4,14 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round25`, which includes rounds 11 to 24)
 
+### Round 27 (v55): cleaner worlds, no more clipping scenery
+
+- **Shared placement guard:** `js/kit3d/place.js` reserves the footprint of every tree, rock, bin, bench, rooftop unit and parked car, so scenery no longer spawns inside other scenery, on pavements or on the track.
+- **Night Drive:** rooftop units are packed onto the real roof (they used to hang in the air off setback towers and overlap the beacon masts), neon signs fit the wall they hang on, yard trees stay off the pavement and clear of houses, street furniture is spaced out, and every tree has a fuller three-part canopy.
+- **Racing:** Kart Grand Prix props sit on the lowest ground under them and keep apart (palms through umbrellas are gone); Kart and Courier keep tree canopies off the track; Sideways spaces its forests and lays the distant city on a street grid so lit towers no longer cut through each other.
+- **3D worlds:** trees and rocks no longer grow inside one another in Royale, Warfront, Nightfall and Plaza; Drop Zone rooftop units, park trees and parked cars keep clear of each other and of the fountains; Zenith and Frontline rooftops, Strike's background town and skyline, Frontline's outer greenery and the Siege skyline are tidied.
+- Measured with a scene overlap scan: objects sunk inside each other dropped from 103 to 0 in Courier, 179 to 48 in Warfront, 186 to 85 in Royale (the rest is grass under trees), 35 to 4 in Plaza and 14 to 1 in Sideways.
+
 ### Round 26 (v54): a new README front page
 
 - **Animated header:** the cabinet room and the big PIXEL ARCADE title, now a seamless loop. The camera drifts under light shafts, the neon hums, and the middle cabinet flips between real games in attract mode. The counts are live again (they still said 510).
