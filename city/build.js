@@ -300,6 +300,13 @@ export function buildCity(scene,W,U,R){const out={props:[],chunks:new Map(),glow
   const trc=new Float32Array(tr.attributes.position.count*3);{const p=tr.attributes.position;for(let i=0;i<p.count;i++){const b=.55+.1*Math.sin(p.getY(i)*9);trc.set([b*.75,b*.62,b*.48],i*3);}}tr.setAttribute('color',new THREE.BufferAttribute(trc,3));
   const fr=[];for(let k=0;k<9;k++){const g=new THREE.PlaneGeometry(.85,4.2,1,6);g.translate(0,2.1,0);const p=g.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i);p.setZ(i,-.09*y*y);p.setX(i,p.getX(i)*(1-y/5.2));}g.rotateX(-1.15+((k*37)%5)*.08);g.rotateY(k/9*Math.PI*2);g.translate(1.1,H-.1,0);
    const cc=new Float32Array(p.count*3);for(let i=0;i<p.count;i++){const t=p.getY(i);const gg=.38+.18*Math.random();cc.set([.18+gg*.3,.45+gg*.4,.14],i*3);}g.setAttribute('color',new THREE.BufferAttribute(cc,3));fr.push(g);}
+  // decorative palms and trees come from several layout passes: drop any that would grow inside another (palms with collision solids always stay)
+  {const kept=[],H=new Map(),cs=8,key=(x,z)=>Math.floor(x/cs)+','+Math.floor(z/cs);const hit=(x,z,r)=>{const cx=Math.floor(x/cs),cz=Math.floor(z/cs);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const L=H.get((cx+i)+','+(cz+j));if(L)for(const o of L)if(Math.hypot(o.x-x,o.z-z)<o.r+r)return true;}return false;};
+   const add=(x,z,r)=>{const k=key(x,z);(H.get(k)||H.set(k,[]).get(k)).push({x,z,r});};
+   const rad=(t,palm)=>(palm?1.6:1.9)*(t.s||1);for(const t of W.palms)if(t.sol)add(t.x,t.z,rad(t,1));
+   W.palms=W.palms.filter(t=>{if(t.sol)return true;if(hit(t.x,t.z,rad(t,1)))return false;add(t.x,t.z,rad(t,1));return true;});
+   W.trees=W.trees.filter(t=>{if(hit(t.x,t.z,rad(t,0)))return false;add(t.x,t.z,rad(t,0));return true;});
+   if(W.pines)W.pines=W.pines.filter(t=>{const r=1.5*(t.s||1);if(hit(t.x,t.z,r))return false;add(t.x,t.z,r);return true;});}
   const palmG=merge([[tr],...fr.map(g=>[g])]);
   const pm=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8,side:THREE.DoubleSide});pm.onBeforeCompile=sh=>{sh.uniforms.uTime=U.uTime;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uTime;').replace('#include <begin_vertex>','#include <begin_vertex>\nfloat sw=sin(uTime*1.25+instanceMatrix[3].x*.11+instanceMatrix[3].z*.07)*.5+sin(uTime*2.9+instanceMatrix[3].x)*.15;float hy=max(transformed.y,0.)/8.5;transformed.x+=sw*.38*hy*hy;transformed.z+=sw*.2*hy*hy;');};pm.customProgramCacheKey=()=>'palm';
   P(palmG,pm,W.palms,(t,m)=>{const s=t.s||1;m.compose(new V(t.x,yAt(t.x,t.z),t.z),new THREE.Quaternion().setFromAxisAngle(new V(0,1,0),hash2(t.x|0,t.z|0)*6.28),new V(s,s,s));},{shadow:true,range:520,qR:[340,520,520]});}
@@ -427,7 +434,7 @@ function furnish(W){const R=rng(2024),out={trees:[],bins:[],news:[],meters:[],bo
   for(const side of[-1,1]){const nx=-dz*side,nz=dx*side;
    // sidewalk furniture line, 1.1 m in from the curb
    for(let s=RW+5,k=0;s<L-RW-5;s+=8.5,k++){const x=a.x+dx*s+nx*(RW+1.1),z=a.z+dz*s+nz*(RW+1.1);const blk=W.blockAt(x,z);if(!blk||blk.walk)continue;
-    if(near(W.lamps,x,z,3.2)||near(W.hydrants,x,z,2.5)||near(tl,x,z,4)||near(W.palms,x,z,3)||poiNear(x,z,7)||W.excluded(x,z,x,z,1)||!free(x,z,.6))continue;const d=blk.d;
+    if(near(W.lamps,x,z,3.2)||near(W.hydrants,x,z,2.5)||near(tl,x,z,4)||near(W.palms,x,z,3)||near(W.trees,x,z,3.5)||poiNear(x,z,7)||W.excluded(x,z,x,z,1)||!free(x,z,.6))continue;const d=blk.d;
     if((d==='downtown'||d==='midtown'||d==='strip'||d==='canal')&&k%2===0){out.trees.push({x,z,ry:R()*6.28,s:.85+R()*.35,h:R()});solid(x-.22,z-.22,x+.22,z+.22,6,'pole');continue;}
     const r=R();if(r<.22){out.bins.push({x,z});solid(x-.3,z-.3,x+.3,z+.3,1,'prop');}
     else if(r<.34&&d!=='suburb'){const ry=Math.atan2(-nx,-nz);for(let j=0;j<2;j++){const o=(j-.5)*.6;out.news.push({x:x+dz*o*side,z:z-dx*o*side,ry,col:[0x2a5bd7,0xc4201a,0x2f7d5a,0xffc61a][R()*4|0]});}solid(x-.6,z-.6,x+.6,z+.6,1.1,'prop');}

@@ -225,7 +225,9 @@ export class World{
    for(let s=18;s<L-14;s+=34){const x=a.x+dx*s,z=a.z+dz*s;if(e.bridge&&x>CANAL[0]-8&&x<CANAL[1]+8)continue;for(const side of[-1,1]){if((Math.floor(s/34)+(side>0?1:0))%2)continue;const ox=-dz*side*(RW+.9),oz=dx*side*(RW+.9);const lx=x+ox,lz=z+oz;if(!this.blockAt(lx,lz))continue;
      this.lamps.push({x:lx,z:lz,ry:Math.atan2(-ox,-oz)});this.addSolid(lx-.18,lz-.18,lx+.18,lz+.18,0,7,'pole');}}
    const coast=a.z===420&&b.z===420,palmSt=(a.z===b.z&&(a.z===310||a.z===200))||(a.x===b.x&&a.z>=200);
-   if(coast||palmSt)for(let s=9;s<L-8;s+=coast?16:28)for(const side of[-1,1]){const x=a.x+dx*s-dz*side*(RW+3.3),z=a.z+dz*s+dx*side*(RW+3.3);if(this.blockAt(x,z)&&!this.excluded(x,z,x,z,1)&&!(this.fwyDist(x,z).d<FWY_HW+2)){this.palms.push({x,z,s:.9+R()*.45});this.addSolid(x-.3,z-.3,x+.3,z+.3,0,9,'palm');}}
+   if(coast||palmSt)for(let s=9;s<L-8;s+=coast?16:28)for(const side of[-1,1]){const x=a.x+dx*s-dz*side*(RW+3.3),z=a.z+dz*s+dx*side*(RW+3.3);if(this.blockAt(x,z)&&!this.excluded(x,z,x,z,1)&&!(this.fwyDist(x,z).d<FWY_HW+2)){const ps=.9+R()*.45;
+     // fronds must not cross a neighbouring palm (corner pairs from the two cross streets) or cut into a facade
+     if(this.palms.some(o=>o.sol&&Math.hypot(o.x-x,o.z-z)<6.5)||this.bld.some(b=>b.y0<1&&Math.abs(x-b.x)<b.w/2+2.4*ps&&Math.abs(z-b.z)<b.d/2+2.4*ps))continue;this.palms.push({x,z,s:ps,sol:1});this.addSolid(x-.3,z-.3,x+.3,z+.3,0,9,'palm');}}
    if(R()<.5){const s=L*.5,x=a.x+dx*s-dz*(RW+1.2),z=a.z+dz*s+dx*(RW+1.2);if(this.blockAt(x,z))this.hydrants.push({x,z});}}
   // boardwalk: palms, benches, beach umbrellas, lifeguard towers
   for(let x=-510;x<QUAY-10;x+=22){if(x>CANAL[0]-4&&x<CANAL[1]+4)continue;this.palms.push({x:x+R()*4,z:BEACH-2.2,s:1+R()*.4});if(R()<.5)this.benches.push({x:x+8,z:BEACH-4.5,ry:Math.PI});}

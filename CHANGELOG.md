@@ -4,6 +4,11 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round25`, which includes rounds 11 to 24)
 
+### Round 27, batch 2 (v58): street trees and tidier palms
+
+- **Night Drive:** street trees in iron-grated pavement pits line the midtown and downtown streets. They keep clear of lamps, the repair garages, street furniture and the pedestrian walking line, and they are solid like lamp posts.
+- **Neon Bay:** the two palms that used to stand on each corner (one from each cross street) no longer cross fronds, palms keep their fronds out of shopfronts, and decorative trees, palms and pines from the different layout passes no longer grow inside each other. Sidewalk furniture also keeps clear of those trees.
+
 ### Rounds 27 and 28 together (v57)
 
 - One build with both rounds: the cleaner worlds from v55 and the colourful cartridges from v56.

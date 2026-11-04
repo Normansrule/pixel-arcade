@@ -130,6 +130,12 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
    m4.compose(new V(l.x,0,l.z),q,s);poles.setMatrixAt(k,m4);heads.setMatrixAt(k,m4);const lx=l.ax==='x'?l.x:l.x+inward*2.3,lz=l.ax==='x'?l.z+inward*2.3:l.z;l.hx=lx;l.hz=lz;
    m4.compose(new V(lx,.2,lz),q,s.set(13,1,13));pools.setMatrixAt(k,m4);m4.compose(new V(lx,.2,lz),q,s.set(1,1,1));cones.setMatrixAt(k,m4);});}
  poles.castShadow=true;group.add(poles,heads,pools,cones);
+ /* ---------- street trees in pavement pits along midtown and downtown (the strip has awnings) (kept clear of lamps, shops and corners) ---------- */
+ {const TR=rng(91),ok=b=>b.d==='downtown'||b.d==='midtown';const P0=new Placer(8);for(const l of lamps)P0.circle(l.x,l.z,3.2);for(const o of city.shops)P0.circle(o.x,o.z,9);
+  for(const b of city.blocks){if(!ok(b))continue;const e=.85;const sides=[[b.x0,b.z0+e,b.x1,b.z0+e],[b.x0,b.z1-e,b.x1,b.z1-e],[b.x0+e,b.z0,b.x0+e,b.z1],[b.x1-e,b.z0,b.x1-e,b.z1]];
+   for(const[x0,z0,x1,z1]of sides){const L=Math.hypot(x1-x0,z1-z0);for(let d=9;d<L-8;d+=13+TR()*4){const x=lerp(x0,x1,d/L),z=lerp(z0,z1,d/L),s=.68+TR()*.2;if(TR()<.25||!P0.take(x,z,2.4))continue;
+     city.trees.push({x,z,s,k:2});city.addSolid(x-.3,z-.3,x+.3,z+.3,{kind:'tree'});}}}}
+
  /* ---------- street furniture (instanced): hydrants, bins, newspaper boxes, benches ---------- */
  {const PR=rng(77);const spots={hyd:[],bin:[],box:[],bench:[]};const PL=new Placer(8);for(const l of lamps)PL.circle(l.x,l.z,1.1);for(const t of city.trees)PL.circle(t.x,t.z,1.3*t.s);
   const near=(x,z)=>city.shops.some(o=>Math.hypot(o.x-x,o.z-z)<9);
@@ -153,7 +159,9 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
   tr.forEach((t,k)=>{m4.compose(new V(t.x,0,t.z),q,sv.set(t.s,t.s,t.s));trunk.setMatrixAt(k,m4);const yaw=R()*6.28,h=.25+R()*.08,l=.17+R()*.08,cy=3.5*t.s;
    LOBE.forEach(([ox,oy,oz,sc],j)=>{const cx=Math.cos(yaw)*ox-Math.sin(yaw)*oz,cz=Math.sin(yaw)*ox+Math.cos(yaw)*oz;q.setFromEuler(new THREE.Euler(R()*.6,R()*6,R()*.6));
     m4.compose(new V(t.x+cx*t.s,cy+oy*t.s+(j?0:.3*t.s),t.z+cz*t.s),q,sv.set(t.s*sc*1.2,t.s*sc*(1+R()*.25),t.s*sc*1.2));crown.setMatrixAt(k*3+j,m4);crown.setColorAt(k*3+j,c.setHSL(h+j*.012,.42,l*(j?.9:1.05)));});q.identity();});
-  trunk.castShadow=crown.castShadow=true;crown.receiveShadow=true;group.add(trunk,crown);}
+  trunk.castShadow=crown.castShadow=true;crown.receiveShadow=true;group.add(trunk,crown);
+  // iron grates around pavement trees
+  const pits=tr.filter(t=>t.k===2);if(pits.length){const gm=new THREE.InstancedMesh(mergeG([new THREE.BoxGeometry(1.5,.05,1.5).translate(0,.2,0)]),std({color:0x24262a,roughness:.5,metalness:.7}),pits.length);pits.forEach((t,k)=>{m4.makeTranslation(t.x,0,t.z);gm.setMatrixAt(k,m4);});gm.receiveShadow=true;group.add(gm);}}
 
  /* ---------- highway, ramps, pillars, bridges ---------- */
  {const deck=new GB(),bar=new GB(),barGlow=new GB(),dl=new GB();const D=8;

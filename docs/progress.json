@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v58", "date": "4 Nov 2026", "branch": "round27-2", "round": 27,
+     "added": "More world clean-up: Night Drive gets street trees in iron-grated pavement pits along midtown and downtown, kept clear of lamps, garages, furniture and pedestrians; Neon Bay corner palms no longer cross fronds or cut into shopfronts, and its decorative trees, palms and pines no longer grow inside each other."},
     {"v": "v57", "date": "4 Nov 2026", "branch": "round28-carts", "round": 28, "games": 521, "worlds": 55,
      "added": "Rounds 27 and 28 in one build: the cleaner 3D worlds from v55 (no more trees, rocks, rooftop units and parked cars spawning inside each other) and the colourful cartridges with pixel icons from v56."},
     {"v": "v56", "date": "4 Nov 2026", "branch": "round28-carts", "round": 28, "games": 521, "worlds": 55,
