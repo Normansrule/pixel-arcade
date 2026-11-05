@@ -1,22 +1,34 @@
 /* The front-page intro: the README's arcade room, live. Scrolling flies the camera into the middle cabinet's screen
-   (which shows the console's attract demo), while the title lifts away and four manifesto lines pass, then the room
-   fades into the console stage below. Three.js loads only on a wide screen with WebGL, without reduced motion or
+   (which shows the console's attract demo), while the title lifts away and five story chapters take the stage one
+   at a time (each holds still long enough to read, with a chapter rail on the right), then the room fades into
+   the console stage below. Three.js loads only on a wide screen with WebGL, without reduced motion or
    data saver; everyone else gets the still render (docs/intro.jpg) with the same scroll timeline in CSS. */
 const intro = document.getElementById('intro');
 const RM = matchMedia('(prefers-reduced-motion: reduce)');
 if (intro && !RM.matches) {
  intro.classList.add('scrub');
- const lines = [...intro.querySelectorAll('.manifesto li')];
+ const lines = [...intro.querySelectorAll('.story li')], rail = document.getElementById('srail'), dots = rail ? [...rail.querySelectorAll('button')] : [];
  const smooth = (a, b, x) => {const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t);};
- let p = 0, view = null;
- // p runs 0..1 while the pinned stage is on screen; each manifesto line owns a slice of that
+ // the title lifts away first, then each chapter owns an equal slice of the scroll: it rises in over the first
+ // fifth, holds still for the middle three fifths (about half a screen of scrolling) and leaves over the last fifth
+ const T0 = .09, T1 = .94, N = lines.length || 1, SL = (T1 - T0) / N;
+ let p = 0, view = null, cur = -1;
  const measure = () => {
   const r = intro.getBoundingClientRect(), span = r.height - innerHeight;
   p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;
   intro.style.setProperty('--p', p.toFixed(4));
-  lines.forEach((li, i) => {const c = .3 + i * .14; li.style.setProperty('--o', Math.max(0, 1 - Math.abs(p - c) / .1).toFixed(3));});
+  let at = -1;
+  lines.forEach((li, i) => {const t = (p - T0 - i * SL) / SL;
+   const o = t < 0 || t > 1 ? 0 : t < .2 ? smooth(0, .2, t) : t > .8 ? 1 - smooth(.8, 1, t) : 1;
+   li.style.setProperty('--o', o.toFixed(3)); li.style.setProperty('--y', (t < .5 ? 1 - o : o - 1).toFixed(3)); li.classList.toggle('on', o > .001);
+   if (t >= 0 && t <= 1) at = i;});
+  if (at !== cur) {cur = at; dots.forEach((d, i) => {d.classList.toggle('on', i === at); d.classList.toggle('done', at >= 0 && i < at);});}
+  if (rail) rail.style.setProperty('--sp', Math.min(1, Math.max(0, (p - T0) / (T1 - T0))).toFixed(4));
   if (view) view.kick();
  };
+ // the rail jumps to the middle of a chapter
+ dots.forEach((d, i) => d.addEventListener('click', () => {const r = intro.getBoundingClientRect(), span = r.height - innerHeight;
+  scrollTo({top: scrollY + r.top + span * (T0 + (i + .5) * SL), behavior: 'smooth'});}));
  addEventListener('scroll', measure, {passive: true}); addEventListener('resize', measure); measure();
 
  const gl = (() => {try {const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl'));} catch (e) {return false;}})();

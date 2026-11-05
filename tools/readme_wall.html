@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>README key art</title>
+<!-- The README header key art: a tilted wall of real 3D world screenshots drifting past behind the PIXEL ARCADE title.
+     tools/readme_intro.js renders it twice: a still (docs/screenshot.png, also the social preview) and a seamless
+     animated loop (docs/readme/hero.webp). Each column repeats a short run of tiles and moves exactly one run per
+     loop, so the last frame flows into the first; a light sweep crosses the wall once per loop.
+     To tweak it by eye: python3 -m http.server 8765  then  http://127.0.0.1:8765/tools/readme_wall.html?games=521&worlds=55&cabs=466
+     ?anim=1 waits for window.frame(i, n) calls instead of drawing once. -->
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+ html,body{margin:0;width:1280px;height:640px;overflow:hidden;background:#06070c}
+ .glow{position:absolute;inset:0;background:radial-gradient(ellipse 50% 60% at 78% 40%,rgba(255,96,24,.22),transparent 70%),radial-gradient(ellipse 45% 55% at 96% 92%,rgba(40,80,255,.22),transparent 70%)}
+ .persp{position:absolute;left:330px;top:-260px;width:1500px;height:1200px;perspective:1700px;perspective-origin:30% 40%}
+ .wall{position:absolute;inset:0;display:flex;gap:22px;transform:rotateX(34deg) rotateY(-16deg) rotateZ(-18deg);transform-style:preserve-3d}
+ .col{position:relative;width:300px;flex:none;height:1200px}
+ .col .run{position:absolute;left:0;top:0;width:300px;display:flex;flex-direction:column;gap:22px;will-change:transform}
+ .t{position:relative;width:300px;height:169px;border-radius:12px;overflow:hidden;background:#151925;box-shadow:0 20px 40px -12px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.1)}
+ .t img{display:block;width:100%;height:100%;object-fit:cover;filter:saturate(1.18) brightness(1.06) contrast(1.04)}
+ .t::after{content:"";position:absolute;inset:0;border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25);background:linear-gradient(180deg,rgba(255,255,255,.06),transparent 40%,rgba(0,0,0,.25))}
+ .t.hot{box-shadow:0 0 0 2px #ff4d00,0 0 36px rgba(255,77,0,.55),0 20px 40px -12px rgba(0,0,0,.8)}
+ .sweep{position:absolute;inset:-40%;background:linear-gradient(105deg,transparent 42%,rgba(255,240,220,.16) 49%,rgba(255,255,255,.22) 50%,rgba(255,240,220,.16) 51%,transparent 58%);mix-blend-mode:screen;pointer-events:none}
+ /* reading side: a dark wash from the left, a floor fade, a vignette and faint scanlines */
+ .shade{position:absolute;inset:0;background:linear-gradient(90deg,#06070c 0%,rgba(6,7,12,.96) 30%,rgba(6,7,12,.72) 46%,rgba(6,7,12,.15) 66%,rgba(6,7,12,0) 80%),linear-gradient(0deg,rgba(6,7,12,.85),transparent 26%),linear-gradient(180deg,rgba(6,7,12,.7),transparent 18%)}
+ .fin{position:absolute;inset:0;background:radial-gradient(ellipse 85% 80% at 55% 50%,transparent 60%,rgba(3,4,8,.75) 100%),repeating-linear-gradient(rgba(0,0,0,0) 0 3px,rgba(0,0,0,.07) 3px 4px)}
+ .copy{position:absolute;left:58px;top:0;bottom:0;width:640px;display:flex;flex-direction:column;justify-content:center;color:#eceae3}
+ .kick{display:inline-flex;align-self:flex-start;align-items:center;gap:12px;margin:0 0 26px;padding:10px 16px 8px;border-radius:999px;border:1px solid rgba(255,77,0,.5);background:rgba(255,77,0,.08);font:15px/1 'PA Pixel';letter-spacing:.16em;color:#ff8a52}
+ .kick b{width:9px;height:9px;border-radius:50%;background:#ff4d00;box-shadow:0 0 12px #ff4d00}
+ h1{margin:0;font:400 156px/.84 Anton,Impact,sans-serif;letter-spacing:-.005em;text-transform:uppercase;
+  background:linear-gradient(180deg,#fff 0%,#eceae3 55%,#a9a59b 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 16px 36px rgba(0,0,0,.7))}
+ h1 span{display:block}
+ h1 i{display:inline-block;width:.15em;height:.15em;margin-left:.05em;background:#ff4d00;box-shadow:0 0 40px rgba(255,77,0,.7)}
+ .tagline{margin:26px 0 30px;max-width:35ch;font:400 23px/1.45 'Atkinson Hyperlegible Next',sans-serif;color:#cfd1d8}
+ .tagline b{color:#fff;font-weight:700}
+ .stats{display:flex}
+ .stats div{width:132px;padding:14px 16px 12px;border:1px solid rgba(236,234,227,.16);margin-left:-1px;background:rgba(14,17,26,.7)}
+ .stats div:first-child{border-radius:10px 0 0 10px}.stats div:last-child{border-radius:0 10px 10px 0}
+ .stats b{display:block;font:400 40px/1 Anton,Impact,sans-serif}
+ .stats div:first-child b{color:#ff4d00}
+ .stats small{display:block;margin-top:9px;font:12px/1 'PA Pixel';letter-spacing:.12em;color:#9da2b0}
+ .url{position:absolute;right:40px;bottom:30px;font:14px/1 'PA Pixel';letter-spacing:.14em;color:#c9ccd4;padding:9px 14px 7px;border-radius:999px;background:rgba(6,7,12,.7);border:1px solid rgba(255,255,255,.14)}
+ .url b{color:#ff4d00;font-weight:400}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="persp"><div class="wall" id="wall"><div class="sweep" id="sweep"></div></div></div>
+<div class="shade"></div>
+<div class="fin"></div>
+<div class="copy">
+ <p class="kick"><b></b>INSERT COIN · FREE · OPEN SOURCE</p>
+ <h1><span>Pixel</span><span>Arcade<i></i></span></h1>
+ <p class="tagline"><b id="g">521</b> original games and <b id="w">55</b> full 3D worlds. No installs, no accounts, every round on the clock.</p>
+ <div class="stats"><div><b id="g2">521</b><small>GAMES</small></div><div><b id="w2">55</b><small>3D WORLDS</small></div><div><b>0</b><small>INSTALLS</small></div></div>
+</div>
+<p class="url"><b>▶</b> NORMANSRULE.GITHUB.IO/PIXEL-ARCADE</p>
+<script>
+const q=new URLSearchParams(location.search);
+for(const[id,k]of[['g','games'],['g2','games'],['w','worlds'],['w2','worlds']])if(q.get(k))document.getElementById(id).textContent=q.get(k);
+// a hand-picked spread of the brightest, most varied worlds; each column cycles a run of RUN tiles
+const SHOTS=['rocket','drive','kartgp','neonbay','swellguard','glossriot','voidwing','tidewaycourier','sideways','zenith','dustwater','starfall','skylancers','lanternstreet','harborpals','courtkings','fairwaylegends','runline','tempestfist','warfront','penguinplaza','aeonfall','hardfall','stormroyale','novaarena','skatecity','voxel','wildquest','starwarden','beaconrescue','longbowkeep','halcyonheist'];
+const COLS=6,RUN=4,TH=169,GAP=22,P=TH+GAP;
+const wall=document.getElementById('wall'),sweep=document.getElementById('sweep'),runs=[];let hot=null;
+for(let c=0;c<COLS;c++){const col=document.createElement('div');col.className='col';const run=document.createElement('div');run.className='run';
+ const ids=[];for(let k=0;k<RUN;k++)ids.push(SHOTS[(c*RUN+k)%SHOTS.length]);
+ for(let rep=0;rep<4;rep++)for(const id of ids){const t=document.createElement('div');t.className='t';t.innerHTML=`<img src="../docs/cards/${id}.jpg" alt="">`;run.appendChild(t);}
+ col.appendChild(run);wall.insertBefore(col,sweep);runs.push({run,dir:c%2?1:-1,phase:(c*67)%P});}
+function frame(i,n){const f=n?i/n:0;
+ runs.forEach((r,c)=>{// every column travels exactly one run of tiles per loop, so the loop is seamless
+  const y=-RUN*P+r.phase+r.dir*f*RUN*P;r.run.style.transform=`translateY(${(r.dir>0?y-RUN*P:y)}px)`;});
+ sweep.style.transform=`translateX(${-110+f*220}%)`;}
+window.frame=frame;
+Promise.all([document.fonts.ready,...[...document.images].map(im=>im.decode().catch(()=>{}))]).then(()=>{if(!q.get('anim'))frame(0,0);else frame(0,1);window.HERO_READY=true;});
+</script>
+</body>
+</html>

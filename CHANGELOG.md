@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round29`, which includes rounds 11 to 29)
 
+### Round 29, batch 2 (v60): a readable intro and new README key art
+
+- **Front-page intro, slowed down and explained:** the scroll is more than twice as long, and instead of four words flashing past there are five chapters (the games, the 3D worlds, no installs or accounts, the round clock, insert coin). Each one slides in, holds still for about half a screen of scrolling with a sentence of detail, then leaves. A dark reading panel sits behind the text, and a chapter rail on the right shows where you are; click a chapter to jump to it. Phones get the same chapters with dots along the bottom.
+- **Fix:** the darkening layer meant to sit behind the intro text never showed, because its parent was fully transparent until the very end.
+- **README key art:** the header is now a tilted wall of real 3D world screenshots drifting past behind the PIXEL ARCADE title, the counts and the address (a seamless 8 second loop, `tools/readme_wall.html`), instead of a crop of the intro. The same art is the social preview (`docs/screenshot.png`, 1280 x 640). The front-page section shows the new intro chapters.
+
 ### Round 29, batch 1 (v59): Rocket Arena rebuilt
 
 - **No more clipping:** cars are solid boxes now. Eighteen points on the body are kept out of the floor, walls, ceiling, goal boxes, posts and crossbar every physics step, and four wheel rays read the surface under the car. Before, only the car's centre was checked, so the nose and corners sank up to 1.1 m into walls and floors; in a full 3v3 bot match the worst sink is now under 1 cm.

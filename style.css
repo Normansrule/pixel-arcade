@@ -155,7 +155,7 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .intro{--p:0;position:relative;margin:0 calc(50% - 50vw);color:#eceae3}
 .istage{position:relative;height:calc(100svh - var(--topbar-h));min-height:520px;overflow:hidden;isolation:isolate;
  background:#0c0f17 url(docs/intro.jpg) 72% 50%/cover no-repeat}
-.intro.scrub{height:calc(280svh)}
+.intro.scrub{height:calc(640svh)}
 .intro.scrub .istage{position:sticky;top:var(--topbar-h)}
 .intro.scrub:not(.gl) .istage{background-position:72% calc(50% - var(--p) * 6%)}
 #introgl{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity 900ms var(--ease-out)}
@@ -163,45 +163,65 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 /* the screen-wide finish from the README header: vignette and faint scanlines, then the fade into the console stage */
 .istage::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
  background:radial-gradient(ellipse 80% 70% at 60% 45%,transparent 55%,rgba(5,7,12,.72) 100%),repeating-linear-gradient(rgba(0,0,0,0) 0 3px,rgba(0,0,0,.08) 3px 4px)}
-.ishade{position:absolute;inset:0;z-index:3;pointer-events:none;background:#141823;opacity:clamp(0,(var(--p) - .86) * 8,1)}
-.ishade::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(5,7,12,.72),rgba(5,7,12,.45));opacity:min(clamp(0,(var(--p) - .14) * 6,1),clamp(0,(.95 - var(--p)) * 10,1))}
-.istage>p,.istage>h1,.istage>ol,.istage>div:not(.ishade),.istage>a{position:absolute;z-index:4}
-.itag{top:var(--s5);margin:0;font:.8rem/1 var(--pixel);letter-spacing:.14em;text-transform:uppercase;color:#959aa8;opacity:calc(1 - var(--p) * 5)}
+/* (the shade fades by its background alpha, not opacity, so the reading gradient in ::before can show before it) */
+.ishade{position:absolute;inset:0;z-index:3;pointer-events:none;background:rgb(20 24 35 / clamp(0,(var(--p) - .935) * 28,1))}
+.ishade::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,7,12,.93) 0%,rgba(5,7,12,.84) 40%,rgba(5,7,12,.4) 66%,rgba(5,7,12,.14) 100%);opacity:min(clamp(0,(var(--p) - .05) * 10,1),clamp(0,(.97 - var(--p)) * 12,1))}
+.istage>p,.istage>h1,.istage>ol,.istage>nav,.istage>div:not(.ishade),.istage>a{position:absolute;z-index:4}
+.itag{top:var(--s5);margin:0;font:.8rem/1 var(--pixel);letter-spacing:.14em;text-transform:uppercase;color:#959aa8;opacity:calc(1 - var(--p) * 14)}
 .itag.l{left:max(var(--s5),calc(50vw - 640px))}.itag.r{right:max(var(--s5),calc(50vw - 640px))}
 .itag b{color:var(--signal);font-weight:400;animation:freeplay 1.6s steps(1) infinite}
 .imark{left:max(var(--s5),calc(50vw - 660px));bottom:clamp(96px,14svh,150px);margin:0;font:400 clamp(4.6rem,17vw,15.5rem)/.8 var(--disp);letter-spacing:-.01em;text-transform:uppercase;
  text-shadow:0 18px 50px rgba(0,0,0,.55);transform-origin:0 100%;
- transform:translateY(calc(var(--p) * -30svh)) scale(calc(1 + var(--p) * .35));opacity:calc(1 - var(--p) * 4.2);filter:blur(calc(var(--p) * 30px))}
+ transform:translateY(calc(var(--p) * -80svh)) scale(calc(1 + var(--p) * .9));opacity:calc(1 - var(--p) * 11);filter:blur(calc(var(--p) * 80px))}
 .imark span{display:block}
 .imark i{display:inline-block;width:.15em;height:.15em;margin-left:.05em;background:var(--signal);box-shadow:0 0 40px rgba(255,77,0,.55)}
-.istats{right:max(var(--s5),calc(50vw - 640px));bottom:clamp(40px,7svh,64px);display:flex;opacity:calc(1 - var(--p) * 5)}
+.istats{right:max(var(--s5),calc(50vw - 640px));bottom:clamp(40px,7svh,64px);display:flex;opacity:calc(1 - var(--p) * 14)}
 .istats div{width:clamp(96px,10vw,132px);padding:14px 14px 12px;border:1px solid rgba(236,234,227,.16);margin-left:-1px;background:rgba(12,15,23,.55);backdrop-filter:blur(6px)}
 .istats b{display:block;font:400 clamp(1.8rem,3vw,2.75rem)/1 var(--disp)}
 .istats div:first-child b{color:var(--signal)}
 .istats small{display:block;margin-top:10px;font:.72rem/1 var(--pixel);letter-spacing:.1em;text-transform:uppercase;color:#959aa8}
 .icue{left:max(var(--s5),calc(50vw - 640px));bottom:clamp(40px,7svh,64px);display:flex;align-items:center;gap:var(--s2);color:#eceae3;text-decoration:none;
- font:.8rem/1 var(--pixel);letter-spacing:.12em;text-transform:uppercase;opacity:calc(1 - var(--p) * 5)}
+ font:.8rem/1 var(--pixel);letter-spacing:.12em;text-transform:uppercase;opacity:calc(1 - var(--p) * 14)}
 .ihint{left:0;top:0;z-index:5;margin:0;padding:8px 12px 6px;border-radius:4px;background:var(--cobalt-fill);color:#fff;pointer-events:none;white-space:nowrap;
  font:.8rem/1 var(--pixel);letter-spacing:.08em;text-transform:uppercase;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}
 .istage.picking{cursor:pointer}
 .icue svg{animation:cue 1.8s var(--ease-out) infinite}
 @keyframes cue{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
-/* the manifesto: in the static intro it is a quiet line under the title; when scrubbing each line takes the
-   middle of the screen in turn, Apple-keynote style */
-.manifesto{left:max(var(--s5),calc(50vw - 640px));top:calc(var(--s5) + 2.4rem);margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:0 1.2em;
+/* the story: in the static intro it is a quiet line of headlines under the tag; when scrubbing, each chapter takes
+   the stage in turn and holds still long enough to read (intro.js sets --o for opacity and --y for the slide) */
+.story{left:max(var(--s5),calc(50vw - 640px));top:calc(var(--s5) + 2.4rem);margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:0 1.2em;
  font:.8rem/1.6 var(--pixel);letter-spacing:.1em;text-transform:uppercase;color:#bdbfc6}
-.manifesto b{font-weight:400;color:#eceae3}
-.intro.scrub .manifesto{inset:0;display:grid;place-items:center;top:0;left:0}
-.intro.scrub .manifesto li{--o:0;grid-area:1/1;max-width:14ch;text-align:center;font:400 clamp(2.6rem,8vw,7rem)/.92 var(--disp);letter-spacing:0;color:#eceae3;
- opacity:var(--o);transform:translateY(calc((1 - var(--o)) * 40px)) scale(calc(.94 + var(--o) * .06));filter:blur(calc((1 - var(--o)) * 12px))}
-.intro.scrub .manifesto li:first-child b{color:var(--signal)}
+.story p{margin:0}.story .sk,.story .ss{display:none}
+.story b{font-weight:400;color:#eceae3}
+.intro.scrub .story{inset:0;display:grid;align-items:center;top:0;left:0;padding:0 max(var(--s5),calc(50vw - 640px));pointer-events:none}
+.intro.scrub .story li{--o:0;--y:0;grid-area:1/1;max-width:min(860px,78vw);opacity:var(--o);transform:translateY(calc(var(--y) * 56px));filter:blur(calc((1 - var(--o)) * 10px));visibility:hidden}
+.intro.scrub .story li.on{visibility:visible}
+.intro.scrub .story .sk{display:inline-flex;align-items:center;gap:.8em;margin-bottom:var(--s4);padding:8px 14px 6px;border-radius:999px;background:rgba(5,7,12,.72);border:1px solid rgba(255,77,0,.45);font:.85rem/1 var(--pixel);letter-spacing:.16em;text-transform:uppercase;color:#ff8a52}
+.intro.scrub .story .sk::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--signal);box-shadow:0 0 10px var(--signal)}
+.intro.scrub .story .sh{font:400 clamp(2.8rem,7.4vw,6.6rem)/.9 var(--disp);letter-spacing:0;text-transform:uppercase;color:#f4f2ec;text-shadow:0 14px 44px rgba(0,0,0,.6)}
+.intro.scrub .story .sh b{color:var(--signal)}
+.intro.scrub .story .ss{display:block;max-width:46ch;margin-top:var(--s5);font:400 clamp(1rem,1.5vw,1.25rem)/1.55 var(--text);letter-spacing:0;text-transform:none;color:#d6d7dc;
+ transform:translateY(calc(var(--y) * 22px));text-shadow:0 2px 14px rgba(0,0,0,.7)}
+/* chapter rail: where you are in the intro, and a shortcut to any chapter */
+.srail{display:none}
+.intro.scrub .srail{position:absolute;z-index:5;right:max(var(--s5),calc(50vw - 640px));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+ opacity:clamp(0,min((var(--p) - .04) * 14,(1 - var(--p)) * 14),1)}
+.srail button{position:relative;padding:8px 22px 8px 0;border:0;background:none;color:#8f94a2;font:.72rem/1 var(--pixel);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:color var(--fast) ease}
+.srail button::after{content:"";position:absolute;right:-4px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:#2b3040;border:1px solid #545b6e;transition:background var(--fast) ease,box-shadow var(--fast) ease}
+.srail button:hover{color:#eceae3}
+.srail button.on{color:#f4f2ec}.srail button.on::after{background:var(--signal);border-color:var(--signal);box-shadow:0 0 12px rgba(255,77,0,.7)}
+.srail button.done::after{background:#9aa0ae;border-color:#9aa0ae}
+.srail .sbar{position:absolute;right:0;top:16px;bottom:16px;width:1px;background:rgba(236,234,227,.16)}
+.srail .sbar i{position:absolute;left:0;right:0;top:0;height:calc(var(--sp,0) * 100%);background:var(--signal)}
 
 @media (max-width:720px){
  .itag.r{display:none}
  .imark{bottom:200px}
  .istats{left:var(--s5);right:auto;bottom:96px}
  .icue{bottom:44px}
- .intro.scrub{height:240svh}}
+ .intro.scrub{height:560svh}
+ .intro.scrub .srail{top:auto;bottom:var(--s5);transform:none;flex-direction:row;gap:0}.srail button{padding:12px 6px;font-size:0}.srail button::after{position:static;display:block;margin:0}.srail .sbar{display:none}
+ .intro.scrub .story .ss{max-width:30ch}}
 
 /* ---------- marquee: world names running between the stage and the posters ---------- */
 .mqwrap{margin:0 calc(50% - 50vw);padding:18px 0;overflow:hidden;position:relative;z-index:1;background:linear-gradient(#141823 50%,#0d1018 50%)}

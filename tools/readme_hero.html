@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <title>README hero</title>
 <!-- The README header: the arcade cabinets and the PIXEL ARCADE title.
-     tools/readme_intro.js renders it twice: a still (docs/screenshot.png) and a looping animated header
-     (docs/readme/hero.webp) where the camera drifts through the room, the neon hums and the middle cabinet
-     flips between real games in attract mode.
+     Since round 29 the README header is tools/readme_wall.html; this room is still the front-page intro's
+     still fallback (?bare=1 renders docs/intro.jpg), and ?anim=1 keeps the old animated loop available.
      To tweak it by eye: python3 -m http.server 8765  then  http://127.0.0.1:8765/tools/readme_hero.html?games=521&worlds=55&cabs=466
      ?anim=1 waits for window.frame(i, n) calls instead of drawing once; ?bare=1 renders the room alone (docs/intro.jpg). -->
 <link rel="stylesheet" href="../fonts/fonts.css">

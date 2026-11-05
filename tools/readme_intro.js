@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Renders the top of the README: everything above "Play in 10 seconds".
-//   docs/screenshot.png        the header still (also the social preview), from tools/readme_hero.html
-//   docs/readme/hero.webp      the same header as a seamless animated loop (camera drift, neon, attract mode)
+//   docs/screenshot.png        the header still (also the social preview), from tools/readme_wall.html
+//   docs/readme/hero.webp      the same header as a seamless animated loop: a tilted wall of 3D world screenshots
+//                              drifting behind the title (tools/readme_hero.html still draws docs/intro.jpg)
 //   docs/readme/bento.webp     the feature grid, from tools/readme_bento.html
 //   docs/readme/marquee.svg    the scrolling LED (light-emitting diode) ticker of game names
 //   docs/readme/btn-*.svg      the PLAY NOW / DESKTOP APP / BUILD A GAME buttons
@@ -109,28 +110,28 @@ const ffmpeg = args => execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'err
   try {
     if (want('hero')) {
       const qs = `games=${N.total}&cabs=${N.cabs}&worlds=${N.worlds}`;
-      // the still: drawn at 2x and scaled down for clean edges
-      let p = await browser.newPage({viewport: {width: 1280, height: 800}, deviceScaleFactor: 2});
-      await p.goto(`${base}/tools/readme_hero.html?${qs}`); await p.waitForFunction('window.HERO_READY', null, {timeout: 120000});
+      // the still: drawn at 2x and scaled down for clean edges (1280 x 640 is also GitHub's social preview size)
+      let p = await browser.newPage({viewport: {width: 1280, height: 640}, deviceScaleFactor: 2});
+      await p.goto(`${base}/tools/readme_wall.html?${qs}`); await p.waitForFunction('window.HERO_READY', null, {timeout: 120000});
       await p.screenshot({path: path.join(tmp, 'still.png')}); await p.close();
-      ffmpeg(['-i', path.join(tmp, 'still.png'), '-vf', 'scale=1280:800:flags=lanczos', path.join(ROOT, 'docs', 'screenshot.png')]);
+      ffmpeg(['-i', path.join(tmp, 'still.png'), '-vf', 'scale=1280:640:flags=lanczos', path.join(ROOT, 'docs', 'screenshot.png')]);
       console.log('wrote docs/screenshot.png');
       // the loop: FRAMES frames at FPS, encoded as an animated WebP (far smaller and richer in colour than a GIF)
       const FRAMES = +(process.env.HERO_FRAMES || 96), FPS = 12;
-      p = await browser.newPage({viewport: {width: 1280, height: 800}});
-      await p.goto(`${base}/tools/readme_hero.html?${qs}&anim=1`); await p.waitForFunction('window.HERO_READY', null, {timeout: 120000});
+      p = await browser.newPage({viewport: {width: 1280, height: 640}});
+      await p.goto(`${base}/tools/readme_wall.html?${qs}&anim=1`); await p.waitForFunction('window.HERO_READY', null, {timeout: 120000});
       for (let i = 0; i < FRAMES; i++) {
         await p.evaluate(([i, n]) => window.frame(i, n), [i, FRAMES]);
         await p.screenshot({path: path.join(tmp, `f${String(i).padStart(3, '0')}.png`)});
       }
       await p.close();
-      // every frame is a key frame: libwebp's frame-to-frame deltas leave blocky smears in the dark light shafts
+      // every frame is a key frame: libwebp's frame-to-frame deltas leave blocky smears on the moving tiles
       execFileSync('python3', ['-I', '-c', `
 import glob, sys
 from PIL import Image
 fs = sorted(glob.glob(sys.argv[1] + '/f*.png'))
-im = [Image.open(f).convert('RGB').resize((1024, 640), Image.LANCZOS) for f in fs]
-im[0].save(sys.argv[2], save_all=True, append_images=im[1:], duration=round(1000 / ${FPS}), loop=0, quality=80, method=6, kmin=0, kmax=1)`,
+im = [Image.open(f).convert('RGB').resize((1120, 560), Image.LANCZOS) for f in fs]
+im[0].save(sys.argv[2], save_all=True, append_images=im[1:], duration=round(1000 / ${FPS}), loop=0, quality=72, method=6, kmin=0, kmax=1)`,
         tmp, path.join(OUT, 'hero.webp')], {stdio: 'inherit'});
       console.log('wrote docs/readme/hero.webp', (fs.statSync(path.join(OUT, 'hero.webp')).size / 1048576).toFixed(1) + ' MB');
     }
