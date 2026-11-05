@@ -1,7 +1,9 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
-    {"v": "v58", "date": "4 Nov 2026", "branch": "round27-2", "round": 27,
+    {"v": "v59", "date": "5 Nov 2026", "branch": "round29", "round": 29,
+     "added": "Rocket Arena rebuilt: cars are now solid bodies with four wheel probes, so they ride smoothly up ramps, walls and the ceiling and never sink into the floor, walls, posts or goals (worst sink in a 3v3 bot match: under 1 cm, it used to be over a metre). Smoother steering, no speed lost up the curves, a landing assist, quick roof recovery, a wall-aware camera that never hides your car, 2/3/5 minute matches, and an original twist: Overcharge, where three touches in a row by one team ignite the ball and an ignited goal counts double."},
+    {"v": "v58", "date": "4 Nov 2026", "branch": "round27-2", "round": 27, "games": 521, "worlds": 55,
      "added": "More world clean-up: Night Drive gets street trees in iron-grated pavement pits along midtown and downtown, kept clear of lamps, garages, furniture and pedestrians; Neon Bay corner palms no longer cross fronds or cut into shopfronts, and its decorative trees, palms and pines no longer grow inside each other."},
     {"v": "v57", "date": "4 Nov 2026", "branch": "round28-carts", "round": 28, "games": 521, "worlds": 55,
      "added": "Rounds 27 and 28 in one build: the cleaner 3D worlds from v55 (no more trees, rocks, rooftop units and parked cars spawning inside each other) and the colourful cartridges with pixel icons from v56."},

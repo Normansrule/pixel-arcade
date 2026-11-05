@@ -13,7 +13,7 @@
 <canvas id="c"></canvas>
 <div id="bars"></div>
 <div id="hud" hidden>
-  <div id="board"><div class="tm b"><i>BLUE</i><b id="s0">0</b></div><div class="clk"><b id="clock">5:00</b><span id="ot"></span></div><div class="tm o"><b id="s1">0</b><i>ORANGE</i></div></div>
+  <div id="board"><div class="tm b"><i>BLUE</i><b id="s0">0</b></div><div class="clk"><b id="clock">3:00</b><span id="ot"></span><div id="heat" title="Overcharge: three touches in a row by one team"><i></i><i></i><i></i></div></div><div class="tm o"><b id="s1">0</b><i>ORANGE</i></div></div>
   <div id="views"></div>
   <canvas id="mini" width="112" height="156"></canvas>
   <div id="feed"></div>
@@ -23,11 +23,14 @@
 <div id="menu">
   <p class="eye">[ PIXEL ARCADE ] FULL 3D · CAR SOCCER</p>
   <h1>ROCKET<br>ARENA<em>.</em></h1>
-  <p class="how">Rocket-powered cars, one giant ball. Boost, jump, flip and fly to put it in the net. Five-minute matches, golden-goal overtime.</p>
+  <p class="how">Rocket cars, one giant ball: boost, jump, flip and fly it into the net. <b>Overcharge:</b> three touches in a row by your team ignite the ball, and an ignited goal counts double.</p>
   <div class="opts">
     <label>MODE</label><div class="seg" id="o-mode"><button data-v="1">1V1</button><button data-v="2" class="on">2V2</button><button data-v="3">3V3</button><button data-v="0">FREEPLAY</button></div>
     <label>PLAYERS</label><div class="seg" id="o-pl"><button data-v="1" class="on">1P</button><button data-v="2">2P SPLIT</button></div>
     <label>CPU</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1" class="on">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>LENGTH</label><div class="seg" id="o-len"><button data-v="2">2 MIN</button><button data-v="3" class="on">3 MIN</button><button data-v="5">5 MIN</button></div>
+    <label>TWIST</label><div class="seg" id="o-oc"><button data-v="1" class="on">OVERCHARGE</button><button data-v="0">CLASSIC</button></div>
+    <label>ASSIST</label><div class="seg" id="o-as"><button data-v="1" class="on">LANDING ASSIST</button><button data-v="0">OFF</button></div>
   </div>
   <div class="row"><button id="go" class="go">KICK OFF</button></div>
 </div>
@@ -44,7 +47,7 @@
     <tr><td>Reset (freeplay) · pause</td><td><kbd>R</kbd> <kbd>Esc</kbd> <span class="pad">Back Start</span></td></tr>
     <tr><td>Graphics quality</td><td><kbd>G</kbd></td></tr>
   </table>
-  <p>Flip into the ball for a power shot: jump, then jump again with a direction held. Hit an opponent at supersonic speed to demolish them.<br>2P split: P2 uses <kbd>Arrows</kbd>, <kbd>Enter</kbd> jump, <kbd>.</kbd> boost, <kbd>,</kbd> slide, <kbd>;</kbd> <kbd>'</kbd> roll, <kbd>\</kbd> ball cam, or gamepad 2.</p>
+  <p>Flip into the ball for a power shot: jump, then jump again with a direction held. Hit an opponent at supersonic speed to demolish them. On your roof? Press jump or wait a second to flip back. Landing assist turns your wheels toward the ground when you let go of the stick.<br>2P split: P2 uses <kbd>Arrows</kbd>, <kbd>Enter</kbd> jump, <kbd>.</kbd> boost, <kbd>,</kbd> slide, <kbd>;</kbd> <kbd>'</kbd> roll, <kbd>\</kbd> ball cam, or gamepad 2.</p>
 </div>
 <div id="pause" hidden><p class="eye">PAUSED</p><h1>TIME<br>OUT<em>.</em></h1><p class="how">Press <b>Esc</b> or Start to resume.</p><div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
 <div id="over" hidden>

@@ -2,7 +2,16 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round25`, which includes rounds 11 to 24)
+## Unreleased (on branch `round29`, which includes rounds 11 to 29)
+
+### Round 29, batch 1 (v59): Rocket Arena rebuilt
+
+- **No more clipping:** cars are solid boxes now. Eighteen points on the body are kept out of the floor, walls, ceiling, goal boxes, posts and crossbar every physics step, and four wheel rays read the surface under the car. Before, only the car's centre was checked, so the nose and corners sank up to 1.1 m into walls and floors; in a full 3v3 bot match the worst sink is now under 1 cm.
+- **Driving:** the car rides ramps, walls and the ceiling smoothly without losing speed in the curves, steering eases in (no keyboard jerk) and is a little sharper at low and mid speed, and car-to-car bumps use capsules along each car instead of one small sphere.
+- **Air and recovery:** optional landing assist (on by default) turns the wheels toward the ground when you let go, and stops held throttle from tipping the nose into the floor just before touchdown. On your roof or side? Press jump or wait half a second and the car flips back.
+- **Camera:** closer, tighter chase cam; on walls the horizon follows the wall and the camera stays on the arena side of the car; inside goals and corners it swings up over the car instead of hiding it.
+- **Overcharge (new twist):** three touches in a row by one team ignite the ball (team-coloured energy shell, sparks and trail). An ignited goal counts double; one touch from the other team defuses it, and it burns out after 12 seconds. Pips under the clock show the chain. Classic mode turns it off.
+- **Match length:** 2, 3 (default) or 5 minutes, still with golden-goal overtime and the results screen.
 
 ### Round 27, batch 2 (v58): street trees and tidier palms
 

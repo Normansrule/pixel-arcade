@@ -24,4 +24,6 @@ export class Sound{
   case'beep':this._o('square',a?990:660,a?990:660,a?.5:.18,.07);break;
   case'goal':this._n(1.4,3000,80,.6,.5);this._o('sine',90,28,1.2,.4);[0,.18,.36].forEach((d,i)=>{this._o('sawtooth',[220,277,330][i],[220,277,330][i]*1.01,1.6,.05,d);});break;
   case'horn':[196,247,294].forEach(f=>this._o('sawtooth',f,f,1.4,.05));break;
+  case'charge':[0,.08,.16].forEach((d,i)=>this._o('sawtooth',[330,440,660][i],[660,880,1320][i],.4,.07,d));this._n(.7,600,5000,.9,.18,'bandpass');break;
+  case'defuse':this._o('square',520,130,.35,.08);this._n(.3,3000,300,1,.12);break;
   case'whoosh':this._n(.6,400,3000,.8,.12,'bandpass');break;}}catch(e){}}}

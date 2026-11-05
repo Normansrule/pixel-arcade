@@ -12,7 +12,7 @@ import {stored,pickers,postButton,toast} from '../js/kit3d/ui.js';
 
 const V=THREE.Vector3,$=id=>document.getElementById(id),cl=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a=1)=>Math.random()*a;
 const NAMES=['VOLT','NOVA','RIFT','BLITZ','COMET','ZEPHYR','JINX','ORBIT','TORQUE','QUASAR','FLUX','RAVEN','EMBER','HALO','PISTON','SPARK','DYNAMO','KESTREL'];
-const MATCH=300,DT=1/120,KMH=1.333;
+const DT=1/120,KMH=1.333,CHARGE_T=12;
 
 /* ================= renderer + scene ================= */
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});R.setPixelRatio(Math.min(devicePixelRatio,1.5));
@@ -32,10 +32,12 @@ const ball=new PH.Ball(),snd=new Sound();
 const mainCam=new THREE.PerspectiveCamera(60,1,.3,2400);mainCam.layers.enable(1);
 
 /* ================= game state ================= */
-let opt={size:2,humans:1,diff:1};const saveOpt=stored('pxd_rocket_opt',opt);
-let app='menu',phase='countdown',cars=[],views=[],score=[0,0],clock=MATCH,overtime=false,otT=0,cdT=3,goT=0,goalT=0,endT=0,time=0,acc=0,timeScale=1;
+let opt={size:2,humans:1,diff:1,len:3,oc:1,assist:1};const saveOpt=stored('pxd_rocket_opt',opt);
+let app='menu',phase='countdown',cars=[],views=[],score=[0,0],clock=180,overtime=false,otT=0,cdT=3,goT=0,goalT=0,endT=0,time=0,acc=0,timeScale=1;
 let hideBall=false,kickTouched=false,kickT=0,goalInfo=null,rec=[],recTick=0,replay=null,bloomKick=0,hype=0,freeplay=false,attract=true,lastBeep=-1,lastClockSec=-1;
 let pred=[],preGoal=null,world=null,diff=DIFF[1],fpReset=0;
+// OVERCHARGE: three touches in a row by one team ignite the ball; an ignited goal counts double
+let heat={team:-1,n:0,t:-9},chargeT=0;const MATCH=()=>Math.max(1,opt.len||3)*60;
 
 /* ================= cars ================= */
 function newCar(team,human,name,style){const c=new PH.Car(team);c.human=human;c.name=name;c.style=style;c.mesh=makeCar(team,style);scene.add(c.mesh);
@@ -56,23 +58,23 @@ function setupViews(){const host=$('views');host.innerHTML='';views=[];const hum
 
 /* ================= match flow ================= */
 function start(o={}){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();Object.assign(opt,o);saveOpt();snd.init();
- freeplay=opt.size===0;attract=false;app='match';diff=DIFF[opt.diff];roster({humans:opt.humans,size:opt.size,freeplay});cars.forEach(c=>c.inf=freeplay);
- score=[0,0];clock=MATCH;overtime=false;otT=0;rec=[];replay=null;pads.forEach(p=>p.t=0);setupViews();kickoff();
+ freeplay=opt.size===0;attract=false;app='match';diff=DIFF[opt.diff];roster({humans:opt.humans,size:opt.size,freeplay});cars.forEach(c=>{c.inf=freeplay;c.assist=c.human>=0&&!!opt.assist;});
+ score=[0,0];clock=MATCH();overtime=false;otT=0;rec=[];replay=null;pads.forEach(p=>p.t=0);setupViews();kickoff();
  $('menu').hidden=true;$('keys').hidden=true;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=false;document.body.classList.add('playing');$('feed').innerHTML='';$('board').style.visibility=freeplay?'hidden':'';}
 function toMenu(){app='menu';attract=true;freeplay=false;diff=DIFF[2];roster({attract:true});views=[];$('views').innerHTML='';kickoff();
  $('menu').hidden=false;$('keys').hidden=false;$('over').hidden=true;$('pause').hidden=true;$('hud').hidden=true;$('bars').classList.remove('on');document.body.classList.remove('playing');}
-function kickoff(){ball.reset();hideBall=false;ballTrail.clear();timeScale=1;goalInfo=null;replay=null;$('replay').hidden=true;$('bars').classList.remove('on');
+function kickoff(){ball.reset();heat={team:-1,n:0,t:-9};chargeT=0;hideBall=false;ballTrail.clear();timeScale=1;goalInfo=null;replay=null;$('replay').hidden=true;$('bars').classList.remove('on');
  const spots=PH.KICK.map((s,i)=>i).sort(()=>Math.random()-.5);
  for(const t of[0,1]){const team=cars.filter(c=>c.team===t),s=t?-1:1;team.forEach((c,i)=>{let[x,z]=PH.KICK[spots[i%5]];if(freeplay){x=t?0:0;z=-L*.45;}c.place(x*s,z*s,Math.atan2(-x*s,-z*s));c.boost=c.inf?100:33;c.demoT=0;c.kick=false;c.ai=null;c.mesh.visible=true;c.trail.clear();c.vp.copy(c.p);c.vv.set(0,0,0);});
   const taker=team.slice().sort((a,b)=>(a.p.x**2+a.p.z**2)-(b.p.x**2+b.p.z**2)||a.p.x*s-b.p.x*s)[0];if(taker)taker.kick=true;}
  kickTouched=false;kickT=0;views.forEach(v=>v.snap=true);
  if(freeplay){phase='play';goT=0;}else{phase='countdown';cdT=3;lastBeep=4;}}
-function scoreGoal(side){const team=side>0?0:1;const sc=ball.touch&&ball.touch.team===team?ball.touch:null;
+function scoreGoal(side){const team=side>0?0:1;const sc=ball.touch&&ball.touch.team===team?ball.touch:null;const dbl=ocOn()&&ball.charge&&ball.cteam===team,pts=dbl?2:1;
  let as=null;if(sc&&ball.prevTouch&&ball.prevTouch.team===team&&ball.prevTouch!==sc&&time-ball.prevTouchT<7)as=ball.prevTouch;
  const kmh=Math.round(ball.v.length()*KMH);goalInfo={team,side,p:ball.p.clone(),scorer:sc,kmh};
- if(!attract&&!freeplay){score[team]++;if(sc){sc.stats.goals++;sc.stats.score+=100;}if(as){as.stats.assists++;as.stats.score+=50;}
+ if(!attract&&!freeplay){score[team]+=pts;if(sc){sc.stats.goals+=pts;sc.stats.score+=100*pts;}if(as){as.stats.assists++;as.stats.score+=50;}
   feed(`${sc?sc.name:'OWN GOAL'} SCORED${as?' · ASSIST '+as.name:''}`,team);$('board').classList.remove('flash');void $('board').offsetWidth;$('board').classList.add('flash');}
- if(!attract)banner('GOAL!',`${sc?sc.name:'OWN GOAL'} · ${kmh} KM/H`,TEAM[team].css,2.6);
+ if(!attract)banner(dbl?'DOUBLE!':'GOAL!',`${sc?sc.name:'OWN GOAL'} · ${kmh} KM/H${dbl?' · OVERCHARGED +2':''}`,TEAM[team].css,2.6);
  goalBoom(ball.p.clone(),team,true);hideBall=true;ball.v.set(0,0,0);
  replay=!attract&&!freeplay&&rec.length>90?{frames:rec.slice(-Math.round(4.4*60)),t:0,end:0}:null;
  phase='goal';goalT=0;}
@@ -95,7 +97,7 @@ function best(){return bestScore('rocket3d');}
 /* ================= events from physics ================= */
 const tv=new V(),tv2=new V(),tq=new THREE.Quaternion();
 function ev(type,a,b,c,d,e){
- if(type==='hit'){const car=a,str=b;if(ball.touch!==car){ball.prevTouch=ball.touch;ball.prevTouchT=ball.touchT;}ball.touch=car;ball.touchT=time;if(phase==='play')kickTouched=true;
+ if(type==='hit'){const car=a,str=b;if(ball.touch!==car){ball.prevTouch=ball.touch;ball.prevTouchT=ball.touchT;}ball.touch=car;ball.touchT=time;if(phase==='play'){kickTouched=true;heatTouch(car,str);}
   if(str>6){const n=Math.min(70,str*1.3|0);parts.burst(c,n,14+str*.6,[new THREE.Color(3,2.6,1.6),new THREE.Color(3,3,3),new THREE.Color(2.5,1.2,.3)],.42,.5,{dir:d,spread:1.1,grav:22,drag:1.8});
    if(str>30)shocks.fire(c,new THREE.Color(1.4,1.5,2),6,.35);snd.play('hit',str);const hv=views.find(v=>v.car===car);if(hv)hv.shake=Math.max(hv.shake,Math.min(.5,str*.008));}
   if(app==='match'&&phase==='play'&&!freeplay){const post=PH.predict(ball,3,1/60,null),opp=car.team===0?1:-1;
@@ -106,6 +108,14 @@ function ev(type,a,b,c,d,e){
  else if(type==='pad'){if(a.human>=0)snd.play('pad',b.big?2:1);parts.burst(tv.set(b.x,.6,b.z),b.big?40:10,b.big?14:7,new THREE.Color(3,1.6,.3),b.big?.8:.45,.6,{up:true,grav:-4});}
  else if(type==='jump'||type==='dodge'){if(a.human>=0)snd.play('jump');if(a.ground===false&&a.p.y<2)parts.burst(tv.copy(a.p).setY(.3),8,5,new THREE.Color(.6,.6,.7),.8,.5,{up:true});}
  else if(type==='land'){if(a.human>=0)snd.play('land',b);}}
+const ocOn=()=>!!opt.oc||attract;
+function heatTouch(car,str){if(!ocOn()||phase!=='play')return;
+ if(ball.charge){if(car.team!==ball.cteam){ball.charge=0;ball.cteam=-1;chargeT=0;heat={team:car.team,n:1,t:time};snd.play('defuse');parts.burst(ball.p,60,22,[new THREE.Color(1.6,1.6,1.8),TEAM[car.team].glow],.5,.6,{drag:2});if(!freeplay)feed(`${car.name} DEFUSED THE BALL`,car.team);}else chargeT=CHARGE_T;return;}
+ if(str<5)return;// a real touch, not a roof carry rubbing the ball
+ if(heat.team!==car.team){heat={team:car.team,n:1,t:time};return;}
+ if(time-heat.t<.4)return;heat.n++;heat.t=time;
+ if(heat.n>=3){ball.charge=1;ball.cteam=car.team;chargeT=CHARGE_T;heat.n=3;snd.play('charge');shocks.fire(ball.p,TEAM[car.team].glow.clone().multiplyScalar(.7),12,.5);
+  parts.burst(ball.p,120,26,[TEAM[car.team].glow,new THREE.Color(2.6,1.8,.8)],.7,.9,{drag:1.6});if(!attract&&!freeplay){banner('OVERCHARGED','NEXT GOAL COUNTS DOUBLE',TEAM[car.team].css,1.6);feed(`${TEAM[car.team].n} OVERCHARGED THE BALL`,car.team);}}}
 function onBounce(v,n,p){if(v>9){snd.play('bounce',v);if(Math.abs(p.z)>L-1&&Math.abs(p.x)<GW+2&&p.y<GH+2){const net=arena.nets.find(x=>x.side===Math.sign(p.z));if(net&&Math.abs(p.z)>L+2){net.U.uHit.value.copy(p);net.U.uT.value=0;net.U.uAmp.value=Math.min(2.2,v*.04);}}}}
 function goalBoom(p,team,real){const col=TEAM[team].glow;parts.burst(p,220,70,[col.clone().multiplyScalar(.55),col.clone().multiplyScalar(.35),new THREE.Color(1,.95,.9)],1.1,1.6,{drag:1.7,grav:5});
  parts.burst(p,110,30,[new THREE.Color(1.3,.9,.35),col.clone().multiplyScalar(.45)],.55,2.4,{drag:.9,grav:10,up:true});
@@ -151,6 +161,7 @@ function fixed(dt){time+=dt;
  for(let i=0;i<cars.length;i++)for(let j=i+1;j<cars.length;j++)PH.carCar(cars[i],cars[j],ev);
  if(!hideBall){for(const c of cars)PH.carBall(c,ball,ev);PH.stepBall(ball,dt,onBounce);}
  for(const p of pads)if(p.t>0)p.t-=dt;for(const c of cars)PH.padPickup(pads,c,dt,ev);
+ if(phase==='play'&&ball.charge&&(chargeT-=dt)<=0){ball.charge=0;ball.cteam=-1;heat={team:-1,n:0,t:-9};snd.play('defuse');}
  if(phase==='play'&&!hideBall){const s=PH.goalSide(ball.p);if(s)scoreGoal(s);}
  if(phase==='play'&&(++recTick%2===0)){rec.push({b:[ball.p.x,ball.p.y,ball.p.z,ball.q.x,ball.q.y,ball.q.z,ball.q.w],c:cars.map(c=>[c.p.x,c.p.y,c.p.z,c.q.x,c.q.y,c.q.z,c.q.w,c.boosting?1:0,c.demoT>0?0:1,c.steerVis,c.super?1:0,c.wheelRot])});if(rec.length>420)rec.splice(0,60);}}
 function makeWorld(){const pg=PH.predict(ball,3,1/30,pred);preGoal=pg;const threat=[null,null];if(pg){threat[pg.side>0?1:0]=pg;}
@@ -194,8 +205,8 @@ function visuals(dt){const live=!(phase==='replay'&&replay),vt=time;
   cars.forEach((c,k)=>{const a=A.c[k],b=B.c[k];if(!a||!b)return;tv2.set(a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f);const qq=lerpQ(a,b,3).clone();carVis(c,tv2,qq,!!a[7],!!a[8],a[9],!!a[10],a[11]+(b[11]-a[11])*f,dt*.5);});
   ballG.position.set(A.b[0]+(B.b[0]-A.b[0])*f,A.b[1]+(B.b[1]-A.b[1])*f,A.b[2]+(B.b[2]-A.b[2])*f);ballG.quaternion.copy(lerpQ(A.b,B.b,3));}
  const bv=!(hideBall&&live)&&!(replay&&replay.end>0&&!live);ballG.visible=bv;ballLight.visible=bv;ballLight.position.copy(ballG.position);
- ballTrail.push(ballG.position,bv&&(live?ball.v.length()>48:true)&&!(phase==='countdown'),dt);
- ballG.userData.halo.material.opacity=.55+Math.sin(vt*3)*.1;
+ ballTrail.push(ballG.position,bv&&(live?ball.v.length()>48||(ball.charge&&ball.v.length()>12):true)&&!(phase==='countdown'),dt);
+ ballG.userData.halo.material.opacity=.55+Math.sin(vt*3)*.1;chargeVis(dt,bv,vt);
  parts.update(dt);shocks.update(dt);padVis(vt);if(arena.ads)arena.ads.offset.x=(vt*.012)%1;arena.time.value=vt;hype=Math.max(0,hype-dt*.25);arena.hype.value=hype;snd.hype&&snd.ac&&snd.hype(hype);
  for(const n of arena.nets){n.U.uT.value+=dt;}
  flash.intensity*=Math.exp(-dt*3.2);bloomKick*=Math.exp(-dt*1.8);
@@ -203,17 +214,50 @@ function visuals(dt){const live=!(phase==='replay'&&replay),vt=time;
  views.forEach((v,i)=>{if(snd.ac)snd.engine(i,v.car.v.length(),v.car.boosting,app==='match'&&v.car.demoT<=0&&phase!=='replay');});if(app!=='match'&&snd.ac)snd.engines.forEach((e,i)=>snd.engine(i,0,false,false));
  cameras(dt);hud(dt);}
 
+const chargeShell=new THREE.Mesh(new THREE.SphereGeometry(RB*1.13,40,24),new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{uC:{value:new THREE.Color()},uA:{value:0},uT:{value:0}},
+ vertexShader:'varying vec3 vN,vV,vP;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);vP=position;gl_Position=projectionMatrix*mv;}',
+ fragmentShader:'uniform vec3 uC;uniform float uA,uT;varying vec3 vN,vV,vP;void main(){float f=pow(1.-abs(dot(vN,vV)),1.7);float b=.5+.5*sin(vP.y*3.1+uT*9.)*sin(vP.x*2.7-uT*6.)*sin(vP.z*2.3+uT*7.);gl_FragColor=vec4(uC*(f*1.5+b*b*.45)*uA,1.);}'}));
+chargeShell.visible=false;ballG.add(chargeShell);
+const BASE_EM=new THREE.Color(.8,.9,1),BASE_TR=ballTrail.col.clone(),BASE_BL=ballLight.color.clone(),ctmp=new THREE.Color();let chargeK=0;
+function chargeVis(dt,bv,vt){const on=!!ball.charge&&phase!=='replay';chargeK+=((on?1:0)-chargeK)*Math.min(1,dt*(on?6:2));const m=ballG.userData.mesh.material,team=ball.cteam>=0?ball.cteam:heat.team;
+ const glow=team>=0?TEAM[team].glow:BASE_EM;const pulse=.75+.25*Math.sin(vt*14);
+ m.emissive.copy(BASE_EM).lerp(ctmp.copy(glow).multiplyScalar(.9*pulse),chargeK);m.emissiveIntensity=1.1+chargeK*1.4;
+ ballG.userData.halo.material.color.copy(ctmp.setRGB(1,1,1).lerp(glow,chargeK*.8));ballG.userData.halo.scale.setScalar(RB*(5+chargeK*2.2*pulse));
+ ballLight.color.copy(BASE_BL).lerp(ctmp.copy(glow).multiplyScalar(.4),chargeK);ballLight.intensity=30+chargeK*50;
+ ballTrail.col.copy(BASE_TR).lerp(ctmp.copy(glow).multiplyScalar(.7),chargeK);
+ chargeShell.visible=chargeK>.01;chargeShell.material.uniforms.uC.value.copy(glow).multiplyScalar(.55);chargeShell.material.uniforms.uA.value=chargeK*pulse;chargeShell.material.uniforms.uT.value=vt;
+ m.color.setRGB(1,1,1).lerp(ctmp.copy(glow).multiplyScalar(.45).addScalar(.35),chargeK*.7);
+ if(on&&bv){const p=ballG.position,n=2+(ball.v.length()>20?2:0);for(let i=0;i<n;i++){const a=Math.random()*6.28,b=Math.random()*3.14,r=RB*1.02;
+  parts.emit(p.x+Math.cos(a)*Math.sin(b)*r,p.y+Math.cos(b)*r,p.z+Math.sin(a)*Math.sin(b)*r,-ball.v.x*.15+rnd(4)-2,rnd(5)+1,-ball.v.z*.15+rnd(4)-2,glow.r*.7+.4,glow.g*.7+.3,glow.b*.7+.15,.5,.5,-3,1.5);}}}
+
 /* ================= cameras ================= */
-const want=new V(),look=new V(),Qc=PH.mkQ();let menuA=0;
+const want=new V(),look=new V(),bwant=new V(),blook=new V(),Qc=PH.mkQ(),upT=new V();let menuA=0;
 function keepIn(p,m){PH.query(p,Qc);if(Qc.d<m)p.addScaledVector(Qc.n,m-Qc.d);}
-function camFor(v,dt){const c=v.car,cam=v.cam;let k=1-Math.exp(-dt*9),kl=1-Math.exp(-dt*14);
+// pull the camera in front of any wall between the car and where the camera wants to be
+const cro=new V(),crd=new V(),CR={t:0,n:new V()};
+// if a wall is in the way, swing the camera closer and over (or under) the car: first clear candidate wins, else the roomiest
+const CAMC=[[1,0],[.78,1.6],[.78,-2.2],[.6,3.2],[.6,-3.6],[.45,4.8],[.45,-5],[.32,6.4]],cto=new V(),ctt=new V(),cbest=new V();
+function camRay(c,w,U){cro.copy(c.p).addScaledVector(U,.9);PH.query(cro,Qc);if(Qc.d<.6)cro.copy(c.p);cto.subVectors(w,cro);const a=cto.dot(U);ctt.copy(cto).addScaledVector(U,-a);let bf=0,best=-1;
+ for(let i=0;i<CAMC.length;i++){const[s,h]=CAMC[i];w.copy(cro).addScaledVector(ctt,s).addScaledVector(U,a+h);crd.subVectors(w,cro);const l=crd.length();crd.divideScalar(l);
+  if(!PH.ray(cro,crd,l+1.3,CR)){bf=i?Math.min(1,(1-s)*1.4):0;best=-2;break;}
+  const free=CR.t-1.3;if(free>best){best=free;cbest.copy(cro).addScaledVector(crd,Math.max(.8,free));}}
+ if(best>-2){w.copy(cbest);bf=1;}
+ keepIn(w,1.2);return bf;}
+function camFor(v,dt){const c=v.car,cam=v.cam;let k=1-Math.exp(-dt*11),kl=1-Math.exp(-dt*16);
  if(phase==='replay'&&replay){// follow the scorer's view of the play, slightly wider
   const fr=replay.frames,fi=Math.min(fr.length-1,replay.t*60|0),idx=cars.indexOf(goalInfo.scorer||c),cp=fr[fi].c[idx]||fr[fi].c[0],bp=ballG.position;
-  tv.set(cp[0],cp[1],cp[2]);tv2.set(bp.x-tv.x,0,bp.z-tv.z);if(tv2.lengthSq()<1)tv2.set(0,0,goalInfo.side);tv2.normalize();want.copy(tv).addScaledVector(tv2,-13).add(new V(0,5.5,0));look.copy(tv).lerp(bp,.72);look.y+=1;k=1-Math.exp(-dt*5);kl=1-Math.exp(-dt*7);v.fovT=64;}
+  tv.set(cp[0],cp[1],cp[2]);tv2.set(bp.x-tv.x,0,bp.z-tv.z);if(tv2.lengthSq()<1)tv2.set(0,0,goalInfo.side);tv2.normalize();want.copy(tv).addScaledVector(tv2,-13).add(new V(0,5.5,0));look.copy(tv).lerp(bp,.72);look.y+=1;cam.up.set(0,1,0);k=1-Math.exp(-dt*5);kl=1-Math.exp(-dt*7);v.fovT=64;}
  else if(c.demoT>0){want.copy(v.pos);look.copy(c.p);}
- else if(v.ballCam&&!hideBall){tv2.set(ball.p.x-c.p.x,0,ball.p.z-c.p.z);if(tv2.lengthSq()<1)c.fwd(tv2).setY(0);tv2.normalize();const dist=ball.p.distanceTo(c.p);
-  want.copy(c.p).addScaledVector(tv2,-11).add(tv.set(0,3.7+Math.min(3,Math.max(0,ball.p.y-c.p.y-6)*.12),0));look.copy(c.p).add(tv.set(0,1.6,0)).lerp(ball.p,dist<10?.4:.66);v.fovT=74;}
- else{c.fwd(tv2);tv2.y*=.25;if(!c.ground&&c.v.lengthSq()>100){tv.copy(c.v).normalize();tv.y*=.3;tv2.lerp(tv,.5);}tv2.normalize();want.copy(c.p).addScaledVector(tv2,-10.5).add(tv.set(0,3.4,0));look.copy(c.p).addScaledVector(tv2,5).add(tv.set(0,1.3,0));v.fovT=74;}
+ else{// surface-aware rig: on a wall the horizon follows the wall and the camera stays on the arena side of the car
+  if(!v.upS)v.upS=new V(0,1,0);upT.set(0,1,0);if(c.ground&&c.n.y<.95)upT.lerp(c.n,THREE.MathUtils.smoothstep(.95-c.n.y,0,.35)).normalize();v.upS.lerp(upT,1-Math.exp(-dt*(c.ground?6:2.5))).normalize();const U=v.upS;
+  // car view: behind the car along its nose (flattened onto the surface)
+  c.fwd(tv2);tv2.addScaledVector(U,-tv2.dot(U)*.75);if(!c.ground&&c.v.lengthSq()>100){tv.copy(c.v).normalize();tv.addScaledVector(U,-tv.dot(U)*.7);tv2.lerp(tv,.5);}tv2.normalize();
+  want.copy(c.p).addScaledVector(tv2,-9.4).addScaledVector(U,3.1);look.copy(c.p).addScaledVector(tv2,5).addScaledVector(U,1.3);
+  // ball view: behind the car on the line from the ball; fades out while driving up walls, where it would look through the wall
+  const bw=v.ballCam&&!hideBall?THREE.MathUtils.smoothstep(U.y,.45,.8):0;v.bw=(v.bw??bw)+(bw-(v.bw??bw))*Math.min(1,dt*5);
+  if(v.bw>.001){tv2.subVectors(ball.p,c.p);tv2.addScaledVector(U,-tv2.dot(U));if(tv2.lengthSq()<1){c.fwd(tv2);tv2.addScaledVector(U,-tv2.dot(U));}tv2.normalize();const dist=ball.p.distanceTo(c.p),rise=Math.min(3,Math.max(0,tv.subVectors(ball.p,c.p).dot(U)-6)*.12);
+   bwant.copy(c.p).addScaledVector(tv2,-9.6).addScaledVector(U,3.3+rise);blook.copy(c.p).addScaledVector(U,1.5).lerp(ball.p,dist<10?.38:.62);want.lerp(bwant,v.bw);look.lerp(blook,v.bw);}
+  v.fovT=74;const bf=camRay(c,want,U);if(bf>0){tv.copy(c.p).addScaledVector(U,.6);look.sub(tv).multiplyScalar(1-bf*.9).add(tv);}cam.up.copy(U);}
  if(c.super)v.fovT+=7;else if(c.boosting)v.fovT+=3;
  if(v.snap){v.pos.copy(want);v.look.copy(look);v.snap=false;}else{v.pos.lerp(want,k);v.look.lerp(look,kl);}keepIn(v.pos,1.6);
  v.fov+=(v.fovT-v.fov)*Math.min(1,dt*4);cam.fov=v.fov;cam.position.copy(v.pos);v.shake=Math.max(0,v.shake-dt*1.6);const s=v.shake*v.shake*.9;cam.position.x+=(Math.random()-.5)*s;cam.position.y+=(Math.random()-.5)*s;cam.position.z+=(Math.random()-.5)*s;cam.lookAt(v.look);}
@@ -237,6 +281,7 @@ function hud(dt){if(banT>0){banT-=dt;if(banT<=0)$('banner').classList.remove('on
   let cd='';if(phase==='countdown')cd=Math.max(1,Math.ceil(cdT));else if(phase==='play'&&goT>0&&!freeplay)cd='GO!';setTxt(v.cd,cd,v.last,'cd');v.cd.classList.toggle('go',cd==='GO!');
   const fr=phase==='countdown'?cdT%1:goT;v.cd.style.opacity=cd?Math.min(1,fr*3+.2):0;v.cd.style.transform=`scale(${1+fr*.35})`;
   setTxt(v.msg,c.demoT>0?`DEMOLISHED · RESPAWN ${Math.ceil(c.demoT)}`:freeplay?'R / BACK · RESET':'',v.last,'msg');}
+ {const hp=$('heat');if(hp){const on=ocOn()&&!freeplay||(freeplay&&opt.oc);hp.hidden=!on;if(on){const n=ball.charge?3:heat.n,t=ball.charge?ball.cteam:heat.team,key=n+'|'+t+'|'+(ball.charge?1:0);if(hc.heat!==key){hc.heat=key;hp.className=(t>=0?'t'+t:'')+(ball.charge?' lit':'');[...hp.children].forEach((e,i)=>e.classList.toggle('on',i<n));}}}}
  if(!$('mini').hidden)drawMini();
  const sec=Math.ceil(clock);if(sec!==lastClockSec||hc.js!==score.join()){lastClockSec=sec;hc.js=score.join();drawJumbo();}}
 function drawMini(){const w=112,h=156,s=Math.min(100/(2*W),144/(2*(L+GD))),cx=w/2,cy=h/2;const me=views[0]&&views[0].car,flip=me&&me.team===1?-1:1;mini.clearRect(0,0,w,h);
@@ -270,7 +315,7 @@ addEventListener('resize',()=>{fxFull&&(fxFull.w=0);fxSplit.forEach(f=>f&&(f.w=0
 
 /* ================= menu wiring ================= */
 const seg=pickers(opt);
-seg('o-mode','size');seg('o-pl','humans');seg('o-diff','diff');
+seg('o-mode','size');seg('o-pl','humans');seg('o-diff','diff');seg('o-len','len');seg('o-oc','oc');seg('o-as','assist');
 $('go').onclick=()=>start();$('again').onclick=()=>start();$('omenu').onclick=toMenu;$('resume').onclick=()=>pause(false);$('quit').onclick=toMenu;
 postButton($('post'),'rocket3d',()=>{const a=lastAward||{};
  return[a.pts||0,`Game: Rocket Arena\nPoints: ${a.pts||0}\nResult: ${a.won?'win':'loss'} ${a.score||''}\nGoals: ${a.goals||0} · Saves: ${a.saves||0}\nMode: ${a.mode||''}${a.split?' split-screen':''} · CPU ${a.diff||''}`];});
@@ -283,4 +328,4 @@ let last=performance.now();function loop(now){const dt=Math.max(0,Math.min(.05,(
 window.ROCKET={get state(){return app==='match'?phase:app;},get app(){return app;},get phase(){return phase;},step,render,start,toMenu,ball,get cars(){return cars;},get score(){return score;},pads,
  setClock(s){clock=s;},get clock(){return clock;},get overtime(){return overtime;},get replay(){return replay;},get goalInfo(){return goalInfo;},
  setIdle(team,on=true){cars.forEach(c=>{if(c.team===team)c.idle=on;});},skip(){edge.Enter=true;},keys,PH,scene,R,get views(){return views;},get time(){return time;},get rec(){return rec;},kickoff,pause,
- setQuality:applyQuality,clearTrails(){cars.forEach(c=>c.trail.clear());ballTrail.clear();},get stats(){return cars.map(c=>({name:c.name,team:c.team,...c.stats}));},parts,cam:()=>views[0]?views[0].cam:mainCam};
+ setQuality:applyQuality,charge(t){ball.charge=1;ball.cteam=t;chargeT=CHARGE_T;},clearTrails(){cars.forEach(c=>c.trail.clear());ballTrail.clear();},get stats(){return cars.map(c=>({name:c.name,team:c.team,...c.stats}));},parts,cam:()=>views[0]?views[0].cam:mainCam};

@@ -10,6 +10,8 @@
 #board .o{background:linear-gradient(90deg,rgba(255,96,16,.92),rgba(200,60,0,.25));border-radius:0 10px 10px 0}
 #board .clk{background:rgba(8,10,16,.88);padding:6px 18px 4px;text-align:center;min-width:112px}
 #board .clk b{display:block;font:400 2rem/1 var(--disp);letter-spacing:.02em}#board .clk span{display:block;font-size:.55rem;letter-spacing:.2em;color:var(--o);min-height:.7rem}
+#heat{display:flex;gap:5px;justify-content:center;margin-top:4px}#heat i{width:14px;height:5px;border-radius:3px;background:rgba(255,255,255,.14);transition:background .2s,box-shadow .2s}
+#heat.t0 i.on{background:var(--b);box-shadow:0 0 8px var(--b)}#heat.t1 i.on{background:var(--or);box-shadow:0 0 8px var(--or)}#heat.lit i{animation:blink .35s infinite}
 #board.flash .b,#board.flash .o{animation:pulse .5s 3}
 @keyframes pulse{50%{filter:brightness(1.8)}}
 /* per-player overlays (one per split view) */
@@ -27,7 +29,7 @@
 .tag{position:absolute;left:22px;top:16px;font:400 1.6rem var(--disp);letter-spacing:.04em}
 .cd{position:absolute;left:0;right:0;top:34%;text-align:center;font:400 9rem/1 var(--disp);color:#fff;text-shadow:0 0 40px rgba(255,120,40,.6);opacity:0}
 .cd.go{color:var(--o)}
-.msg{position:absolute;left:0;right:0;top:58%;text-align:center;font:700 .8rem var(--mono);letter-spacing:.24em;color:#ffb38a;text-shadow:0 2px 6px #000}
+.msg{position:absolute;left:0;right:0;bottom:30px;text-align:center;font:700 .8rem var(--mono);letter-spacing:.24em;color:#ffb38a;text-shadow:0 2px 6px #000}
 #mini{position:absolute;left:20px;bottom:20px;border-radius:16px;background:rgba(6,8,14,.55);border:1px solid rgba(255,255,255,.12)}
 #feed{position:absolute;right:20px;top:20px;text-align:right;font-size:.7rem;line-height:2.1;letter-spacing:.06em;text-shadow:0 1px 3px #000}
 #feed div{animation:fin .25s}#feed .b{color:var(--b)}#feed .o{color:var(--or)}
@@ -75,4 +77,5 @@ button.ghost{font:700 .85rem var(--mono);background:transparent;color:var(--fg);
 a.back{position:fixed;right:18px;bottom:16px;font:.75rem var(--mono);color:var(--fg);text-decoration:none;border:1px solid #333;border-radius:999px;padding:8px 14px;z-index:5;background:rgba(0,0,0,.4)}
 body.playing a.back{display:none}
 @media (max-width:1100px){.card{display:none}}
+@media (max-height:860px){#menu h1{font-size:clamp(3.4rem,9vw,6.6rem)}#menu .how{margin:10px 0 12px}.opts{gap:6px 14px;margin-bottom:14px}.seg button{padding:7px 13px}}
 @media (max-height:640px){h1{font-size:4.2rem}.how{display:none}}
