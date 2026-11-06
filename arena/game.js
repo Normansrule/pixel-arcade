@@ -31,7 +31,7 @@ const tv=new V(),tv2=new V(),tv3=new V(),UP=new V(0,1,0);
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});R.setPixelRatio(Math.min(devicePixelRatio,1.5));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;
 const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(80,1,.06,9000);cam.rotation.order='YXZ';scene.add(cam);
 const vmScene=new THREE.Scene(),vmCam=new THREE.PerspectiveCamera(58,1,.01,10);vmScene.add(vmCam);
-const vmHemi=new THREE.HemisphereLight(0xdfe8ff,0x202430,.55),vmKey=new THREE.DirectionalLight(0xffffff,1.1),vmRim=new THREE.DirectionalLight(0x6fb8ff,.7);vmKey.position.set(-1,2,1);vmRim.position.set(2,.5,-1.5);vmScene.add(vmHemi,vmKey,vmRim);
+const vmHemi=new THREE.HemisphereLight(0xdfe8ff,0x303644,.9),vmKey=new THREE.DirectionalLight(0xffffff,1.6),vmRim=new THREE.DirectionalLight(0x6fb8ff,1.1);vmKey.position.set(-1,2,1);vmRim.position.set(2,.5,-1.5);vmScene.add(vmHemi,vmKey,vmRim);
 const VM=new Viewmodel(vmCam);const snd=new Sound();
 const parts=new Particles(scene,5000),smoke=new Particles(scene,1400,true),beams=new Beams(scene,128),shocks=new Shocks(scene,10),decals=new Decals(scene,160),lights=new LightPool(scene,5);
 

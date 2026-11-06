@@ -17,9 +17,9 @@ export const SPAWN_KIT=['pulse','carbine'];
 /* ---------- gun models ---------- */
 let MS=null;
 function mats(){if(MS)return MS;const std=o=>new THREE.MeshStandardMaterial(o);
- MS={body:std({color:0x3c424e,roughness:.35,metalness:.85}),dark:std({color:0x16181d,roughness:.5,metalness:.6}),light:std({color:0x6a7180,roughness:.35,metalness:.85}),
+ MS={body:std({color:0x4a515e,roughness:.38,metalness:.62}),dark:std({color:0x16181d,roughness:.5,metalness:.6}),light:std({color:0x7a8190,roughness:.36,metalness:.65}),
   grip:std({color:0x1f2228,roughness:.85,metalness:.1}),white:std({color:0xb8bcc6,roughness:.4,metalness:.3}),glove:std({color:0x2a2d33,roughness:.75,metalness:.2}),
-  armor:std({color:0x50607a,roughness:.32,metalness:.6})};for(const k in MS)MS[k].envMapIntensity=.2;return MS;}
+  armor:std({color:0x50607a,roughness:.32,metalness:.6})};for(const k in MS)MS[k].envMapIntensity=.55;return MS;}
 const glowM=c=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(1.15)});
 // part list -> merged meshes per material; returns group
 function build(parts){const g=new THREE.Group(),by=new Map();for(const[geo,mat,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1]of parts){let a=by.get(mat);if(!a)by.set(mat,a=[]);a.push([geo,M4(x,y,z,rx,ry,rz,sx,sy,sz)]);}

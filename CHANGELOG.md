@@ -4,6 +4,14 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round29`, which includes rounds 11 to 29)
 
+### Round 29, batch 5 (v63): last checks and polish
+
+- **Every 3D world checked:** the five worlds that crashed or timed out in the test browser last time (Abyss Diver, Storm Royale, Frontline, Starfall, Strike Zone) were played again one at a time, with no errors. That covers all 55.
+- **Full test suite:** every arcade cabinet passes in solo, CPU and two-player modes at two difficulty levels, with no crashes and no broken drawing.
+- **Zombie Road:** redrawn with a dusk sky, a burning city in two parallax layers with smoke, an asphalt road with lane marks, and a shaded pickup truck with headlights and spoked wheels. The distance readout no longer goes negative when you roll backwards.
+- **Cave Raid:** two layers of far cave wall scroll behind the play area, with glowing crystals and drifting spores.
+- **Nova Arena:** the first-person guns were so metallic that they rendered almost black. They now pick up the room lighting.
+
 ### Round 29, batch 4 (v62): 3D world pass and Rocket Arena polish
 
 - **3D worlds checked one by one:** all 52 other 3D worlds were started and played with random input, with screenshots of each one in play. None of them threw script errors.
