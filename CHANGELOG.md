@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round29`, which includes rounds 11 to 29)
 
+### Round 29, batch 3 (v61): clean-up sweep of the other games
+
+- **Every game checked:** all 466 arcade cabinets were run with random input looking for frozen screens, games that never end and text drawn off screen, and the 3D worlds were opened and played past their menus.
+- **Pop-ups stay on screen:** score, bonus and warning pop-ups (+10, GRAZE, NEAR PAD, HELP and so on) are kept inside the screen and below the top bar in every arcade game, instead of drifting off an edge.
+- **Fix:** the first-person shooter cabinet showed negative health on the frame you died.
+- **Tooling:** `tests/qa.js` now prints each flagged cabinet as it finds it and can be split across processes (`SHARDS=4 SH=0..3`).
+
 ### Round 29, batch 2 (v60): a readable intro and new README key art
 
 - **Front-page intro, slowed down and explained:** the scroll is more than twice as long, and instead of four words flashing past there are five chapters (the games, the 3D worlds, no installs or accounts, the round clock, insert coin). Each one slides in, holds still for about half a screen of scrolling with a sentence of detail, then leaves. A dark reading panel sits behind the text, and a chapter rail on the right shows where you are; click a chapter to jump to it. Phones get the same chapters with dots along the bottom.

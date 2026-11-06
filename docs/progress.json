@@ -1,7 +1,9 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
-    {"v": "v60", "date": "5 Nov 2026", "branch": "round29", "round": 29,
+    {"v": "v61", "date": "6 Nov 2026", "branch": "round29", "round": 29,
+     "added": "Clean-up sweep of the other games. Every arcade cabinet was run with random input looking for frozen screens, games that never end and clipped text, and the 3D worlds were played past their menus. Score and bonus pop-ups now always stay on screen instead of drifting off an edge or under the top bar, and the first-person shooter cabinet no longer shows negative health on the death frame. The quality sweep (tests/qa.js) reports each problem as it finds it and can be split across processes."},
+    {"v": "v60", "date": "5 Nov 2026", "branch": "round29", "round": 29, "games": 521, "worlds": 55,
      "added": "A slower, clearer front-page intro and new README key art. The scroll intro now tells five short chapters (the games, the 3D worlds, no installs or accounts, the round clock, insert coin), each holding still for about half a screen of scrolling with a sentence of detail, a darkened reading panel and a clickable chapter rail. The README opens on a tilted, drifting wall of 3D world screenshots behind the title instead of a crop of the intro."},
     {"v": "v59", "date": "5 Nov 2026", "branch": "round29", "round": 29, "games": 521, "worlds": 55,
      "added": "Rocket Arena rebuilt: cars are now solid bodies with four wheel probes, so they ride smoothly up ramps, walls and the ceiling and never sink into the floor, walls, posts or goals (worst sink in a 3v3 bot match: under 1 cm, it used to be over a metre). Smoother steering, no speed lost up the curves, a landing assist, quick roof recovery, a wall-aware camera that never hides your car, 2/3/5 minute matches, and an original twist: Overcharge, where three touches in a row by one team ignite the ball and an ignited goal counts double."},
