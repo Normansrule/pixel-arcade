@@ -79,3 +79,8 @@ body.playing a.back{display:none}
 @media (max-width:1100px){.card{display:none}}
 @media (max-height:860px){#menu h1{font-size:clamp(3.4rem,9vw,6.6rem)}#menu .how{margin:10px 0 12px}.opts{gap:6px 14px;margin-bottom:14px}.seg button{padding:7px 13px}}
 @media (max-height:640px){h1{font-size:4.2rem}.how{display:none}}
+.bptr{position:absolute;width:46px;height:46px;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.7))}
+.bptr i{position:absolute;inset:0;background:radial-gradient(circle at 34% 50%,#fff 0 7px,transparent 8px);}
+.bptr i::after{content:"";position:absolute;right:2px;top:50%;margin-top:-9px;border-left:16px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent}
+.bptr.lit i{background:radial-gradient(circle at 34% 50%,#ffb070 0 7px,transparent 8px)}.bptr.lit i::after{border-left-color:#ff8a3d}
+.bptr[hidden]{display:none}

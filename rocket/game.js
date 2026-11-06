@@ -51,9 +51,9 @@ function roster(o){clearCars();const names=NAMES.slice().sort(()=>Math.random()-
 /* ================= views (one per human; split-screen for two) ================= */
 function setupViews(){const host=$('views');host.innerHTML='';views=[];const hum=cars.filter(c=>c.human>=0).sort((a,b)=>a.human-b.human);
  hum.forEach((c,i)=>{const el=document.createElement('div');el.className='pv';const split=hum.length>1;el.style.top=split?(i*50)+'%':'0';el.style.height=split?'50%':'100%';
-  el.innerHTML=`${split?`<div class="tag" style="color:${TEAM[c.team].css}">${c.name}</div>`:''}<div class="cd"></div><div class="msg"></div><div class="cam on">BALL CAM</div><div class="dial"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="45" stroke-dasharray="212 400"/><circle class="fg" cx="60" cy="60" r="45"/></svg><b>33</b><span>BOOST</span></div>`;
+  el.innerHTML=`${split?`<div class="tag" style="color:${TEAM[c.team].css}">${c.name}</div>`:''}<div class="cd"></div><div class="msg"></div><div class="cam on">BALL CAM</div><div class="bptr" hidden><i></i></div><div class="dial"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="45" stroke-dasharray="212 400"/><circle class="fg" cx="60" cy="60" r="45"/></svg><b>33</b><span>BOOST</span></div>`;
   host.appendChild(el);const cam=new THREE.PerspectiveCamera(74,1,.3,2400);cam.layers.enable(1);
-  views.push({car:c,cam,ballCam:true,pos:new V(),look:new V(),shake:0,fov:74,snap:true,el,cd:el.querySelector('.cd'),msg:el.querySelector('.msg'),camEl:el.querySelector('.cam'),dial:el.querySelector('.dial'),dfg:el.querySelector('.fg'),dnum:el.querySelector('.dial b'),last:{}});});
+  views.push({car:c,cam,ballCam:true,pos:new V(),look:new V(),shake:0,fov:74,snap:true,el,cd:el.querySelector('.cd'),msg:el.querySelector('.msg'),camEl:el.querySelector('.cam'),dial:el.querySelector('.dial'),dfg:el.querySelector('.fg'),dnum:el.querySelector('.dial b'),bp:el.querySelector('.bptr'),last:{}});});
  $('mini').hidden=hum.length>1;}
 
 /* ================= match flow ================= */
@@ -206,7 +206,7 @@ function visuals(dt){const live=!(phase==='replay'&&replay),vt=time;
   ballG.position.set(A.b[0]+(B.b[0]-A.b[0])*f,A.b[1]+(B.b[1]-A.b[1])*f,A.b[2]+(B.b[2]-A.b[2])*f);ballG.quaternion.copy(lerpQ(A.b,B.b,3));}
  const bv=!(hideBall&&live)&&!(replay&&replay.end>0&&!live);ballG.visible=bv;ballLight.visible=bv;ballLight.position.copy(ballG.position);
  ballTrail.push(ballG.position,bv&&(live?ball.v.length()>48||(ball.charge&&ball.v.length()>12):true)&&!(phase==='countdown'),dt);
- ballG.userData.halo.material.opacity=.55+Math.sin(vt*3)*.1;chargeVis(dt,bv,vt);
+ ballG.userData.halo.material.opacity=.55+Math.sin(vt*3)*.1;chargeVis(dt,bv,vt);markVis(bv);
  parts.update(dt);shocks.update(dt);padVis(vt);if(arena.ads)arena.ads.offset.x=(vt*.012)%1;arena.time.value=vt;hype=Math.max(0,hype-dt*.25);arena.hype.value=hype;snd.hype&&snd.ac&&snd.hype(hype);
  for(const n of arena.nets){n.U.uT.value+=dt;}
  flash.intensity*=Math.exp(-dt*3.2);bloomKick*=Math.exp(-dt*1.8);
@@ -218,6 +218,12 @@ const chargeShell=new THREE.Mesh(new THREE.SphereGeometry(RB*1.13,40,24),new THR
  vertexShader:'varying vec3 vN,vV,vP;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);vP=position;gl_Position=projectionMatrix*mv;}',
  fragmentShader:'uniform vec3 uC;uniform float uA,uT;varying vec3 vN,vV,vP;void main(){float f=pow(1.-abs(dot(vN,vV)),1.7);float b=.5+.5*sin(vP.y*3.1+uT*9.)*sin(vP.x*2.7-uT*6.)*sin(vP.z*2.3+uT*7.);gl_FragColor=vec4(uC*(f*1.5+b*b*.45)*uA,1.);}'}));
 chargeShell.visible=false;ballG.add(chargeShell);
+// floor marker under a high ball (a soft ring that tightens as the ball drops), so aerials can be judged without shadows
+const markG=new THREE.Group(),markM=new THREE.MeshBasicMaterial({color:0xdfe8ff,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,polygonOffset:true,polygonOffsetFactor:-2});
+{const r=new THREE.Mesh(new THREE.RingGeometry(RB*.86,RB,48),markM),d=new THREE.Mesh(new THREE.CircleGeometry(RB*.86,48),markM.clone());d.material.opacity=0;markG.add(r,d);markG.userData.disc=d;markG.rotation.x=-Math.PI/2;markG.renderOrder=2;scene.add(markG);}
+function markVis(bv){const h=ballG.position.y-RB,a=bv?Math.min(1,Math.max(0,(h-1.2)/3))*.55:0;markG.visible=a>.01;if(!markG.visible)return;
+ markG.position.set(ballG.position.x,.05,ballG.position.z);const s=1+Math.min(1.6,h*.03);markG.scale.set(s,s,1);
+ markM.opacity=a;markM.color.set(ball.charge&&ball.cteam>=0?TEAM[ball.cteam].c:0xdfe8ff);markG.userData.disc.material.opacity=a*.18;markG.userData.disc.material.color.copy(markM.color);}
 const BASE_EM=new THREE.Color(.8,.9,1),BASE_TR=ballTrail.col.clone(),BASE_BL=ballLight.color.clone(),ctmp=new THREE.Color();let chargeK=0;
 function chargeVis(dt,bv,vt){const on=!!ball.charge&&phase!=='replay';chargeK+=((on?1:0)-chargeK)*Math.min(1,dt*(on?6:2));const m=ballG.userData.mesh.material,team=ball.cteam>=0?ball.cteam:heat.team;
  const glow=team>=0?TEAM[team].glow:BASE_EM;const pulse=.75+.25*Math.sin(vt*14);
@@ -280,10 +286,15 @@ function hud(dt){if(banT>0){banT-=dt;if(banT<=0)$('banner').classList.remove('on
   v.dial.classList.toggle('ss',!!c.super);v.camEl.classList.toggle('on',v.ballCam);
   let cd='';if(phase==='countdown')cd=Math.max(1,Math.ceil(cdT));else if(phase==='play'&&goT>0&&!freeplay)cd='GO!';setTxt(v.cd,cd,v.last,'cd');v.cd.classList.toggle('go',cd==='GO!');
   const fr=phase==='countdown'?cdT%1:goT;v.cd.style.opacity=cd?Math.min(1,fr*3+.2):0;v.cd.style.transform=`scale(${1+fr*.35})`;
-  setTxt(v.msg,c.demoT>0?`DEMOLISHED · RESPAWN ${Math.ceil(c.demoT)}`:freeplay?'R / BACK · RESET':'',v.last,'msg');}
+  ballPtr(v);setTxt(v.msg,c.demoT>0?`DEMOLISHED · RESPAWN ${Math.ceil(c.demoT)}`:freeplay?'R / BACK · RESET':'',v.last,'msg');}
  {const hp=$('heat');if(hp){const on=ocOn()&&!freeplay||(freeplay&&opt.oc);hp.hidden=!on;if(on){const n=ball.charge?3:heat.n,t=ball.charge?ball.cteam:heat.team,key=n+'|'+t+'|'+(ball.charge?1:0);if(hc.heat!==key){hc.heat=key;hp.className=(t>=0?'t'+t:'')+(ball.charge?' lit':'');[...hp.children].forEach((e,i)=>e.classList.toggle('on',i<n));}}}}
  if(!$('mini').hidden)drawMini();
  const sec=Math.ceil(clock);if(sec!==lastClockSec||hc.js!==score.join()){lastClockSec=sec;hc.js=score.join();drawJumbo();}}
+// edge arrow pointing at the ball when it is off screen or behind the camera
+const bpV=new V();function ballPtr(v){const show=!hideBall&&phase!=='replay'&&phase!=='countdown';v.cam.updateMatrixWorld();bpV.copy(ball.p).applyMatrix4(v.cam.matrixWorldInverse);
+ let on=false,ax=0,ay=0;if(show){if(bpV.z<0){const n=bpV.clone().applyMatrix4(v.cam.projectionMatrix);on=Math.abs(n.x)>.97||Math.abs(n.y)>.94;ax=n.x;ay=n.y;}else{on=true;ax=bpV.x;ay=-Math.abs(bpV.z)-Math.abs(bpV.y)*.3;}}
+ if(v.last.bp!==on){v.last.bp=on;v.bp.hidden=!on;}if(!on)return;const a=Math.atan2(ay,ax),cx=Math.cos(a),cy=Math.sin(a),k=Math.min(.44/Math.max(Math.abs(cx),.01),.4/Math.max(Math.abs(cy),.01));
+ v.bp.style.left=(50+cx*k*100)+'%';v.bp.style.top=(50-cy*k*100)+'%';v.bp.style.transform=`translate(-50%,-50%) rotate(${-a}rad)`;v.bp.classList.toggle('lit',!!ball.charge);}
 function drawMini(){const w=112,h=156,s=Math.min(100/(2*W),144/(2*(L+GD))),cx=w/2,cy=h/2;const me=views[0]&&views[0].car,flip=me&&me.team===1?-1:1;mini.clearRect(0,0,w,h);
  mini.strokeStyle='rgba(255,255,255,.35)';mini.lineWidth=1;mini.beginPath();mini.roundRect(cx-W*s,cy-L*s,2*W*s,2*L*s,14*s);mini.stroke();mini.beginPath();mini.moveTo(cx-W*s,cy);mini.lineTo(cx+W*s,cy);mini.stroke();
  for(const t of[0,1]){const z=(t?L:-L)*flip;mini.fillStyle=TEAM[t].css;mini.fillRect(cx-GW*s,cy-z*s-(z>0?GD*s:0),2*GW*s,GD*s);}

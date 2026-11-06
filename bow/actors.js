@@ -112,15 +112,17 @@ export function buildGeos(){const b=[];for(let i=0;i<6;i++)b.push([boxGeo(.48,2.
 // orient a forearm (local +z axis) along a fixed camera-space direction regardless of the bow's cant
 const LA_DIR=new V(-.5,-.6,.62).normalize(),RA_DIR=new V(.55,-.5,.67).normalize(),_qa=new THREE.Quaternion(),_qb=new THREE.Quaternion(),_z=new V(0,0,1);
 function aimArm(arm,g,glove,dir){g.updateMatrix();_qa.copy(g.quaternion).multiply(glove.quaternion).invert();_qb.setFromUnitVectors(_z,dir);arm.quaternion.copy(_qa.multiply(_qb));}
+const _sd=new V(),_up=new V(0,1,0);function segTo(m,a,b){_sd.subVectors(b,a);const l=_sd.length();m.position.addVectors(a,b).multiplyScalar(.5);m.scale.set(1,l,1);m.quaternion.setFromUnitVectors(_up,_sd.multiplyScalar(1/(l||1)));}
 export class Viewmodel{
  constructor(team){items();this.team=team;const T=TEAMS[team];const root=this.root=new THREE.Group();const mat=this.mat=new THREE.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:.6,metalness:.1});
   const mk=(list)=>new THREE.Mesh(merge(list),mat);
   const forearm=()=>mk([[cap(.05,.36,3,8),T.col,[0,0,.22],[Math.PI/2,0,0]],[new THREE.CylinderGeometry(.062,.058,.16,8),DLEATHER,[0,0,0],[Math.PI/2,0,0]],[box(.08,.035,.09),0xf3e6c4,[0,.045,.2]]]);
   const glove=()=>mk([[new THREE.IcosahedronGeometry(.052,1),DLEATHER,[0,0,-.04]],[box(.075,.05,.07),DLEATHER,[0,-.02,-.08]]]);
   // --- bows (longbow + shortbow): limbs bend with the draw; string follows the nock ---
-  const mkBow=(len,col,recurve)=>{const g=new THREE.Group();const limb=(s)=>{const pts=[];for(let i=0;i<=8;i++){const t=i/8;pts.push(new V(0,s*(.06+t*len),t*t*.11-(recurve?Math.pow(t,5)*.07:0)));}const gg=new THREE.Group();const m=mk([[new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),12,.026,6),col,[0,0,0]]]);gg.add(m);gg.userData.tip=new V(0,s*(.06+len),.11-(recurve?.07:0));return gg;};
+  const mkBow=(len,col,recurve)=>{const g=new THREE.Group();const limb=(s)=>{const pts=[];for(let i=0;i<=8;i++){const t=i/8;pts.push(new V(0,s*(.06+t*len),t*t*.14-(recurve?Math.pow(t,5)*.08:0)));}const gg=new THREE.Group();const cv=new THREE.CatmullRomCurve3(pts),tg=new THREE.TubeGeometry(cv,16,.034,7);{const P=tg.attributes.position,c=new V();for(let i=0;i<P.count;i++){const k=Math.floor(i/8)/16,f=1-k*.55;cv.getPointAt(k,c);P.setXYZ(i,c.x+(P.getX(i)-c.x)*f,P.getY(i),c.z+(P.getZ(i)-c.z)*f);}tg.computeVertexNormals();}const m=mk([[tg,col,[0,0,0]],[new THREE.SphereGeometry(.03,6,4),0xd8c8a0,[0,s*(.06+len),.14-(recurve?.08:0)]]]);gg.add(m);gg.userData.tip=new V(0,s*(.06+len),.14-(recurve?.08:0));return gg;};
    const up=limb(1),lo=limb(-1);g.add(up,lo);g.add(mk([[cap(.024,.12,2,6),DLEATHER,[0,0,0]],[box(.03,.03,.03),GOLD,[0,.08,.0]]]));
-   const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(9),3));const str=new THREE.Line(sg,new THREE.LineBasicMaterial({color:0xf4efe4}));str.frustumCulled=false;g.add(str);
+   const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(9),3));const str=new THREE.Line(sg,new THREE.LineBasicMaterial({color:0xf4efe4}));str.frustumCulled=false;str.visible=false;g.add(str);
+   const sgm=new THREE.MeshStandardMaterial({color:0xefe6d2,roughness:.5}),sgg=new THREE.CylinderGeometry(.0065,.0065,1,5);const s1=new THREE.Mesh(sgg,sgm),s2=new THREE.Mesh(sgg,sgm);s1.frustumCulled=s2.frustumCulled=false;g.add(s1,s2);str.userData.segs=[s1,s2];
    const arrow=new THREE.Mesh(arrowGeo(),mat);g.add(arrow);const lg=glove();lg.position.set(-.005,0,.03);g.add(lg);const la=forearm();la.position.set(-.02,-.03,.06);lg.add(la);
    const rg=glove();g.add(rg);const ra=forearm();rg.add(ra);
    g.userData={up,lo,str,arrow,rg,lg,la,ra,len};return g;};
@@ -152,7 +154,7 @@ export class Viewmodel{
    g.scale.setScalar(.5);g.position.set(-.15+d*.065+bx,-.085+by-lower+d*.04,-.74-d*.02);g.rotation.set(.03+this.swayY,.1-d*.08+this.swayX,.4-d*.14);
    const bend=d*(s.kind==='long'?.2:.14);u.up.rotation.x=bend;u.lo.rotation.x=-bend;
    const tipU=u.up.userData.tip.clone().applyEuler(u.up.rotation),tipL=u.lo.userData.tip.clone().applyEuler(u.lo.rotation);const tz=u.up.userData.tip.z,nz=tz+d*(s.kind==='long'?.36:.3);
-   const P=u.str.geometry.attributes.position;P.setXYZ(0,tipU.x,tipU.y,tipU.z);P.setXYZ(1,0,0,nz);P.setXYZ(2,tipL.x,tipL.y,tipL.z);P.needsUpdate=true;
+   const P=u.str.geometry.attributes.position;P.setXYZ(0,tipU.x,tipU.y,tipU.z);P.setXYZ(1,0,0,nz);P.setXYZ(2,tipL.x,tipL.y,tipL.z);P.needsUpdate=true;{const[a,b]=u.str.userData.segs,nk=new V(0,0,nz);segTo(a,tipU,nk);segTo(b,tipL,nk);}
    u.arrow.visible=s.loaded;u.arrow.position.set(.014,.012,nz-.72);u.arrow.rotation.set(0,Math.PI,0);u.rg.position.set(.03,-.02,nz+.03);u.rg.rotation.set(0,0,.2);u.rg.visible=false;
    const w=s.wobble||0;g.position.x+=Math.sin(s.t*2.1)*w*.012;g.position.y+=Math.sin(s.t*3.3)*w*.01;
    aimArm(u.la,g,u.lg,LA_DIR);aimArm(u.ra,g,u.rg,RA_DIR);}

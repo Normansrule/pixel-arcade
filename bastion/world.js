@@ -45,7 +45,15 @@ export function buildWorld(scene,M,q){const out={objs:[],anim:[],fires:[],portal
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(Cc,3));g.setIndex(I);g.computeVertexNormals();
   const sides=add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,side:THREE.DoubleSide})));sides.receiveShadow=true;
   const plate=add(new THREE.Mesh(new THREE.BoxGeometry(W*2+3,1.2,D*2+3),new THREE.MeshStandardMaterial({color:'#2a2622',roughness:.6,metalness:.2})));plate.position.y=B-.5;plate.receiveShadow=true;
-  const trim=add(new THREE.Mesh(new THREE.BoxGeometry(W*2+3.4,.25,D*2+3.4),new THREE.MeshStandardMaterial({color:'#b08a4a',roughness:.35,metalness:.7})));trim.position.y=B+.12;}
+  const trim=add(new THREE.Mesh(new THREE.BoxGeometry(W*2+3.4,.25,D*2+3.4),new THREE.MeshStandardMaterial({color:'#b08a4a',roughness:.35,metalness:.7})));trim.position.y=B+.12;
+  // the war-room table the diorama sits on, so panning or turning the camera never shows empty sky below the board
+  {const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');for(let i=0;i<8;i++){const g=x.createLinearGradient(0,0,512,0);const v=40+((i*37)%17);g.addColorStop(0,`rgb(${v+38},${v+18},${v})`);g.addColorStop(.5,`rgb(${v+46},${v+24},${v+6})`);g.addColorStop(1,`rgb(${v+34},${v+16},${v})`);x.fillStyle=g;x.fillRect(0,i*64,512,64);
+    x.fillStyle='rgba(0,0,0,.35)';x.fillRect(0,i*64,512,2);x.strokeStyle='rgba(20,8,0,.18)';x.lineWidth=1;for(let k=0;k<14;k++){const y=i*64+4+((k*29+i*13)%58);x.beginPath();x.moveTo(0,y);for(let u=0;u<=512;u+=32)x.lineTo(u,y+Math.sin(u*.02+k+i)*2.2);x.stroke();}}
+   const tex=new THREE.CanvasTexture(c);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(10,10);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
+   const table=add(new THREE.Mesh(new THREE.CircleGeometry(520,48).rotateX(-Math.PI/2),new THREE.MeshStandardMaterial({map:tex,roughness:.55,metalness:.05,color:'#c8b8a8'})));table.position.y=B-1.12;table.receiveShadow=true;
+   // soft contact shadow around the plate
+   const sc=document.createElement('canvas');sc.width=sc.height=128;const sx=sc.getContext('2d');const rg=sx.createRadialGradient(64,64,30,64,64,64);rg.addColorStop(0,'rgba(0,0,0,.55)');rg.addColorStop(1,'rgba(0,0,0,0)');sx.fillStyle=rg;sx.fillRect(0,0,128,128);
+   const sh=add(new THREE.Mesh(new THREE.PlaneGeometry(W*3.2,D*3.6).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc),transparent:true,depthWrite:false})));sh.position.y=B-1.08;sh.renderOrder=1;}}
  /* ---- water ---- */
  if(wet){const wU={uT:{value:0}};const wg=new THREE.PlaneGeometry(W*2,D*2,1,1);wg.rotateX(-Math.PI/2);
   const water=add(new THREE.Mesh(wg,new THREE.ShaderMaterial({uniforms:wU,transparent:true,depthWrite:false,

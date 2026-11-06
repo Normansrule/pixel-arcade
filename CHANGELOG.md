@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round29`, which includes rounds 11 to 29)
 
+### Round 29, batch 4 (v62): 3D world pass and Rocket Arena polish
+
+- **3D worlds checked one by one:** all 52 other 3D worlds were started and played with random input, with screenshots of each one in play. None of them threw script errors.
+- **Bastion Line:** the diorama now sits on a dark wooden war-room table with a soft shadow, so panning or turning the camera no longer shows the board floating in empty sky.
+- **Longbow Keep:** the first-person bow now has tapered, more curved limbs with tips and a visible string (the old string was a one-pixel line), so it reads as a bow instead of a stick.
+- **Rocket Arena:** a soft ring on the floor under a high ball shows where it is above the pitch, which helps you judge aerials (it takes the team colour when the ball is overcharged). When ball cam is off and the ball is off screen or behind you, an arrow at the screen edge points to it.
+
 ### Round 29, batch 3 (v61): clean-up sweep of the other games
 
 - **Every game checked:** all 466 arcade cabinets were run with random input looking for frozen screens, games that never end and text drawn off screen, and the 3D worlds were opened and played past their menus.
