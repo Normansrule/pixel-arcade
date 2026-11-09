@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round30`, which includes rounds 11 to 30)
 
+### Round 30, batch 7 (v70): the Townsfolk pack, 20 new games (581 in all)
+- New `games/townsfolk.js`: trades and town life, drawn with the shared character kit.
+- Solo: Baker's Dozen, Blacksmith, Lamplighter, Potter's Wheel, Clock Tower, Fire Brigade, Milk Round, Book Sort, Tailor's Seam, Window Washer, Bus Stop, Sawmill, Ice Cream Stack, Stargazer, Lobster Pots, Bell Ringer, Chimney Sweep.
+- Versus CPU or 2 players: Pig Chase, Wood Chop, Cheese Roll.
+- Spice Trader's "worth" readout no longer shows NaN.
+
 ### Round 30, batch 6 (v69): the Voyage pack, 20 new games (561 in all)
 - New `games/voyage.js` built on the shared character kit, with a crowd helper and world-travel settings.
 - Solo: Camel Caravan, Rickshaw Run, Panda Climb, Volcano Hop, Sand Glyphs, Koi Pond, Cable Car, Balloon Crossing, Carnival Parade, Penguin Slide, Snow Rescue, Canyon Bridge, Temple Torches, Lasso Loop, Topiary, Kite Surf, Spice Trader, Museum Guard.
