@@ -73,7 +73,8 @@
   "games/powerup.js",
   "games/rush.js",
   "games/saga.js",
-  "games/frontier.js"
+  "games/frontier.js",
+  "games/voyage.js"
  ],
  "after": [
   "js/net.js"

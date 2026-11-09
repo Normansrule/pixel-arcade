@@ -4,6 +4,11 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round30`, which includes rounds 11 to 30)
 
+### Round 30, batch 6 (v69): the Voyage pack, 20 new games (561 in all)
+- New `games/voyage.js` built on the shared character kit, with a crowd helper and world-travel settings.
+- Solo: Camel Caravan, Rickshaw Run, Panda Climb, Volcano Hop, Sand Glyphs, Koi Pond, Cable Car, Balloon Crossing, Carnival Parade, Penguin Slide, Snow Rescue, Canyon Bridge, Temple Torches, Lasso Loop, Topiary, Kite Surf, Spice Trader, Museum Guard.
+- Versus CPU or 2 players: Dog Sled (each lane has its own camera), Fjord Race.
+
 ### Round 30, batch 5 (v68): the Frontier pack, 20 new games (541 in all)
 - New `games/frontier.js` with a shared character kit: `hero()` (outlined chibi people with blinking eyes, five hair styles, eight hats, capes, aprons and a held item), `critter()`, and scenery helpers (`tree`, `pine`, `cottage`, `cloud`).
 - Solo: Lighthouse Keeper, Mushroom Forager, Train Hop, Sky Fisher, Night Market, Crystal Cave, Mail Owl, Gondola, Dino Dig, Storm Chaser, Yeti Escape, Treasure Dive, Firework Show, Lantern Float, Ice Fishing, Sheepdog, Tide Pool.

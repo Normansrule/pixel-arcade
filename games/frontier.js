@@ -71,6 +71,8 @@ const cottage=(x,y,w,h,wall,roof,lit)=>{X.shadow(x+w/2,y,w*.6,3,.3);X.rr(x,y-h,w
  const wc=lit?'#ffd87a':'#4a5a7a';X.rr(x+w*.18,y-h*.7,w*.22,h*.3,.5,wc);X.rr(x+w*.6,y-h*.7,w*.22,h*.3,.5,wc);if(lit&&lo()){X.glow(x+w*.29,y-h*.55,8,'#ffc860',.35);X.glow(x+w*.71,y-h*.55,8,'#ffc860',.35);}X.rr(x+w*.42,y-h*.42,w*.16,h*.42,.5,'#5a3a24');};
 const cloud=(x,y,s,col)=>{col=col||'#ffffff';for(const[dx,dy,r]of[[-10,0,7],[0,-4,9],[10,0,7],[4,2,7],[-4,2,6]])X.disc(x+dx*s,y+dy*s,r*s,col);};
 const T=(s,x,y,col,sc,al)=>X.ot(s,x,y,col,sc||1,al);
+// shared with later packs (games/voyage.js)
+A.kit={hero,hat,critter,tree,pine,cottage,cloud,ink,shade,OUT};
 
 /* ================= LIGHTHOUSE KEEPER ================= */
 // a storm on the sea; ships make for the harbour channel and only the ones you light see the reef
