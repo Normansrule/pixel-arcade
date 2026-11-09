@@ -72,7 +72,8 @@
   "games/skyway.js",
   "games/powerup.js",
   "games/rush.js",
-  "games/saga.js"
+  "games/saga.js",
+  "games/frontier.js"
  ],
  "after": [
   "js/net.js"

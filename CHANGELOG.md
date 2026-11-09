@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round30`, which includes rounds 11 to 30)
 
+### Round 30, batch 5 (v68): the Frontier pack, 20 new games (541 in all)
+- New `games/frontier.js` with a shared character kit: `hero()` (outlined chibi people with blinking eyes, five hair styles, eight hats, capes, aprons and a held item), `critter()`, and scenery helpers (`tree`, `pine`, `cottage`, `cloud`).
+- Solo: Lighthouse Keeper, Mushroom Forager, Train Hop, Sky Fisher, Night Market, Crystal Cave, Mail Owl, Gondola, Dino Dig, Storm Chaser, Yeti Escape, Treasure Dive, Firework Show, Lantern Float, Ice Fishing, Sheepdog, Tide Pool.
+- Versus CPU or 2 players: Wizard Duel, Gnome Garden, Lance Tourney.
+- Release zips older than round30-4 were deleted from the project files (owner's request) to free storage.
+
 ### Round 30, batch 4 (v67): showroom finish
 - All full-3D worlds: the shared grade in `js/fx3d.js` adds vibrance, teal-and-gold split toning and luminance clarity (`cinematic({look:0})` turns it off, or pass `{look:{vib,split,clar}}` to tune it).
 - Night Drive: lighter daytime asphalt with a dry sheen, and stronger afternoon sky fill so shaded streets no longer turn black.
