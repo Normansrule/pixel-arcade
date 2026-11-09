@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round30`, which includes rounds 11 to 30)
 
+### Round 30, batch 4 (v67): showroom finish
+- All full-3D worlds: the shared grade in `js/fx3d.js` adds vibrance, teal-and-gold split toning and luminance clarity (`cinematic({look:0})` turns it off, or pass `{look:{vib,split,clar}}` to tune it).
+- Night Drive: lighter daytime asphalt with a dry sheen, and stronger afternoon sky fill so shaded streets no longer turn black.
+- Firefly: moonbeams, a pond that mirrors the moon, ferns, and a lighter blue night so the forest reads.
+- Word Guess: a lamp-lit board behind the grid, a tiled backdrop, a padded keyboard tray, a blinking caret and shine on revealed tiles.
+- README: new "Showroom finish" section with a before/after.
+
 ### Round 30, batch 3 (v66): textured 3D walls and a richer README
 
 - **Dungeon 3D:** the maze walls are now textured stone blocks with mortar, moss low down and soot near the ceiling, lit warm by your torch and fading into the dark. The textures are generated in code (a new shared `walltex`/`wallCol` kit in `js/gx.js`), so nothing extra is downloaded.

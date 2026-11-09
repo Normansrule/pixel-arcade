@@ -9,12 +9,21 @@ import {SMAAPass} from '../vendor/jsm/postprocessing/SMAAPass.js';
 import {ShaderPass} from '../vendor/jsm/postprocessing/ShaderPass.js';
 import {GTAOPass} from '../vendor/jsm/postprocessing/GTAOPass.js';
 
-const Grade={uniforms:{tDiffuse:{value:null},vig:{value:.35},sat:{value:1.12},tint:{value:new THREE.Color(1,1,1)},grain:{value:.03},time:{value:0},ca:{value:.0012},con:{value:1},warm:{value:0}},
+// Grade: the "showroom photo" finish. Besides saturation, contrast and vignette it adds
+//  - vibrance: lifts dull colours more than ones that are already vivid, so paint and foliage pop without neon skin
+//  - split toning: cool teal in the shadows and warm gold in the highlights, the colour separation of modern racing games
+//  - clarity: a gentle S-curve on luminance only, so midtones get punch while hue stays put
+// All three are on by default at a light setting; cinematic({look:0}) turns them off for a world that wants it flat.
+const Grade={uniforms:{tDiffuse:{value:null},vig:{value:.35},sat:{value:1.12},tint:{value:new THREE.Color(1,1,1)},grain:{value:.03},time:{value:0},ca:{value:.0012},con:{value:1},warm:{value:0},
+ vib:{value:.38},split:{value:.7},clar:{value:.3},shTint:{value:new THREE.Color(.10,.42,.55)},hiTint:{value:new THREE.Color(1.,.72,.42)}},
  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
- fragmentShader:`uniform sampler2D tDiffuse;uniform float vig,sat,grain,time,ca,con,warm;uniform vec3 tint;varying vec2 vUv;
+ fragmentShader:`uniform sampler2D tDiffuse;uniform float vig,sat,grain,time,ca,con,warm,vib,split,clar;uniform vec3 tint,shTint,hiTint;varying vec2 vUv;
  float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233))+time)*43758.5453);}
  void main(){vec2 d=vUv-.5;float r=dot(d,d);vec3 c;c.r=texture2D(tDiffuse,vUv+d*ca).r;c.g=texture2D(tDiffuse,vUv).g;c.b=texture2D(tDiffuse,vUv-d*ca).b;
-  float l=dot(c,vec3(.299,.587,.114));c=mix(vec3(l),c,sat)*tint;c=clamp((c-.5)*con+.5,0.,1.);c*=vec3(1.+warm,1.+warm*.35,1.-warm*.6);c*=1.-vig*smoothstep(.1,.7,r*1.6);c+=(h(vUv*999.)-.5)*grain;gl_FragColor=vec4(c,1.);}`};
+  float l=dot(c,vec3(.299,.587,.114));c=mix(vec3(l),c,sat)*tint;
+  float mx=max(c.r,max(c.g,c.b)),mn=min(c.r,min(c.g,c.b));c=mix(vec3(l),c,1.+vib*(1.-smoothstep(0.,.6,mx-mn)));
+  float L2=clamp(l,0.,1.),sc=L2*L2*(3.-2.*L2);c*=mix(1.,(mix(L2,sc,clar)+.001)/(L2+.001),step(.002,L2));
+  float wS=(1.-L2)*(1.-L2)*.11*split,wH=L2*L2*.09*split;c=c*(1.-wS-wH)+shTint*wS*(l+.18)*2.2+c*hiTint*wH*1.6;c=clamp((c-.5)*con+.5,0.,1.);c*=vec3(1.+warm,1.+warm*.35,1.-warm*.6);c*=1.-vig*smoothstep(.1,.7,r*1.6);c+=(h(vUv*999.)-.5)*grain;gl_FragColor=vec4(c,1.);}`};
 
 // Lens: what a real camera adds at speed and into the sun (all in HDR, before tone mapping).
 //  - speed blur: radial streaks toward the edges, from a vanishing point, scaled by setLens({speed:0..1})
@@ -90,7 +99,9 @@ export function cinematic(renderer,scene,camera,o={}){
  let ao=null;if(q>=2&&o.ao!==false){ao=new LiteAO(scene,camera,size.x,size.y);ao.blendIntensity=o.aoStrength??1;comp.addPass(ao);}
  const bloom=new UnrealBloomPass(new THREE.Vector2(size.x,size.y),o.bloom??.55,o.bloomRadius??.5,o.bloomThreshold??.82);comp.addPass(bloom);
  let lens=null;if(o.lens){lens=new ShaderPass(Lens);const L=o.lens;if(L.flare!==undefined)lens.uniforms.uFlare.value=L.flare;if(L.occ!==undefined)lens.uniforms.uOccT.value=L.occ;if(L.sunColor)lens.uniforms.uSunC.value.set(L.sunColor);lens.uniforms.uTaps.value=q>=2?10:6;comp.addPass(lens);}
- comp.addPass(new OutputPass());const grade=new ShaderPass(Grade);if(o.vignette!==undefined)grade.uniforms.vig.value=o.vignette;if(o.saturation!==undefined)grade.uniforms.sat.value=o.saturation;if(o.tint)grade.uniforms.tint.value.set(o.tint);if(o.grain!==undefined)grade.uniforms.grain.value=o.grain;if(o.contrast!==undefined)grade.uniforms.con.value=o.contrast;if(o.warm!==undefined)grade.uniforms.warm.value=o.warm;comp.addPass(grade);
+ comp.addPass(new OutputPass());const grade=new ShaderPass(Grade);if(o.vignette!==undefined)grade.uniforms.vig.value=o.vignette;if(o.saturation!==undefined)grade.uniforms.sat.value=o.saturation;if(o.tint)grade.uniforms.tint.value.set(o.tint);if(o.grain!==undefined)grade.uniforms.grain.value=o.grain;if(o.contrast!==undefined)grade.uniforms.con.value=o.contrast;if(o.warm!==undefined)grade.uniforms.warm.value=o.warm;
+ if(o.look===0){grade.uniforms.vib.value=0;grade.uniforms.split.value=0;grade.uniforms.clar.value=0;}else if(o.look&&typeof o.look==='object'){for(const k of['vib','split','clar'])if(o.look[k]!==undefined)grade.uniforms[k].value=o.look[k];}
+ comp.addPass(grade);
  const smaa=new SMAAPass(size.x*pr,size.y*pr);comp.addPass(smaa);
  const shAmt=o.sharpen??.16;let sharp=null;if(shAmt>0){sharp=new ShaderPass(Sharp);sharp.uniforms.uAmt.value=shAmt;sharp.uniforms.uPx.value.set(1/(size.x*pr),1/(size.y*pr));comp.addPass(sharp);}
  const t0=performance.now();

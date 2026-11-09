@@ -27,8 +27,8 @@ float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*vn(p);p=p*2.03+vec2(
 
 // time-of-day keyframes: hour -> look
 const TOD=[
- {h:17.0,el:22,sun:[1,.86,.66],si:2.6,hs:[.95,.85,.75],hg:[.32,.28,.24],hi:.9,top:[.24,.42,.72],hor:[1,.72,.48],fog:[.7,.6,.55],fd:.0011,exp:.9,night:0},
- {h:18.4,el:6,sun:[1,.56,.3],si:1.8,hs:[.8,.6,.6],hg:[.25,.18,.18],hi:.7,top:[.16,.22,.5],hor:[1,.45,.3],fog:[.55,.36,.38],fd:.0021,exp:.95,night:.25},
+ {h:17.0,el:22,sun:[1,.86,.66],si:2.6,hs:[.95,.88,.82],hg:[.44,.40,.34],hi:1.4,top:[.24,.42,.72],hor:[1,.72,.48],fog:[.7,.6,.55],fd:.0011,exp:1.0,night:0},
+ {h:18.4,el:6,sun:[1,.56,.3],si:1.8,hs:[.8,.6,.6],hg:[.25,.18,.18],hi:1.0,top:[.16,.22,.5],hor:[1,.45,.3],fog:[.55,.36,.38],fd:.0021,exp:.95,night:.25},
  {h:19.3,el:-3,sun:[.8,.4,.5],si:.35,hs:[.42,.38,.62],hg:[.12,.1,.16],hi:.45,top:[.06,.08,.22],hor:[.5,.22,.38],fog:[.18,.13,.24],fd:.0026,exp:1.0,night:.7},
  {h:20.3,el:-12,sun:[.55,.65,1],si:.3,hs:[.3,.36,.6],hg:[.07,.07,.1],hi:.3,top:[.015,.022,.06],hor:[.12,.08,.18],fog:[.035,.035,.06],fd:.0026,exp:.92,night:1},
  {h:26.0,el:-12,sun:[.55,.65,1],si:.3,hs:[.28,.34,.58],hg:[.06,.06,.09],hi:.28,top:[.01,.015,.045],hor:[.1,.07,.16],fog:[.03,.03,.055],fd:.0026,exp:.92,night:1}];
@@ -286,7 +286,7 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
   const night=k.night;const moon=new V(.4,.6,.6).normalize();const ld=night>.6?moon:sd.y>.05?sd:sd.clone().setY(.08).normalize();sun.userData.dir=ld;sun.color.setRGB(...k.sun);sun.intensity=k.si*(1-rainAmt*.6);
   hemi.color.setRGB(...k.hs);hemi.groundColor.setRGB(...k.hg);hemi.intensity=k.hi*(1-rainAmt*.25);fog.color.setRGB(...k.fog).lerp(new THREE.Color(.11,.12,.15).multiplyScalar(.35+(1-night)*1.5),rainAmt*.45);fog.density=k.fd*(1+rainAmt*.7);
   const win=cl((night-.15)/.6,0,1);for(const k2 in FAC)FAC[k2].emissiveIntensity=win*(k2==='ind'?.6:k2==='glass'?.75:k2==='shop'?.6:.85);headM.color.setRGB(2.4,1.9,1.3).multiplyScalar(.1+.9*cl(night*1.6,0,1));signMat.color.setScalar(.35+1.5*cl(night*1.4,0,1));
-  for(const m of wetMats){m.roughness=lerp(1,.24,wet);m.metalness=lerp(.05,.5,wet);m.envMapIntensity=lerp(.04,1.05,wet);m.color.setScalar(lerp(1,.55,wet));m.normalScale.setScalar(lerp(.4,.22,wet));}
+  for(const m of wetMats){m.roughness=lerp(.86,.24,wet);m.metalness=lerp(.05,.5,wet);m.envMapIntensity=lerp(.18,1.05,wet);m.color.setScalar(lerp(1,.55,wet));m.normalScale.setScalar(lerp(.4,.22,wet));}
   const lit=cl((night-.2)/.5,0,1);poolM.color.setRGB(1,.74,.46).multiplyScalar(lit*(.42+.3*wet));coneU.uI.value=lit*(.07+.45*rainAmt)*state.cones;splU.uAmt.value=rainAmt*state.splash;splU.uCol.value.setRGB(.55,.6,.72).multiplyScalar(.5+.5*lit);
   const useNight=night>.45;if(state.envNight!==useNight){state.envNight=useNight;state.env=useNight?env:envDay;}
   M.walk.roughness=lerp(.85,.45,wet);rainU.uAmt.value=rainAmt;state.exp=k.exp;}

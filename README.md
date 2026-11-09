@@ -19,7 +19,7 @@
 ![offline](https://img.shields.io/badge/works-offline-f2f2f2?style=flat-square)
 ![installable](https://img.shields.io/badge/installable-app-f2f2f2?style=flat-square)
 
-**[Play](#-play-in-10-seconds)** · **[Features](#-what-you-get)** · **[3D worlds](#-55-full-3d-worlds)** · **[Cabinets](#-466-arcade-cabinets)** · **[Screens](#-five-screens-one-arcade)** · **[Sound](#-real-sound)** · **[Progress](#-progress)** · **[Builder](#-build-your-own)** · **[Get the app](#-play-anywhere)** · **[Develop](#-develop)** · **[Design](#-design)** · **[Docs](https://normansrule.github.io/pixel-arcade/docs/)**
+**[Play](#-play-in-10-seconds)** · **[Features](#-what-you-get)** · **[3D worlds](#-55-full-3d-worlds)** · **[Cabinets](#-466-arcade-cabinets)** · **[Finish](#-showroom-finish)** · **[Screens](#-five-screens-one-arcade)** · **[Sound](#-real-sound)** · **[Progress](#-progress)** · **[Builder](#-build-your-own)** · **[Get the app](#-play-anywhere)** · **[Develop](#-develop)** · **[Design](#-design)** · **[Docs](https://normansrule.github.io/pixel-arcade/docs/)**
 
 </div>
 
@@ -199,6 +199,21 @@ Classic arcade, sports, board games with real CPU search, puzzles, cards, party 
 <img src="docs/readme/graphics-r30.jpg" width="100%" alt="Before and after: Dungeon 3D gets textured stone walls with mortar and moss, Strike Zone 3D gets riveted metal panels and red brick, Hover Tank 3D gets a banded synthwave sun over two ridges of mountains">
 
 <sub>Round 30 graphics pass on the retro-3D cabinets: every wall column is now a slice of a generated 64×64 texture (stone, riveted metal or brick, made from a seeded hash so nothing is downloaded), shaded by distance and torchlight.</sub>
+
+## 🏁 Showroom finish
+
+Every one of the 50+ full-3D worlds now goes through the same finishing pass, the kind of colour work modern open-world racers are known for:
+
+| Layer | What it does |
+|---|---|
+| **Vibrance** | lifts dull colours more than vivid ones, so car paint and grass pop and skies don't go neon |
+| **Split toning** | cool teal in the shadows, warm gold in the highlights: the sunset-postcard separation |
+| **Clarity** | a gentle S-curve on brightness only, for punchy midtones without shifting colour |
+| **Lens** (racing worlds) | sun glare, anamorphic streak, ghosts and speed blur, cut off by anything in front of the sun |
+
+<img src="docs/readme/graphics-r30b.jpg" width="100%" alt="Before and after in Night Drive: the street goes from a black slab to sunlit, cracked asphalt with a warmer grade. Below: Rocket Arena under the new grade, Firefly's moonlit forest with a pond, Word Guess on a lamp-lit board">
+
+<sub>Night Drive's daytime asphalt is lighter and catches a little sky sheen even when dry. Its afternoon fill light was raised so shaded streets read instead of going black. The pass is one shader in <code>js/fx3d.js</code>, so it costs the same on every world and switches off with graphics on LOW (key G).</sub>
 
 ## 🎛️ Five screens, one arcade
 
