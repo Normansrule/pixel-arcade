@@ -1,8 +1,9 @@
 // KART GRAND PRIX — synthesized audio: engines, drift squeal, item sounds, countdown, and a small per-course music sequencer.
-import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
+import {boot,master,gain,noiseBuf,bed,tone,hiss,samples} from '../js/kit3d/audio.js';
 const SC={maj:[0,2,4,5,7,9,11],min:[0,2,3,5,7,8,10],dor:[0,2,3,5,7,9,10],phr:[0,1,3,5,7,8,10],lyd:[0,2,4,6,7,9,11]};
 export class Sound{
- constructor(){this.ac=null;this.engines=[];this.music=true;this.vol=.7;this.seq=null;}
+ constructor(){this.ac=null;this.engines=[];this.music=true;this.vol=.7;this.seq=null;
+  samples(this,{wall:['crash',a=>Math.min(.6,a*.03)],bump:['thud',.4],hit:['crash',.6],boom:['bigboom',.7],land:['thud',a=>Math.min(.4,a*.02)],coin:['coin',.3]},()=>this.out);}
  init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,this.vol,-24,12);this.mus=gain(ac,.22,this.out);const b=this.noise=noiseBuf(ac);
   for(let i=0;i<2;i++){const o=ac.createOscillator();o.type='sawtooth';const o2=ac.createOscillator();o2.type='triangle';const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=500;const g=gain(ac,0,this.out);o.connect(f);o2.connect(f);f.connect(g);o.start();o2.start();
    const{f:nf,g:ng}=bed(ac,b,'bandpass',2600,4,this.out);

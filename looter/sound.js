@@ -1,6 +1,8 @@
 // STARWARDEN — WebAudio synthesis (no audio files): spatial weapon/impact one-shots, jetpack loop, ambience, a small music sequencer, announcer.
 import {boot,SpatialSound} from '../js/kit3d/audio.js';
 export class Sound extends SpatialSound{
+ // recorded CC0 takes layered on the synth (see samples() in js/kit3d/audio.js)
+ constructor(){super();this.layer({auto:['repeater',.35],pulse:['repeater',.4,.9],scout:['blaster',.4,1.1],hand:['blaster',.5,.85],smg:['repeater',.3,1.25],shot:['blaster',.6,.75],snipe:['blaster',.5,.7],rocket:['thrust',.5],foeDie:['destroy',.4],door:['clank',.4,.7]});}
  init(){boot(this,ac=>{this.bus(ac);this.room(ac);this.beds(ac,900);});}
  ambience(theme){if(!this.ac)return;this.amb({moon:[260,.05,46,.03],wastes:[620,.08,0,0],reach:[900,.05,52,.02]}[theme]||[300,0,0,0]);}
  jet(on,k=1){if(!this.ac)return;const t=this.ac.currentTime;this.jg.gain.setTargetAtTime(on?.13*k:0,t,.05);this.jf.frequency.setTargetAtTime(on?700+Math.random()*300:500,t,.05);}

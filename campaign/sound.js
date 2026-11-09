@@ -1,6 +1,8 @@
 // STARFALL VANGUARD — WebAudio synthesis (no audio files): spatial weapon/impact one-shots, engine loop, ambience, radio chirps and a choir-pad battle score.
 import {boot,SpatialSound} from '../js/kit3d/audio.js';
 export class Sound extends SpatialSound{
+ // recorded CC0 takes layered on the synth (see samples() in js/kit3d/audio.js)
+ constructor(){super();this.layer({ar:['repeater',.4],br:['repeater',.45,.9],shotgun:['blaster',.6,.8],sniper:['blaster',.5,.7],rocket:['thrust',.5],mortar:['boom',.6],cannon:['boom',.6],crash:['crash',.7],alienDie:['destroy',.35],pulse:['repeater',.35],carbine:['repeater',.45,.85],scatter:['blaster',.6,.8]});}
  init(){boot(this,ac=>{this.bus(ac);this.room(ac);this.beds(ac,900);});}
  ambience(theme){if(!this.ac)return;this.amb({gorge:[700,.06,0,0],spire:[260,.05,46,.04],plains:[1100,.05,0,0]}[theme]||[300,0,0,0]);}
  engine(on,rpm=0,tank=0){if(!this.ac)return;const t=this.ac.currentTime;if(!this.eo){const ac=this.ac;this.eo=ac.createOscillator();this.eo.type='sawtooth';this.eo2=ac.createOscillator();this.eo2.type='square';this.ef=ac.createBiquadFilter();this.ef.type='lowpass';this.ef.frequency.value=500;this.eg=ac.createGain();this.eg.gain.value=0;this.eo.connect(this.ef);this.eo2.connect(this.ef);this.ef.connect(this.eg);this.eg.connect(this.sfx);this.eo.start();this.eo2.start();}

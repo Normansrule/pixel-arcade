@@ -2,7 +2,7 @@
 // splats, swim swishes, bomb fizz, the INKQUAKE slam, a funky bass + clap music loop, and the results drumroll / fanfare.
 import {boot,bed,SpatialSound} from '../js/kit3d/audio.js';
 export class Sound extends SpatialSound{
- constructor(){super();this.range=50;}
+ constructor(){super();this.range=50;this.layer({hit:['thud',.3]});}
  // roller rumble loop + swim loop
  init(){boot(this,ac=>{this.bus(ac);this.rollL=bed(ac,this.noise,'lowpass',260,2,this.sfx);this.swimL=bed(ac,this.noise,'bandpass',700,1.4,this.sfx);});}
  loops(roll,swim){if(!this.ac)return;const t=this.ac.currentTime;this.rollL.g.gain.setTargetAtTime(roll*.22,t,.06);this.rollL.f.frequency.setTargetAtTime(180+roll*220,t,.06);this.swimL.g.gain.setTargetAtTime(swim*.08,t,.08);this.swimL.f.frequency.setTargetAtTime(500+swim*700,t,.08);}

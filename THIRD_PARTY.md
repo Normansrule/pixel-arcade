@@ -9,6 +9,7 @@ Pixel Arcade's own code and art are under the [MIT licence](LICENSE). It ships t
 | [Anton](https://github.com/googlefonts/AntonFont) | `fonts/anton-400.woff2` | SIL Open Font License (OFL) 1.1, see [fonts/OFL-Anton.txt](fonts/OFL-Anton.txt) |
 | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | `fonts/jetbrains-mono-*.woff2` | SIL Open Font License (OFL) 1.1, see [fonts/OFL-JetBrainsMono.txt](fonts/OFL-JetBrainsMono.txt) |
 | [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next) | `fonts/atkinson-next-*.woff2` | SIL Open Font License (OFL) 1.1, see [fonts/OFL-AtkinsonHyperlegibleNext.txt](fonts/OFL-AtkinsonHyperlegibleNext.txt) |
+| Sound effects: 76 recorded takes from [Kenney](https://kenney.nl)'s Interface, Impact and Sci-Fi Sounds packs and his official [starter kits](https://github.com/KenneyNL) (the racing kit's skid by Landeplage), re-encoded to MP3 | `sfx/` | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (public domain), see [sfx/LICENSE.txt](sfx/LICENSE.txt) |
 | PA Pixel (made in this repo from the engine's bitmap font by `tools/pixelfont.py`) | `fonts/pa-pixel.woff2` | MIT, same as the project |
 
 The desktop app is built with [Electron](https://www.electronjs.org/) and [electron-builder](https://www.electron.build/) (both MIT). They are development dependencies installed by `npm install` in `desktop/` and are not stored in the repository.

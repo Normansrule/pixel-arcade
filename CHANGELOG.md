@@ -2,7 +2,16 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round29`, which includes rounds 11 to 29)
+## Unreleased (on branch `round30`, which includes rounds 11 to 30)
+
+### Round 30, batch 1 (v64): recorded sound and a Play anywhere section
+
+- **Recorded sound effects:** 76 free CC0 (public domain) sounds by Kenney, taken from his Interface, Impact and Sci-Fi Sounds packs and his official starter kits, are now stored in `sfx/` (560 KB, works offline). Credits are in `THIRD_PARTY.md` and `sfx/LICENSE.txt`.
+- **All 466 arcade cabinets** play recorded takes instead of single beeps: a random take each time with a slight pitch change, so repeated hits, coins and explosions don't sound copied. Press **X** on the pause card (or in the menus) to switch between **Studio** and **Retro** beeps; the choice is remembered.
+- **Hub interface sounds:** a clunk when a cartridge goes into the console, ticks for the 3-2-1 countdown, a soft tick when hovering cartridges and a click when you go back to the lobby. Quiet, and only after your first click or key press.
+- **11 3D worlds** layer recorded takes on their synthesized sounds: Nova Arena, Hardfall, Starfall Vanguard, Starwarden and Gloss Riot (gunfire, footsteps, landings, explosions, kills), Rocket Arena (metal clang on ball touches by impact speed, crunches for bumps, demolitions and goals), Critter Kart, Kart Grand Prix, Sideways and Night Drive (crashes, walls, cones) and Runline (footsteps, landings, breaks).
+- **Play anywhere section** on the front page: the arcade shown on a laptop, a tablet and a phone over a moving, grainy colour field, fanning out as you scroll, with three short facts (offline, studio sound, light on hardware).
+
 
 ### Round 29, batch 5 (v63): last checks and polish
 

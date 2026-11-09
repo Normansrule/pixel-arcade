@@ -1,6 +1,8 @@
 // NOVA ARENA — WebAudio synthesis (no audio files): spatial weapon/impact one-shots, jetpack loop, ambience, a small music sequencer, announcer.
 import {boot,SpatialSound} from '../js/kit3d/audio.js';
 export class Sound extends SpatialSound{
+ // recorded CC0 takes layered on the synth (see samples() in js/kit3d/audio.js)
+ constructor(){super();this.layer({pulse:['repeater',.35],carbine:['repeater',.45,.85],scatter:['blaster',.6,.8],plasma:['blaster',.35,1.3],rail:['thrust',.4,1.6],hitShield:['clank',.3]});}
  init(){boot(this,ac=>{this.bus(ac);this.room(ac);this.beds(ac,900);});}
  ambience(theme){if(!this.ac)return;this.amb({space:[260,.05,46,.03],canyon:[520,.07,0,0],sky:[900,.06,0,0]}[theme]||[300,0,0,0]);}
  jet(on,k=1){if(!this.ac)return;const t=this.ac.currentTime;this.jg.gain.setTargetAtTime(on?.13*k:0,t,.05);this.jf.frequency.setTargetAtTime(on?700+Math.random()*300:500,t,.05);}

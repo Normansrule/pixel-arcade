@@ -30,3 +30,10 @@
  new IntersectionObserver(es=>{on=es[es.length-1].isIntersecting;run();},{rootMargin:'100px'}).observe(cv);
  document.addEventListener('visibilitychange',run);
 })();
+
+/* Play anywhere: the laptop, tablet and phone fan out as the section scrolls into the middle of the screen
+   (--any goes 0 → 1); with reduced motion they just sit in their final pose */
+(function(){const d=document.getElementById('devices');if(!d)return;
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){d.style.setProperty('--any','1');return;}
+ let raf=0;const upd=()=>{raf=0;const r=d.getBoundingClientRect(),vh=innerHeight||800;const k=Math.max(0,Math.min(1,(vh-r.top)/(vh*.75)));d.style.setProperty('--any',k.toFixed(3));};
+ addEventListener('scroll',()=>{if(!raf)raf=requestAnimationFrame(upd);},{passive:true});addEventListener('resize',upd);upd();})();

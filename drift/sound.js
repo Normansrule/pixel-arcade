@@ -1,8 +1,9 @@
 // SIDEWAYS — synthesized audio (no files): rev-matched engine (firing-frequency oscillators through a waveshaper),
 // turbo whine + blow-off flutter, backfire pops, tyre squeal, wall scrape, impacts, wind, rain, UI cues.
-import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
+import {boot,master,gain,noiseBuf,bed,tone,hiss,samples} from '../js/kit3d/audio.js';
 export class Sound{
- constructor(){this.ac=null;this.vol=.8;}
+ constructor(){this.ac=null;this.vol=.8;
+  samples(this,{hit:['crash',a=>Math.min(.8,.25+a*.03)],cone:['wood',.35,1.4]},()=>this.out);}
  init(){boot(this,ac=>{this.out=master(ac,this.vol,-14,4);const b=this.noise=noiseBuf(ac);
   const loop=(type,f,q,g0=0)=>bed(ac,b,type,f,q,this.out,g0,Math.random());
   this.squeal=loop('bandpass',1150,7);this.squeal2=loop('bandpass',1750,9);this.scrape=loop('highpass',2400,.8);this.wind=loop('lowpass',600,.5);this.rain=loop('highpass',2600,.4);this.gravel=loop('lowpass',380,.8);

@@ -1,6 +1,8 @@
 // HARDFALL — WebAudio synthesis (no audio files): spatial gun / frame / impact one-shots, wall-run + frame servo loops, ambience, music, announcer.
 import {boot,SpatialSound} from '../js/kit3d/audio.js';
 export class Sound extends SpatialSound{
+ // recorded CC0 takes layered on the synth (see samples() in js/kit3d/audio.js)
+ constructor(){super();this.layer({rifle:['repeater',.4],carbine:['repeater',.45,.85],shotgun:['blaster',.6,.8],chaingun:['repeater',.3,1.2],rocket:['thrust',.5],mechBoom:['bigboom',.9],stomp:['metal',.45,.7],mechLand:['metal',.6,.6],punch:['metal',.6],hitArmor:['clank',.35]});}
  init(){boot(this,ac=>{this.bus(ac);this.room(ac);this.beds(ac,1600);});}
  ambience(theme){if(!this.ac)return;const cfg={dusk:[700,.06,0,0],neon:[380,.06,52,.02]}[theme]||[300,0,0,0];this.amb(cfg);this.hum0=cfg[3];}
  jet(on,k=1){if(!this.ac)return;const t=this.ac.currentTime;this.jg.gain.setTargetAtTime(on?.08*k:0,t,.05);this.jf.frequency.setTargetAtTime(on?1400+Math.random()*400:900,t,.05);}

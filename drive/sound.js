@@ -2,13 +2,13 @@
 // plus three procedural radio stations (synthwave, techno, lo-fi) on a look-ahead scheduler.
 const R=Math.random;
 export const STATIONS=[{id:'neon',name:'NEON 88.1',tag:'SYNTHWAVE · NIGHT CRUISING',bpm:100},{id:'pulse',name:'PULSE 104.7',tag:'TECHNO · 4/4 ALL NIGHT',bpm:124},{id:'tide',name:'LOW TIDE 92.3',tag:'LO-FI · RAIN ON GLASS',bpm:78},{id:'off',name:'RADIO OFF',tag:'JUST THE ENGINE'}];
-import {boot,master,gain,noiseBuf,reverb,bed,panTo,tone,hiss} from '../js/kit3d/audio.js';
+import {boot,master,gain,noiseBuf,reverb,bed,panTo,tone,hiss,take} from '../js/kit3d/audio.js';
 const mtof=m=>440*Math.pow(2,(m-69)/12);
 // chord progressions (MIDI roots) per station
 const PROG={neon:[[57,60,64],[53,57,60],[60,64,67],[55,59,62]],pulse:[[45,48,52],[45,48,52],[43,47,50],[41,45,48]],tide:[[62,65,69,72],[60,64,67,71],[57,60,64,67],[59,62,65,69]]};
 export class Sound{
  constructor(){this.ac=null;this.vol=.8;this.radioVol=.5;this.station=0;this.nextT=0;this.step=0;this.bar=0;this.cam={x:0,z:0,a:0};}
- init(){boot(this,ac=>{this.master=master(ac,this.vol,-14,4);this.sfx=gain(ac,1,this.master);const rlp=ac.createBiquadFilter();rlp.type='lowpass';rlp.frequency.value=9000;rlp.connect(this.master);this.rlp=rlp;this.radio=gain(ac,this.radioVol,rlp);
+ init(){boot(this,ac=>{if(window.PASFX)window.PASFX.bank(ac,'../sfx/').want('crash','thud');this.master=master(ac,this.vol,-14,4);this.sfx=gain(ac,1,this.master);const rlp=ac.createBiquadFilter();rlp.type='lowpass';rlp.frequency.value=9000;rlp.connect(this.master);this.rlp=rlp;this.radio=gain(ac,this.radioVol,rlp);
   const b=this.noise=noiseBuf(ac);
   this.verbIn=reverb(ac,2.2,2.4,.35,this.radio);
   // engine: two oscillators through a lowpass, plus a noise rumble
@@ -32,8 +32,8 @@ export class Sound{
   // siren: wail pitch, gain by nearest cop distance
   const sg=o.siren>0?Math.min(.06,.06*(1-o.sirenD/180)):0;this.sirenG.gain.setTargetAtTime(Math.max(0,sg),t,.15);this.siren.frequency.setTargetAtTime(700+Math.sin(t*3.2)*250,t,.02);}
  /* ---------- one-shots ---------- */
- crash(v){if(!this.ac)return;const a=Math.min(1,v/25);this._n(.5,1600,90,.6,.6*a,'lowpass');this._n(.25,4200,1800,1.5,.3*a,'bandpass',.02);this._o('sine',90,40,.3,.5*a);if(a>.5)for(let k=0;k<4;k++)this._o('triangle',1800+R()*2000,900,.12,.04*a,.03+k*.05);}
- land(v){if(this.ac)this._n(.25,500,80,.7,Math.min(.5,v*.05),'lowpass');}
+ crash(v){if(!this.ac)return;const a=Math.min(1,v/25);take(this.ac,a>.45?'crash':'thud',this.sfx,.25+a*.6);this._n(.5,1600,90,.6,.6*a,'lowpass');this._n(.25,4200,1800,1.5,.3*a,'bandpass',.02);this._o('sine',90,40,.3,.5*a);if(a>.5)for(let k=0;k<4;k++)this._o('triangle',1800+R()*2000,900,.12,.04*a,.03+k*.05);}
+ land(v){if(this.ac&&v>4)take(this.ac,'thud',this.sfx,Math.min(.5,v*.04));if(this.ac)this._n(.25,500,80,.7,Math.min(.5,v*.05),'lowpass');}
  horn(){if(!this.ac)return;this._o('sawtooth',392,392,.45,.09,0,0,null,null,.01);this._o('sawtooth',494,494,.45,.07,0,0,null,null,.01);}
  honkAt(d,pan){if(!this.ac||d>70)return;const a=1/(1+d/12);this._o('square',330,330,.3,.05*a,0,pan);this._o('square',415,415,.3,.04*a,0,pan);}
  blip(f=1200){if(this.ac){this._o('triangle',f,f,.08,.08);}}

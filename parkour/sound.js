@@ -1,5 +1,5 @@
 // RUNLINE — synthesized audio: footsteps, wind, slides, wall-runs, grapple, pickups and a procedural electronic score per district.
-import {boot,master,gain,noiseBuf,reverb,bed,tone,hiss} from '../js/kit3d/audio.js';
+import {boot,master,gain,noiseBuf,reverb,bed,tone,hiss,samples} from '../js/kit3d/audio.js';
 const R=Math.random;
 const N=n=>440*Math.pow(2,(n-69)/12);
 // district songs: chords (midi roots + intervals), bass pattern, tempo
@@ -8,7 +8,8 @@ const SONGS=[
  {bpm:128,ch:[[50,[0,3,7,10]],[46,[0,4,7,11]],[43,[0,3,7,10]],[45,[0,4,7,10]]],arp:[0,1,2,3,0,2,1,3],bass:'xx.xx.x.xx.xx.x.',hat:'xxxxxxxxxxxxxxxx',snare:'....x.......x..x'},
  {bpm:116,ch:[[53,[0,4,7,11]],[57,[0,3,7,10]],[50,[0,3,7,10]],[48,[0,4,7,14]]],arp:[0,2,3,1,2,3,1,0],bass:'x...x.x.x...x.x.',hat:'..x...x...x...x.',snare:'....x.......x...'}];
 export class Sound{
- constructor(){this.ac=null;this.vol=.8;this.musVol=.5;this.song=0;this.playing=false;this.step=0;this.bar=0;this.nextT=0;this.timer=null;this.speed=0;}
+ constructor(){this.ac=null;this.vol=.8;this.musVol=.5;this.song=0;this.playing=false;this.step=0;this.bar=0;this.nextT=0;this.timer=null;this.speed=0;
+  samples(this,{step:['step',a=>.16+a*.1],land:['land',.6],hard:['thud',.6],knock:['thud',.5],crack:['smash',.5],jump:['jump',.22]},()=>this.sfx);}
  init(){boot(this,ac=>{this.master=master(ac,this.vol,-12,4);this.sfx=gain(ac,1,this.master);this.mus=gain(ac,this.musVol,this.master);
   this.musF=ac.createBiquadFilter();this.musF.type='lowpass';this.musF.frequency.value=1800;this.musF.Q.value=.7;this.musF.connect(this.mus);
   const b=this.noise=noiseBuf(ac);

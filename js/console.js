@@ -58,10 +58,11 @@ addEventListener('arcade-ready',()=>{
  /* insert: the cartridge drops into the slot, the screen powers down, the clock counts 3-2-1, the game boots */
  function insert(gm,el,from){
   if(busy)return;busy=true;if(stop){stop();stop=null;}
+  A.uiSfx&&A.uiSfx('insert',.5);
   const s=$('slot').getBoundingClientRect(),r=(from||el).getBoundingClientRect();
   if(!RM.matches){const t=from||el;t.classList.add('gone');t.style.transform='translate('+(s.left+s.width/2-(r.left+r.width/2))+'px,'+(s.top-(r.top+r.height/2))+'px) scale(.55)';}
   con.classList.remove('ready');osd.textContent='LOADING '+gm.name;cname.textContent=tc(gm.name);
-  let n=3;const step=()=>{clock.classList.remove('low');if(n<0||RM.matches){S.play(gm);setTimeout(reset,400);return;}clock.textContent=n?'0:0'+n:'GO';n--;setTimeout(step,260);};
+  let n=3;const step=()=>{clock.classList.remove('low');if(n<0||RM.matches){S.play(gm);setTimeout(reset,400);return;}clock.textContent=n?'0:0'+n:'GO';A.uiSfx&&A.uiSfx(n?'hover':'open',n?.25:.4);n--;setTimeout(step,260);};
   powerCycle(()=>{still(gm);step();});
  }
  function reset(){busy=false;osd.textContent='ATTRACT MODE';const i=tray.indexOf(tray[cur]);cartEls().forEach(b=>{b.classList.remove('gone','lift');b.style.transform='';});tune(i,true);}

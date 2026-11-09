@@ -1,4 +1,6 @@
-// Shared WebAudio synthesis for the full-3D worlds: no audio files, every sound is built from oscillators and noise.
+// Shared WebAudio for the full-3D worlds. Every sound is synthesized from oscillators and noise; samples() below can
+// layer a recorded CC0 take (js/sfxbank.js, files in sfx/) on top of chosen sounds, falling back to synth-only while
+// the take decodes or if the file can't load.
 // Each world keeps its own sound.js (its recipes, music and ambience); this module holds the plumbing they all repeat.
 //
 //  boot(snd, build)                    create snd.ac on the first call (from a click) and run build(ac); later calls resume a
@@ -14,7 +16,9 @@
 //  SpatialSound                        base class for the worlds that place one-shots around the listener with play(kind, pos)
 //                                      (arena, titans, ink, campaign, looter): buses, delay room, jet/ambience beds, _dst/_n/_o,
 //                                      setVol/setMusic/listener/announce.
+//  samples(snd, map, dst)            wrap snd.play(kind, a?) (and snd.init) so each kind in map also plays a recorded take
 // tone() and hiss() return their gain node, already connected to dst, so a caller can add a reverb send.
+import '../sfxbank.js';
 const AC=()=>new (window.AudioContext||window.webkitAudioContext)();
 
 export function boot(snd,build){if(snd.ac){if(snd.ac.state==='suspended')snd.ac.resume();return;}try{build(snd.ac=AC());}catch(e){snd.ac=null;}}
@@ -30,6 +34,24 @@ export function tone(ac,dst,t,type,f0,f1,dur,vol,atk=.004){const o=ac.createOsci
 export function hiss(ac,buf,dst,t,dur,f0,f1,q,vol,type='lowpass',atk=0,lo=30){const s=ac.createBufferSource();s.buffer=buf;const f=ac.createBiquadFilter();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(Math.max(lo,f0),t);f.frequency.exponentialRampToValueAtTime(Math.max(lo,f1),t+dur);
  const g=ac.createGain();if(atk){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+atk);}else g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+dur);s.connect(f);f.connect(g);g.connect(dst);s.start(t,Math.random()*1.5);s.stop(t+dur+.02);return g;}
 
+/** Layer recorded takes on a world's synth sounds. map = {kind: [pool, vol, rate?]}; vol may be a function of the
+ *  play() call's second argument (an impact speed, say). dst() is the node the take feeds, normally the world's sfx
+ *  bus, so its volume slider and mute still apply; returning null skips the take (a sound too far away to hear).
+ *  scale() multiplies the volume (SpatialSound passes its distance falloff). The pools start decoding on init(). */
+export function samples(snd,map,dst,scale){
+ const pools=[...new Set(Object.values(map).map(l=>l[0]))],want=()=>{try{const ac=snd.ac||snd.ctx;if(snd._bk&&snd._bkAc===ac)return snd._bk;const b=ac&&window.PASFX&&window.PASFX.bank(ac,'../sfx/');if(b){b.want(...pools);snd._bk=b;snd._bkAc=ac;}return b;}catch(e){return null;}};
+ const ini=snd.init;if(ini)snd.init=function(...r){const v=ini.apply(this,r);want();return v;};
+ const play=snd.play;snd.play=function(k,...r){this._d=null;const v=play.call(this,k,...r);const L=map[k];
+  if(L&&(this.ac||this.ctx)&&this.on!==false){try{const b=want(),d=dst();if(b&&d){const a=typeof r[0]==='number'?r[0]:typeof r[1]==='number'?r[1]:1;
+   const vol=(typeof L[1]==='function'?L[1](a):L[1])*(scale?scale():1);if(vol>.004)b.play(L[0],d,{vol,rate:L[2]||1});}}catch(e){}}
+  return v;};
+ return snd;}
+/** One recorded take straight onto dst (for worlds whose sounds are separate methods, not play(kind)). */
+export function take(ac,pool,dst,vol,rate){try{const b=ac&&window.PASFX&&window.PASFX.bank(ac,'../sfx/');if(b&&dst)return b.play(pool,dst,{vol,rate:rate||1});}catch(e){}return null;}
+// kinds most SpatialSound worlds share, and the takes they get; a world adds its own with layer({...})
+export const SPATIAL_TAKES={boom:['bigboom',.8],melee:['hit',.55],hitBody:['thud',.35],death:['destroy',.35],step:['step',.3],
+ land:['land',.6],jump:['jump',.25],swap:['swap',.45],reload:['swap',.3,1.25],tink:['clank',.25],pickup:['coin',.3],shieldBreak:['glass',.45],
+ throw:['drop',.25],spawn:['power',.25],empty:['hover',.4]};
 /** Positional one-shot synth. Subclasses write init() with boot() and the helpers below, and a play(kind,pos,vol) that does
  *  `if(!this._dst(pos,v,range))return;` and then layers this._o / this._n on that destination. this.range is the default
  *  audible range in metres; this.verb (optional) is the send that loud panned sounds also feed. */
@@ -44,12 +66,15 @@ export class SpatialSound{
   this.hum=ac.createOscillator();this.hum.type='sine';this.hum.frequency.value=55;this.hg=gain(ac,0,this.master);this.hum.connect(this.hg);this.hum.start();}
  /** Glide the ambience to cfg = [bed low-pass Hz, bed gain, hum Hz (0 = 50), hum gain]. */
  amb(cfg){const t=this.ac.currentTime;this.af.frequency.setTargetAtTime(cfg[0],t,.5);this.ag.gain.setTargetAtTime(cfg[1],t,.5);this.hum.frequency.setTargetAtTime(cfg[2]||50,t,.5);this.hg.gain.setTargetAtTime(cfg[3],t,.5);}
+ /** Layer recorded takes on this world's sounds: SPATIAL_TAKES plus extra {kind:[pool,vol,rate?]}. Takes go through the
+  *  same positioned node as the synth (_dst), scaled by its distance falloff. Call once, from the constructor. */
+ layer(extra){return samples(this,Object.assign({},SPATIAL_TAKES,extra),()=>this._d,()=>this._v||0);}
  setVol(v){this.vol=v;if(this.master)this.master.gain.value=v;}
  setMusic(v){this.musVol=v;if(this.musG)this.musG.gain.value=v*.5;}
  listener(x,y,z,yaw){this.lp.x=x;this.lp.y=y;this.lp.z=z;this.lp.yaw=yaw;}
  // destination node for a positioned sound (gain + stereo pan by listener-relative angle); null when too far to hear
  _dst(pos,vol,range=this.range){const ac=this.ac,g=ac.createGain();let v=vol,pan=0;if(pos){const dx=pos.x-this.lp.x,dy=pos.y-this.lp.y,dz=pos.z-this.lp.z,d=Math.hypot(dx,dy,dz);v*=1/(1+(d/(range*.25))**2);if(d>.5){const rx=Math.cos(this.lp.yaw),rz=-Math.sin(this.lp.yaw);pan=Math.max(-.85,Math.min(.85,(dx*rx+dz*rz)/d));}if(v<.004)return null;}
-  if(ac.createStereoPanner&&pan){const p=ac.createStereoPanner();p.pan.value=pan;g.connect(p);p.connect(this.sfx);if(vol>.15&&this.verb)p.connect(this.verb);}else g.connect(this.sfx);this._v=v;return g;}
+  if(ac.createStereoPanner&&pan){const p=ac.createStereoPanner();p.pan.value=pan;g.connect(p);p.connect(this.sfx);if(vol>.15&&this.verb)p.connect(this.verb);}else g.connect(this.sfx);this._v=v;this._d=g;return g;}
  _n(dst,dur,f0,f1,q,vol,type='lowpass',delay=0){hiss(this.ac,this.noise,dst,this.ac.currentTime+delay,dur,f0,f1,q,vol*this._v,type,.004,20);}
  _o(dst,type,f0,f1,dur,vol,delay=0,att=.004){tone(this.ac,dst,this.ac.currentTime+delay,type,f0,f1,dur,vol*this._v,att);}
  announce(text){if(!this.annOn)return;try{const s=window.speechSynthesis;if(!s)return;if(s.speaking&&s.pending)s.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.02;u.pitch=.55;u.volume=Math.min(1,this.vol*1.1);s.speak(u);}catch(e){}}}

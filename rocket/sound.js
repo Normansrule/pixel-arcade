@@ -1,7 +1,9 @@
 // ROCKET ARENA — synthesized sound (no audio files): engines, boost, hits, crowd, horn.
-import {boot,master,gain,noiseBuf,bed,tone,hiss} from '../js/kit3d/audio.js';
+import {boot,master,gain,noiseBuf,bed,tone,hiss,samples} from '../js/kit3d/audio.js';
 export class Sound{
- constructor(){this.ac=null;this.on=true;this.engines=[];}
+ constructor(){this.ac=null;this.on=true;this.engines=[];
+  // recorded CC0 takes under the synth: a metal clang on ball touches scaled by impact speed, crunches for bumps and demolitions
+  samples(this,{hit:['metal',a=>Math.min(.8,.15+a*.012)],bounce:['clank',a=>Math.min(.3,a*.008)],bump:['crash',.6],demo:['bigboom',.8],goal:['bigboom',.9],land:['thud',a=>Math.min(.4,a*.02)]},()=>this.out);}
  init(){if(this.ac)return;boot(this,ac=>{this.out=master(ac,.7,-24,12);const b=this.noise=noiseBuf(ac);
   // crowd bed
   this.crowd=bed(ac,b,'bandpass',700,.6,this.out,.03).g;

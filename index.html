@@ -193,6 +193,21 @@
     </div>
   </section>
 
+  <section class="sect anywhere" id="anywhere" aria-labelledby="any-h">
+    <div class="any-bg" aria-hidden="true"><i></i><i></i><i></i></div>
+    <header class="sec-head"><h2 id="any-h">Play anywhere</h2><p>The same arcade on a laptop, a tablet and a phone. Install it as an app, or save every game for a flight with no internet.</p></header>
+    <div class="devices" id="devices">
+      <figure class="dev laptop"><div class="lid"><div class="scr"><img src="docs/cards/novaarena.jpg" alt="Nova Arena running in the desktop app" loading="lazy"></div></div><div class="base"></div><figcaption>Desktop app<span>Windows, macOS, Linux</span></figcaption></figure>
+      <figure class="dev tablet"><div class="scr"><img src="docs/cards/rocket.jpg" alt="Rocket Arena on a tablet" loading="lazy"></div><figcaption>Tablet<span>touch controls</span></figcaption></figure>
+      <figure class="dev phone"><div class="scr"><img src="phone.png" alt="The arcade lobby on a phone" loading="lazy"></div><figcaption>Phone<span>installable web app</span></figcaption></figure>
+    </div>
+    <ul class="any-facts">
+      <li><b>Offline</b><span>Every game, font and sound is stored in the app. No servers, no trackers.</span></li>
+      <li><b>Studio sound</b><span>Recorded effects from Kenney's free CC0 libraries, or press <kbd>X</kbd> on the pause card for retro beeps.</span></li>
+      <li><b>Light on hardware</b><span>Canvas games run on old laptops; 3D worlds drop their effects to keep the frame rate.</span></li>
+    </ul>
+  </section>
+
   <section class="sect make" id="make" aria-labelledby="make-h">
     <header class="sec-head"><h2 id="make-h">Make your own</h2><p>A real 2D and 3D game editor in the browser: scenes, components, rules, play-test, share and publish.</p></header>
     <a class="mkcard" href="builder/" data-tilt><div class="mkimgs"><img src="docs/cards/builder3d.jpg" alt="The 3D game builder editor" loading="lazy"><img class="mk2" src="docs/cards/builder.jpg" alt="The 2D game builder editor" loading="lazy"></div><div><b>Build a game in 60 seconds.</b><span>2D platformers and shooters or 3D obstacle courses, islands and arenas. Drop in players, enemies, coins and goals, move them with gizmos, wire up WHEN → DO rules and press Play. Share a link or publish it to the arcade shelf.</span><i class="btn pri">Open the builder</i></div></a>
@@ -226,6 +241,7 @@
 <script src="js/engine/01-draw.js"></script>
 <script src="js/engine/02-pseudo3d.js"></script>
 <script src="js/engine/03-person.js"></script>
+<script src="js/sfxbank.js"></script>
 <script src="js/engine/04-audio.js"></script>
 <script src="js/engine/05-fx.js"></script>
 <script src="js/engine/06-input.js"></script>

@@ -1,8 +1,10 @@
 // CRITTER KART — WebAudio synth: per-player engines with drift screech, pickups, tiered turbos, tricks, hazards,
 // countdown, fanfares and a light procedural race music loop (M toggles music).
+import {samples} from '../js/kit3d/audio.js';
 const THEME_KEYS={shores:[0,4,7,9],frost:[0,3,7,10],jungle:[0,3,5,7],star:[0,4,7,11],hub:[0,4,7,9]};
 export class Sound{
- constructor(){this.ctx=null;this.eng=[];this.on=true;this.music=true;try{this.music=localStorage.getItem('pxd_critterkart_music')!=='0';}catch(e){}this.mus=null;}
+ constructor(){this.ctx=null;this.eng=[];this.on=true;this.music=true;try{this.music=localStorage.getItem('pxd_critterkart_music')!=='0';}catch(e){}this.mus=null;
+  samples(this,{hit:['crash',.5],boom:['bigboom',.6],coin:['coin',.28],bumper:['thud',.5]},()=>this.master);}
  init(){if(this.ctx)return;try{this.ctx=new (window.AudioContext||window.webkitAudioContext)();this.master=this.ctx.createGain();this.master.gain.value=.35;this.master.connect(this.ctx.destination);
   this.mbus=this.ctx.createGain();this.mbus.gain.value=this.music?.16:0;this.mbus.connect(this.master);
   const len=this.ctx.sampleRate*1,b=this.ctx.createBuffer(1,len,this.ctx.sampleRate),a=b.getChannelData(0);for(let i=0;i<len;i++)a[i]=Math.random()*2-1;this.nbuf=b;}catch(e){this.ctx=null;}}

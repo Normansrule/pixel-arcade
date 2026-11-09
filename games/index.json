@@ -5,6 +5,7 @@
   "js/engine/01-draw.js",
   "js/engine/02-pseudo3d.js",
   "js/engine/03-person.js",
+  "js/sfxbank.js",
   "js/engine/04-audio.js",
   "js/engine/05-fx.js",
   "js/engine/06-input.js",

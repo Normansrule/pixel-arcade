@@ -79,7 +79,7 @@ function pauseCard(){const e=ease(E.pT/12);veil(e,.55);anim(e,10,()=>{const how=
  tx(E.cur.name,x+14,y+46,{f:'d',z:Math.min(24,24*(w-28)/Math.max(1,tw(E.cur.name,{f:'d',z:24}))),mw:w-28});
  how.forEach((l,i)=>tx(l,x+14,y+62+i*10,{z:6.4,ls:.2,c:'#bdbdbd'}));const ry=y+66+how.length*10;hair(x+14,ry,w-28,'rgba(255,255,255,.1)');
  krow([{k:'P',l:'RESUME',hot:1,fn:()=>{E.paused=false;}},{k:'R',l:'RESTART',fn:()=>{if(E.hot){E.turn=0;E.ts=[0,0];}E.begin();}},{k:'ESC',l:'LOBBY',fn:()=>A.close()}],W/2,ry+12);
- krow([{k:'M',l:E.mute?'SOUND OFF':'SOUND ON',fn:()=>A.toggleMute()},{k:'G',l:'GFX '+A.gfx.toUpperCase(),fn:()=>A.cycleGfx()}].concat(!E.cur.vs||A.cpu?[{k:'L',l:'SCORES',fn:()=>A.showBoard(E.cur)}]:[]),W/2,ry+30);});}
+ krow([{k:'M',l:E.mute?'SOUND OFF':'SOUND ON',fn:()=>A.toggleMute()},{k:'X',l:A.sfxStyle==='retro'?'RETRO':'STUDIO',fn:()=>A.cycleSfx()},{k:'G',l:'GFX '+A.gfx.toUpperCase(),fn:()=>A.cycleGfx()}].concat(!E.cur.vs||A.cpu?[{k:'L',l:'SCORES',fn:()=>A.showBoard(E.cur)}]:[]),W/2,ry+30);});}
 
 function resultCard(kind){const e=ease(E.sT/16),c=A.c;veil(e,.5);anim(e,12,()=>{const solo=kind==='over'&&!E.hot&&!E.cur.vs,w=248;let h=kind==='swap'?132:solo||E.hot?150:124;const x=W/2-w/2,y=H/2-h/2-4;card(x,y,w,h,e);
  const mode=E.hot?'2P TAKE TURNS':E.cur.vs?(A.cpu?'VS CPU · '+['EASY','NORMAL','HARD'][A.lvl]:'2 PLAYERS'):'SOLO';
