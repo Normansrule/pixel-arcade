@@ -48,6 +48,23 @@ const X={hx,lt,rgba,lg,rg,
  wood:(x,y,w,h,col,vert)=>{fr(x,y,w,h,col);const c=A.c;c.fillStyle='rgba(0,0,0,.12)';if(vert)for(let i=0;i<w;i+=7)c.fillRect(x+i,y,1,h);else for(let i=0;i<h;i+=7)c.fillRect(x,y+i,w,1);c.fillStyle='rgba(255,255,255,.06)';if(vert)for(let i=3;i<w;i+=13)c.fillRect(x+i,y,2,h);else for(let i=3;i<h;i+=13)c.fillRect(x,y+i,w,2);},
  water:(x,y,w,h,c1,c2,t)=>{fr(x,y,w,h,lg(0,y,0,y+h,[c1,c2]));const c=A.c;c.fillStyle='rgba(255,255,255,.14)';for(let j=y+4;j<y+h;j+=9)for(let i=0;i<w;i+=26){const o=((t||0)*.5+j*3)%26;c.fillRect(x+((i+o)%w),j+Math.sin((i+j+(t||0)*.1))*1,9,1);}},
  /* cached static layer, re-rendered when key changes. fn draws in logical coords */
+ /* Wall textures for the column (raycast) renderers: a 64x64 canvas per kind, made once from a seeded hash so it
+    looks the same every run. Kinds: 'stone' (rough blocks, mortar, moss and soot), 'panel' (riveted metal plates
+    with a lit seam), 'brick' (red brick). wallCol() draws one screen column of it: texture column u (0..1) stretched
+    from top to top+h, then darkened toward fog = [r,g,b] by (1-f) and by side shading. */
+ walltex:kind=>{const key='wt_'+kind;if(X._t[key]!==undefined)return X._t[key];if(typeof document==='undefined'){X._t[key]=null;return null;}
+  const N=64,cv=document.createElement('canvas');cv.width=cv.height=N;const c=cv.getContext('2d'),hs=(x,y)=>{let h=Math.imul(x+374761393,668265263)^Math.imul(y+1442695041,2246822519);h=Math.imul(h^(h>>>13),3266489917);return((h^(h>>>16))>>>0)/4294967296;};
+  const img=c.createImageData(N,N),d=img.data,set=(x,y,r,g,b)=>{const i=(y*N+x)*4;d[i]=r;d[i+1]=g;d[i+2]=b;d[i+3]=255;};
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const n=hs(x,y),n2=hs(x>>2,y>>2);let r,g,b;
+   if(kind==='panel'){const px=x%32,py=y%32,edge=px<1||py<1,lit=px===1||py===1,riv=(px===4||px===27)&&(py===4||py===27);const v=96+n2*18+n*10;r=v*.86;g=v*.92;b=v*1.06;if(edge){r=g=b=34;}else if(lit){r+=40;g+=44;b+=50;}if(riv){r=g=b=170;}if(py>14&&py<17&&px>6&&px<26){r*=.7;g*=.7;b*=.7;}if(hs(x>>3,y>>3)>.9){r*=.82;g*=.86;b*=.8;}}
+   else{const bw=kind==='brick'?16:21,bh=kind==='brick'?8:13,row=Math.floor(y/bh),off=(row%2)*(bw>>1),bx=(x+off)%bw,by=y%bh,cell=hs(Math.floor((x+off)/bw),row),mort=bx<1||by<1;
+    if(kind==='brick'){const v=.85+cell*.3;r=(150+n*30)*v;g=(68+n*16)*v;b=(52+n*12)*v;if(mort){r=g=b=74+n*10;}}
+    else{const v=.78+cell*.35+(n2-.5)*.2;r=(118+n*26)*v;g=(102+n*22)*v;b=(88+n*20)*v;if(mort){r=48;g=40;b=36;}else if(by===1||bx===1){r+=18;g+=16;b+=14;}else if(by===bh-1||bx===bw-1){r*=.7;g*=.7;b*=.7;}
+     if(y>40&&hs(x>>1,7)>.55&&mort===false&&hs(x,y>>1)>.6){r*=.62;g*=.85;b*=.55;}if(y<10&&hs(x>>2,3)>.5){r*=.75;g*=.72;b*=.72;}}}
+   set(x,y,Math.min(255,r)|0,Math.min(255,g)|0,Math.min(255,b)|0);}
+  c.putImageData(img,0,0);return X._t[key]=cv;},_t:{},
+ wallCol:(tex,u,x,top,w,h,f,fog)=>{const c=A.c;if(!tex||!c.drawImage){c.fillStyle='rgb('+fog.map(v=>v|0)+')';c.fillRect(x,top,w,h);return;}
+  const tu=Math.min(63,Math.max(0,u*64|0));c.drawImage(tex,tu,0,1,64,x,top,w,h);if(f<.995){c.fillStyle='rgba('+fog[0]+','+fog[1]+','+fog[2]+','+(1-Math.max(0,f)).toFixed(3)+')';c.fillRect(x,top,w,h);}},
  cache:(key,fn)=>{if(typeof document==='undefined'||!A.c||!A.c.drawImage){fn();return;}let e=X._c[key];if(!e){if(Object.keys(X._c).length>40)X._c={};const cv=document.createElement('canvas');cv.width=640;cv.height=480;const cx=cv.getContext('2d');cx.scale(2,2);const sv=A.c;A.c=cx;try{fn();}finally{A.c=sv;}e=X._c[key]=cv;}A.c.drawImage(e,0,0,W,H);},_c:{},
  /* local effects: rings, sparks, flashes, floating text. create one per game */
  fx:()=>{const L=[];let fl=0,flc='#ffffff';const o={

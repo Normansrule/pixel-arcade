@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round30`, which includes rounds 11 to 30)
 
+### Round 30, batch 3 (v66): textured 3D walls and a richer README
+
+- **Dungeon 3D:** the maze walls are now textured stone blocks with mortar, moss low down and soot near the ceiling, lit warm by your torch and fading into the dark. The textures are generated in code (a new shared `walltex`/`wallCol` kit in `js/gx.js`), so nothing extra is downloaded.
+- **Strike Zone 3D:** riveted metal panels with lit seams, and red brick on some walls, tinted per wall and fogged with distance (GFX off keeps the old flat colours).
+- **Hover Tank 3D:** a banded synthwave sun and two ridges of mountains on the horizon that slide as you turn, over a gradient plain.
+- **README:** new sections with an animated reel of the five screen filters, a panel of real sound waveforms, a before/after strip for this round's graphics and a fresh shot of the Play anywhere section; the controls table lists V and X.
+
 ### Round 30, batch 2 (v65): screen filters
 
 - **Screen filters for every arcade cabinet:** press **V** on the pause card (or on a game's title and result screens) to cycle CLEAN, POCKET (four shades of green with ordered dithering, like an old handheld), 8-COLOUR (each colour channel dithered on or off), PRINT (one-bit Atkinson dithering on warm paper) and ASCII (the picture rebuilt from coloured text characters). The clock, cards and menus stay sharp on top, the choice is remembered, and each filter costs 1 to 3.5 ms a frame whatever the window size.

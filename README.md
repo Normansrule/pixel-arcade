@@ -19,7 +19,7 @@
 ![offline](https://img.shields.io/badge/works-offline-f2f2f2?style=flat-square)
 ![installable](https://img.shields.io/badge/installable-app-f2f2f2?style=flat-square)
 
-**[Play](#-play-in-10-seconds)** · **[Features](#-what-you-get)** · **[3D worlds](#-55-full-3d-worlds)** · **[Cabinets](#-466-arcade-cabinets)** · **[Progress](#-progress)** · **[Builder](#-build-your-own)** · **[Get the app](#-play-anywhere)** · **[Develop](#-develop)** · **[Design](#-design)** · **[Docs](https://normansrule.github.io/pixel-arcade/docs/)**
+**[Play](#-play-in-10-seconds)** · **[Features](#-what-you-get)** · **[3D worlds](#-55-full-3d-worlds)** · **[Cabinets](#-466-arcade-cabinets)** · **[Screens](#-five-screens-one-arcade)** · **[Sound](#-real-sound)** · **[Progress](#-progress)** · **[Builder](#-build-your-own)** · **[Get the app](#-play-anywhere)** · **[Develop](#-develop)** · **[Design](#-design)** · **[Docs](https://normansrule.github.io/pixel-arcade/docs/)**
 
 </div>
 
@@ -39,6 +39,7 @@ Pixel Arcade is a free, open-source arcade that runs in your web browser: hundre
 | A: fire, jump, select | Space | click, hold, or spam-click |
 | B | X | right-click |
 | Pause · Restart · Mute · Graphics | P · R · M · G | |
+| Screen filter · Sound style | V · X | on the pause card |
 | Exit | Esc | |
 | 2 players | Player 1 (P1): WASD + F/G · P2: Arrows + Enter/Shift | |
 
@@ -54,6 +55,7 @@ Can't decide? Hit **Surprise me** on the front page (or the dice in the top bar)
 - **Light on hardware.** The cabinets draw on a small 320×240 screen and scale it up; the 3D worlds have three graphics levels (press **G**). Nothing to download before you play.
 - **Plays anywhere, even offline.** Install it as a PWA (progressive web app), save every game for offline play, or grab the desktop app for Windows, macOS and Linux.
 - **Scores on GitHub.** Post a score and it becomes a GitHub issue tied to your account, so the global top 10 is real.
+- **Real sound, five screens.** 76 recorded CC0 sound effects play in every cabinet (press **X** for retro beeps), and **V** redraws any game as a dithered handheld, an eight-colour micro, a photocopy or ASCII art.
 - **Make your own.** A 2D (two-dimensional) and 3D game builder runs in the same browser tab and can publish straight into the arcade.
 - **Online play with codes.** Swap a short code (or scan a QR (Quick Response) code) with a friend on the same network to play head to head. No server and no account.
 
@@ -194,6 +196,36 @@ Classic arcade, sports, board games with real CPU search, puzzles, cards, party 
 
 **[See every game →](docs/GAMES.md)**
 
+<img src="docs/readme/graphics-r30.jpg" width="100%" alt="Before and after: Dungeon 3D gets textured stone walls with mortar and moss, Strike Zone 3D gets riveted metal panels and red brick, Hover Tank 3D gets a banded synthwave sun over two ridges of mountains">
+
+<sub>Round 30 graphics pass on the retro-3D cabinets: every wall column is now a slice of a generated 64×64 texture (stone, riveted metal or brick, made from a seeded hash so nothing is downloaded), shaded by distance and torchlight.</sub>
+
+## 🎛️ Five screens, one arcade
+
+<p align="center"><img src="docs/readme/filters.webp" width="640" alt="One arcade cabinet cycling through its five screen filters: Clean, Pocket (four shades of green), 8-colour, Print (one-bit dither on paper) and ASCII (the picture rebuilt from coloured text)"></p>
+
+Press **V** in any of the 466 cabinets to change how the screen is drawn. The game keeps running; only the picture changes, and the clock, cards and menus stay sharp on top.
+
+| Screen | What it does | Cost per frame |
+|---|---|---|
+| **Clean** | The game as drawn: HD (high definition) vector art, bloom and particles. | 0 ms |
+| **Pocket** | Four shades of green with a 4×4 Bayer ordered dither, like an old handheld. | ~1.5 ms |
+| **8-colour** | Each colour channel dithered fully on or off: the eight-colour home-computer look. | ~1.2 ms |
+| **Print** | One-bit Atkinson error diffusion on warm paper, like a photocopied fanzine. | ~3.4 ms |
+| **ASCII** | The picture rebuilt from 2,560 coloured characters, ramp ` .,:;-=+*cox%#&@`. | ~0.9 ms |
+
+Every filter works on a 320×240 copy of the frame, so the cost is the same on a phone or a 4K monitor.
+
+## 🔊 Real sound
+
+<img src="docs/readme/sounds.png" width="100%" alt="Waveforms of eight recorded sound effects: a punch hit, a coin, an explosion, a laser shot, a jump, a win jingle, a car crash and a blaster">
+
+The arcade now ships **76 recorded sound effects** (560 KB, stored in [`sfx/`](sfx/), so they work offline). They are free CC0 (public domain) sounds by [Kenney](https://kenney.nl), credited in [THIRD_PARTY.md](THIRD_PARTY.md).
+
+- **All 466 cabinets.** Each of the ten sound names a game can call (`hit`, `coin`, `boom` …) has a pool of 3 to 6 takes. Every call picks a different take and nudges its pitch, so a hundred coins in a row never sound copied. Press **X** for the original synth beeps (**Retro**).
+- **11 3D worlds.** Gunfire, footsteps, landings and explosions in the shooters; a metal clang in Rocket Arena that grows with impact speed; crashes in the kart and driving games. The recorded take plays on top of each world's own synthesized sound, from the same position in 3D (three-dimensional) space.
+- **The hub.** A clunk when a cartridge goes into the console, ticks on the 3-2-1 countdown, a soft tick when you hover a cartridge.
+
 ## 📈 Progress
 
 Where the arcade is heading: every release, and which 3D worlds have had the realism pass (physically based materials, real lighting, detailed models and effects, plus deeper gameplay). Generated by `tools/gen_docs.py` from the game registry and [`docs/progress.json`](docs/progress.json), so the counts can't go stale.
@@ -311,7 +343,7 @@ The **[Game Builder](https://normansrule.github.io/pixel-arcade/builder/)** is a
 
 ## 📲 Play anywhere
 
-<img src="docs/readme/anywhere.jpg" alt="Web, app, offline, desktop">
+<img src="docs/readme/anywhere-r30.jpg" width="100%" alt="The Play anywhere section of the front page: the arcade on a laptop, a tablet and a phone over a glowing orange and blue background, with three facts underneath">
 
 | Where | How |
 |---|---|
