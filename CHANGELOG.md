@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round30`, which includes rounds 11 to 30)
 
+### Round 30, batch 2 (v65): screen filters
+
+- **Screen filters for every arcade cabinet:** press **V** on the pause card (or on a game's title and result screens) to cycle CLEAN, POCKET (four shades of green with ordered dithering, like an old handheld), 8-COLOUR (each colour channel dithered on or off), PRINT (one-bit Atkinson dithering on warm paper) and ASCII (the picture rebuilt from coloured text characters). The clock, cards and menus stay sharp on top, the choice is remembered, and each filter costs 1 to 3.5 ms a frame whatever the window size.
+
 ### Round 30, batch 1 (v64): recorded sound and a Play anywhere section
 
 - **Recorded sound effects:** 76 free CC0 (public domain) sounds by Kenney, taken from his Interface, Impact and Sci-Fi Sounds packs and his official starter kits, are now stored in `sfx/` (560 KB, works offline). Credits are in `THIRD_PARTY.md` and `sfx/LICENSE.txt`.

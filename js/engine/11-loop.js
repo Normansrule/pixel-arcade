@@ -17,9 +17,9 @@ let crtEl=null;
 function render(){E.hits=[];
  if(E.state==='title'){bloom(false);E.drawTitle();E.toastDraw();return;}
  if(!E.g)return;E.g.draw();A.flush&&A.flush();
- if(E.state==='play'){A.fxDraw();E.clockUI();bloom(!E.paused);if(E.paused)E.pauseCard();else E.howStrip();}
- else if(E.state==='swap'){bloom(false);A.fxDraw();E.resultCard('swap');}
- else if(E.state==='over'){bloom(false);E.resultCard('over');A.fxDraw();}
+ if(E.state==='play'){A.fxDraw();A.screenFilter&&A.screenFilter();E.clockUI();bloom(!E.paused);if(E.paused)E.pauseCard();else E.howStrip();}
+ else if(E.state==='swap'){bloom(false);A.fxDraw();A.screenFilter&&A.screenFilter();E.resultCard('swap');}
+ else if(E.state==='over'){bloom(false);A.screenFilter&&A.screenFilter();E.resultCard('over');A.fxDraw();}
  E.toastDraw();
  if(!crtEl)crtEl=document.querySelector('.crt');if(crtEl){const s=E.paused?0:A.shake;crtEl.style.transform=s>0?'translate('+(A.rnd(s)-s/2)+'px,'+(A.rnd(s)-s/2)+'px)':'';}}
 let last=0,acc=0;
