@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v74", "date": "10 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,
+     "added": "A README reel of twelve cabinets on the Arcade screen, a calmer Arcade glow for pale games, and Yeti Escape redrawn with forest walls and lit moguls."},
     {"v": "v73", "date": "10 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,
      "added": "Gloss Riot's skyline becomes real buildings (window facades with glossy glass, rooftop tanks, awnings) with palms and moored sailboats on the harbour; the 78 round-30 cabinets get their missing shelf screenshots (and CI now checks for them); Corn Maze Night and Snowman are redrawn."},
     {"v": "v72", "date": "10 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,

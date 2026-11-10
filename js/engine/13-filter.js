@@ -76,10 +76,10 @@ function arcade(){const c=A.c,cv=c.canvas,w=cv.width,h=cv.height;if(!w||!h)retur
   fx.globalCompositeOperation='source-over';c.globalCompositeOperation='lighter';c.globalAlpha=.16;const d=Math.max(1,w/640);c.drawImage(fr,d,0,w,h);
   fx.globalCompositeOperation='copy';fx.drawImage(cv,0,0,320,240);fx.globalCompositeOperation='multiply';fx.fillStyle='#0038ff';fx.fillRect(0,0,320,240);c.globalAlpha=.12;c.drawImage(fr,-d,0,w,h);fx.globalCompositeOperation='source-over';}
  // halation: a blurred bright-pass of the picture, screened back over it
- gx.globalCompositeOperation='copy';if('filter' in gx){gx.filter='brightness(.9) contrast(1.9) blur(3px)';gx.drawImage(cv,0,0,160,120);gx.filter='none';}
+ gx.globalCompositeOperation='copy';if('filter' in gx){gx.filter='brightness(.72) contrast(2.6) blur(3px)';gx.drawImage(cv,0,0,160,120);gx.filter='none';}
  else{gx.drawImage(cv,0,0,40,30);gx.drawImage(glow,0,0,40,30,0,0,160,120);}
  gx.globalCompositeOperation='multiply';gx.drawImage(glow,0,0);gx.globalCompositeOperation='source-over';
- c.globalCompositeOperation='screen';c.globalAlpha=A.gfx==='low'?.55:.85;c.drawImage(glow,0,0,w,h);
+ c.globalCompositeOperation='screen';c.globalAlpha=A.gfx==='low'?.5:.75;c.drawImage(glow,0,0,w,h);
  c.globalCompositeOperation='source-over';c.globalAlpha=1;if(A.gfx!=='off')warp(c,cv,w,h);c.drawImage(mask,0,0);c.restore();}
 const RUN={arcade,pocket,eight,print,ascii};
 A.screenFilter=()=>{if(A.filter==='clean'||typeof document==='undefined'||!A.c||!A.c.canvas||!A.c.getImageData||!A.c.canvas.getContext)return;try{RUN[A.filter]();}catch(e){}};

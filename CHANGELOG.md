@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round31`)
 
+### Round 31, batch 3 (v74): a cabinet reel, a calmer Arcade glow and a deeper Yeti Escape
+- **README:** a new animated reel of twelve cabinets played on the Arcade screen opens the cabinets section.
+- **Arcade screen:** the phosphor glow now only picks up genuinely bright things, so pale games (Melon Drop, the snow games) no longer wash out.
+- **Yeti Escape:** pine forest walls scroll down both edges of the slope and lit moguls with blue shadows dot the run; its shelf screenshot is re-rendered.
+- **Survey:** all 544 cabinet screenshots were checked on contact sheets; the remaining sparse-looking ones (Ping Bounce, Trails, Territory) are minimal by design.
+
 ### Round 31, batch 2 (v73): a real skyline for Gloss Riot, 78 missing shelf screenshots, two winter and autumn redraws
 - **Gloss Riot:** the skyline around both arenas was plain coloured blocks. The buildings now have window facades (frames, sills, blinds, glossy glass that reflects the sky), parapets, stair heads, water tanks on legs, air-con units, aerials and shopfront awnings. The harbour map gains 34 palms along the beach and nine moored sailboats that bob on the swell.
 - **Shelf screenshots:** the 78 cabinets added in round 30 (Frontier, Voyage, Townsfolk and Four Seasons) had no hub thumbnail. All are rendered now, and `tools/gen_docs.py` (and so CI) fails if any cabinet is missing one.
