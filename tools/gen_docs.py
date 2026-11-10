@@ -325,6 +325,10 @@ def main():
     missing = [g['id'] for g in games if g['href'] and not g.get('style')]
     if missing:
         raise SystemExit('3D worlds need a style: field in their A.add(): ' + ', '.join(missing))
+    # every canvas cabinet needs a shelf screenshot, or the hub shows NO SIGNAL for it
+    nothumb = [g['id'] for g in games if not g['href'] and not g.get('img') and not os.path.exists(rel(f"docs/thumbs/{g['id']}.jpg"))]
+    if nothumb:
+        raise SystemExit(f'{len(nothumb)} cabinets have no docs/thumbs/<id>.jpg (render them with tools/thumbs.py): ' + ', '.join(nothumb))
     n = counts(games)
     index_scripts()
     sync_counts(n)

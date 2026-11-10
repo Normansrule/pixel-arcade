@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round31`)
 
+### Round 31, batch 2 (v73): a real skyline for Gloss Riot, 78 missing shelf screenshots, two winter and autumn redraws
+- **Gloss Riot:** the skyline around both arenas was plain coloured blocks. The buildings now have window facades (frames, sills, blinds, glossy glass that reflects the sky), parapets, stair heads, water tanks on legs, air-con units, aerials and shopfront awnings. The harbour map gains 34 palms along the beach and nine moored sailboats that bob on the swell.
+- **Shelf screenshots:** the 78 cabinets added in round 30 (Frontier, Voyage, Townsfolk and Four Seasons) had no hub thumbnail. All are rendered now, and `tools/gen_docs.py` (and so CI) fails if any cabinet is missing one.
+- **Corn Maze Night:** the maze is drawn under moonlight instead of solid black: furrowed earth, corn rows with leaves and ears, a soft lantern edge that flickers, fireflies and a lit exit gate. Tickets and oil still only show inside the lantern light.
+- **Snowman:** a sunset sky with a snowy cabin and chimney smoke, glints on fresh snow, and cleared ground that shows rounded grass patches instead of grey squares.
+
 ### Round 31, batch 1 (v72): audit, an Arcade screen and a tidier README
 - **ARCADE screen filter** for all 544 cabinets (press **V** on the pause card, now second in the cycle): a curved tube monitor with phosphor glow around bright things, a faint red/blue convergence fringe, a barrel-curved picture, one scanline per game row, an aperture grille on large screens, rounded glass corners and a reflection. It never reads pixels back, so it costs about a millisecond on the graphics card at any window size.
 - **Audit fixes:** the README header art, social preview, feature grid and several paragraphs still said 521 games, 466 cabinets and 55 worlds; all now say 600, 544 and 56. `tools/gen_docs.py` now rewrites counts in running prose too (outside the release history), so `--check` in CI fails the moment a count goes stale. The release table was missing v64 to v70; those rows are back.

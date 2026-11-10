@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v73", "date": "10 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,
+     "added": "Gloss Riot's skyline becomes real buildings (window facades with glossy glass, rooftop tanks, awnings) with palms and moored sailboats on the harbour; the 78 round-30 cabinets get their missing shelf screenshots (and CI now checks for them); Corn Maze Night and Snowman are redrawn."},
     {"v": "v72", "date": "10 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,
      "added": "An audit and an Arcade screen. Press V in any cabinet for a curved tube monitor with phosphor glow, scanlines, a colour fringe and rounded glass. The README header, social preview and feature grid now show the real counts (600 games, 56 worlds), the docs check catches stale counts in prose, and the README is tidier: one gallery for the four new packs and a folded release history."},
     {"v": "v71", "date": "10 Nov 2026", "branch": "round30", "round": 30, "games": 600, "worlds": 56,
