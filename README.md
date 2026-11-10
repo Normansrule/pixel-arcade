@@ -19,13 +19,13 @@
 ![offline](https://img.shields.io/badge/works-offline-f2f2f2?style=flat-square)
 ![installable](https://img.shields.io/badge/installable-app-f2f2f2?style=flat-square)
 
-**[Play](#-play-in-10-seconds)** · **[Features](#-what-you-get)** · **[3D worlds](#-56-full-3d-worlds)** · **[Cabinets](#-544-arcade-cabinets)** · **[Frontier](#-the-frontier-pack)** · **[Voyage](#-the-voyage-pack)** · **[Townsfolk](#-the-townsfolk-pack)** · **[Seasons](#-the-four-seasons-pack)** · **[Finish](#-showroom-finish)** · **[Screens](#-five-screens-one-arcade)** · **[Sound](#-real-sound)** · **[Progress](#-progress)** · **[Builder](#-build-your-own)** · **[Get the app](#-play-anywhere)** · **[Develop](#-develop)** · **[Design](#-design)** · **[Docs](https://normansrule.github.io/pixel-arcade/docs/)**
+**[Play](#-play-in-10-seconds)** · **[Features](#-what-you-get)** · **[3D worlds](#-56-full-3d-worlds)** · **[Cabinets](#-544-arcade-cabinets)** · **[New packs](#-four-new-packs)** · **[Graphics](#-showroom-finish)** · **[Screens](#-six-screens-one-arcade)** · **[Sound](#-real-sound)** · **[Progress](#-progress)** · **[Builder](#-build-your-own)** · **[Get the app](#-play-anywhere)** · **[Develop](#-develop)** · **[Docs](https://normansrule.github.io/pixel-arcade/docs/)**
 
 </div>
 
 ---
 
-Pixel Arcade is a free, open-source arcade that runs in your web browser: hundreds of short, original games, including 55 full-3D (three-dimensional) worlds, that you can start in a couple of seconds and finish in a few minutes. It's for anyone who wants a quick game without installing anything or owning a gaming PC (personal computer): on a school laptop, an old desktop, a phone on the bus, or a family computer where two people share one keyboard. Every game has a round timer and a results screen, most can be played against the computer at three difficulty levels, and the whole arcade can be saved for offline play or installed as an app.
+Pixel Arcade is a free, open-source arcade that runs in your web browser: hundreds of short, original games, including 56 full-3D (three-dimensional) worlds, that you can start in a couple of seconds and finish in a few minutes. It's for anyone who wants a quick game without installing anything or owning a gaming PC (personal computer): on a school laptop, an old desktop, a phone on the bus, or a family computer where two people share one keyboard. Every game has a round timer and a results screen, most can be played against the computer at three difficulty levels, and the whole arcade can be saved for offline play or installed as an app.
 
 ## ⚡ Play in 10 seconds
 
@@ -47,15 +47,15 @@ Can't decide? Hit **Surprise me** on the front page (or the dice in the top bar)
 
 ## ✨ What you get
 
-<img src="docs/readme/bento.webp" width="100%" alt="The feature grid: 55 full-3D worlds, 466 arcade cabinets, a round clock on every game, easy/normal/hard CPU, light on hardware, a 2D + 3D builder, online play with codes, and every platform it runs on">
+<img src="docs/readme/bento.webp" width="100%" alt="The feature grid: 56 full-3D worlds, 544 arcade cabinets, a round clock on every game, easy/normal/hard CPU, light on hardware, a 2D + 3D builder, online play with codes, and every platform it runs on">
 
-- **521 original games.** 466 arcade cabinets (classics, sports, board games, puzzles, cards, party games, sims) plus 55 full-3D worlds. Every name and level is our own; search the hub for a classic you know and it finds the game it inspired.
+- **600 original games.** 544 arcade cabinets (classics, sports, board games, puzzles, cards, party games, sims) plus 56 full-3D worlds. Every name and level is our own; search the hub for a classic you know and it finds the game it inspired.
 - **Quick rounds.** Each game has a time limit and a results screen, so a session takes minutes, not evenings.
 - **A real opponent.** The CPU (central processing unit, so the computer player) comes in easy, normal and hard, and board games use proper search, not random moves. Or play a friend on the same keyboard.
 - **Light on hardware.** The cabinets draw on a small 320×240 screen and scale it up; the 3D worlds have three graphics levels (press **G**). Nothing to download before you play.
 - **Plays anywhere, even offline.** Install it as a PWA (progressive web app), save every game for offline play, or grab the desktop app for Windows, macOS and Linux.
 - **Scores on GitHub.** Post a score and it becomes a GitHub issue tied to your account, so the global top 10 is real.
-- **Real sound, five screens.** 76 recorded CC0 sound effects play in every cabinet (press **X** for retro beeps), and **V** redraws any game as a dithered handheld, an eight-colour micro, a photocopy or ASCII art.
+- **Real sound, six screens.** 76 recorded CC0 sound effects play in every cabinet (press **X** for retro beeps), and **V** redraws any game on a curved arcade tube, a dithered handheld, an eight-colour micro, a photocopy or ASCII art.
 - **Make your own.** A 2D (two-dimensional) and 3D game builder runs in the same browser tab and can publish straight into the arcade.
 - **Online play with codes.** Swap a short code (or scan a QR (Quick Response) code) with a friend on the same network to play head to head. No server and no account.
 
@@ -201,17 +201,20 @@ Classic arcade, sports, board games with real CPU search, puzzles, cards, party 
 
 <sub>Round 30 graphics pass on the retro-3D cabinets: every wall column is now a slice of a generated 64×64 texture (stone, riveted metal or brick, made from a seeded hash so nothing is downloaded), shaded by distance and torchlight.</sub>
 
-## 🧭 The Frontier pack
+## 🧳 Four new packs
 
-Twenty new cabinets, each built around a cast and a place. They share a new character kit: outlined chibi people with blinking eyes, five hair styles, eight hats, outfits and something in hand. There are also small creatures and scenery pieces like trees, pines, cottages with lit windows and clouds.
+Seventy-eight cabinets added in round 30, each built around a cast and a place with a shared character kit: outlined chibi people with blinking eyes, five hair styles, eight hats, outfits and something in hand, plus small creatures and scenery.
 
-<img src="docs/readme/frontier-pack.jpg" width="100%" alt="Twenty new games in a grid: a lighthouse keeper guiding ships in a storm, a mushroom forager in a sunlit forest, a cowboy running along a desert train, a fisher on a floating island, a night-market noodle stall, a miner in a crystal cave, an owl delivering letters, a gondolier, a fossil dig, a storm chaser, a sled fleeing a yeti, a wizard duel, a treasure diver, a firework show, a gnome garden, a sky lantern, a jousting tourney, ice fishing, a sheepdog and a tide pool">
-
-## 🏂 The Four Seasons pack and Summit Rush
-
-Game 600. The last eighteen cabinets tour the year. In spring you plant seeds, follow a bee's waggle dance, build a nest and catch blossom. In summer you build sandcastles, snorkel a reef, spit melon seeds and race rafts. In autumn you rake leaves, shake apple trees, find your way out of a corn maze by lantern light, wave off crows and bob for apples. In winter you build snowmen, fly a sleigh, run a cocoa café, plough the streets and dodge icicles.
-
-<img src="docs/readme/seasons-pack.jpg" width="100%" alt="Eighteen seasonal games in a grid: seed sowing, a bee dance, a nest, petal catching, a sandcastle, snorkelling, seed spitting, a raft race, a leaf pile, an apple orchard, a corn maze, a scarecrow, apple bobbing, a snowman, a sleigh, a cocoa cafe, a snowplough and an icicle alley">
+<table>
+<tr>
+<td width="50%" valign="top"><img src="docs/readme/frontier-pack.jpg" alt="Twenty new games in a grid: a lighthouse keeper guiding ships in a storm, a mushroom forager in a sunlit forest, a cowboy running along a desert train, a fisher on a floating island, a night-market noodle stall, a miner in a crystal cave, an owl delivering letters, a gondolier, a fossil dig, a storm chaser, a sled fleeing a yeti, a wizard duel, a treasure diver, a firework show, a gnome garden, a sky lantern, a jousting tourney, ice fishing, a sheepdog and a tide pool"><br><b>Frontier</b> · 20 games<br><sub>Lighthouse keepers, foragers, train-top cowboys, miners, gondoliers and yeti chases.</sub></td>
+<td width="50%" valign="top"><img src="docs/readme/voyage-pack.jpg" alt="Twenty new games in a grid: a camel caravan, a rickshaw, a panda climbing bamboo, a dog sled race, volcano stepping stones, a sand glyph puzzle, a koi pond, a cable car, a balloon crossing, a carnival parade, a penguin slide, a longship race, a snow rescue, a canyon bridge, temple torches, a lasso rodeo, topiary trimming, kite surfing, a spice market and a museum guard"><br><b>Voyage</b> · 20 games<br><sub>Caravans, rickshaws, husky sleds, cable cars, balloons, longships and a night at the museum.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/readme/townsfolk-pack.jpg" alt="Twenty new games in a grid: a bakery, a blacksmith's forge, a lamplighter at dusk, a potter's wheel, a clock tower, a fire brigade, a milk float, a library, a sewing machine, a window washer, a town bus, a pig chase, a wood-chopping contest, a cheese roll, a sawmill, an ice cream cart, a stargazer, lobster pots, a belfry and a chimney sweep"><br><b>Townsfolk</b> · 20 games<br><sub>Bake, forge, light the lamps, fight a fire floor by floor, drive the bus and roll the cheese.</sub></td>
+<td width="50%" valign="top"><img src="docs/readme/seasons-pack.jpg" alt="Eighteen seasonal games in a grid: seed sowing, a bee dance, a nest, petal catching, a sandcastle, snorkelling, seed spitting, a raft race, a leaf pile, an apple orchard, a corn maze, a scarecrow, apple bobbing, a snowman, a sleigh, a cocoa cafe, a snowplough and an icicle alley"><br><b>Four Seasons</b> · 18 games<br><sub>Sow seeds in spring, snorkel in summer, rake leaves in autumn, fly a sleigh in winter.</sub></td>
+</tr>
+</table>
 
 **Summit Rush** is world 56. Race three riders down a 2.6 km valley at golden hour. Carve through flag gates, launch off kickers and land your spins straight. It has a real height-field slope with tuck and carve physics, snow that glitters in the low sun, instanced pine forests with snow-capped tiers and long soft shadows.
 
@@ -244,21 +247,24 @@ Every one of the 50+ full-3D worlds now goes through the same finishing pass, th
 
 <sub>Night Drive's daytime asphalt is lighter and catches a little sky sheen even when dry. Its afternoon fill light was raised so shaded streets read instead of going black. The pass is one shader in <code>js/fx3d.js</code>, so it costs the same on every world and switches off with graphics on LOW (key G).</sub>
 
-## 🎛️ Five screens, one arcade
+## 🎛️ Six screens, one arcade
 
-<p align="center"><img src="docs/readme/filters.webp" width="640" alt="One arcade cabinet cycling through its five screen filters: Clean, Pocket (four shades of green), 8-colour, Print (one-bit dither on paper) and ASCII (the picture rebuilt from coloured text)"></p>
+<p align="center"><img src="docs/readme/filters.webp" width="640" alt="One arcade cabinet cycling through its six screen filters: Clean, Arcade (a curved tube with scanlines and glow), Pocket (four shades of green), 8-colour, Print (one-bit dither on paper) and ASCII (the picture rebuilt from coloured text)"></p>
 
-Press **V** in any of the 466 cabinets to change how the screen is drawn. The game keeps running; only the picture changes, and the clock, cards and menus stay sharp on top.
+<img src="docs/readme/arcade-screen.jpg" width="100%" alt="Three cabinets split down the middle: on the left the clean picture, on the right the new Arcade screen with a curved tube, scanlines, phosphor glow and rounded glass corners">
+
+Press **V** in any of the 544 cabinets to change how the screen is drawn. The game keeps running; only the picture changes, and the clock, cards and menus stay sharp on top.
 
 | Screen | What it does | Cost per frame |
 |---|---|---|
 | **Clean** | The game as drawn: HD (high definition) vector art, bloom and particles. | 0 ms |
+| **Arcade** | A tube monitor: phosphor glow around bright things, a red/blue convergence fringe, a barrel-curved picture, one scanline per game row, an aperture grille and rounded glass. | ~1 ms (GPU) |
 | **Pocket** | Four shades of green with a 4×4 Bayer ordered dither, like an old handheld. | ~1.5 ms |
 | **8-colour** | Each colour channel dithered fully on or off: the eight-colour home-computer look. | ~1.2 ms |
 | **Print** | One-bit Atkinson error diffusion on warm paper, like a photocopied fanzine. | ~3.4 ms |
 | **ASCII** | The picture rebuilt from 2,560 coloured characters, ramp ` .,:;-=+*cox%#&@`. | ~0.9 ms |
 
-Every filter works on a 320×240 copy of the frame, so the cost is the same on a phone or a 4K monitor.
+Pocket, 8-colour, Print and ASCII work on a 320×240 copy of the frame, so their cost is the same on a phone or a 4K monitor. Arcade never reads pixels back: it is a few dozen image copies over a mask drawn once per screen size.
 
 ## 🔊 Real sound
 
@@ -266,7 +272,7 @@ Every filter works on a 320×240 copy of the frame, so the cost is the same on a
 
 The arcade now ships **76 recorded sound effects** (560 KB, stored in [`sfx/`](sfx/), so they work offline). They are free CC0 (public domain) sounds by [Kenney](https://kenney.nl), credited in [THIRD_PARTY.md](THIRD_PARTY.md).
 
-- **All 466 cabinets.** Each of the ten sound names a game can call (`hit`, `coin`, `boom` …) has a pool of 3 to 6 takes. Every call picks a different take and nudges its pitch, so a hundred coins in a row never sound copied. Press **X** for the original synth beeps (**Retro**).
+- **All 544 cabinets.** Each of the ten sound names a game can call (`hit`, `coin`, `boom` …) has a pool of 3 to 6 takes. Every call picks a different take and nudges its pitch, so a hundred coins in a row never sound copied. Press **X** for the original synth beeps (**Retro**).
 - **11 3D worlds.** Gunfire, footsteps, landings and explosions in the shooters; a metal clang in Rocket Arena that grows with impact speed; crashes in the kart and driving games. The recorded take plays on top of each world's own synthesized sound, from the same position in 3D (three-dimensional) space.
 - **The hub.** A clunk when a cartridge goes into the console, ticks on the 3-2-1 countdown, a soft tick when you hover a cartridge.
 
@@ -275,13 +281,26 @@ The arcade now ships **76 recorded sound effects** (560 KB, stored in [`sfx/`](s
 Where the arcade is heading: every release, and which 3D worlds have had the realism pass (physically based materials, real lighting, detailed models and effects, plus deeper gameplay). Generated by `tools/gen_docs.py` from the game registry and [`docs/progress.json`](docs/progress.json), so the counts can't go stale.
 
 <!-- gen:progress (generated by tools/gen_docs.py) -->
-![latest](https://img.shields.io/badge/latest-v71-2443ff?style=flat-square) ![realism](https://img.shields.io/badge/realism_pass-13%2F56_worlds-f2f2f2?style=flat-square)
+![latest](https://img.shields.io/badge/latest-v72-2443ff?style=flat-square) ![realism](https://img.shields.io/badge/realism_pass-13%2F56_worlds-f2f2f2?style=flat-square)
 
 **`█████░░░░░░░░░░░░░░░` 13 of 56 full-3D worlds have had the realism pass (23%).**
 
 | Release | Date | Branch | Games | 3D | What it added |
 |---|---|---|---|---|---|
+| **v72** | 10 Nov 2026 | `round31` | 600 | 56 | An audit and an Arcade screen. Press V in any cabinet for a curved tube monitor with phosphor glow, scanlines, a colour fringe and rounded glass. The README header, social preview and feature grid now show the real counts (600 games, 56 worlds), the docs check catches stale counts in prose, and the README is tidier: one gallery for the four new packs and a folded release history. |
 | **v71** | 10 Nov 2026 | `round30` | 600 | 56 | Round 30 reaches 600 games. Four new canvas packs (Frontier, Voyage, Townsfolk and Four Seasons, 78 cabinets) share a new outlined character kit, and a new full-3D world, Summit Rush, races snowboarders down a golden-hour valley. Earlier in the round: a CC0 sound bank, five screen filters, textured retro-3D walls and a showroom colour grade for every 3D world. |
+| **v70** | 10 Nov 2026 | `round30` | 581 | 56 | The Townsfolk pack: 20 cabinets about the people who keep a town running, from the bakery and the forge to the lamplighter, the fire brigade, the bus and a cheese roll down a hill. |
+| **v69** | 9 Nov 2026 | `round30` | 561 | 56 | The Voyage pack: 20 cabinets that travel the world, with caravans, rickshaws, husky sleds, cable cars, balloons, a longship race and a night at the museum. |
+| **v68** | 9 Nov 2026 | `round30` | 541 | 56 | The Frontier pack: 20 cabinets built on a new outlined character kit (blinking chibi people, hats, hair, outfits, creatures and scenery), from a storm lighthouse to a yeti chase. |
+| **v67** | 9 Nov 2026 | `round30` | 521 | 55 | Showroom finish: every full-3D world gets vibrance, teal-and-gold split toning and clarity in one shared grade; Night Drive streets are sunlit instead of black; Firefly and Word Guess are repainted. |
+
+<details><summary><b>Earlier releases</b> (31 more, back to v29)</summary>
+
+| Release | Date | Branch | Games | 3D | What it added |
+|---|---|---|---|---|---|
+| **v66** | 9 Nov 2026 | `round30` | 521 | 55 | Textured retro-3D walls (stone, riveted metal and brick generated in code) for Dungeon 3D and Strike Zone 3D, a synthwave horizon in Hover Tank 3D, and README sections for screens and sound. |
+| **v65** | 9 Nov 2026 | `round30` | 521 | 55 | Screen filters for every cabinet (key V): Pocket handheld green, 8-colour micro, Print photocopy and ASCII art, applied under the clock and menus so text stays sharp. |
+| **v64** | 9 Nov 2026 | `round30` | 521 | 55 | Recorded sound: 76 CC0 effects by Kenney for every cabinet (key X switches back to retro beeps), 11 3D worlds and the hub, plus a Play anywhere section on the front page. |
 | **v63** | 6 Nov 2026 | `round29` | 521 | 55 | Last checks and polish. The five 3D worlds that crashed or timed out in the test browser (Abyss Diver, Storm Royale, Frontline, Starfall, Strike Zone) now pass, and the full test suite passes for every cabinet. Zombie Road is redrawn with a burning city skyline, a proper road and a new truck, Cave Raid gains layered cave walls and glowing crystals, and the Nova Arena guns are no longer near-black. |
 | **v62** | 6 Nov 2026 | `round29` | 521 | 55 | 3D world pass and Rocket Arena polish. All 52 other 3D worlds were played past their menus with random input and checked screen by screen. Bastion Line's diorama now sits on a war-room table instead of floating in empty sky when you pan or turn the camera, and the Longbow Keep bow is a proper tapered bow with a visible string. Rocket Arena gains a floor marker under a high ball for judging aerials and an arrow at the screen edge pointing to the ball when it is off screen. |
 | **v61** | 6 Nov 2026 | `round29` | 521 | 55 | Clean-up sweep of the other games. Every arcade cabinet was run with random input looking for frozen screens, games that never end and clipped text, and the 3D worlds were played past their menus. Score and bonus pop-ups now always stay on screen instead of drifting off an edge or under the top bar, and the first-person shooter cabinet no longer shows negative health on the death frame. The quality sweep (tests/qa.js) reports each problem as it finds it and can be split across processes. |
@@ -310,6 +329,8 @@ Where the arcade is heading: every release, and which 3D worlds have had the rea
 | **v31** | 18 Oct 2026 | `round8` | 509 | 54 | Four new 3D worlds from the inspiration pack: BEACON RESCUE, LANTERN STREET, TIDEWAY COURIER, HARBOR PALS. |
 | **v30** | 18 Oct 2026 | `v30` | 505 | 50 | BASTION LINE and FAIRWAY LEGENDS, a 43-game art pass, cheaper ambient occlusion, COURT KINGS and SILENT CONTRACT polish. |
 | **v29** | 17 Oct 2026 | `v29-heavy-3d` | 503 | 48 | Rounds 1 to 6: repository reorganisation, the shared 3D kit, online play codes, dozens of new 3D worlds and art passes on the canvas cabinets. |
+
+</details>
 
 <details><summary><b>Realism pass by world</b> (13 done · 43 to do)</summary>
 

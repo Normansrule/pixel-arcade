@@ -98,12 +98,27 @@ def sync_counts(n):
             (r'\d+ original browser games, \d+ full-3D worlds', f"{n['total']} original browser games, {n['worlds']} full-3D worlds"),
         ],
     }
+    # counts written in running prose ("the 544 cabinets", "56 full-3D (three-dimensional) worlds", "600 original
+    # games"); the release history in the progress block keeps the numbers of its day
+    prose = [
+        (r'\b\d+( full-3D(?: \(three-dimensional\))? worlds)', lambda m: f"{n['worlds']}{m.group(1)}"),
+        (r'\b\d+((?: arcade)? cabinets\b)', lambda m: f"{n['canvas']}{m.group(1)}"),
+        (r'\b\d+( original games\b)', lambda m: f"{n['total']}{m.group(1)}"),
+        (r'(id="libcount"[^>]*>)\d+( cartridges)', lambda m: f"{m.group(1)}{n['canvas']}{m.group(2)}"),
+    ]
+    keep = re.compile(r'(<!-- gen:progress.*?<!-- /gen:progress -->)', re.S)
     for path, subs in rules.items():
         if not os.path.exists(rel(path)):
             continue
         s = open(rel(path), encoding='utf-8').read()
         for pat, rep in subs:
             s = re.sub(pat, rep, s)
+        if path in ('README.md', 'index.html'):
+            parts = keep.split(s)
+            for i in range(0, len(parts), 2):
+                for pat, rep in prose:
+                    parts[i] = re.sub(pat, rep, parts[i])
+            s = ''.join(parts)
         write(path, s)
 
 
@@ -131,6 +146,9 @@ def cat_badges(n):
     return ' '.join(out)
 
 
+RECENT = 6
+
+
 def progress_block(games, n):
     """Progress tracker from docs/progress.json: releases plus realism-pass status per 3D world."""
     p = json.load(open(rel('docs/progress.json'), encoding='utf-8'))
@@ -147,9 +165,15 @@ def progress_block(games, n):
            f'![realism](https://img.shields.io/badge/realism_pass-{done}%2F{len(worlds)}_worlds-f2f2f2?style=flat-square)', '',
            f'**`{bar}` {done} of {len(worlds)} full-3D worlds have had the realism pass ({pct}%).**', '',
            '| Release | Date | Branch | Games | 3D | What it added |', '|---|---|---|---|---|---|']
+    head = out[-2:]
     for i, r in enumerate(p['releases']):
         tot, wl = (n['total'], n['worlds']) if i == 0 else (r['games'], r['worlds'])
+        if i == RECENT:
+            # the latest releases stay in view; the long history folds away
+            out += ['', f'<details><summary><b>Earlier releases</b> ({len(p["releases"]) - RECENT} more, back to {p["releases"][-1]["v"]})</summary>', ''] + head
         out.append(f'| **{r["v"]}** | {r["date"]} | `{r["branch"]}` | {tot} | {wl} | {r["added"]} |')
+    if len(p['releases']) > RECENT:
+        out += ['', '</details>']
     order = {r['v']: i for i, r in enumerate(p['releases'])}
     rows = sorted(worlds, key=lambda g: (order.get(real[g['id']]['v'], 99) if g['id'] in real else 999, title(g['name'])))
     out += ['', f'<details><summary><b>Realism pass by world</b> ({done} done · {len(worlds) - done} to do)</summary>', '',

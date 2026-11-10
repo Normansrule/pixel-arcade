@@ -2,7 +2,14 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round30`, which includes rounds 11 to 30)
+## Unreleased (on branch `round31`)
+
+### Round 31, batch 1 (v72): audit, an Arcade screen and a tidier README
+- **ARCADE screen filter** for all 544 cabinets (press **V** on the pause card, now second in the cycle): a curved tube monitor with phosphor glow around bright things, a faint red/blue convergence fringe, a barrel-curved picture, one scanline per game row, an aperture grille on large screens, rounded glass corners and a reflection. It never reads pixels back, so it costs about a millisecond on the graphics card at any window size.
+- **Audit fixes:** the README header art, social preview, feature grid and several paragraphs still said 521 games, 466 cabinets and 55 worlds; all now say 600, 544 and 56. `tools/gen_docs.py` now rewrites counts in running prose too (outside the release history), so `--check` in CI fails the moment a count goes stale. The release table was missing v64 to v70; those rows are back.
+- **README:** a shorter navigation bar, the four round-30 packs in one two-by-two gallery, the six-screen reel and a clean/arcade comparison, and only the six newest releases in view with the rest folded under *Earlier releases*.
+
+## v71 on `main` (10 Nov 2026), rounds 11 to 30
 
 ### Round 30, batch 8 (v71): game 600 - the Four Seasons pack and a new 3D world
 - New full-3D world **Summit Rush** (`summit/`): a golden-hour snowboard race down a 2.6 km valley against three CPU riders (EASY/NORMAL/HARD). It has flag gates, eight kickers, spin tricks that must land straight, a three-minute clock and a race report with score posting. The scene uses a sunset sky, environment light from the sky, glittering snow, instanced snow-capped pines and the shared cinematic post stack.
