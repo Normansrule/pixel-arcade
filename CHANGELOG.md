@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round31`)
 
+### Round 31, batch 4 (v75): a clearer Halcyon Heist
+- **Halcyon Heist:** a peach haze hung over the whole screen because the bloom picked up every lit wall and floor. Bloom is now gentler and only catches real highlights (dusk: strength .24, threshold .94; night: .36, .93), so the bank, the brickwork and the crew read clearly.
+- **Survey:** all 56 full-3D worlds were stepped through their opening seconds and checked on a contact sheet (no page errors in any of them).
+
 ### Round 31, batch 3 (v74): a cabinet reel, a calmer Arcade glow and a deeper Yeti Escape
 - **README:** a new animated reel of twelve cabinets played on the Arcade screen opens the cabinets section.
 - **Arcade screen:** the phosphor glow now only picks up genuinely bright things, so pale games (Melon Drop, the snow games) no longer wash out.

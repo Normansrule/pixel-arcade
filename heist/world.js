@@ -33,8 +33,8 @@ function mergeN(list){if(!list.length)return null;const gs=list.map(g2=>g2.index
 let seed=3;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
 
 const MOODS={
- dusk:{sky:{top:0x1d2a52,mid:0x6a4a78,hor:0xf39a5c,sun:new V(-.6,.06,.78).normalize(),sunCol:0xffa060,stars:.2},hemi:[0x8e9cc8,0x3a2a24,.5],fog:[0x4a3c4a,.008],exp:1.05,bloom:.55,thr:.86,sat:1.08,tint:0xfff0e4,outAmb:[.075,.065,.085],street:0xffa860,inAmb:[.03,.026,.022]},
- night:{sky:{top:0x05070e,mid:0x0e1424,hor:0x2a2c3c,sun:new V(.3,.5,-.8).normalize(),sunCol:0x8090b0,stars:.5},hemi:[0x55607e,0x1a1a20,.42],fog:[0x141820,.012],exp:1.12,bloom:.5,thr:.92,sat:1.02,tint:0xe6ecff,outAmb:[.03,.034,.05],street:0xd8e4ff,lampI:11,lampBulb:[1.7,1.85,2.1],inAmb:[.026,.024,.026]}};
+ dusk:{sky:{top:0x1d2a52,mid:0x6a4a78,hor:0xf39a5c,sun:new V(-.6,.06,.78).normalize(),sunCol:0xffa060,stars:.2},hemi:[0x8e9cc8,0x3a2a24,.5],fog:[0x4a3c4a,.008],exp:1.05,bloom:.24,thr:.94,sat:1.08,tint:0xfff0e4,outAmb:[.075,.065,.085],street:0xffa860,inAmb:[.03,.026,.022]},
+ night:{sky:{top:0x05070e,mid:0x0e1424,hor:0x2a2c3c,sun:new V(.3,.5,-.8).normalize(),sunCol:0x8090b0,stars:.5},hemi:[0x55607e,0x1a1a20,.42],fog:[0x141820,.012],exp:1.12,bloom:.36,thr:.93,sat:1.02,tint:0xe6ecff,outAmb:[.03,.034,.05],street:0xd8e4ff,lampI:11,lampBulb:[1.7,1.85,2.1],inAmb:[.026,.024,.026]}};
 
 function makeSky(o){const g=new THREE.SphereGeometry(450,32,16);const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
  uniforms:{top:{value:new THREE.Color(o.top)},mid:{value:new THREE.Color(o.mid)},hor:{value:new THREE.Color(o.hor)},sunDir:{value:o.sun.clone()},sunCol:{value:new THREE.Color(o.sunCol)},st:{value:o.stars},time:{value:0}},
