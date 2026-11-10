@@ -4,6 +4,11 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round30`, which includes rounds 11 to 30)
 
+### Round 30, batch 8 (v71): game 600 - the Four Seasons pack and a new 3D world
+- New full-3D world **Summit Rush** (`summit/`): a golden-hour snowboard race down a 2.6 km valley against three CPU riders (EASY/NORMAL/HARD). It has flag gates, eight kickers, spin tricks that must land straight, a three-minute clock and a race report with score posting. The scene uses a sunset sky, environment light from the sky, glittering snow, instanced snow-capped pines and the shared cinematic post stack.
+- New `games/seasons.js`, 18 cabinets: Seed Sower, Bee Dance, Nest Builder, Sandcastle, Snorkel Reef, Seed Spit, Leaf Pile, Apple Orchard, Corn Maze Night, Scarecrow, Snowman, Sleigh Ride, Cocoa Cafe, Snowplow and Icicle Alley, plus versus games Petal Duel, River Raft and Apple Bobbing.
+- Fixed: four older games shared cached backgrounds with another game (Aim Trainer and Air Traffic, Bullet Hell and Bomb Hero), so whichever opened second could show the other's background. The new packs' cached backgrounds now draw with the right canvas, so their light shafts, the Stargazer milky way and the bakery tiles render as intended.
+
 ### Round 30, batch 7 (v70): the Townsfolk pack, 20 new games (581 in all)
 - New `games/townsfolk.js`: trades and town life, drawn with the shared character kit.
 - Solo: Baker's Dozen, Blacksmith, Lamplighter, Potter's Wheel, Clock Tower, Fire Brigade, Milk Round, Book Sort, Tailor's Seam, Window Washer, Bus Stop, Sawmill, Ice Cream Stack, Stargazer, Lobster Pots, Bell Ringer, Chimney Sweep.

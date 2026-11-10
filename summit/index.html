@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Summit Rush · Pixel Arcade</title>
+<meta name="description" content="Summit Rush: a golden-hour snowboard race down a mountain valley. Carve through gates, launch off kickers, land clean spins and beat three CPU riders to the bottom before the clock runs out.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="summit.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div class="tl"><p id="place">1<i>ST</i><small>/4</small></p><p class="pill" id="clock">3:00</p><p class="sub" id="spd">0 KM/H</p></div>
+  <div class="tr"><p class="big" id="pts">0</p><p class="sub" id="gates">GATES 0/0</p><p class="sub" id="trk">TRICKS 0</p></div>
+  <div id="bar"><em id="prog"></em><span id="dots"></span></div>
+  <div id="toasts"></div>
+  <div id="count"></div>
+  <div id="keysline"><kbd>A</kbd><kbd>D</kbd> CARVE / SPIN <kbd>W</kbd> TUCK <kbd>S</kbd> BRAKE <kbd>SPACE</kbd> OLLIE <kbd>ESC</kbd> PAUSE</div>
+</div>
+<div id="touch" hidden><button id="tL">◀</button><button id="tJ">JUMP</button><button id="tT">TUCK</button><button id="tR">▶</button></div>
+<div id="menu" class="scr">
+  <p class="eye">[ PIXEL ARCADE ] FULL 3D · SNOWBOARD RACE</p>
+  <h1>SUMMIT<br><span>RUSH</span></h1>
+  <p class="how">The last run of the day, with the sun low over the peaks. Race three riders down a 2.6&nbsp;km valley. Carve through the flag gates, hit the kickers, spin in the air and land straight. The first one to the lodge takes the gold, and the clock gives you three minutes.</p>
+  <div class="opts">
+    <label>RIVALS</label><div class="seg" id="o-diff"><button data-v="0">EASY</button><button data-v="1">NORMAL</button><button data-v="2">HARD</button></div>
+    <label>VOLUME</label><div class="seg" id="o-vol"><button data-v="0">OFF</button><button data-v="0.5">LOW</button><button data-v="0.8">MED</button><button data-v="1.1">HIGH</button></div>
+  </div>
+  <div class="row"><button id="go" class="go">DROP IN</button></div>
+  <p class="best" id="best"></p>
+</div>
+<div class="card" id="keys">
+  <h3>HOW TO RIDE</h3>
+  <table>
+    <tr><td>Carve left · right</td><td><kbd>A</kbd><kbd>D</kbd> / <kbd>◀</kbd><kbd>▶</kbd></td></tr>
+    <tr><td>Tuck for speed · brake</td><td><kbd>W</kbd> <kbd>S</kbd></td></tr>
+    <tr><td>Ollie</td><td><kbd>Space</kbd></td></tr>
+    <tr><td>Spin in the air</td><td>hold <kbd>A</kbd> or <kbd>D</kbd></td></tr>
+    <tr><td>Pause · graphics</td><td><kbd>Esc</kbd> <kbd>G</kbd></td></tr>
+  </table>
+  <p>Land a spin within a quarter turn of straight. A 180 is worth 150 and every half turn adds more. Land crooked and you wipe out. Each gate you pass through is worth 100.</p>
+</div>
+<div id="pause" class="scr" hidden><p class="eye">PAUSED</p><h1>CATCH YOUR<br><span>BREATH</span></h1>
+  <div class="row"><button id="resume" class="go">RESUME</button><button id="quit" class="ghost">QUIT TO MENU</button></div></div>
+<div id="over" class="scr" hidden>
+  <p class="eye">RACE REPORT</p>
+  <p class="res" id="ores">1ST PLACE</p>
+  <p class="sub2" id="osub"></p>
+  <p class="fs" id="ofs">0</p>
+  <table id="stats"></table>
+  <p class="tok" id="otok"></p>
+  <div class="row"><button id="again" class="go">RIDE AGAIN</button><button id="omenu" class="ghost">MENU</button><button id="post" class="ghost">POST SCORE</button></div>
+</div>
+<div id="loading"><b>SUMMIT RUSH</b><span>WAXING THE BOARDS…</span></div>
+<a class="back" href="../">← ARCADE</a>
+<script type="module" src="game.js"></script>
+</body>
+</html>

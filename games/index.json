@@ -75,7 +75,8 @@
   "games/saga.js",
   "games/frontier.js",
   "games/voyage.js",
-  "games/townsfolk.js"
+  "games/townsfolk.js",
+  "games/seasons.js"
  ],
  "after": [
   "js/net.js"

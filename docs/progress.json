@@ -1,7 +1,9 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
-    {"v": "v63", "date": "6 Nov 2026", "branch": "round29", "round": 29,
+    {"v": "v71", "date": "10 Nov 2026", "branch": "round30", "round": 30,
+     "added": "Round 30 reaches 600 games. Four new canvas packs (Frontier, Voyage, Townsfolk and Four Seasons, 78 cabinets) share a new outlined character kit, and a new full-3D world, Summit Rush, races snowboarders down a golden-hour valley. Earlier in the round: a CC0 sound bank, five screen filters, textured retro-3D walls and a showroom colour grade for every 3D world."},
+    {"v": "v63", "date": "6 Nov 2026", "branch": "round29", "round": 29, "games": 521, "worlds": 55,
      "added": "Last checks and polish. The five 3D worlds that crashed or timed out in the test browser (Abyss Diver, Storm Royale, Frontline, Starfall, Strike Zone) now pass, and the full test suite passes for every cabinet. Zombie Road is redrawn with a burning city skyline, a proper road and a new truck, Cave Raid gains layered cave walls and glowing crystals, and the Nova Arena guns are no longer near-black."},
     {"v": "v62", "date": "6 Nov 2026", "branch": "round29", "round": 29, "games": 521, "worlds": 55,
      "added": "3D world pass and Rocket Arena polish. All 52 other 3D worlds were played past their menus with random input and checked screen by screen. Bastion Line's diorama now sits on a war-room table instead of floating in empty sky when you pan or turn the camera, and the Longbow Keep bow is a proper tapered bow with a visible string. Rocket Arena gains a floor marker under a high ball for judging aerials and an arrow at the screen edge pointing to the ball when it is off screen."},
@@ -60,6 +62,7 @@
   ],
   "realism": {
     "_about": "Realism pass status per 3D world id: the release that shipped it and how many passes it has had. Worlds not listed are still to do.",
+    "summitrush": {"v": "v71", "passes": 1},
     "frontline":      {"v": "v32", "passes": 2},
     "sideways":       {"v": "v32", "passes": 1},
     "dustwater":      {"v": "v32", "passes": 1},

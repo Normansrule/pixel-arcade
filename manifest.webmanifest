@@ -1,7 +1,7 @@
 {
   "name": "Pixel Arcade",
   "short_name": "Pixel Arcade",
-  "description": "581 original browser games, 55 full-3D worlds and a 2D/3D game builder. Free, open source, works offline.",
+  "description": "600 original browser games, 56 full-3D worlds and a 2D/3D game builder. Free, open source, works offline.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
