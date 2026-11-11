@@ -465,7 +465,7 @@ applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
 function render(){const w=innerWidth,h=innerHeight;if(Rr.domElement.width!==Math.floor(w*Rr.getPixelRatio())||Rr.domElement.height!==Math.floor(h*Rr.getPixelRatio()))Rr.setSize(w,h,false);
  cam.aspect=w/h;cam.updateProjectionMatrix();vmCam.aspect=w/h;vmCam.updateProjectionMatrix();
  const sc=h*Rr.getPixelRatio()/(2*Math.tan(cam.fov*D2R/2));fx.dust.U.uScale.value=fx.spark.U.uScale.value=sc;sea.U.uT.value=G.time;sky.U.uT.value=G.time;
- const cy=cam.position.y;scene.fog.density=.0017*(1-Math.min(.55,Math.max(0,cy-20)/400));
+ const cy=cam.position.y;scene.fog.density=.0017*(1-Math.min(.72,Math.max(0,cy-20)/320));   // thinner haze up high so the drop shows the whole port
  // shadow frustum follows the view (wide when airborne), texel-snapped
  const S=cy>60?240:70,ms=sun.shadow.mapSize.x,tex=2*S/ms;const sc2=sun.shadow.camera;if(sc2.right!==S){Object.assign(sc2,{left:-S,right:S,top:S,bottom:-S});sc2.updateProjectionMatrix();}
  const f=fwdOf(G.app==='match'?P.yaw:0,0,tv);const c=tv2.copy(cam.position).addScaledVector(f,G.app==='match'?S*.4:0);sun.target.position.set(Math.round(c.x/tex)*tex,0,Math.round(c.z/tex)*tex);sun.position.copy(sun.target.position).addScaledVector(sunDir,300);sun.target.updateMatrixWorld();

@@ -4,6 +4,11 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round31`)
 
+### Round 31, batch 6 (v77): a proper transport plane for Dropzone and a clear Strike Point killcam
+- **Dropzone:** the drop plane was a plain cylinder with box wings. It is now a four-engine transport with a shaped fuselage (rounded nose, red radome, tapering tail cone), tapered wings and tailplanes with panel lines, long engine pods with spinners, intake rings and four-blade props, a swept fin with a beacon, wheel sponsons, cockpit glazing, cabin windows, a cheat line, a tail number and a lit cargo bay behind the open ramp. The haze also thins faster with height, so more of the port shows on the drop.
+- **Strike Point:** a dark ball could fill the killcam. It was a grenade drawn at the thrower's eye for its first frame, right where the killcam camera sits. Grenades now start at the hand, and grenades and rockets right next to the camera are hidden.
+- **Survey:** all 56 full-3D worlds were captured again with a corrected tool (the camera now follows the player), with no page errors. The "washed out" Abyss Diver and Neon Bay views from the last survey were artefacts of the old tool.
+
 ### Round 31, batch 5 (v76): a loading screen for the front page
 - **Boot screen:** the front page now opens on a short arcade boot screen (a spinning coin, the Pixel Arcade wordmark and a 20-block progress bar) while the scripts, fonts and 3D arcade room load. The bar follows real milestones (page parsed, fonts, images, room textures) and then waits for the room to compile its shaders and draw its first dozen frames, so the intro is already smooth when it is revealed. It switches off like an old cathode ray tube (CRT) screen, never stays longer than about 8 seconds, any key or click skips it, and links straight to a game skip it entirely.
 - **Front page:** the fallback counts written in the page itself now read 600 games and 56 worlds (they were only corrected once the scripts ran).

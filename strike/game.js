@@ -156,7 +156,7 @@ const fragGeo=new THREE.SphereGeometry(.07,10,8),fragMat=new THREE.MeshStandardM
 function throwFrag(a,target){if(a.frags<=0||!a.alive)return false;a.frags--;a.spawnProt=0;const eye=eyeOf(a,new V());let vel;
  if(target){const T=cl(Math.hypot(target.x-eye.x,target.z-eye.z)/13,.5,1.6);vel=new V((target.x-eye.x)/T,(target.y+.3-eye.y)/T+.5*12.5*T,(target.z-eye.z)/T);if(vel.length()>21)vel.setLength(21);}
  else{vel=viewDir(a,new V()).multiplyScalar(17);vel.y+=2.6;vel.add(a.vel.clone().multiplyScalar(.6));}
- const m=new THREE.Mesh(fragGeo,fragMat);m.castShadow=true;m.position.copy(eye);scene.add(m);G.frags.push({owner:a,pos:eye.clone().addScaledVector(vel.clone().normalize(),.35),vel,t:0,mesh:m});if(a.isPlayer){VM.throwIt();snd.throwIt();}else a.rig.throwT=1;return true;}
+ const fp=eye.clone().addScaledVector(vel.clone().normalize(),.35);const m=new THREE.Mesh(fragGeo,fragMat);m.castShadow=true;m.position.copy(fp);scene.add(m);G.frags.push({owner:a,pos:fp,vel,t:0,mesh:m});if(a.isPlayer){VM.throwIt();snd.throwIt();}else a.rig.throwT=1;return true;}
 G.throwFrag=throwFrag;
 function stepFrags(dt){const g=12.5;for(let i=G.frags.length-1;i>=0;i--){const n=G.frags[i];n.t+=dt;for(let s=0;s<3;s++){const h=dt/3;n.vel.y-=g*h;const sp=n.vel.length();if(sp<1e-4)continue;const dx=n.vel.x/sp,dy=n.vel.y/sp,dz=n.vel.z/sp;L.ray(n.pos.x,n.pos.y,n.pos.z,dx,dy,dz,sp*h+.07,ro);
    if(ro.t<sp*h+.07){n.pos.addScaledVector(n.vel,Math.max(0,ro.t-.07)/sp);const vn=n.vel.x*ro.nx+n.vel.y*ro.ny+n.vel.z*ro.nz;n.vel.x-=1.55*vn*ro.nx;n.vel.y-=1.55*vn*ro.ny;n.vel.z-=1.55*vn*ro.nz;n.vel.multiplyScalar(ro.ny>.7?.5:.68);if(Math.abs(vn)>2)snd.bounce(n.pos);}else n.pos.addScaledVector(n.vel,h);}
@@ -342,7 +342,9 @@ function applyShadow(){if(!world)return;const s=world.sun;const ms=gfx>=2?2048:g
  for(const a of G.actors)a.rig.root.traverse(o=>{if(o.isMesh&&o!==a.rig.blob)o.castShadow=gfx>=1;});Rr.shadowMap.needsUpdate=true;}
 function applyQuality(q){gfx=q;Rr.setPixelRatio(Math.min(devicePixelRatio,q>=2?1.5:q===1?1.15:.85));fxStack=null;fxSize='';applyShadow();}
 applyQuality(gfx);bindQualityKey(()=>gfx,q=>applyQuality(q));
-function render(){const w=innerWidth,h=innerHeight;if(Rr.domElement.width!==Math.floor(w*Rr.getPixelRatio())||Rr.domElement.height!==Math.floor(h*Rr.getPixelRatio()))Rr.setSize(w,h,false);
+function render(){// a grenade leaving the hand of whoever the camera is riding (killcam) would fill the screen: hide it until it is clear
+ for(const f of G.frags)f.mesh.visible=f.mesh.position.distanceToSquared(cam.position)>.9;for(const r of G.rockets)r.mesh.visible=r.mesh.position.distanceToSquared(cam.position)>.9;
+const w=innerWidth,h=innerHeight;if(Rr.domElement.width!==Math.floor(w*Rr.getPixelRatio())||Rr.domElement.height!==Math.floor(h*Rr.getPixelRatio()))Rr.setSize(w,h,false);
  cam.aspect=w/h;cam.updateProjectionMatrix();vmCam.aspect=w/h;vmCam.updateProjectionMatrix();const sc=h*Rr.getPixelRatio()/(2*Math.tan(cam.fov*Math.PI/360));fx.sparks.U.uScale.value=fx.smoke.U.uScale.value=sc;
  frameN++;if(gfx>=2||(gfx===1&&frameN%2===0)||frameN<4)Rr.shadowMap.needsUpdate=true;
  const M=world.M;const key=w+'x'+h;if(!fxStack){fxStack=cinematic(Rr,scene,cam,{exposure:M.exp,bloom:M.bloom,bloomThreshold:M.thr,bloomRadius:.5,saturation:M.sat,tint:M.tint,vignette:.32,grain:.028,aoStrength:.85,quality:gfx});if(fxStack.composer)fxStack.composer.insertPass(new VMPass(),fxStack.ao?2:1);fxSize='';}

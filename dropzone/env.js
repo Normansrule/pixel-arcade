@@ -102,14 +102,76 @@ export function buildProps(MAP,T){const by={};for(const p of MAP.props)(by[p.k]|
  for(const k in by){const list=by[k];const geo=PROPG[k]();const im=new THREE.InstancedMesh(geo,k==='tree'?tmat:mat,list.length);list.forEach((p,i)=>{q.setFromAxisAngle(Y,p.r||0);const sc=p.s||1;s.set(sc,sc,sc);pos.set(p.x,p.y||0,p.z);m4.compose(pos,q,s);im.setMatrixAt(i,m4);c.set(p.c??0xffffff);im.setColorAt(i,c);});
   im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;im.castShadow=true;im.receiveShadow=true;im.computeBoundingSphere();group.add(im);}return group;}
 
-/* ---------- transport plane ---------- */
-export function makePlane(){const g=new THREE.Group();const body=new THREE.MeshStandardMaterial({color:0x6a7268,roughness:.55,metalness:.35}),dark=new THREE.MeshStandardMaterial({color:0x22262a,roughness:.4,metalness:.5}),glass=new THREE.MeshStandardMaterial({color:0x1a2a36,roughness:.05,metalness:.9});
+/* ---------- transport plane ----------
+   A four-engine military transport: a lathed fuselage (rounded nose, upswept tail cone), tapered wings with real
+   thickness, long nacelles with spinners and four-blade props, a swept fin, a painted skin (panel lines, cockpit
+   glazing, cabin windows, tail number), wheel sponsons and an open rear ramp. Nose points along +z. */
+function planeSkin(){const W=1024,H=256,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+ // u runs nose (left) to tail (right) along the fuselage, v runs round the hull (top at the middle)
+ const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#59605a');g.addColorStop(.5,'#7a8279');g.addColorStop(1,'#59605a');x.fillStyle=g;x.fillRect(0,0,W,H);
+ for(let i=0;i<900;i++){x.fillStyle=`rgba(${Math.random()<.5?'0,0,0':'255,255,255'},${Math.random()*.035})`;x.fillRect(Math.random()*W,Math.random()*H,8+Math.random()*40,2+Math.random()*10);}
+ x.strokeStyle='rgba(20,24,22,.35)';x.lineWidth=1.5;for(let u=40;u<W;u+=34){x.beginPath();x.moveTo(u,0);x.lineTo(u,H);x.stroke();}
+ for(const v of[.18,.34,.66,.82]){x.beginPath();x.moveTo(0,v*H);x.lineTo(W,v*H);x.stroke();}
+ x.fillStyle='rgba(0,0,0,.18)';for(let u=40;u<W;u+=34)for(const v of[.18,.34,.66,.82])for(let k=4;k<34;k+=8)x.fillRect(u+k,v*H-3,1.5,1.5);
+ // cockpit glazing wraps the nose top, cabin windows run along both sides
+ // (drawn on the top and, as chin windows, the belly, so it reads from any angle)
+ for(const o of[0,.5,1]){x.fillStyle='#0e1419';x.beginPath();x.moveTo(62,H*(o-.15));x.lineTo(124,H*(o-.12));x.lineTo(124,H*(o+.12));x.lineTo(62,H*(o+.15));x.closePath();x.fill();
+  x.strokeStyle='#59605a';x.lineWidth=4;for(const v of[-.05,.05]){x.beginPath();x.moveTo(62,(o+v)*H);x.lineTo(124,(o+v)*H);x.stroke();}x.beginPath();x.moveTo(94,(o-.14)*H);x.lineTo(94,(o+.14)*H);x.stroke();
+  x.fillStyle='rgba(170,215,240,.4)';x.fillRect(66,H*(o-.1),24,5);}
+ x.fillStyle='#141a20';for(let u=190;u<640;u+=46)for(const v of[.25,.75]){x.beginPath();x.arc(u,v*H,6,0,7);x.fill();}
+ // a sand-coloured cheat line and tail number on both flanks
+ x.fillStyle='#b9a87a';x.fillRect(130,H*.29,700,5);x.fillRect(130,H*.71-5,700,5);
+ x.font='bold 30px monospace';x.fillStyle='#e8e2cc';x.save();x.translate(800,H*.12);x.rotate(Math.PI);x.fillText('PH-07',0,0);x.restore();x.save();x.translate(700,H*.88);x.fillText('PH-07',0,0);x.restore();
+ x.fillStyle='#d23a2a';x.fillRect(0,0,26,H);   // red radome edge
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
+function panelTex(){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle='#6c746b';x.fillRect(0,0,256,256);
+ for(let i=0;i<300;i++){x.fillStyle=`rgba(${Math.random()<.5?'0,0,0':'255,255,255'},${Math.random()*.04})`;x.fillRect(Math.random()*256,Math.random()*256,10+Math.random()*50,3+Math.random()*12);}
+ x.strokeStyle='rgba(25,28,26,.4)';x.lineWidth=1.5;for(let i=0;i<=256;i+=64){x.beginPath();x.moveTo(i,0);x.lineTo(i,256);x.stroke();}for(let i=0;i<=256;i+=32){x.beginPath();x.moveTo(0,i);x.lineTo(256,i);x.stroke();}
+ x.fillStyle='rgba(0,0,0,.2)';for(let i=0;i<256;i+=64)for(let k=4;k<256;k+=8)x.fillRect(i+2,k,1.5,1.5);
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(.18,.18);t.anisotropy=4;return t;}
+function wingGeo(span,root,tip,sweep,thick){// tapered planform extruded to a thin slab, bevelled for an airfoil edge
+ const s=new THREE.Shape();s.moveTo(0,-root/2);s.lineTo(span,-root/2+sweep);s.lineTo(span,-root/2+sweep+tip);s.lineTo(0,root/2);s.closePath();
+ const g=new THREE.ExtrudeGeometry(s,{depth:thick,bevelEnabled:true,bevelThickness:thick*.45,bevelSize:thick*.6,bevelSegments:2,steps:1});g.translate(0,0,-thick/2);g.rotateX(Math.PI/2);return g;}
+export function makePlane(){const g=new THREE.Group();
+ const skin=new THREE.MeshStandardMaterial({map:planeSkin(),roughness:.5,metalness:.3}),
+  body=new THREE.MeshStandardMaterial({map:panelTex(),roughness:.55,metalness:.3}),dark=new THREE.MeshStandardMaterial({color:0x23272b,roughness:.4,metalness:.55}),
+  prop=new THREE.MeshStandardMaterial({color:0x15181a,roughness:.5,metalness:.4}),tipc=new THREE.MeshStandardMaterial({color:0xd8c24a,roughness:.5});
  const M=(geo,m,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;g.add(o);return o;};
- M(new THREE.CylinderGeometry(2.6,2.6,30,16),body,0,0,0,Math.PI/2);M(new THREE.SphereGeometry(2.6,16,10,0,Math.PI*2,0,Math.PI/2),body,0,0,15,Math.PI/2);M(new THREE.CylinderGeometry(2.6,.8,12,16),body,0,1,-21,-Math.PI/2+.12);
- M(new THREE.BoxGeometry(44,.5,6),body,0,2,2);M(new THREE.BoxGeometry(16,.4,4),body,0,2.6,-25);M(new THREE.BoxGeometry(.5,8,5),body,0,6,-25);M(new THREE.BoxGeometry(3.4,1,1.2),glass,0,1.6,16.2,-.3);
- const props=[];for(const x of[-14,-7,7,14]){M(new THREE.CylinderGeometry(.9,1,4.4,12),dark,x,1.4,4.4,Math.PI/2);const p=new THREE.Group();p.position.set(x,1.4,6.8);g.add(p);for(let k=0;k<4;k++){const b=new THREE.Mesh(new THREE.BoxGeometry(.3,4.4,.08),dark);b.rotation.z=k*Math.PI/4;p.add(b);}props.push(p);}
- // open rear ramp
- M(new THREE.BoxGeometry(4.2,.3,6),dark,0,-2.2,-19,.4);const lt=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),new THREE.MeshBasicMaterial({color:0xff3030}));lt.position.set(-22,2.2,2);g.add(lt);const lt2=lt.clone();lt2.material=new THREE.MeshBasicMaterial({color:0x30ff60});lt2.position.x=22;g.add(lt2);
+ // fuselage: lathe profile from the nose (y=+17) to the tail (y=-27), then laid along z
+ const pr=[[0,17.6],[.9,17.3],[1.7,16.6],[2.3,15.4],[2.6,13.6],[2.7,11],[2.7,-12],[2.55,-16],[2.1,-20],[1.4,-24],[.7,-26.6],[0,-27.2]].map(([r,y])=>new THREE.Vector2(r,y));
+ const fg=new THREE.LatheGeometry(pr,28);fg.rotateZ(Math.PI/2);  // after this the axis runs along x
+ // remap UVs: u along the length (nose at 0), v round the hull with the top in the middle
+ {const P=fg.attributes.position,U=fg.attributes.uv;for(let i=0;i<P.count;i++){const X=P.getX(i),Y=P.getY(i),Z=P.getZ(i);const a=Math.atan2(Z,Y);U.setXY(i,(17.6+X)/44.8,(a/(2*Math.PI)+1.5)%1);}U.needsUpdate=true;}
+ M(fg,skin,0,0,0,0,Math.PI/2,0);
+ M(new THREE.BoxGeometry(4.6,.5,7.6),body,0,-2.35,-15.6,.06);
+ // wing roots sit high on the fuselage (shoulder wing), with tapered panels and a little dihedral
+ const wg=wingGeo(22,7,3.4,2.2,.42);
+ for(const sd of[1,-1]){const w=new THREE.Mesh(wg,body);w.castShadow=true;w.position.set(sd*1.6,2.35,3.4);w.scale.x=sd;w.rotation.z=sd*.035;g.add(w);
+  // yellow wing tips and nav lights
+  M(new THREE.BoxGeometry(.6,.36,3.2),tipc,sd*23.5,3.12,1.0);
+  const lt=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),new THREE.MeshBasicMaterial({color:sd>0?0x30ff60:0xff3030}));lt.position.set(sd*23.9,3.15,1.1);g.add(lt);
+  // horizontal stabiliser
+  const hs=new THREE.Mesh(wingGeo(8,4.2,2,1.6,.3),body);hs.castShadow=true;hs.position.set(sd*.8,1.35,-22.6);hs.scale.x=sd;hs.rotation.z=sd*.02;g.add(hs);
+  // wheel sponson
+  M(new THREE.CapsuleGeometry(1.1,6.5,4,10),body,sd*2.55,-1.8,0,Math.PI/2);}
+ // swept fin with a rudder line and anti-collision beacon
+ const fin=new THREE.Shape();fin.moveTo(0,0);fin.lineTo(-6.8,0);fin.lineTo(-9.4,8.6);fin.lineTo(-6.6,8.6);fin.closePath();
+ const fgeo=new THREE.ExtrudeGeometry(fin,{depth:.32,bevelEnabled:true,bevelThickness:.14,bevelSize:.18,bevelSegments:2});fgeo.translate(0,0,-.16);
+ M(fgeo,body,0,1.6,-16.8,0,-Math.PI/2,0);M(new THREE.BoxGeometry(.5,6.6,.12),dark,0,6.2,-25.2,-.31);
+ const bc=new THREE.Mesh(new THREE.SphereGeometry(.28,8,6),new THREE.MeshBasicMaterial({color:0xff4020}));bc.position.set(0,10.3,-25.9);g.add(bc);g.userData.beacon=bc;
+ // nacelles: long pods under the wing, intake ring, exhaust stub, spinner and four-blade prop
+ const props=[];const blade=new THREE.CylinderGeometry(.08,.2,2.5,6);blade.translate(0,1.3,0);blade.scale(1,1,.45);
+ for(const x of[-15,-7.5,7.5,15]){const n=M(new THREE.CapsuleGeometry(1,5.2,4,12),body,x,1.75,4.2,Math.PI/2);
+  M(new THREE.TorusGeometry(.95,.16,8,18),dark,x,1.75,7.15);M(new THREE.CylinderGeometry(.32,.38,1.2,8),dark,x+(x>0?.7:-.7),2.3,.6,Math.PI/2);
+  const p=new THREE.Group();p.position.set(x,1.75,7.55);g.add(p);
+  const sp=new THREE.Mesh(new THREE.ConeGeometry(.62,1.5,14),dark);sp.rotation.x=Math.PI/2;sp.position.z=.6;p.add(sp);
+  for(let k=0;k<4;k++){const b=new THREE.Mesh(blade,prop);b.rotation.z=k*Math.PI/2;p.add(b);const tp=new THREE.Mesh(new THREE.BoxGeometry(.2,.32,.06),tipc);tp.position.set(Math.sin(-k*Math.PI/2)*2.5,Math.cos(k*Math.PI/2)*2.5,0);p.add(tp);}
+  // a faint blur disc so the props read as spinning even at a low frame rate
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(2.7,24),new THREE.MeshBasicMaterial({color:0x202428,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide}));disc.position.z=-.05;p.add(disc);
+  props.push(p);}
+ // open rear ramp with a lit cargo bay behind it
+ M(new THREE.BoxGeometry(4.2,.3,6),dark,0,-2.3,-21.4,.42);
+ const bay=new THREE.Mesh(new THREE.CircleGeometry(2.1,18),new THREE.MeshBasicMaterial({color:0xffc070}));bay.position.set(0,-.3,-18.4);bay.rotation.y=Math.PI;g.add(bay);
  g.userData.props=props;g.scale.setScalar(1.2);return g;}
 
 /* ---------- parachute canopy ---------- */

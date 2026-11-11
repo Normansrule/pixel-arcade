@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v77", "date": "11 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,
+     "added": "Dropzone's drop plane rebuilt as a detailed four-engine transport with a clearer sky, and Strike Point's killcam no longer blocked by a grenade at the camera."},
     {"v": "v76", "date": "11 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,
      "added": "An arcade boot screen with a coin and a progress bar covers the front page while the 3D room loads and warms up, so the intro starts smooth."},
     {"v": "v75", "date": "10 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,
