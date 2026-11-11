@@ -16,8 +16,77 @@
 <script>try{const t=localStorage.getItem('pxd_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="style.css">
+<style>
+/* Boot screen: covers the first seconds while the scripts, fonts and the 3D arcade room load and warm up their
+   shaders, so the intro is already smooth when it is revealed. Inline so it paints before anything else loads. */
+#boot{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 40%,#161b2b 0%,#0b0d14 62%,#05060a 100%);color:#eceae3;
+ font:500 13px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase;transition:opacity .5s cubic-bezier(.23,1,.32,1);overflow:hidden}
+#boot::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+#boot::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(70% 60% at 50% 45%,transparent 55%,rgba(0,0,0,.55))}
+#boot .bt-bx{position:relative;z-index:1;display:grid;justify-items:center;gap:22px;width:min(420px,80vw);transform-origin:50% 50%}
+#boot .bt-coin{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a8,#ffc83a 40%,#c47a0c 75%);box-shadow:inset 0 0 0 4px #e09a1a,inset 0 0 0 6px #ffd560,0 0 28px rgba(255,170,40,.45);
+ display:grid;place-items:center;color:#8a4f00;font:700 18px/1 'JetBrains Mono',monospace;animation:bcoin 1.1s linear infinite}
+@keyframes bcoin{0%,100%{transform:scaleX(1)}25%{transform:scaleX(.15)}50%{transform:scaleX(-1)}75%{transform:scaleX(.15)}}
+#boot .bt-mk{margin:0;font:400 clamp(2.6rem,9vw,4.6rem)/.9 Anton,Impact,sans-serif;letter-spacing:.02em;color:#f4f2ec;text-shadow:0 0 24px rgba(255,77,0,.35),0 10px 30px rgba(0,0,0,.6);white-space:nowrap}
+#boot .bt-mk b{color:#ff4d00;font-weight:400}
+#boot .bt-bar{display:grid;grid-template-columns:repeat(20,1fr);gap:4px;width:100%;height:24px;padding:4px;border:2px solid rgba(238,240,246,.35);border-radius:4px;box-sizing:border-box}
+#boot .bt-bar i{background:rgba(238,240,246,.07);border-radius:1px;transition:background .12s,box-shadow .12s}
+#boot .bt-bar i.on{background:#ff4d00;box-shadow:0 0 8px rgba(255,77,0,.7)}
+#boot .bt-bar i.on:nth-child(n+15){background:#ffb020;box-shadow:0 0 8px rgba(255,176,32,.7)}
+#boot .bt-st{display:flex;justify-content:space-between;width:100%;color:#9aa0b0}
+#boot .bt-st b{color:#eceae3;font-weight:500}
+#boot.ok .bt-st span{color:#ff8a52;animation:bblink .5s steps(1) infinite}
+@keyframes bblink{50%{opacity:0}}
+#boot.out{opacity:0;pointer-events:none}
+#boot.out .bt-bx{animation:bcrt .45s cubic-bezier(.7,0,.84,0) forwards}
+@keyframes bcrt{0%{transform:scale(1,1);filter:brightness(1)}55%{transform:scale(1.04,.012);filter:brightness(3)}100%{transform:scale(0,.012);filter:brightness(4)}}
+@media (prefers-reduced-motion:reduce){#boot .bt-coin,#boot.ok .bt-st span{animation:none}#boot.out .bt-bx{animation:none}}
+</style>
 </head>
 <body>
+<div id="boot" role="status" aria-label="Loading Pixel Arcade"><div class="bt-bx" aria-hidden="true">
+ <div class="bt-coin">¢</div>
+ <p class="bt-mk">Pixel <b>Arcade</b></p>
+ <div class="bt-bar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+ <div class="bt-st"><span>Loading cartridges</span><b>0%</b></div>
+</div></div>
+<script>
+/* Boot progress. Real milestones (scripts parsed, fonts, page loaded, 3D room textures, shader warm-up) set a
+   target; the bar eases toward it and creeps a little between milestones so it never looks stuck. js/intro.js
+   reports its own stages through PA_BOOT. Skipped for deep links to a game (index.html#id) and for automated
+   browsers (add ?boot to see it there). Any key or click skips it; it never stays longer than 8 s. */
+(function(){
+ var el=document.getElementById('boot');if(!el)return;
+ var q=location.search,auto=navigator.webdriver&&!/[?&]boot\b/.test(q);
+ if((location.hash.length>1&&location.hash!=='#top')||auto){el.remove();window.PA_BOOT={set:function(){},wait:function(){},done:function(){}};return;}
+ var cells=el.querySelectorAll('.bt-bar i'),pct=el.querySelector('.bt-st b'),lab=el.querySelector('.bt-st span'),
+  t0=performance.now(),MIN=1100,MAX=8000,shown=0,target=6,need={page:1},fin=0,lit=-1;
+ var draw=function(){
+  var now=performance.now(),dt=Math.min(.25,(now-(draw.l||now))/1000);draw.l=now;
+  if(!fin&&shown>=target-.5)target=Math.min(target+2.5*dt,94);        // gentle creep between milestones
+  shown+=(target-shown)*(1-Math.exp(-(fin?14:5)*dt));
+  var v=Math.min(100,Math.round(shown)),n=Math.round(v/5);
+  if(n!==lit){for(var i=0;i<cells.length;i++)cells[i].className=i<n?'on':'';lit=n;}
+  pct.textContent=v+'%';
+  var ready=!Object.keys(need).length;
+  if((ready&&now-t0>MIN)||now-t0>MAX){fin=1;target=100;}
+  if(fin&&v>=100){end();return;}
+  requestAnimationFrame(draw);};
+ var end=function(){if(el.classList.contains('ok'))return;el.classList.add('ok');lab.textContent='Insert coin';
+  setTimeout(function(){el.classList.add('out');setTimeout(function(){el.remove();},600);},380);};
+ window.PA_BOOT={
+  set:function(p,text){if(p>target)target=p;if(text)lab.textContent=text;},
+  wait:function(k){need[k]=1;},                                         // hold the screen until done(k)
+  done:function(k){delete need[k];}};
+ var skip=function(){fin=1;target=100;shown=100;};
+ addEventListener('keydown',skip,{once:true});el.addEventListener('pointerdown',skip);
+ document.addEventListener('DOMContentLoaded',function(){PA_BOOT.set(40,'Stocking the shelf');});
+ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){PA_BOOT.set(52);});
+ addEventListener('load',function(){PA_BOOT.set(66,'Powering up the cabinets');PA_BOOT.done('page');});
+ requestAnimationFrame(draw);
+ setTimeout(function(){fin=1;shown=100;end();},MAX+1500);   // even if a busy main thread starves the animation
+})();
+</script>
 <a class="skip" href="#library">Skip to the library</a>
 <nav class="topbar" aria-label="Site">
   <a class="brand" href="#top" aria-label="Pixel Arcade, back to top"><i aria-hidden="true"></i><span>PIXEL ARCADE</span></a>
@@ -42,21 +111,21 @@
       <p class="itag r">Browser · free · offline · open source</p>
       <h1 class="imark" id="intro-h"><span>Pixel</span> <span>Arcade<i aria-hidden="true"></i></span></h1>
       <ol class="story" id="story">
-        <li><p class="sk">01 · The shelf</p><p class="sh"><b data-stat="games">521</b> original games.</p><p class="ss">Arcade classics, sports, puzzles, cards and party games, all made for this arcade. Pick one and you are playing in a second.</p></li>
-        <li><p class="sk">02 · 3D worlds</p><p class="sh"><b data-stat="worlds">55</b> full 3D worlds.</p><p class="ss">Car soccer, racing, open cities, shooters and survival, tuned to run smoothly on everyday laptops and phones.</p></li>
+        <li><p class="sk">01 · The shelf</p><p class="sh"><b data-stat="games">600</b> original games.</p><p class="ss">Arcade classics, sports, puzzles, cards and party games, all made for this arcade. Pick one and you are playing in a second.</p></li>
+        <li><p class="sk">02 · 3D worlds</p><p class="sh"><b data-stat="worlds">56</b> full 3D worlds.</p><p class="ss">Car soccer, racing, open cities, shooters and survival, tuned to run smoothly on everyday laptops and phones.</p></li>
         <li><p class="sk">03 · Free</p><p class="sh">No installs. No accounts.</p><p class="ss">Everything runs in your browser. Add it as an app if you like, and it keeps working offline.</p></li>
         <li><p class="sk">04 · The clock</p><p class="sh">Every round ends on the clock.</p><p class="ss">Short timed rounds, a results screen and a best score to beat, against the CPU or a friend on the same screen.</p></li>
         <li><p class="sk">05 · Play</p><p class="sh">Insert coin.</p><p class="ss">Your console is just below. Drag a cartridge into the slot, or pick one and press start.</p></li>
       </ol>
       <nav class="srail" id="srail" aria-label="Intro chapters"><span class="sbar"><i></i></span><button type="button">Games</button><button type="button">3D worlds</button><button type="button">Free</button><button type="button">The clock</button><button type="button">Play</button></nav>
-      <div class="istats" aria-hidden="true"><div><b data-stat="games">511</b><small>Games</small></div><div><b data-stat="worlds">55</b><small>3D worlds</small></div><div><b>0</b><small>Installs</small></div></div>
+      <div class="istats" aria-hidden="true"><div><b data-stat="games">600</b><small>Games</small></div><div><b data-stat="worlds">56</b><small>3D worlds</small></div><div><b>0</b><small>Installs</small></div></div>
       <a class="icue" href="#deck"><span>Scroll to insert coin</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
     </div>
   </section>
   <header class="hero">
     <div class="hcopy">
       <h2 class="mega">Pick a<br>cartridge.</h2>
-      <p class="lede"><b data-stat="games">511</b> original games on the shelf, from two-minute sports rounds to <b data-stat="worlds">55</b> full 3D worlds. Every one runs in your browser, works offline and ends on the clock.</p>
+      <p class="lede"><b data-stat="games">600</b> original games on the shelf, from two-minute sports rounds to <b data-stat="worlds">56</b> full 3D worlds. Every one runs in your browser, works offline and ends on the clock.</p>
       <div class="cta"><a class="btn pri" href="#library">Browse the library</a><button class="btn" data-random type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>Surprise me</button></div>
     </div>
     <div class="deck" id="deck">
@@ -215,7 +284,7 @@
   </section>
 
   <footer class="foot">
-    <div class="sign"><p class="mark">Pixel Arcade<i></i></p><p class="credits"><span class="free">Free play</span> <b data-stat="games">511</b> games · <b data-stat="worlds">55</b> worlds · open source, MIT</p></div>
+    <div class="sign"><p class="mark">Pixel Arcade<i></i></p><p class="credits"><span class="free">Free play</span> <b data-stat="games">600</b> games · <b data-stat="worlds">56</b> worlds · open source, MIT</p></div>
     <ul class="keys" aria-label="Controls"><li><kbd>Arrows</kbd> move</li><li><kbd>Space</kbd> or click: A</li><li><kbd>X</kbd> or right-click: B</li><li><kbd>P</kbd> pause</li><li><kbd>Esc</kbd> back to the lobby</li><li><kbd>/</kbd> search</li></ul>
     <nav class="links" aria-label="More"><a href="docs/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5M8 13h8M8 17h6"/></svg>Docs</a><a href="builder/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Build a game</a><a href="#" id="netBtn" title="Play a friend on the same network by swapping codes"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>Play online</a><a href="#" id="offlineBtn" title="Download every game so the arcade works with no internet"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Save all offline</a><a href="https://github.com/Normansrule/pixel-arcade/releases" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Desktop app</a></nav>
   </footer>

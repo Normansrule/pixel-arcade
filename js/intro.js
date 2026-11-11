@@ -5,6 +5,7 @@
    data saver; everyone else gets the still render (docs/intro.jpg) with the same scroll timeline in CSS. */
 const intro = document.getElementById('intro');
 const RM = matchMedia('(prefers-reduced-motion: reduce)');
+const B = window.PA_BOOT || {set() {}, wait() {}, done() {}};
 if (intro && !RM.matches) {
  intro.classList.add('scrub');
  const lines = [...intro.querySelectorAll('.story li')], rail = document.getElementById('srail'), dots = rail ? [...rail.querySelectorAll('button')] : [];
@@ -33,10 +34,12 @@ if (intro && !RM.matches) {
 
  const gl = (() => {try {const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl'));} catch (e) {return false;}})();
  const save = navigator.connection && navigator.connection.saveData;
- if (gl && !save && innerWidth >= 720 && location.protocol !== 'file:') start().catch(() => {});
+ // the boot screen (index.html) stays up until the room has loaded its textures and drawn its first frames
+ if (gl && !save && innerWidth >= 720 && location.protocol !== 'file:') {B.wait('room'); start().catch(() => B.done('room'));}
 
  async function start() {
   const THREE = await import('../vendor/three.module.min.js');
+  B.set(72, 'Wiring the arcade room');
   const [{EffectComposer}, {RenderPass}, {UnrealBloomPass}, {OutputPass}, {arcadeScene}] = await Promise.all([
    import('../vendor/jsm/postprocessing/EffectComposer.js'), import('../vendor/jsm/postprocessing/RenderPass.js'),
    import('../vendor/jsm/postprocessing/UnrealBloomPass.js'), import('../vendor/jsm/postprocessing/OutputPass.js'), import('./arcade-scene.js')]);
@@ -46,8 +49,9 @@ if (intro && !RM.matches) {
   let dpr = Math.min(devicePixelRatio || 1, 1.5);
   r.setPixelRatio(dpr); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.outputColorSpace = THREE.SRGBColorSpace;
   // fade the live room in over the still once every screen texture has arrived
-  const shown = () => {intro.classList.add('gl'); if (matchMedia('(pointer: fine)').matches) intro.querySelector('.icue span').textContent = 'Click a cabinet to play, or scroll to insert coin'; if (view) view.kick();};
+  const shown = () => {B.set(90, 'Warming up'); intro.classList.add('gl'); if (matchMedia('(pointer: fine)').matches) intro.querySelector('.icue span').textContent = 'Click a cabinet to play, or scroll to insert coin'; if (view) view.kick();};
   THREE.DefaultLoadingManager.onLoad = shown;
+  THREE.DefaultLoadingManager.onProgress = (u, n, total) => B.set(74 + 14 * n / total, 'Loading screens');
   const room = arcadeScene(THREE, {base: '', live: document.getElementById('cdemo'), cones: true});
   room.useRenderer(r);
   const {scene, cam, start: a, target: b} = room;
@@ -108,6 +112,7 @@ if (intro && !RM.matches) {
    // if the first second runs slow, drop the bloom and render at 1x so the scroll stays smooth
    if (last && frames < 60) {slow += t - last > 30 ? 1 : 0; if (++frames === 60 && slow > 24) {useBloom = false; dpr = 1; r.setPixelRatio(1); size();}}
    last = t;
+   if (frames === 12) B.done('room');   // a dozen smooth frames in: lift the boot screen
    if (++idle < 600) raf = requestAnimationFrame(frame);   // dust keeps drifting for ~10 s after the last input
   };
   // nothing renders behind a running game
@@ -116,6 +121,7 @@ if (intro && !RM.matches) {
   new IntersectionObserver(es => {on = es[0].isIntersecting; if (on) view.kick();}).observe(stage);
   document.addEventListener('visibilitychange', () => view.kick());
   setTimeout(shown, 4000);
+  try {r.compile(scene, cam);} catch (e) {}   // build every shader now, under the boot screen, not mid-scroll
   view.kick();
  }
 }

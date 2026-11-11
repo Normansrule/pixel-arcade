@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round31`)
 
+### Round 31, batch 5 (v76): a loading screen for the front page
+- **Boot screen:** the front page now opens on a short arcade boot screen (a spinning coin, the Pixel Arcade wordmark and a 20-block progress bar) while the scripts, fonts and 3D arcade room load. The bar follows real milestones (page parsed, fonts, images, room textures) and then waits for the room to compile its shaders and draw its first dozen frames, so the intro is already smooth when it is revealed. It switches off like an old cathode ray tube (CRT) screen, never stays longer than about 8 seconds, any key or click skips it, and links straight to a game skip it entirely.
+- **Front page:** the fallback counts written in the page itself now read 600 games and 56 worlds (they were only corrected once the scripts ran).
+
 ### Round 31, batch 4 (v75): a clearer Halcyon Heist
 - **Halcyon Heist:** a peach haze hung over the whole screen because the bloom picked up every lit wall and floor. Bloom is now gentler and only catches real highlights (dusk: strength .24, threshold .94; night: .36, .93), so the bank, the brickwork and the crew read clearly.
 - **Survey:** all 56 full-3D worlds were stepped through their opening seconds and checked on a contact sheet (no page errors in any of them).
