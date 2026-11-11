@@ -6,7 +6,7 @@ import {panelSet,rockSet,glowTex,facadeSet,containerSet,groundSet,roofSet,hazard
 
 const C=(r,g,b)=>new THREE.Color(r,g,b);
 export const THEMES={
- dusk:{fog:[0xc89a78,.0052],hemi:[0xffd8b0,0x4a3428,.62],sun:[0xffc48a,2.9,[.72,.3,-.42]],exp:.92,bloom:.4,thr:.9,sat:1.06,tint:'#fff2e4',winI:.5,refl:0,
+ dusk:{fog:[0xc49274,.0033],hemi:[0xffd8b0,0x3a2820,.56],sun:[0xffc48a,3.1,[.72,.34,-.42]],exp:.94,bloom:.3,thr:.92,sat:1.14,tint:'#fff2e4',winI:.5,refl:0,
   mats:{asphalt:['ground','asphalt'],sand:['ground','sand'],conc:['ground','conc'],cliff:['rock',[178,122,86],[98,62,46]],
    facA:['fac','#a39280',{style:'glass',lit:.08,glass:'#3c4a54',sky:'#e8b48a'}],facB:['fac','#bba083',{style:'conc',lit:.12,ac:1}],facC:['fac','#7c8389',{style:'slot',lit:.04,stripe:'#b8582a'}],facD:['fac','#ad8670',{style:'conc',lit:.15,frame:'#2c2a28'}],facG:['fac','#7d8a96',{style:'glass',lit:.1}],
    deck:['panel','#615b54',{},.55,.6],steel:['panel','#76603e',{stripes:'#e0a020'},.45,.75],tank:['plain',0xd2c8b8,0,.45,.55],metal:['plain',0x5c5a58,0,.4,.85],conc2:['ground','conc'],wallBig:['rock',[178,122,86],[98,62,46]],

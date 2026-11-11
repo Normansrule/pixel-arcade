@@ -20,15 +20,36 @@ let MS=null;
 function mats(){if(MS)return MS;const std=o=>new THREE.MeshStandardMaterial(o);
  MS={body:std({color:0x4a4e55,roughness:.38,metalness:.55}),dark:std({color:0x24272c,roughness:.45,metalness:.5}),light:std({color:0x767a80,roughness:.35,metalness:.6}),
   grip:std({color:0x24262a,roughness:.85,metalness:.1}),tan:std({color:0x8a7a5e,roughness:.7,metalness:.15}),glove:std({color:0x2c2e30,roughness:.75,metalness:.2}),
-  armor:std({color:0x4c5562,roughness:.35,metalness:.6})};for(const k in MS)MS[k].envMapIntensity=.9;return MS;}
+  armor:std({color:0x4c5562,roughness:.35,metalness:.6}),lens:std({color:0x1a3a4a,roughness:.05,metalness:.9,emissive:0x0a3040,emissiveIntensity:.8})};for(const k in MS)MS[k].envMapIntensity=.9;return MS;}
 const glowM=c=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(1.4)});
 function build(parts){const g=new THREE.Group(),by=new Map();for(const[geo,mat,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1]of parts){let a=by.get(mat);if(!a)by.set(mat,a=[]);a.push([geo,M4(x,y,z,rx,ry,rz,sx,sy,sz)]);}
  for(const[m,a]of by){const o=new THREE.Mesh(merge(a),m);g.add(o);}return g;}
+// rounded box: a rounded-rectangle profile extruded along z with a small bevel
+const RB=(w,h,d,r)=>{const s=new THREE.Shape(),x=-w/2+r,y=-h/2+r,W=w-2*r,H=h-2*r;s.moveTo(x,y-r);s.lineTo(x+W,y-r);s.quadraticCurveTo(x+W+r,y-r,x+W+r,y);s.lineTo(x+W+r,y+H);s.quadraticCurveTo(x+W+r,y+H+r,x+W,y+H+r);s.lineTo(x,y+H+r);s.quadraticCurveTo(x-r,y+H+r,x-r,y+H);s.lineTo(x-r,y);s.quadraticCurveTo(x-r,y-r,x,y-r);
+ const b=Math.min(r*.6,d*.2);const g=new THREE.ExtrudeGeometry(s,{depth:d-2*b,bevelEnabled:true,bevelThickness:b,bevelSize:b*.8,bevelSegments:2,curveSegments:3});g.translate(0,0,-(d-2*b)/2);g.deleteAttribute('uv');g.computeVertexNormals();return g;};
 const B=(w,h,d)=>new THREE.BoxGeometry(w,h,d),Cy=(r,l,s=12,r2)=>{const g=new THREE.CylinderGeometry(r,r2??r,l,s);g.rotateX(Math.PI/2);return g;};
 export function gunModel(id){const M=mats(),w=WPN[id],gl=glowM(w.col);const P=[];let muzzle=new V(0,0,-.6);
- if(id==='rifle'||id==='carbine'){const b=id==='rifle'?M.body:M.tan;P.push([B(.08,.13,.56),b,0,0,-.1],[B(.07,.05,.42),M.dark,0,.09,-.12],[Cy(.022,.3),M.dark,0,.02,-.52],[B(.06,.1,.2),b,0,-.0,-.42],[B(.04,.04,.06),M.dark,0,.02,-.68],
-   [B(.06,.17,.08),M.grip,0,-.13,.05,.3],[B(.06,.2,.09),M.dark,0,-.15,-.13,-.18],[B(.07,.1,.24),b,0,.0,.26],[B(.05,.06,.1),M.dark,0,.14,-.05],[B(.083,.008,.2),gl,0,.03,-.26]);
-  if(id==='rifle')P.push([Cy(.03,.12),M.dark,0,.14,-.12],[B(.02,.03,.03),gl,0,.155,-.05]);muzzle.set(0,.02,-.72);}
+ if(id==='rifle'||id==='carbine'){const b=id==='rifle'?M.body:M.tan;
+  // receiver, upper and handguard: softened boxes so the edges catch the light
+  P.push([RB(.078,.11,.4,.012),b,0,0,-.08],[RB(.07,.045,.46,.01),M.light,0,.075,-.12],[RB(.074,.085,.26,.014),b,0,.01,-.46]);
+  // picatinny rail teeth along the top, vent slots down the handguard
+  for(let i=0;i<20;i++)P.push([B(.042,.008,.009),M.dark,0,.101,.04-i*.021]);
+  for(const sx of[-1,1])for(let i=0;i<5;i++)P.push([RB(.006,.026,.03,.004),M.dark,sx*.037,.012,-.37-i*.045]);
+  // barrel with a ported muzzle brake
+  P.push([Cy(.015,.22,12),M.dark,0,.02,-.66],[Cy(.026,.075,14),M.dark,0,.02,-.79],[B(.054,.012,.016),M.grip,0,.02,-.79],[B(.054,.012,.016),M.grip,0,.02,-.765]);
+  // curved magazine (three stacked segments), angled grip with finger grooves, trigger guard
+  for(let i=0;i<3;i++)P.push([RB(.05,.075,.085,.01),M.dark,0,-.085-i*.06,-.15-i*.022,-.18-i*.12]);
+  P.push([RB(.055,.16,.075,.014),M.grip,0,-.12,.06,.32]);for(let i=0;i<3;i++)P.push([B(.058,.006,.07),M.dark,0,-.1-i*.04,.065+i*.012,.32]);
+  P.push([B(.012,.012,.1),M.dark,0,-.07,-.02],[B(.012,.05,.012),M.dark,0,-.095,-.07]);
+  // skeleton stock: top bar, lower strut, rubber butt pad, plus charging handle and ejection port
+  P.push([RB(.05,.04,.26,.01),b,0,.03,.28],[RB(.03,.03,.24,.008),M.dark,0,-.04,.27,-.18],[RB(.06,.14,.03,.01),M.grip,0,-.01,.41],
+   [B(.02,.018,.04),M.light,.045,.06,.06],[B(.002,.03,.07),M.dark,.04,.02,-.03],[B(.083,.008,.2),gl,0,.03,-.26]);
+  if(id==='rifle'){// variable scope: rings, tube, bells, turrets and a tinted lens
+   P.push([Cy(.022,.2,16),M.dark,0,.15,-.1],[Cy(.031,.06,18,.022),M.dark,0,.15,-.225],[Cy(.027,.045,18,.022),M.dark,0,.15,.02],
+    [Cy(.012,.03,10),M.light,0,.18,-.1,-Math.PI/2],[Cy(.011,.026,10),M.light,.03,.15,-.1,0,Math.PI/2],
+    [RB(.05,.035,.025,.006),M.dark,0,.118,-.16],[RB(.05,.035,.025,.006),M.dark,0,.118,-.04],[B(.004,.008,.03),gl,.024,.15,-.02]);
+   P.push([Cy(.026,.004,18),M.lens,0,.15,-.256],[Cy(.022,.004,18),M.lens,0,.15,.044]);}
+  muzzle.set(0,.02,-.83);}
  else if(id==='shotgun'){P.push([B(.11,.14,.58),M.body,0,0,-.1],[Cy(.04,.44),M.dark,0,.03,-.48],[B(.12,.04,.32),M.light,0,.1,-.12],[B(.1,.1,.24),M.grip,0,-.07,-.42],
    [B(.08,.19,.1),M.grip,0,-.15,.08,.3],[B(.112,.01,.26),gl,0,-.03,-.2],[B(.1,.11,.2),M.body,0,0,.26],[B(.1,.12,.06),M.dark,.0,-.06,-.02]);muzzle.set(0,.03,-.72);}
  else if(id==='seeker'){P.push([B(.06,.09,.26),M.body,0,0,-.08],[B(.055,.05,.24),M.light,0,.06,-.09],[B(.05,.16,.07),M.grip,0,-.1,.04,.25],[Cy(.018,.05),M.dark,0,.03,-.23],

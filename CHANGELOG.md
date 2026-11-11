@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round31`)
 
+### Round 31, batch 7 (v78): a sharper Hardfall
+- **Hardfall:** the desert map's dusk haze is about a third thinner and the colours a little richer, so the mesas, containers and far end of the base read clearly instead of fading into brown. The VX-7 rifle and the grunt carbine were plain boxes; they now have softened edges, a toothed top rail, vented handguard, ported muzzle brake, curved magazine, grooved grip, skeleton stock and (on the VX-7) a proper scope with rings, turrets and a tinted lens.
+- **Housekeeping:** older release zips were removed from the project files (only the latest is kept).
+
 ### Round 31, batch 6 (v77): a proper transport plane for Dropzone and a clear Strike Point killcam
 - **Dropzone:** the drop plane was a plain cylinder with box wings. It is now a four-engine transport with a shaped fuselage (rounded nose, red radome, tapering tail cone), tapered wings and tailplanes with panel lines, long engine pods with spinners, intake rings and four-blade props, a swept fin with a beacon, wheel sponsons, cockpit glazing, cabin windows, a cheat line, a tail number and a lit cargo bay behind the open ramp. The haze also thins faster with height, so more of the port shows on the drop.
 - **Strike Point:** a dark ball could fill the killcam. It was a grenade drawn at the thrower's eye for its first frame, right where the killcam camera sits. Grenades now start at the hand, and grenades and rockets right next to the camera are hidden.
