@@ -14,6 +14,7 @@
    Pool names are listed in POOLS; any other name is treated as one file, sfx/<name>.mp3. */
 (function(){
 'use strict';
+const RND=Math.random;// captured at load: online lockstep swaps Math.random for a seeded one during game steps, and sound picks must not consume it
 if(typeof window==='undefined'||window.PASFX)return;
 // the canvas arcade's nine A.sfx names plus a few shared ones; every pool is a list of takes picked at random
 const POOLS={
@@ -55,9 +56,9 @@ function bank(ac,base){
   ready:n=>takes(n).length>0,
   play(n,dst,o){o=o||{};const t=takes(n);if(!t.length){want(n);return null;}
    // never the same take twice in a row when the pool has more than one
-   let i=Math.floor(Math.random()*t.length);if(t.length>1&&t[i]===last[n])i=(i+1)%t.length;last[n]=t[i];
+   let i=Math.floor(RND()*t.length);if(t.length>1&&t[i]===last[n])i=(i+1)%t.length;last[n]=t[i];
    try{const s=ac.createBufferSource();s.buffer=buf[t[i]];const jit=o.jit==null?.05:o.jit;
-    s.playbackRate.value=Math.max(.25,(o.rate||1)*(1+(Math.random()*2-1)*jit));
+    s.playbackRate.value=Math.max(.25,(o.rate||1)*(1+(RND()*2-1)*jit));
     const g=ac.createGain();g.gain.value=o.vol==null?1:o.vol;s.connect(g);g.connect(dst||ac.destination);
     s.start(o.when||0);s.onended=()=>{try{g.disconnect();}catch(e){}};return s;}catch(e){return null;}},
   loop(n,dst,vol){const t=takes(n);if(!t.length){want(n);return null;}

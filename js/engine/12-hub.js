@@ -5,7 +5,8 @@ const A=window.A,E=A._e,{W,H,K}=A;
 function boot(){
  const scr=document.getElementById('scr');A.c=scr.getContext('2d');A.c.imageSmoothingEnabled=false;
  const PREV=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Slash'];
- addEventListener('keydown',e=>{if(E.state==='hub'){if(e.code==='Escape'&&A.closeBoard)A.closeBoard();return;}E.keys[e.code]=true;if(!e.repeat)E.tap[e.code]=1;if(PREV.includes(e.code))e.preventDefault();
+ const typing=e=>{const t=e.target;return!!t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName||''));};
+ addEventListener('keydown',e=>{if(typing(e))return;if(E.state==='hub'){if(e.code==='Escape'&&A.closeBoard)A.closeBoard();return;}E.keys[e.code]=true;if(!e.repeat)E.tap[e.code]=1;if(PREV.includes(e.code))e.preventDefault();
   if(e.code==='Escape'){if(A.closeBoard&&A.closeBoard())return;A.close();}else if(E.cur&&E.cur.typing&&E.state==='play'&&!E.paused&&(/^Key[A-Z]$/.test(e.code)||e.code==='Backspace'||e.code==='Enter')){A.typed.push(e.code==='Backspace'?'<':e.code==='Enter'?'>':e.code.slice(3));e.preventDefault();}else if((e.code==='KeyP'||e.code==='KeyH')&&E.state==='play')E.paused=!E.paused;else if(e.code==='KeyR'&&(E.state==='play'||E.state==='over')&&E.cur){if(E.hot){E.turn=0;E.ts=[0,0];}E.begin();}else if(e.code==='KeyM')A.toggleMute();else if(e.code==='KeyG'&&(E.state!=='play'||E.paused))A.cycleGfx();else if(e.code==='KeyX'&&(E.state!=='play'||E.paused)&&E.state!=='hub')A.cycleSfx();else if(e.code==='KeyV'&&(E.state!=='play'||E.paused)&&E.state!=='hub'&&A.cycleFilter)A.cycleFilter();else if(E.state==='over'&&E.g&&e.code==='KeyU'&&(!E.cur.vs||A.cpu))A.submitScore(E.g);else if((E.state==='over'||E.state==='title')&&e.code==='KeyL')A.showBoard(E.cur);});
  addEventListener('keyup',e=>{E.keys[e.code]=false;});
  addEventListener('blur',()=>{for(const k in E.keys)E.keys[k]=false;});

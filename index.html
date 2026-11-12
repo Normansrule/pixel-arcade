@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-fSLcwd6l6/P+7AaH9ta28MZ1HC/tVY2aCeuYd3EEDj0=' 'sha256-Gf5ycrHIud18zyBe5tVd7gCXLK1GT/nTI2bCCFb6vlA=' 'sha256-xOBXlNXc4zyKT3nwDzQZaLdH/wPXz+NEsmG7AE21qsY=' 'sha256-gSNHbY1wWuhi+RELWLtQHAT9ruB2ZLLWrxXvKdlbR7M='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://github.com https://avatars.githubusercontent.com; font-src 'self'; media-src 'self' data: blob:; connect-src 'self' https://api.github.com wss://0.peerjs.com https://0.peerjs.com https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pixel Arcade</title>
 <meta name="description" content="600 original browser games and 56 full-3D worlds. Play solo, against the CPU, or two players on one keyboard.">
@@ -380,6 +381,9 @@
 <script src="games/voyage.js"></script>
 <script src="games/townsfolk.js"></script>
 <script src="games/seasons.js"></script>
+<script src="js/online/safe.js"></script>
+<script src="js/online/config.js"></script>
+<script src="js/online/auth.js"></script>
 <script src="js/net.js"></script>
 <!-- scripts:end -->
 <script src="js/carts.js"></script>
@@ -391,8 +395,8 @@
 <script>
 (function(){let L=[];try{L=JSON.parse(localStorage.getItem('pxd_mygames'))||[];}catch(e){}if(!Array.isArray(L)||!L.length)return;
  const box=document.getElementById('mine'),row=document.getElementById('minerow');box.hidden=false;
- L.slice(0,12).forEach(g=>{const a=document.createElement('a');a.className='minec';a.href=g.url||('builder/?play&game='+encodeURIComponent(g.id));
-  const im=document.createElement('img');im.alt='';im.src=g.thumb||'';a.appendChild(im);const b=document.createElement('b');b.textContent=g.title||'Untitled';a.appendChild(b);
+ L.slice(0,12).forEach(g=>{const a=document.createElement('a');a.className='minec';const S=window.PXSafe;if(!g||typeof g!=='object')return;a.href=(S&&S.safeLocalUrl(g.url,'builder/'))||('builder/?play&game='+encodeURIComponent(String(g.id||'')));
+  const im=document.createElement('img');im.alt='';im.src=S?S.safeImage(g.thumb):'';a.appendChild(im);const b=document.createElement('b');b.textContent=g.title||'Untitled';a.appendChild(b);
   const sp=document.createElement('span');sp.textContent=(g.category||'Custom')+', '+new Date(g.updated||Date.now()).toLocaleDateString();a.appendChild(sp);row.appendChild(a);});
  const add=document.createElement('a');add.className='minec new';add.href='builder/';add.innerHTML='<b>+ New game</b>';row.appendChild(add);})();
 </script>

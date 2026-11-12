@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v79", "date": "12 Nov 2026", "branch": "round32", "round": 32, "games": 600, "worlds": 56,
+     "added": "Online play with anyone over the internet as a guest: room codes, 130 two-player cabinets head to head, 399 solo cabinets as live score duels, chat, strict message checks and a Content Security Policy; optional sign-in ready."},
     {"v": "v78", "date": "11 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,
      "added": "Hardfall's desert haze thinned and its rifles rebuilt with rails, scopes, vented handguards and curved magazines."},
     {"v": "v77", "date": "11 Nov 2026", "branch": "round31", "round": 31, "games": 600, "worlds": 56,

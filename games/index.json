@@ -79,6 +79,9 @@
   "games/seasons.js"
  ],
  "after": [
+  "js/online/safe.js",
+  "js/online/config.js",
+  "js/online/auth.js",
   "js/net.js"
  ]
 }

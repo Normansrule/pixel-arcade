@@ -1,6 +1,6 @@
 # Online multiplayer: options and trade-offs
 
-Status: **option 1 is built for Four in a Row** (owner decision, 12 Oct 2026: codes only, no outside server). Everything else is single-player or local two-player. This page compares the ways to add online play to a static site served by GitHub Pages, so the owner can pick one before any code is written.
+Status (round 32, 12 Nov 2026): **online play across the internet is built** with option 2 (a free public signaling server) plus public STUN, for 529 cabinets, with option 1 (copy-paste codes) kept as the no-server fallback. See [ONLINE.md](ONLINE.md) for how it works and its security. The design notes below are kept for reference. This page compares the ways to add online play to a static site served by GitHub Pages, so the owner can pick one before any code is written.
 
 ## The constraint
 

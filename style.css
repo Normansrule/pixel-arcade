@@ -451,6 +451,29 @@ main{max-width:1280px;margin:0 auto;padding:0 var(--s5) var(--s8)}
 .netbox .nrow{display:flex;flex-wrap:wrap;gap:var(--s2);margin:var(--s2) 0}
 .netbox .nqr{display:block;margin:10px auto;max-width:100%;image-rendering:pixelated;border-radius:var(--r)}
 .netbox .nmsg{font:700 var(--t-xs) var(--text)}
+.netbox .nerr{color:var(--signal-text)}
+.netbox .nhot{background:var(--signal);color:#fff}
+.netbox .ninp{width:100%;min-height:40px;margin:6px 0;padding:0 var(--s3);border-radius:var(--r);border:1px solid var(--line);background:var(--paper-2);color:var(--ink);font:500 var(--t-sm) var(--text)}
+.netbox .ncode{font:700 1.1rem var(--mono);letter-spacing:.2em;text-transform:uppercase}
+.netbox .nlab{font-weight:700}.netbox .nlab small{font-weight:400;color:var(--ink-3)}
+.netbox .ncols{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin:var(--s3) 0}
+.netbox .ncol{display:flex;flex-direction:column;gap:6px;padding:var(--s3);border-radius:10px;background:var(--paper-2)}
+.netbox .ncol p{margin:0;font-size:var(--t-xs)}.netbox .ncol button{margin-top:auto}
+.netbox .nsmall{font-size:var(--t-xs)}.netbox .nsmall a{color:var(--ink-2)}
+.netbox .nroom{margin:var(--s2) 0;font:700 clamp(2rem,9vw,3rem)/1 var(--mono);letter-spacing:.14em;text-align:center;color:var(--ink)}
+.netbox .nvs{display:flex;align-items:baseline;gap:var(--s2);flex-wrap:wrap;font:1.1rem var(--pixel);letter-spacing:.04em;overflow-wrap:anywhere}
+.netbox .nvs i{font:400 var(--t-xs) var(--text);color:var(--ink-3)}.netbox .nvs .nping{margin-left:auto;font:500 var(--t-xs) var(--mono);color:var(--ink-3)}
+.netbox .ngames{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;max-height:34vh;overflow:auto;margin:var(--s2) 0}
+.netbox .ngame{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-height:48px;border-radius:8px;text-align:left}
+.netbox .ngame b{font:700 var(--t-xs) var(--text)}.netbox .ngame small{font:500 .62rem var(--mono);color:var(--ink-3)}
+.netbox .nchat{margin-top:var(--s3);padding:var(--s2);border-radius:10px;background:var(--paper-2)}
+.netbox .nchat .nrow{flex-wrap:nowrap}.netbox .nchat .ninp{margin:0}
+.nlog{max-height:140px;overflow:auto;font-size:var(--t-xs);overflow-wrap:anywhere}
+.nlog p{margin:2px 0;color:var(--ink-2)}.nlog p.me b{color:var(--signal-text)}.nlog p.sys{color:var(--ink-3);font-style:italic}
+.netbox .nemo{display:flex;flex-wrap:wrap;gap:4px}.netbox .nemo button{min-height:30px;padding:0 10px;font-size:.66rem}
+.ndock{position:fixed;right:16px;bottom:16px;z-index:55;min-height:40px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,77,0,.6);background:rgba(8,8,8,.88);color:#f4f2ec;font:700 .72rem 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.06em;cursor:pointer;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ndock.new{box-shadow:0 0 0 3px rgba(255,77,0,.45)}
+@media (max-width:520px){.netbox .ncols{grid-template-columns:1fr}}
 
 /* ---------- responsive ---------- */
 @media (max-width:1100px){.profile span{display:none}.profile{padding:0 4px}.docslink{display:none}}

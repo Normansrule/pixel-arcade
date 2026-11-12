@@ -2,7 +2,16 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round31`)
+## Unreleased (on branch `round32`)
+
+### Round 32, batch 1 (v79): online play with anyone, anywhere
+- **Online play over the internet:** make a room, send the 6-character code (or link, or QR code) and play from any network, in the web page or the desktop app, as a guest. A free public signaling server introduces the two browsers once; the game then runs directly between them.
+- **529 cabinets online:** the 130 deterministic 2-player cabinets run in lockstep (same seed, only buttons are sent, a state hash checks both screens match), and all 399 solo cabinets become live score duels on the same level and clock, with a rematch button. Lobby chat and quick emotes.
+- **Security:** strict schemas, size limits and rate limits on every network message (js/online/safe.js), cleaned names and chat shown only as text, no `innerHTML` in the online code, a Content Security Policy on the hub and builder (tools/csp.py), checked profile, leaderboard and "My games" data, and a hardened desktop app (permission requests denied, only https links open, stricter file paths). New tests: tests/safe.test.js, tests/net.test.js, tests/auth.test.js and a two-browser tests/online.e2e.js.
+- **Optional sign-in:** js/online/auth.js signs in with an email code or GitHub through Supabase and saves tokens and wins to the player's own row (docs/supabase.sql, row level security). Switched off until the owner adds a free Supabase project (docs/ONLINE.md).
+- **Self-hosting:** tools/signal-server.js is a dependency-free signaling server in case the public one is down.
+
+## Round 31 (on branch `round31`)
 
 ### Round 31, batch 7 (v78): a sharper Hardfall
 - **Hardfall:** the desert map's dusk haze is about a third thinner and the colours a little richer, so the mesas, containers and far end of the base read clearly instead of fading into brown. The VX-7 rifle and the grunt carbine were plain boxes; they now have softened edges, a toothed top rail, vented handguard, ported muzzle brake, curved magazine, grooved grip, skeleton stock and (on the VX-7) a proper scope with rings, turrets and a tinted lens.
