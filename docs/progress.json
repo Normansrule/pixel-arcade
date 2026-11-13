@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v81", "date": "13 Nov 2026", "branch": "round32", "round": 32, "games": 600, "worlds": 56,
+     "added": "All 56 3D worlds play online as score duels: pick a world in the online lobby or press DUEL ONLINE on its menu, each player plays a round and the winner is named. One shared, checked connection module for the hub and the worlds."},
     {"v": "v80", "date": "12 Nov 2026", "branch": "round32", "round": 32, "games": 600, "worlds": 56,
      "added": "Online play stays guest-only with device-stored nicknames: the unused sign-in code was removed, the security policy tightened, and all 544 cabinets now play online."},
     {"v": "v79", "date": "12 Nov 2026", "branch": "round32", "round": 32, "games": 600, "worlds": 56,

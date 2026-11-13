@@ -17,14 +17,17 @@
 (function(){
 'use strict';
 const A=window.A,E=A._e,S=window.PXSafe,CFG=window.PX_ONLINE;
-if(!A||!S||!CFG)return;
+if(!A||!S||!CFG||!window.PXLink)return;
 A.net={on:false};// legacy per-game protocol (round 30): unused, lockstep needs no game code
 
 /* ---------- which games can be played online ---------- */
 // vs cabinets that must stay local (none today; typing games are excluded by g.typing). tests/net.test.js fails if a
 // lockstep cabinet is not deterministic.
 const NO_LOCK=new Set();
-const modeOf=g=>!g||g.href?null:g.vs?(NO_LOCK.has(g.id)||g.typing?null:'lock'):'duel';
+// 3D worlds run their own engines, so they become a score duel in the world itself (js/kit3d/duel.js): both players
+// open the same world, play a round each and compare scores. Only the arcade's own world folders are ever opened.
+const WORLD=/^[a-z0-9]{2,16}\/$/;
+const modeOf=g=>!g?null:g.href?(WORLD.test(g.href)?'world':null):g.vs?(NO_LOCK.has(g.id)||g.typing?null:'lock'):'duel';
 A.onlineMode=modeOf;
 const EMO=['GG','NICE!','WOW','OOPS','REMATCH?','HELLO','GOOD LUCK','TOO EASY'];
 const now=()=>performance.now();
@@ -53,81 +56,34 @@ function qr(text){const bytes=[...new TextEncoder().encode(text)];let v=1;for(;v
 function drawQR(cv,text){const M=qr(text),c=cv.getContext('2d');if(!M){cv.hidden=true;return;}cv.hidden=false;const n=M.length+8,s=Math.max(3,Math.floor(240/n));cv.width=cv.height=n*s;c.fillStyle='#fff';c.fillRect(0,0,n*s,n*s);c.fillStyle='#000';
  M.forEach((row,y)=>row.forEach((d,x)=>{if(d)c.fillRect((x+4)*s,(y+4)*s,s,s);}));}
 
-/* ---------- copy-paste codes (no server): session description -> deflate -> base64url ---------- */
-const b64=u=>{let s='';for(let i=0;i<u.length;i+=4096)s+=String.fromCharCode.apply(null,u.subarray(i,i+4096));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
-const unb64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
-async function squeeze(u,T,limit){const rd=new Blob([u]).stream().pipeThrough(new T('deflate-raw')).getReader();const parts=[];let n=0;
- for(;;){const{done,value}=await rd.read();if(done)break;n+=value.length;if(n>limit){rd.cancel();throw new Error('That code is too long.');}parts.push(value);}
- const out=new Uint8Array(n);let o=0;for(const p of parts){out.set(p,o);o+=p.length;}return out;}
-async function pack(o){return'PXA2.'+b64(await squeeze(new TextEncoder().encode(JSON.stringify(o)),CompressionStream,60000));}
-async function unpack(code){code=String(code||'').trim();if(code.length>12000)throw new Error('That code is too long.');const m=code.match(/^PXA2\.([A-Za-z0-9_-]{8,})$/);if(!m)throw new Error('That is not an arcade code (they start with PXA2).');
- let o;try{o=JSON.parse(new TextDecoder().decode(await squeeze(unb64(m[1]),DecompressionStream,30000)));}catch(e){throw new Error(e.message==='That code is too long.'?e.message:'That code is damaged. Copy it again.');}
- const v=S.parseCode(o);if(!v)throw new Error('That code is damaged. Copy it again.');return v;}
-const gathered=pc=>new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const t=setTimeout(r,5000);pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'){clearTimeout(t);r();}});});
-
-/* ---------- signaling server client (PeerJS wire protocol) ---------- */
-function Signal(id,on){const c=CFG.signal;const url=(c.secure?'wss':'ws')+'://'+c.host+':'+c.port+c.path.replace(/\/?$/,'/')+'peerjs?key='+encodeURIComponent(c.key)+'&id='+encodeURIComponent(id)+'&token='+S.randomId(12);
- let ws,hb=null,dead=false;const bucket=new S.Bucket(30,60);const fin=t=>{if(dead)return;dead=true;clearInterval(hb);on({type:t});};
- try{ws=new WebSocket(url);}catch(e){setTimeout(()=>fin('FAIL'));return{send(){},close(){}};}
- ws.onopen=()=>{hb=setInterval(()=>{if(ws.readyState===1)ws.send('{"type":"HEARTBEAT"}');},5000);};
- ws.onmessage=e=>{if(dead||!bucket.take(now()))return;const m=S.parseSignal(typeof e.data==='string'?e.data:'');if(m&&m.type!=='HEARTBEAT')on(m);};
- ws.onerror=()=>fin('FAIL');ws.onclose=()=>fin('CLOSED');
- return{send(type,dst,payload){if(!dead&&ws.readyState===1)ws.send(JSON.stringify({type,dst,payload}));},close(){dead=true;clearInterval(hb);try{ws.close();}catch(_){}}};}
-
-/* ---------- the link ---------- */
-const st={phase:'idle',role:null,room:null,sig:null,pc:null,dc:null,peer:null,cands:[],nc:0,rival:null,match:null,strikes:0,inB:null,chatB:null,myChatB:null,rtt:0,pingT:null,timer:null,tries:0,pick:null,n:0};
+/* ---------- the link (js/online/link.js: signaling, WebRTC, schema checks, rate limits) ---------- */
+const L=window.PXLink.make({
+ status:t=>ui.status(t),
+ room:()=>ui.room(),
+ waiting:t=>ui.room(t),
+ linked:()=>linked(),
+ message:m=>handle(m),
+ fail:msg=>{reset();ui.home(msg);},
+ lost:msg=>{const M=st.match;reset();if(M&&E.state!=='hub'){if(M.mode==='lock')oc();else if(A.toast)A.toast('RIVAL LEFT');}ui.home(msg);}});
+const st=L.st;Object.assign(st,{rival:null,match:null,chatB:null,myChatB:null,pick:null,n:0,w3d:null});
 A.online=st;
-const myName=()=>{let v='';try{v=localStorage.getItem('pxd_nick')||'';}catch(_){}return S.cleanName(v||(A.profile&&A.profile.user)||'','')||('Guest '+S.randomId(3).toUpperCase());};
-const setName=v=>{const n=S.cleanName(v,'');try{n?localStorage.setItem('pxd_nick',n):localStorage.removeItem('pxd_nick');}catch(_){}return n;};
-function send(m){if(!st.dc||st.dc.readyState!=='open')return false;try{st.dc.send(S.encode(m));return true;}catch(e){return false;}}
-function teardown(){clearTimeout(st.timer);clearInterval(st.pingT);if(st.sig)st.sig.close();try{st.dc&&st.dc.close();}catch(_){}try{st.pc&&st.pc.close();}catch(_){}
- Object.assign(st,{phase:'idle',role:null,room:null,sig:null,pc:null,dc:null,peer:null,cands:[],nc:0,rival:null,strikes:0,rtt:0,pingT:null,timer:null,pick:null});endMatch();ui.dock();}
-function makePC(){const pc=st.pc=new RTCPeerConnection({iceServers:JSON.parse(JSON.stringify(CFG.ice))});
- pc.onicecandidate=e=>{if(e.candidate&&st.sig&&st.peer)st.sig.send('CANDIDATE',st.peer,{c:e.candidate.candidate||'',m:String(e.candidate.sdpMid||'').slice(0,64),i:e.candidate.sdpMLineIndex||0});};
- pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'&&st.phase!=='linked')fail('Could not link the two browsers. One of you may be on a strict network (some school, office or mobile networks block direct links). Try another network.');};
- return pc;}
-function wire(dc){st.dc=dc;st.inB=new S.Bucket(240,480);st.chatB=new S.Bucket(.6,4);st.myChatB=new S.Bucket(.6,4);
- dc.onopen=linked;dc.onclose=()=>{if(st.phase==='linked')lost('Your rival left.');};
- dc.onmessage=e=>{if(typeof e.data!=='string'||!st.inB.take(now())){strike();return;}const m=S.parse(e.data);if(!m){strike();return;}handle(m);};}
-function strike(){if(++st.strikes>60)lost('The link was closed because the other browser sent too much bad data.');}
-function linked(){clearTimeout(st.timer);st.phase='linked';if(st.sig){st.sig.close();st.sig=null;}// leave the signaling server: the room is now full
- send({t:'hi',v:1,name:myName(),app:CFG.app});st.pingT=setInterval(()=>send({t:'ping',p:Math.round(now())>>>0}),2000);ui.lobby();if(A.uiSfx)A.uiSfx('coin',.4);}
-function fail(msg){teardown();ui.home(msg);}
-function lost(msg){const M=st.match;teardown();if(M&&E.state!=='hub'){if(M.mode==='lock')oc();else if(A.toast)A.toast('RIVAL LEFT');}ui.home(msg);}
-function onSig(m){switch(m.type){
- case'OPEN':st.tries=0;if(st.role==='host'){st.phase='waiting';ui.room();}else offer();break;
- case'ID-TAKEN':if(st.role==='host'&&st.tries++<3){st.sig.close();st.sig=null;openRoom();}else fail('Could not open a room. Try again.');break;
- case'OFFER':answer(m);break;
- case'ANSWER':if(st.role==='guest'&&m.src===st.peer&&st.pc&&!st.pc.remoteDescription)st.pc.setRemoteDescription({type:'answer',sdp:m.payload.sdp}).then(flushCands).catch(()=>fail('The host sent a bad answer.'));break;
- case'CANDIDATE':if(m.src===st.peer&&st.pc&&st.nc++<60){if(st.pc.remoteDescription)st.pc.addIceCandidate({candidate:m.payload.c,sdpMid:m.payload.m||'0',sdpMLineIndex:m.payload.i||0}).catch(()=>{});else st.cands.push(m.payload);}break;
- case'EXPIRE':if(st.role==='guest'&&st.phase!=='linked')fail('No open room has that code. Check it, or ask your friend to make a new room.');break;
- case'LEAVE':if(st.phase!=='linked'&&m.src===st.peer){if(st.role==='host'){resetGuest();}else fail('The host closed the room.');}break;
- case'INVALID-KEY':case'ERROR':case'FAIL':case'CLOSED':if(st.phase!=='linked'&&st.phase!=='idle')fail('Could not reach the free online server. Check your internet connection, or use "Swap codes" instead.');break;}}
-function flushCands(){const c=st.cands.splice(0);c.forEach(p=>st.pc.addIceCandidate({candidate:p.c,sdpMid:p.m||'0',sdpMLineIndex:p.i||0}).catch(()=>{}));}
-function resetGuest(){try{st.pc&&st.pc.close();}catch(_){}st.pc=st.dc=st.peer=null;st.cands=[];st.nc=0;ui.room();}
-const GUEST=new RegExp('^'+CFG.prefix.replace(/[-]/g,'\\-')+'g[a-z0-9]{12}$');
-async function answer(m){if(st.role!=='host'||st.phase!=='waiting'||st.peer||!GUEST.test(m.src))return;// one guest per room; later offers are ignored
- st.peer=m.src;ui.status('Linking with '+(m.payload.name||'a friend')+'…');const pc=makePC();pc.ondatachannel=e=>{if(!st.dc&&e.channel.label==='px')wire(e.channel);};
- try{await pc.setRemoteDescription({type:'offer',sdp:m.payload.sdp});flushCands();await pc.setLocalDescription(await pc.createAnswer());st.sig.send('ANSWER',st.peer,{k:'a',sdp:pc.localDescription.sdp});
-  st.timer=setTimeout(()=>{if(st.phase!=='linked'){resetGuest();ui.status('That friend could not link. Still waiting…');}},20000);}catch(e){resetGuest();}}
-async function offer(){const pc=makePC();wire(pc.createDataChannel('px',{ordered:true}));
- try{await pc.setLocalDescription(await pc.createOffer());st.sig.send('OFFER',st.peer,{k:'o',sdp:pc.localDescription.sdp,name:myName()});}catch(e){fail('Your browser could not start a connection.');return;}
- st.timer=setTimeout(()=>{if(st.phase!=='linked')fail('No answer from that room. Check the code, or ask your friend to make a new room.');},20000);}
-function openRoom(){st.role='host';st.room=S.newRoom();st.phase='opening';st.sig=Signal(CFG.prefix+st.room.toLowerCase(),onSig);ui.status('Opening a room…');}
-function hostRoom(){teardown();st.tries=0;openRoom();}
-function joinRoom(code){const c=S.cleanRoom(code);if(!c){ui.err('Room codes are 6 letters and numbers, like K7QF2M.');return;}teardown();st.role='guest';st.room=c;st.phase='joining';st.peer=CFG.prefix+c.toLowerCase();
- st.sig=Signal(CFG.prefix+'g'+S.randomId(12),onSig);ui.status('Looking for room '+c+'…');}
+const myName=window.PXLink.myName,setName=window.PXLink.setName,send=L.send;
+function reset(){clearTimeout(st.w3d&&st.w3d.timer);Object.assign(st,{rival:null,pick:null,w3d:null});endMatch();ui.dock();}
+function teardown(){L.close();reset();}
+function linked(){st.chatB=new S.Bucket(.6,4);st.myChatB=new S.Bucket(.6,4);send({t:'hi',v:1,name:myName(),app:CFG.app});ui.lobby();if(A.uiSfx)A.uiSfx('coin',.4);}
+const strike=()=>L.strike();
+function hostRoom(){reset();L.host(myName());}
+function joinRoom(code){if(!S.cleanRoom(code)){ui.err('Room codes are 6 letters and numbers, like K7QF2M.');return;}reset();L.join(myName(),code);}
 /* no-server mode: the same link, set up by swapping two codes */
-async function codesHost(){teardown();st.role='host';st.phase='codes';const pc=makePC();wire(pc.createDataChannel('px',{ordered:true}));await pc.setLocalDescription(await pc.createOffer());await gathered(pc);return pack({t:'o',s:pc.localDescription.sdp,name:myName()});}
-async function codesAccept(code){const o=await unpack(code);if(o.t!=='a')throw new Error('Paste the answer code from your friend.');if(!st.pc||st.pc.remoteDescription)throw new Error('Start again: make a new code.');await st.pc.setRemoteDescription({type:'answer',sdp:o.s});}
-async function codesJoin(code){const o=await unpack(code);if(o.t!=='o')throw new Error('Paste the host\'s code.');teardown();st.role='guest';st.phase='codes';const pc=makePC();pc.ondatachannel=e=>{if(!st.dc&&e.channel.label==='px')wire(e.channel);};
- await pc.setRemoteDescription({type:'offer',sdp:o.s});await pc.setLocalDescription(await pc.createAnswer());await gathered(pc);return pack({t:'a',s:pc.localDescription.sdp,name:myName()});}
+const codesHost=()=>{reset();return L.codesHost(myName());};
+const codesAccept=code=>L.codesAccept(code);
+const codesJoin=code=>{reset();return L.codesJoin(myName(),code);};
 
 /* ---------- messages ---------- */
 function handle(m){const M=st.match;switch(m.t){
  case'hi':st.rival={name:m.name,app:m.app};ui.lobby();ui.sys(m.name+' joined.');if(m.app!==CFG.app)ui.sys('Your rival runs a different arcade version. Both of you should reload the page.');break;
- case'chat':if(st.chatB.take(now()))ui.chat(rivalName(),m.text,false);break;
- case'emo':if(st.chatB.take(now())){ui.chat(rivalName(),EMO[m.e],false);if(E.state!=='hub'&&A.toast)A.toast(rivalName().toUpperCase()+': '+EMO[m.e]);}break;
+ case'chat':if(st.chatB&&st.chatB.take(now()))ui.chat(rivalName(),m.text,false);break;
+ case'emo':if(st.chatB&&st.chatB.take(now())){ui.chat(rivalName(),EMO[m.e],false);if(E.state!=='hub'&&A.toast)A.toast(rivalName().toUpperCase()+': '+EMO[m.e]);}break;
  case'pick':if(st.role==='guest'){const g=A.games.find(x=>x.id===m.game);st.pick=g&&modeOf(g)?g:null;ui.lobby();}break;
  case'go':if(st.role==='guest')start(m);break;
  case'in':if(M&&M.mode==='lock'){if(m.f<M.F||m.f+m.k.length>M.F+240){strike();break;}m.k.forEach((k,i)=>{if(!M.remote.has(m.f+i))M.remote.set(m.f+i,k);});if(m.m&&st.role==='guest'&&!M.mrem.has(m.f))M.mrem.set(m.f,m.m);}break;
@@ -135,13 +91,21 @@ function handle(m){const M=st.match;switch(m.t){
  case'sc':if(M&&M.mode==='duel'&&m.n===M.n&&!M.rival.done){M.rival.score=m.s;if(m.done){M.rival.done=true;M.rival.over=m.over||'';}}break;
  case'again':if(M&&m.n===M.n){M.again.them=true;if(st.role==='host'&&M.again.me)rematch();else if(A.toast&&E.state==='over')A.toast(rivalName().toUpperCase()+' WANTS A REMATCH');}break;
  case'quit':if(M&&m.n===M.n){if(M.mode==='lock'){endMatch();oc();ui.open();ui.sys(rivalName()+' left the game.');}else{M.rival.done=true;M.rival.quit=true;if(A.toast)A.toast('RIVAL LEFT THE GAME');}}break;
- case'ping':send({t:'pong',p:m.p});break;
- case'pong':st.rtt=Math.max(0,Math.round(now())-m.p);ui.ping();break;
- case'bye':lost('Your rival left.');break;}}
+ case'pong':ui.ping();break;
+ case'w3d':if(st.role==='guest')toWorld(m,'guest');else if(st.w3d&&st.w3d.room===m.room)goWorld();break;}}
 const rivalName=()=>st.rival?st.rival.name:'Rival';
 
 /* ---------- matches ---------- */
+/* 3D world hand-off: the host sends the world and a fresh room code; the guest answers with the same message; both pages
+   then open the world, which reads the hand-off from sessionStorage (same site only, so a link can never start one) and
+   links again under that code: the host opens the room, the guest keeps knocking until it is open. */
+function toWorld(m,role){const g=A.games.find(x=>x.id===m.game);if(!g||modeOf(g)!=='world'||!S.cleanRoom(m.room))return;
+ try{sessionStorage.setItem('pxd_duel',JSON.stringify({role,room:m.room,t:Date.now(),game:g.id}));}catch(_){ui.sys('This browser blocks the hand-off to 3D worlds.');return;}
+ if(role==='guest'){send({t:'w3d',game:g.id,room:m.room});setTimeout(()=>{L.close();location.href=g.href;},400);}
+ else{st.w3d={room:m.room,href:g.href,timer:setTimeout(goWorld,4000)};ui.sys('Opening '+(E.tc?E.tc(g.name):g.name)+'…');}}
+function goWorld(){const w=st.w3d;if(!w)return;clearTimeout(w.timer);st.w3d=null;L.close();location.href=w.href;}
 function choose(g){if(st.role!=='host'||st.phase!=='linked')return;const mode=modeOf(g);if(!mode)return;
+ if(mode==='world'){const m={t:'w3d',game:g.id,room:S.newRoom()};if(send(m))toWorld(m,'host');return;}
  const m={t:'go',game:g.id,seed:S.randomSeed(),mode,delay:Math.max(3,Math.min(10,Math.ceil((st.rtt/2+20)/16.7))),n:++st.n};if(send(m))start(m);}
 function rematch(){const M=st.match;if(!M)return;const m={t:'go',game:M.g.id,seed:S.randomSeed(),mode:M.mode,delay:M.delay,n:++st.n};if(send(m))start(m);}
 function start(m){const g=A.games.find(x=>x.id===m.game);if(!g||modeOf(g)!==m.mode)return;st.n=m.n;
@@ -202,7 +166,7 @@ function ensure(){if(box)return;box=h('div',{class:'board netbox',hidden:true,ro
  h('button',{type:'button',class:'nclose',text:'Close',onclick:()=>ui.hide()})));document.body.appendChild(box);
  box.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape')ui.hide();});}
 ui.open=pre=>{if(!window.RTCPeerConnection){alert('This browser cannot play online.');return;}ensure();box.hidden=false;
- if(st.phase==='linked')ui.lobby();else if(st.phase==='waiting')ui.room();else if(st.phase==='idle'||st.phase==='codes'&&!pre)ui.home('',pre);const f=box.querySelector('input,button');if(f)f.focus();};
+ if(st.phase==='linked')ui.lobby();else if(st.phase==='waiting'||st.phase==='answering')ui.room();else if(st.phase==='idle'||st.phase==='codes'&&!pre)ui.home('',pre);const f=box.querySelector('input,button');if(f)f.focus();};
 ui.hide=()=>{if(box)box.hidden=true;if(st.phase!=='linked'&&st.phase!=='idle'&&st.phase!=='codes')teardown();ui.dock();};
 ui.status=t=>{ensure();clear(body);body.append(h('p',{class:'nmsg',text:t}),h('div',{class:'nrow'},h('button',{type:'button',text:'Cancel',onclick:()=>{teardown();ui.home();}})));};
 ui.err=t=>{if(!body)return;let s=body.querySelector('.nerr');if(!s){s=h('p',{class:'nmsg nerr',role:'alert'});body.appendChild(s);}s.textContent=t;};
@@ -216,10 +180,10 @@ ui.home=(msg,pre)=>{ensure();box.hidden=false;clear(body);const code=h('input',{
    h('div',{class:'ncol'},h('b',{text:'Join a room'}),h('p',{text:'Type your friend\'s room code.'}),code,h('button',{type:'button',class:'nhot',text:'JOIN',onclick:()=>joinRoom(code.value)}))),
   h('p',{class:'nsmall'},h('a',{href:'#',text:'No internet server? Swap codes instead (works on one network)',onclick:e=>{e.preventDefault();ui.codes(pre&&pre.code);}})));
  code.addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom(code.value);});if(msg)ui.err(msg);if(pre&&pre.code)ui.codes(pre.code);};
-ui.room=()=>{ensure();clear(body);const link=location.href.split('#')[0]+'#room='+st.room,cv=h('canvas',{class:'nqr','aria-label':'QR code for the room link'});
+ui.room=note=>{ensure();clear(body);const link=location.href.split('#')[0]+'#room='+st.room,cv=h('canvas',{class:'nqr','aria-label':'QR code for the room link'});
  body.append(h('p',{text:'Send this room code to your friend, or let them scan the QR code:'}),h('div',{class:'nroom',text:st.room.slice(0,3)+' '+st.room.slice(3)}),
   h('div',{class:'nrow'},h('button',{type:'button',text:'Copy link',onclick:async e=>{try{await navigator.clipboard.writeText(link);e.target.textContent='Copied';}catch(_){e.target.textContent='Copy failed';}}}),h('button',{type:'button',text:'Close room',onclick:()=>{teardown();ui.home();}})),
-  cv,h('p',{class:'nmsg',text:'Waiting for a friend… the room closes when you close this.'}));drawQR(cv,link);};
+  cv,h('p',{class:'nmsg',text:note||'Waiting for a friend… the room closes when you close this.'}));drawQR(cv,link);};
 ui.codes=async pre=>{ensure();clear(body);const ta=h('textarea',{class:'noff',rows:3,placeholder:'PXA2…',spellcheck:'false','aria-label':'Host code'});if(pre)ta.value=pre;
  body.append(h('p',{text:'Without a server, the two browsers set up the link by swapping two codes. This normally only works when you are both on the same network.'}),
   h('div',{class:'nrow'},h('button',{type:'button',class:'nhot',text:'MAKE A HOST CODE',onclick:hostCodes})),h('label',{text:'Or paste the host\'s code:'}),ta,
@@ -230,13 +194,13 @@ ui.codes=async pre=>{ensure();clear(body);const ta=h('textarea',{class:'noff',ro
   body.append(h('label',{text:label}),t,h('div',{class:'nrow'},h('button',{type:'button',text:'Copy code',onclick:async e=>{try{await navigator.clipboard.writeText(code);e.target.textContent='Copied';}catch(_){t.select();}}})),cv);drawQR(cv,qrText||code);}};
 ui.lobby=()=>{ui.dock();if(!box||box.hidden)return;clear(body);const host=st.role==='host';
  body.append(h('div',{class:'nvs'},h('span',{class:'nme',text:myName()}),h('i',{text:' vs '}),h('span',{class:'nthem',text:st.rival?st.rival.name:'…'}),h('small',{class:'nping',text:st.rtt?st.rtt+' ms':''})));
- if(host){const q=h('input',{class:'ninp',type:'search',maxlength:30,placeholder:'Search 544 games',spellcheck:'false','aria-label':'Search games'}),list=h('div',{class:'ngames',role:'list'});
+ if(host){const q=h('input',{class:'ninp',type:'search',maxlength:30,placeholder:'Search 600 games',spellcheck:'false','aria-label':'Search games'}),list=h('div',{class:'ngames',role:'list'});
   const fill=()=>{clear(list);const t=S.cleanText(q.value,30).toLowerCase();let n=0;for(const g of A.games){const md=modeOf(g);if(!md||t&&g.name.toLowerCase().indexOf(t)<0&&g.cat.toLowerCase().indexOf(t)<0)continue;
-   list.append(h('button',{type:'button',role:'listitem',class:'ngame',onclick:()=>choose(g)},h('b',{text:E.tc?E.tc(g.name):g.name}),h('small',{text:md==='lock'?'2 PLAYERS':'SCORE DUEL'})));if(++n>=60)break;}
+   list.append(h('button',{type:'button',role:'listitem',class:'ngame',onclick:()=>choose(g)},h('b',{text:E.tc?E.tc(g.name):g.name}),h('small',{text:md==='lock'?'2 PLAYERS':md==='world'?'3D · SCORE DUEL':'SCORE DUEL'})));if(++n>=60)break;}
    if(!n)list.append(h('p',{text:'No game matches that search.'}));};
-  q.addEventListener('input',fill);fill();body.append(h('p',{text:'Pick a game. 2-player games put you head to head; solo games become a score duel on the same level and clock.'}),q,list);}
+  q.addEventListener('input',fill);fill();body.append(h('p',{text:'Pick a game. 2-player games put you head to head; solo games become a score duel on the same level and clock; 3D worlds open for both of you and compare your round scores.'}),q,list);}
  else body.append(h('p',{class:'nmsg',text:st.pick?(rivalName()+' is looking at '+(E.tc?E.tc(st.pick.name):st.pick.name)+'…'):(rivalName()+' is picking a game…')}));
- body.append(chatBox(),h('div',{class:'nrow'},h('button',{type:'button',text:'Leave',onclick:()=>{send({t:'bye'});teardown();ui.home();}})));};
+ body.append(chatBox(),h('div',{class:'nrow'},h('button',{type:'button',text:'Leave',onclick:()=>{L.leave();reset();ui.home();}})));};
 ui.ping=()=>{if(box){const p=box.querySelector('.nping');if(p)p.textContent=st.rtt+' ms';}};
 function chatBox(){const inp=h('input',{class:'ninp',type:'text',maxlength:S.CHAT_MAX,autocomplete:'off','aria-label':'Chat message',placeholder:'Say something…'});logEl=h('div',{class:'nlog','aria-live':'polite'});drawLog();
  const go=()=>{const t=S.cleanChat(inp.value);if(!t)return;if(!st.myChatB.take(now())){ui.sys('Slow down a little.');return;}if(send({t:'chat',text:t}))ui.chat(myName(),t,true);inp.value='';};

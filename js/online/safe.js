@@ -68,7 +68,9 @@ const MSG={
  ping:{t:{t:'str',max:4},p:U32},
  pong:{t:{t:'str',max:4},p:U32},
  quit:{t:{t:'str',max:4},n:{t:'int',min:0,max:1e6}},
- bye:{t:{t:'str',max:4}}
+ bye:{t:{t:'str',max:4}},
+ wh:{t:{t:'str',max:4},world:{t:'str',max:16,re:/^[a-z0-9]{2,16}$/}},
+ w3d:{t:{t:'str',max:4},game:{t:'str',max:24,re:GAME_ID},room:{t:'str',max:6,re:/^[A-HJ-NP-Z2-9]{6}$/}}
 };
 function parse(raw){if(typeof raw!=='string'||raw.length>MAX_MSG)return null;let o;try{o=JSON.parse(raw);}catch(_){return null;}
  if(!plain(o)||typeof o.t!=='string'||!hasOwn(MSG,o.t))return null;const m=validate(o,MSG[o.t]);if(!m)return null;

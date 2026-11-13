@@ -81,6 +81,7 @@
  "after": [
   "js/online/safe.js",
   "js/online/config.js",
+  "js/online/link.js",
   "js/net.js"
  ]
 }

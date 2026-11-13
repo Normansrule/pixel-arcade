@@ -5,7 +5,7 @@
 global.window = global;
 const ctx = new Proxy({}, { get: (t, k) => k in t ? t[k] : () => ({}), set: (t, k, v) => { t[k] = v; return true; } });
 require('./lib/load.js')();
-for (const f of ['js/online/safe.js', 'js/online/config.js', 'js/net.js']) require('../' + f);
+for (const f of ['js/online/safe.js', 'js/online/config.js', 'js/online/link.js', 'js/net.js']) require('../' + f);
 const A = global.A, S = global.PXSafe; A.c = ctx; A.silent = true; const NR = Math.random, N = ['l', 'r', 'u', 'd', 'a', 'b'];
 let fails = 0; const bad = [];
 const lock = A.games.filter(g => A.onlineMode(g) === 'lock'), duel = A.games.filter(g => A.onlineMode(g) === 'duel');
@@ -25,5 +25,5 @@ const vs = A.games.filter(g => g.vs && !g.href).length, solo = A.games.filter(g 
 console.log('online: ' + lock.length + ' of ' + vs + ' 2-player cabinets in lockstep, ' + duel.length + ' of ' + solo + ' solo cabinets as score duels');
 if (duel.length !== solo) { fails++; console.log('FAIL every solo cabinet should be a score duel'); }
 if (lock.length !== vs) { fails++; console.log('FAIL every 2-player cabinet should be playable online'); }
-if (A.games.some(g => g.href && A.onlineMode(g))) { fails++; console.log('FAIL 3D worlds are not online yet'); }
+if (A.games.some(g => g.href && A.onlineMode(g) !== 'world')) { fails++; console.log('FAIL every 3D world should be a world score duel'); }
 console.log(fails ? 'net test failed' : 'net test passed'); process.exit(fails ? 1 : 0);

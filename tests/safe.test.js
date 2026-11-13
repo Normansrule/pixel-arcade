@@ -131,4 +131,14 @@ eq(S.stateHash({ a: 1, b: [1, 2, { c: 3 }], s: 'text', f() {} }), S.stateHash({ 
 no(S.stateHash({ a: 1 }) === S.stateHash({ a: 2 }), 'hash sees numbers');
 const cyc = { a: 1 }; cyc.self = cyc; yes(Number.isInteger(S.stateHash(cyc)), 'hash survives cycles');
 
+// 3D world duel and hand-off messages
+yes(P({ t: 'w3d', game: 'orbitlab', room: 'K7QF2M' }), 'world hand-off accepted');
+no(P({ t: 'w3d', game: 'orbitlab', room: 'k7qf2m' }), 'hand-off room must be a clean upper-case code');
+no(P({ t: 'w3d', game: 'orbitlab', room: 'K7QF0M' }), 'hand-off room rejects 0/O/1/I');
+no(P({ t: 'w3d', game: '../city', room: 'K7QF2M' }), 'hand-off game id cannot be a path');
+no(P({ t: 'w3d', game: 'orbitlab', room: 'K7QF2M', href: 'https://evil.example/' }), 'hand-off cannot carry a URL');
+yes(P({ t: 'wh', world: 'orbit' }), 'world name accepted');
+no(P({ t: 'wh', world: '../../etc' }), 'world name cannot be a path');
+no(P({ t: 'wh', world: 'Orbit' }), 'world name is lower case');
+
 console.log(n + ' checks, ' + fails + ' failed'); process.exit(fails ? 1 : 0);

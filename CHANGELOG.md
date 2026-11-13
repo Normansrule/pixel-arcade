@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round32`)
 
+### Round 32, batch 3 (v81): the 3D worlds go online
+- **All 56 3D worlds online as score duels.** The worlds run their own engines, so they cannot share one simulation like the cabinets; instead both players link up, each plays a round of the same world, and every finished round's score is sent across. When both have finished a round, a banner names the winner; a small bar at the top shows the rival's latest score.
+- **Two ways in:** pick a world in the arcade's online lobby (both browsers open it and link again by themselves), or press **DUEL ONLINE** on any world's menu and create or join a room there. A link can never start a duel by itself: the hub hands the room over through the browser's same-site session storage.
+- **One connection module:** the signaling, WebRTC (Web Real-Time Communication) link, schema checks and rate limits now live in js/online/link.js, shared by the hub (js/net.js) and the worlds (js/kit3d/duel.js). Two new strictly checked message types (world hand-off and world name).
+- **Tests:** tests/safe.test.js grows to 110 checks; tests/online.e2e.js now also hands a world to both browsers, plays a world round, sends malformed world messages and links from a world's own menu.
+- **Strict networks:** no free relay (TURN, Traversal Using Relays around NAT) server exists that works without an account, so this stays as before: the lobby explains the problem and suggests another network, such as a phone hotspot.
+
 ### Round 32, batch 2 (v80): guest nicknames only, and every cabinet online
 - **All 544 cabinets online:** the last 15 now play online too. Ten were wrongly flagged by the determinism test (it carried held buttons from one run into the next); the five mouse games work because the host's pointer is now sent with its buttons, as player 1 owns the mouse in local 2-player. Board games can be played with the host's mouse as well.
 - **No accounts:** the owner chose guest nicknames only, so the optional sign-in code (js/online/auth.js, docs/supabase.sql, its test) is removed. Nicknames stay on the player's own device, there are no account calls, and the Content Security Policy no longer allows any account server.
