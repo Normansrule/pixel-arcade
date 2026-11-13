@@ -61,7 +61,7 @@ const MSG={
  emo:{t:{t:'str',max:4},e:{t:'int',min:0,max:7}},
  pick:{t:{t:'str',max:4},game:{t:'str',max:24,re:GAME_ID}},
  go:{t:{t:'str',max:4},game:{t:'str',max:24,re:GAME_ID},seed:{t:'int',min:0,max:2147483647},mode:{t:'enum',of:['lock','duel']},delay:{t:'int',min:2,max:12},n:{t:'int',min:0,max:1e6}},
- in:{t:{t:'str',max:4},f:FRAME,k:{t:'arr',min:1,max:16,of:{t:'int',min:0,max:63}}},
+ in:{t:{t:'str',max:4},f:FRAME,k:{t:'arr',min:1,max:16,of:{t:'int',min:0,max:63}},m:{t:'arr',min:6,max:6,of:{t:'int',min:-512,max:600},opt:1}},
  h:{t:{t:'str',max:4},f:FRAME,h:U32},
  sc:{t:{t:'str',max:4},n:{t:'int',min:0,max:1e6},s:{t:'num',min:-1e9,max:1e9},done:{t:'bool',opt:1},over:{t:'str',max:40,opt:1}},
  again:{t:{t:'str',max:4},n:{t:'int',min:0,max:1e6}},

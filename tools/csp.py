@@ -5,7 +5,7 @@ chat, names) and the game builder (imported projects and shared play links).
 GitHub Pages cannot send HTTP headers, so the policy is a <meta http-equiv> tag. Scripts may only come from the
 site itself plus the exact inline <script> blocks of each page (pinned by SHA-256 hash), so injected markup can
 never run code. Network calls are limited to the site, the GitHub API (leaderboards), the signaling server named
-in js/online/config.js and optional Supabase sign-in.
+in js/online/config.js.
 
     python3 tools/csp.py          rewrite the tags after editing an inline <script>
     python3 tools/csp.py --check  fail if a tag is missing or stale (run by the tests and CI)
@@ -28,7 +28,7 @@ def policy(html):
     for m in re.finditer(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.S):
         h = base64.b64encode(hashlib.sha256(m.group(1).encode('utf-8')).digest()).decode()
         hashes.append(f"'sha256-{h}'")
-    connect = ["'self'", 'https://api.github.com'] + signal_hosts() + ['https://*.supabase.co', 'wss://*.supabase.co']
+    connect = ["'self'", 'https://api.github.com'] + signal_hosts()
     rules = [
         "default-src 'self'",
         "script-src 'self' " + ' '.join(hashes),

@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round32`)
 
+### Round 32, batch 2 (v80): guest nicknames only, and every cabinet online
+- **All 544 cabinets online:** the last 15 now play online too. Ten were wrongly flagged by the determinism test (it carried held buttons from one run into the next); the five mouse games work because the host's pointer is now sent with its buttons, as player 1 owns the mouse in local 2-player. Board games can be played with the host's mouse as well.
+- **No accounts:** the owner chose guest nicknames only, so the optional sign-in code (js/online/auth.js, docs/supabase.sql, its test) is removed. Nicknames stay on the player's own device, there are no account calls, and the Content Security Policy no longer allows any account server.
+
 ### Round 32, batch 1 (v79): online play with anyone, anywhere
 - **Online play over the internet:** make a room, send the 6-character code (or link, or QR code) and play from any network, in the web page or the desktop app, as a guest. A free public signaling server introduces the two browsers once; the game then runs directly between them.
 - **529 cabinets online:** the 130 deterministic 2-player cabinets run in lockstep (same seed, only buttons are sent, a state hash checks both screens match), and all 399 solo cabinets become live score duels on the same level and clock, with a rematch button. Lobby chat and quick emotes.

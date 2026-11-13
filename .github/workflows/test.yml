@@ -26,7 +26,6 @@ jobs:
       # online play: sanitisers and message schemas, lockstep determinism, Content Security Policy tags
       - run: node tests/safe.test.js
       - run: node tests/net.test.js
-      - run: node tests/auth.test.js
       - run: python3 tools/csp.py --check
       # README counts, the 3D table, docs/GAMES.md and index.html's script tags must match the registry
       - run: python3 tools/gen_docs.py --check

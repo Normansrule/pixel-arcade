@@ -52,6 +52,14 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++
   await sleep(1500);
   const hs = await Promise.all([host, guest].map(p => p.evaluate(() => ({ F: A.online.match.F, desync: A.online.match.desync, h: window.PXSafe.stateHash(A._e.g.b || A._e.g) }))));
   ok(!hs[0].desync && !hs[1].desync, 'lockstep hashes matched (host F=' + hs[0].F + ', guest F=' + hs[1].F + ')');
+  // a mouse-driven 2-player game: the host's pointer is part of the synced input
+  await host.keyboard.press('Escape'); await guest.waitForFunction(() => !A.online.match, null, { timeout: 5000 });
+  await host.evaluate(() => A._net.choose(A.games.find(g => g.id === 'melondrop'))); await guest.waitForFunction(() => A.online.match && A._e.state === 'play', null, { timeout: 10000 });
+  const box = await host.locator('#scr').boundingBox();
+  for (let i = 0; i < 8; i++) { await host.mouse.move(box.x + box.width * (.2 + .08 * i), box.y + box.height * .3); await host.mouse.down(); await sleep(120); await host.mouse.up(); await sleep(300); }
+  await host.waitForFunction(() => A.online.match && A.online.match.F > 300, null, { timeout: 60000 }); await sleep(1500);
+  const mh = await Promise.all([host, guest].map(p => p.evaluate(() => A.online.match.desync)));
+  ok(!mh[0] && !mh[1], 'mouse game stays in sync (Melon Drop)');
   // back to lobby, then a score duel
   await host.keyboard.press('Escape'); await guest.waitForFunction(() => !A.online.match, null, { timeout: 5000 });
   ok(true, 'leaving the game ends it for both');

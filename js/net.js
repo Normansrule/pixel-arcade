@@ -1,4 +1,4 @@
-/* PIXEL ARCADE · Online play, as a guest or signed in.
+/* PIXEL ARCADE · Online play as a guest with a nickname (no accounts).
    How it connects: the host opens a room and gets a 6-character code. The guest types it (or opens the room link /
    scans the QR code). The two browsers swap connection offers through a free public signaling server (PeerJS
    protocol, js/online/config.js), find each other with public STUN servers, then talk directly over a WebRTC data
@@ -21,9 +21,9 @@ if(!A||!S||!CFG)return;
 A.net={on:false};// legacy per-game protocol (round 30): unused, lockstep needs no game code
 
 /* ---------- which games can be played online ---------- */
-// vs cabinets that read the mouse or typed letters (not part of the synced input), or that failed the lockstep
-// determinism probe in tests/net.test.js. They stay local only.
-const NO_LOCK=new Set(['trivia','lanerush','kitchenchaos','melondrop','sinkhole','ttt','dots','fighters','rps','dominoes','fencing','go7','amazons','wizardduel','fjordrace']);
+// vs cabinets that must stay local (none today; typing games are excluded by g.typing). tests/net.test.js fails if a
+// lockstep cabinet is not deterministic.
+const NO_LOCK=new Set();
 const modeOf=g=>!g||g.href?null:g.vs?(NO_LOCK.has(g.id)||g.typing?null:'lock'):'duel';
 A.onlineMode=modeOf;
 const EMO=['GG','NICE!','WOW','OOPS','REMATCH?','HELLO','GOOD LUCK','TOO EASY'];
@@ -77,7 +77,7 @@ function Signal(id,on){const c=CFG.signal;const url=(c.secure?'wss':'ws')+'://'+
 /* ---------- the link ---------- */
 const st={phase:'idle',role:null,room:null,sig:null,pc:null,dc:null,peer:null,cands:[],nc:0,rival:null,match:null,strikes:0,inB:null,chatB:null,myChatB:null,rtt:0,pingT:null,timer:null,tries:0,pick:null,n:0};
 A.online=st;
-const myName=()=>{if(A.auth&&A.auth.user&&A.auth.name)return A.auth.name;let v='';try{v=localStorage.getItem('pxd_nick')||'';}catch(_){}return S.cleanName(v||(A.auth&&A.auth.name)||(A.profile&&A.profile.user)||'','')||('Guest '+S.randomId(3).toUpperCase());};
+const myName=()=>{let v='';try{v=localStorage.getItem('pxd_nick')||'';}catch(_){}return S.cleanName(v||(A.profile&&A.profile.user)||'','')||('Guest '+S.randomId(3).toUpperCase());};
 const setName=v=>{const n=S.cleanName(v,'');try{n?localStorage.setItem('pxd_nick',n):localStorage.removeItem('pxd_nick');}catch(_){}return n;};
 function send(m){if(!st.dc||st.dc.readyState!=='open')return false;try{st.dc.send(S.encode(m));return true;}catch(e){return false;}}
 function teardown(){clearTimeout(st.timer);clearInterval(st.pingT);if(st.sig)st.sig.close();try{st.dc&&st.dc.close();}catch(_){}try{st.pc&&st.pc.close();}catch(_){}
@@ -130,7 +130,7 @@ function handle(m){const M=st.match;switch(m.t){
  case'emo':if(st.chatB.take(now())){ui.chat(rivalName(),EMO[m.e],false);if(E.state!=='hub'&&A.toast)A.toast(rivalName().toUpperCase()+': '+EMO[m.e]);}break;
  case'pick':if(st.role==='guest'){const g=A.games.find(x=>x.id===m.game);st.pick=g&&modeOf(g)?g:null;ui.lobby();}break;
  case'go':if(st.role==='guest')start(m);break;
- case'in':if(M&&M.mode==='lock'){if(m.f<M.F||m.f+m.k.length>M.F+240){strike();break;}m.k.forEach((k,i)=>{if(!M.remote.has(m.f+i))M.remote.set(m.f+i,k);});}break;
+ case'in':if(M&&M.mode==='lock'){if(m.f<M.F||m.f+m.k.length>M.F+240){strike();break;}m.k.forEach((k,i)=>{if(!M.remote.has(m.f+i))M.remote.set(m.f+i,k);});if(m.m&&st.role==='guest'&&!M.mrem.has(m.f))M.mrem.set(m.f,m.m);}break;
  case'h':if(M&&M.mode==='lock'){M.theirs.set(m.f,m.h);checkHash(m.f);}break;
  case'sc':if(M&&M.mode==='duel'&&m.n===M.n&&!M.rival.done){M.rival.score=m.s;if(m.done){M.rival.done=true;M.rival.over=m.over||'';}}break;
  case'again':if(M&&m.n===M.n){M.again.them=true;if(st.role==='host'&&M.again.me)rematch();else if(A.toast&&E.state==='over')A.toast(rivalName().toUpperCase()+' WANTS A REMATCH');}break;
@@ -145,7 +145,7 @@ function choose(g){if(st.role!=='host'||st.phase!=='linked')return;const mode=mo
  const m={t:'go',game:g.id,seed:S.randomSeed(),mode,delay:Math.max(3,Math.min(10,Math.ceil((st.rtt/2+20)/16.7))),n:++st.n};if(send(m))start(m);}
 function rematch(){const M=st.match;if(!M)return;const m={t:'go',game:M.g.id,seed:S.randomSeed(),mode:M.mode,delay:M.delay,n:++st.n};if(send(m))start(m);}
 function start(m){const g=A.games.find(x=>x.id===m.game);if(!g||modeOf(g)!==m.mode)return;st.n=m.n;
- const M=st.match={g,mode:m.mode,n:m.n,delay:m.delay,F:0,local:new Map(),remote:new Map(),theirs:new Map(),mine:new Map(),prev:[0,0],rand:S.mulberry(m.seed),stall:0,rival:{score:null,done:false,over:''},meDone:false,again:{me:false,them:false},desync:false};
+ const M=st.match={g,mode:m.mode,n:m.n,delay:m.delay,F:0,local:new Map(),remote:new Map(),mloc:new Map(),mrem:new Map(),theirs:new Map(),mine:new Map(),prev:[0,0],rand:S.mulberry(m.seed),stall:0,rival:{score:null,done:false,over:''},meDone:false,again:{me:false,them:false},desync:false};
  for(let f=0;f<M.delay;f++){M.local.set(f,0);M.remote.set(f,0);}
  ui.hide();if(E.state==='hub'||E.cur!==g)A.open(g);
  E.netTick=tick;E.netIn=M.mode==='lock'?applyInputs:null;E.onAgain=onAgain;E.netInfo=info;E.netHud=hud;
@@ -156,16 +156,20 @@ function withSim(fn){const M=st.match,r=Math.random;if(M)Math.random=M.rand;try{
 function tick(step){const M=st.match;if(!M){step();return true;}
  if(M.mode==='duel'){withSim(step);duelSync();return true;}
  if(!M.remote.has(M.F)){M.stall++;return false;}
- M.stall=0;const ms=A.mouse,md=ms.down,mb=ms.bdown;withSim(step);ms.down=md;ms.bdown=mb;M.local.delete(M.F);M.remote.delete(M.F);M.F++;
+ M.stall=0;const ms=A.mouse,keep=[ms.x,ms.y,ms.down,ms.bdown,ms.t];withSim(step);[ms.x,ms.y,ms.down,ms.bdown,ms.t]=keep;ms.dx=ms.dy=0;M.local.delete(M.F);M.remote.delete(M.F);M.mloc.delete(M.F);M.mrem.delete(M.F);M.F++;
  if(M.F%120===0&&E.g){const v=S.stateHash(E.g);M.mine.set(M.F,v);send({t:'h',f:M.F,h:v});checkHash(M.F);}
  return true;}
 const bits=o=>(o.l?1:0)|(o.r?2:0)|(o.u?4:0)|(o.d?8:0)|(o.a?16:0)|(o.b?32:0);
 /* called by step() right after the keyboard is read: replace both players' buttons with the synced ones */
-function applyInputs(){const M=st.match;if(!M)return;E.paused=false;const f=M.F+M.delay;const ms=A.mouse;// the mouse is not synced: clicks already count as button A in the bits, so games must not read it directly
- ms.dx=ms.dy=0;
- if(!M.local.has(f)){const k=bits(E.held[0])|bits(E.held[1]);M.local.set(f,k);send({t:'in',f,k:[k]});}
+/* the mouse belongs to player 1 (the host), as in local 2-player: the host sends it with its buttons, both browsers
+   play the host's mouse, and the guest's mouse is ignored by the game (its clicks still count as button A) */
+const mouseOf=ms=>[A.clamp(Math.round(ms.x)||0,-64,384),A.clamp(Math.round(ms.y)||0,-64,304),A.clamp(Math.round(ms.dx)||0,-512,512),A.clamp(Math.round(ms.dy)||0,-512,512),(ms.down?1:0)|(ms.bdown?2:0),A.clamp(ms.t|0,0,600)];
+const NOMOUSE=[160,120,0,0,0,0];
+function applyInputs(){const M=st.match;if(!M)return;E.paused=false;const f=M.F+M.delay;const ms=A.mouse;
+ if(!M.local.has(f)){const k=bits(E.held[0])|bits(E.held[1]),host=st.role==='host',mm=host?mouseOf(ms):null;M.local.set(f,k);if(host)M.mloc.set(f,mm);send(host?{t:'in',f,k:[k],m:mm}:{t:'in',f,k:[k]});}
  const mine=M.local.get(M.F)||0,theirs=M.remote.get(M.F)||0,v=st.role==='host'?[mine,theirs]:[theirs,mine];
- E.N.forEach((n,i)=>{for(let p=0;p<2;p++){const on=!!(v[p]>>i&1);E.held[p][n]=on;E.hitS[p][n]=on&&!(M.prev[p]>>i&1);}});M.prev=v;ms.down=ms.bdown=false;}
+ E.N.forEach((n,i)=>{for(let p=0;p<2;p++){const on=!!(v[p]>>i&1);E.held[p][n]=on;E.hitS[p][n]=on&&!(M.prev[p]>>i&1);}});M.prev=v;
+ const hm=(st.role==='host'?M.mloc.get(M.F):M.mrem.get(M.F))||NOMOUSE;ms.x=hm[0];ms.y=hm[1];ms.dx=hm[2];ms.dy=hm[3];ms.down=!!(hm[4]&1);ms.bdown=!!(hm[4]&2);ms.t=hm[5];}
 function checkHash(f){const M=st.match;if(!M||M.desync||!M.mine.has(f)||!M.theirs.has(f))return;if(M.mine.get(f)!==M.theirs.get(f)){M.desync=true;if(A.toast)A.toast('OUT OF SYNC · RESULTS MAY DIFFER');}M.mine.delete(f);M.theirs.delete(f);}
 function duelSync(){const M=st.match;if(!M||!E.g)return;const s=S.cleanScore(E.g.score);
  if(E.state==='play'&&A.t%20===0&&s!==null)send({t:'sc',n:M.n,s});
@@ -210,18 +214,8 @@ ui.home=(msg,pre)=>{ensure();box.hidden=false;clear(body);const code=h('input',{
   h('div',{class:'ncols'},
    h('div',{class:'ncol'},h('b',{text:'Make a room'}),h('p',{text:'You get a code to send to a friend.'}),h('button',{type:'button',class:'nhot',text:'CREATE ROOM',onclick:hostRoom})),
    h('div',{class:'ncol'},h('b',{text:'Join a room'}),h('p',{text:'Type your friend\'s room code.'}),code,h('button',{type:'button',class:'nhot',text:'JOIN',onclick:()=>joinRoom(code.value)}))),
-  accountBox(),
   h('p',{class:'nsmall'},h('a',{href:'#',text:'No internet server? Swap codes instead (works on one network)',onclick:e=>{e.preventDefault();ui.codes(pre&&pre.code);}})));
  code.addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom(code.value);});if(msg)ui.err(msg);if(pre&&pre.code)ui.codes(pre.code);};
-/* optional sign-in (js/online/auth.js); hidden until accounts are switched on in js/online/config.js */
-function accountBox(){const au=A.auth;if(!au||!au.enabled)return '';const box=h('div',{class:'nacct'});const msg=t=>{let p=box.querySelector('.nmsg');if(!p){p=h('p',{class:'nmsg',role:'status'});box.append(p);}p.textContent=t;};
- if(au.user){box.append(h('p',null,'Signed in as ',h('b',{text:au.name||'player'}),'. Your tokens and wins are saved to your account. '),h('button',{type:'button',text:'Sign out',onclick:async()=>{await au.signOut();ui.home();}}));return box;}
- const em=h('input',{class:'ninp',type:'email',maxlength:254,autocomplete:'email','aria-label':'Email for a sign-in code',placeholder:'you@example.com'}),cd=h('input',{class:'ninp',type:'text',inputmode:'numeric',maxlength:10,autocomplete:'one-time-code','aria-label':'Code from the email',placeholder:'123456',hidden:true});
- const vb=h('button',{type:'button',text:'Verify',hidden:true,onclick:async()=>{try{await au.verify(em.value,cd.value);ui.home();}catch(e){msg(e.message);}}});
- box.append(h('details',null,h('summary',{text:'Sign in (optional): save your tokens and keep your name'}),h('p',{text:'Guests can play everything. Signing in only saves your progress to your account.'}),em,
-  h('div',{class:'nrow'},h('button',{type:'button',text:'Email me a code',onclick:async()=>{try{await au.emailCode(em.value);cd.hidden=false;vb.hidden=false;cd.focus();msg('Check your email for a 6-digit code.');}catch(e){msg(e.message);}}}),
-   au.app?null:h('button',{type:'button',text:'Sign in with GitHub',onclick:()=>au.github().catch(e=>msg(e.message))})),cd,vb));
- [em,cd].forEach(i=>{i.addEventListener('keydown',e=>e.stopPropagation());});return box;}
 ui.room=()=>{ensure();clear(body);const link=location.href.split('#')[0]+'#room='+st.room,cv=h('canvas',{class:'nqr','aria-label':'QR code for the room link'});
  body.append(h('p',{text:'Send this room code to your friend, or let them scan the QR code:'}),h('div',{class:'nroom',text:st.room.slice(0,3)+' '+st.room.slice(3)}),
   h('div',{class:'nrow'},h('button',{type:'button',text:'Copy link',onclick:async e=>{try{await navigator.clipboard.writeText(link);e.target.textContent='Copied';}catch(_){e.target.textContent='Copy failed';}}}),h('button',{type:'button',text:'Close room',onclick:()=>{teardown();ui.home();}})),
