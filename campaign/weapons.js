@@ -21,30 +21,68 @@ export const ammoLeft=w=>WPN[w.id].energy?w.bat>0:w.mag+w.res>0;
 /* ---------- gun models ---------- */
 let MS=null;
 function mats(){if(MS)return MS;const std=o=>new THREE.MeshStandardMaterial(o);
- MS={body:std({color:0x3a4034,roughness:.45,metalness:.7}),dark:std({color:0x15171a,roughness:.55,metalness:.6}),light:std({color:0x6c7462,roughness:.4,metalness:.75}),
+ MS={body:std({color:0x3a4034,roughness:.45,metalness:.7}),dark:std({color:0x24272b,roughness:.48,metalness:.6}),light:std({color:0x6c7462,roughness:.4,metalness:.75}),
   grip:std({color:0x1e2020,roughness:.85,metalness:.1}),olive:std({color:0x4c5a36,roughness:.6,metalness:.35}),glove:std({color:0x2a2c28,roughness:.75,metalness:.2}),
-  armor:std({color:0x4f5e3c,roughness:.42,metalness:.55}),alien:std({color:0x3a2a5a,roughness:.18,metalness:.85}),alien2:std({color:0x5a4a7e,roughness:.22,metalness:.9}),alienG:std({color:0x24563e,roughness:.2,metalness:.85})};
- for(const k in MS)MS[k].envMapIntensity=.25;return MS;}
+  armor:std({color:0x4f5e3c,roughness:.42,metalness:.55}),alien:std({color:0x3a2a5a,roughness:.18,metalness:.85}),alien2:std({color:0x5a4a7e,roughness:.22,metalness:.9}),alienG:std({color:0x24563e,roughness:.2,metalness:.85}),
+  lens:std({color:0x1a3a4a,roughness:.05,metalness:.9,emissive:0x0a3040,emissiveIntensity:.8})};
+ for(const k in MS)MS[k].envMapIntensity=.6;return MS;}
 const glowM=c=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(1.6)});
-function build(parts){const g=new THREE.Group(),by=new Map();for(const[geo,mat,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1]of parts){let a=by.get(mat);if(!a)by.set(mat,a=[]);a.push([geo,M4(x,y,z,rx,ry,rz,sx,sy,sz)]);}
- for(const[m,a]of by){const o=new THREE.Mesh(merge(a),m);g.add(o);}return g;}
+// parts: [geometry, material, x,y,z, rx,ry,rz, sx,sy,sz]; merged per material. The merged geometry is cached per gun id
+// (bots and pickups all reuse it); the glow material stays per-instance because the viewmodel tints it with heat.
+const GEO=new Map();
+function build(id,parts,gl){let list=GEO.get(id);
+ if(!list){const by=new Map();for(const[geo,mat,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1]of parts){const k=mat===gl?'GL':mat;let a=by.get(k);if(!a)by.set(k,a=[]);a.push([geo,M4(x,y,z,rx,ry,rz,sx,sy,sz)]);}
+  list=[];for(const[k,a]of by)list.push([merge(a),k]);GEO.set(id,list);}
+ const g=new THREE.Group();for(const[geo,k]of list)g.add(new THREE.Mesh(geo,k==='GL'?gl:k));return g;}
 const B=(w,h,d)=>new THREE.BoxGeometry(w,h,d),Cy=(r,l,s=12,r2)=>{const g=new THREE.CylinderGeometry(r,r2??r,l,s);g.rotateX(Math.PI/2);return g;},Sp=(r,ws=14,hs=10)=>new THREE.SphereGeometry(r,ws,hs);
+// rounded box: a rounded-rectangle profile extruded along z with a small bevel, so edges catch the light
+const RB=(w,h,d,r)=>{const s=new THREE.Shape(),x=-w/2+r,y=-h/2+r,W=w-2*r,H=h-2*r;s.moveTo(x,y-r);s.lineTo(x+W,y-r);s.quadraticCurveTo(x+W+r,y-r,x+W+r,y);s.lineTo(x+W+r,y+H);s.quadraticCurveTo(x+W+r,y+H+r,x+W,y+H+r);s.lineTo(x,y+H+r);s.quadraticCurveTo(x-r,y+H+r,x-r,y+H);s.lineTo(x-r,y);s.quadraticCurveTo(x-r,y-r,x,y-r);
+ const b=Math.min(r*.6,d*.2);const g=new THREE.ExtrudeGeometry(s,{depth:d-2*b,bevelEnabled:true,bevelThickness:b,bevelSize:b*.8,bevelSegments:2,curveSegments:3});g.translate(0,0,-(d-2*b)/2);g.deleteAttribute('uv');g.computeVertexNormals();return g;};
+const Tor=(r,t,s=18)=>new THREE.TorusGeometry(r,t,6,s);
+// shared bits: picatinny rail teeth, side vent slots, curved magazine, ribbed grip, optic lens
+const rail=(P,M,y,z0,n,w=.044)=>{for(let i=0;i<n;i++)P.push([B(w,.008,.009),M.dark,0,y,z0-i*.021]);};
+const vents=(P,M,x,y,z0,n,gap=.045)=>{for(const sx of[-1,1])for(let i=0;i<n;i++)P.push([RB(.006,.026,.03,.004),M.dark,sx*x,y,z0-i*gap]);};
+const mag=(P,M,y,z,n=3,w=.052)=>{for(let i=0;i<n;i++)P.push([RB(w,.075,.085,.01),M.dark,0,y-i*.06,z-i*.022,-.18-i*.12]);};
+const grip=(P,M,y,z)=>{P.push([RB(.058,.17,.078,.014),M.grip,0,y,z,.32]);for(let i=0;i<3;i++)P.push([B(.061,.006,.072),M.dark,0,y+.02-i*.04,z+.005+i*.012,.32]);P.push([B(.012,.012,.1),M.dark,0,y+.05,z-.08],[B(.012,.05,.012),M.dark,0,y+.025,z-.13]);};
 export function gunModel(id){const M=mats(),w=WPN[id],gl=glowM(w.col);const P=[];let muzzle=new V(0,0,-.6);
- if(id==='ar'){P.push([B(.1,.15,.56),M.olive,0,0,-.1],[B(.11,.07,.5),M.dark,0,.1,-.12],[B(.08,.06,.3),M.dark,0,.15,-.06],[Cy(.03,.3),M.dark,0,.01,-.5],[B(.12,.12,.26),M.olive,0,-.005,-.46],
-   [B(.07,.2,.09),M.grip,0,-.15,.04,.25],[B(.075,.22,.12),M.dark,0,-.16,-.18,-.2],[B(.1,.11,.16),M.dark,0,.0,.22],[B(.112,.01,.22),gl,0,.035,-.3]);muzzle.set(0,.01,-.68);}
- else if(id==='br'){P.push([B(.09,.13,.8),M.body,0,0,-.18],[B(.06,.07,.5),M.dark,0,-.08,-.2],[Cy(.025,.26),M.dark,0,.015,-.7],[Cy(.04,.26),M.dark,0,.13,-.08],[Cy(.045,.02),gl,0,.13,-.21],
-   [B(.07,.18,.09),M.grip,0,-.14,.08,.3],[B(.07,.17,.08),M.dark,0,-.14,-.08,-.15],[B(.08,.1,.22),M.body,0,.01,.28],[B(.092,.008,.4),gl,0,.0,-.3]);muzzle.set(0,.015,-.84);}
- else if(id==='shotgun'){P.push([B(.13,.15,.62),M.dark,0,0,-.1],[Cy(.045,.5),M.light,0,.04,-.48],[Cy(.04,.44),M.dark,0,-.05,-.44],[B(.14,.1,.24),M.grip,0,-.06,-.42],
-   [B(.08,.2,.1),M.grip,0,-.15,.08,.3],[B(.12,.13,.22),M.dark,0,0,.26],[B(.135,.01,.2),gl,0,.075,-.1]);muzzle.set(0,.04,-.74);}
- else if(id==='sniper'){P.push([B(.08,.12,1.05),M.dark,0,0,-.3],[Cy(.028,.6),M.light,0,.02,-.98],[B(.07,.18,.1),M.grip,0,-.14,.08,.3],[Cy(.05,.36),M.dark,0,.14,-.12],[Cy(.058,.03),gl,0,.14,-.31],[Cy(.058,.03),M.dark,0,.14,.07],
-   [B(.08,.11,.26),M.dark,0,0,.32],[B(.03,.12,.03),M.light,0,-.09,-.62,.4]);muzzle.set(0,.02,-1.3);}
- else if(id==='rocket'){P.push([Cy(.12,1.1,16),M.olive,0,.02,-.15],[Cy(.135,.12,16),M.dark,0,.02,-.7],[Cy(.135,.12,16),M.dark,0,.02,.4],[B(.08,.2,.1),M.grip,0,-.17,.02,.25],[B(.07,.16,.08),M.grip,0,-.15,-.32],[B(.06,.08,.2),M.dark,-.13,.08,-.2],
-   [Cy(.105,.02,16),gl,0,.02,-.77]);muzzle.set(0,.02,-.8);}
- else if(id==='spark'){P.push([Sp(.1),M.alienG,0,0,-.12,0,0,0,1,.7,1.8],[Sp(.07),M.alienG,0,-.02,.08,0,0,0,1,1,1.4],[B(.05,.15,.07),M.alien,0,-.1,.05,.3],[Sp(.045),gl,0,.02,-.3,0,0,0,1,1,.8],[new THREE.TorusGeometry(.07,.012,6,16),gl,0,0,-.22]);muzzle.set(0,.01,-.36);}
- else if(id==='ion'){P.push([Sp(.11),M.alien,0,0,-.18,0,0,0,1,.75,2.6],[Sp(.08),M.alien2,0,.06,.06,0,0,0,1,.8,1.6],[B(.05,.16,.08),M.alien,0,-.12,.06,.3],[Sp(.04),gl,-.07,.02,-.4],[Sp(.04),gl,.07,.02,-.4],
-   [new THREE.TorusGeometry(.09,.014,6,18),gl,0,.0,-.3],[B(.012,.012,.32),gl,0,.1,-.15]);muzzle.set(0,.02,-.52);}
- else if(id==='mortar'){P.push([Sp(.2),M.alien,0,0,-.2,0,0,0,1,.8,2.4],[Sp(.12),gl,0,0,-.62],[new THREE.TorusGeometry(.17,.03,8,20),M.alien2,0,0,-.5]);muzzle.set(0,0,-.72);}
- const g=build(P);g.userData={muzzle,glow:gl};return g;}
+ if(id==='ar'){// MK7: armoured receiver, vented shroud, reflex sight, curved mag, ported brake
+  P.push([RB(.1,.13,.42,.018),M.olive,0,0,-.08],[RB(.092,.05,.46,.014),M.dark,0,.085,-.12],[RB(.112,.11,.26,.022),M.olive,0,-.005,-.44],[RB(.116,.03,.2,.008),M.dark,0,-.07,-.44]);
+  vents(P,M,.057,.01,-.36,5);rail(P,M,.114,.06,9);
+  P.push([Cy(.017,.2,12),M.dark,0,.015,-.64],[Cy(.03,.085,14),M.dark,0,.015,-.77],[B(.064,.012,.018),M.grip,0,.015,-.785],[B(.064,.012,.018),M.grip,0,.015,-.755]);
+  mag(P,M,-.1,-.15);grip(P,M,-.12,.06);
+  P.push([RB(.1,.11,.16,.02),M.dark,0,-.005,.22],[RB(.104,.13,.035,.012),M.grip,0,-.01,.31],[B(.02,.018,.04),M.light,.055,.05,.04]);
+  // reflex sight: hood, glass, red dot; housing under the ammo screen
+  P.push([RB(.06,.012,.06,.004),M.dark,0,.14,-.2],[RB(.012,.05,.06,.004),M.dark,-.026,.12,-.2],[RB(.012,.05,.06,.004),M.dark,.026,.12,-.2],[B(.04,.036,.004),M.lens,0,.122,-.2],[B(.006,.006,.004),gl,0,.124,-.196],
+   [RB(.086,.04,.09,.01),M.dark,0,.155,-.02],[B(.114,.01,.2),gl,0,.03,-.3]);muzzle.set(0,.015,-.82);}
+ else if(id==='br'){// VX-3: long receiver, 3x scope with bells and turrets, bipod-ready rail
+  P.push([RB(.088,.12,.56,.016),M.body,0,0,-.14],[RB(.08,.045,.6,.012),M.light,0,.075,-.17],[RB(.096,.09,.3,.02),M.body,0,.005,-.56]);
+  vents(P,M,.049,.01,-.46,6,.04);rail(P,M,.102,.06,12,.04);
+  P.push([Cy(.016,.24,12),M.dark,0,.015,-.82],[Cy(.026,.07,14),M.dark,0,.015,-.95]);mag(P,M,-.1,-.14,2,.048);grip(P,M,-.12,.1);
+  P.push([Cy(.024,.24,16),M.dark,0,.15,-.1],[Cy(.034,.07,18,.024),M.dark,0,.15,-.25],[Cy(.03,.05,18,.024),M.dark,0,.15,.04],[Cy(.013,.03,10),M.light,0,.182,-.1,-Math.PI/2],[Cy(.012,.028,10),M.light,.032,.15,-.1,0,Math.PI/2],
+   [RB(.05,.035,.025,.006),M.dark,0,.118,-.18],[RB(.05,.035,.025,.006),M.dark,0,.118,-.02],[Cy(.03,.004,18),M.lens,0,.15,-.286],[Cy(.025,.004,18),M.lens,0,.15,.066]);
+  P.push([RB(.08,.1,.22,.018),M.body,0,0,.3],[RB(.084,.12,.03,.01),M.grip,0,-.01,.42],[RB(.03,.03,.16,.008),M.dark,0,.07,.28],[B(.092,.008,.4),gl,0,.0,-.3]);muzzle.set(0,.015,-.99);}
+ else if(id==='shotgun'){// BREACHER-12: boxy receiver, heat-shielded barrel over a mag tube, ribbed pump
+  P.push([RB(.12,.15,.4,.02),M.dark,0,0,-.04],[RB(.124,.04,.34,.01),M.light,0,.085,-.04],[Cy(.034,.5),M.dark,0,.045,-.48],[Cy(.03,.46),M.dark,0,-.03,-.44]);
+  P.push([RB(.088,.036,.42,.012),M.light,0,.085,-.5]);for(let i=0;i<6;i++)P.push([B(.06,.008,.02),M.dark,0,.105,-.33-i*.06]);
+  for(let i=0;i<6;i++)P.push([RB(.11,.09,.025,.012),M.grip,0,-.03,-.34-i*.032]);P.push([Cy(.04,.03,14),M.dark,0,.045,-.74],[RB(.13,.08,.04,.012),M.dark,0,.0,-.2]);
+  grip(P,M,-.13,.1);P.push([RB(.11,.12,.2,.02),M.dark,0,-.01,.26],[RB(.114,.14,.035,.012),M.grip,0,-.015,.37],[B(.13,.01,.2),gl,0,.06,-.06],[RB(.03,.03,.04,.006),M.light,0,.125,-.1]);muzzle.set(0,.045,-.78);}
+ else if(id==='sniper'){// LONGBOW: fluted heavy barrel, big objective, bolt, cheek riser, folded bipod
+  P.push([RB(.08,.12,.62,.016),M.dark,0,0,-.1],[RB(.09,.1,.36,.02),M.olive,0,.0,-.56],[Cy(.026,.66,14),M.dark,0,.02,-1.02],[Cy(.034,.1,14),M.dark,0,.02,-1.38]);
+  for(let i=0;i<6;i++)P.push([Cy(.03,.012,14),M.light,0,.02,-.82-i*.08]);for(const sx of[-1,1])P.push([Cy(.007,.32,6),M.light,sx*.03,-.06,-.6]);
+  P.push([Cy(.032,.38,16),M.dark,0,.16,-.14],[Cy(.052,.1,20,.032),M.dark,0,.16,-.36],[Cy(.04,.06,18,.032),M.dark,0,.16,.08],[Cy(.048,.004,20),M.lens,0,.16,-.412],[Cy(.034,.004,18),M.lens,0,.16,.112],
+   [Cy(.016,.04,10),M.light,0,.205,-.14,-Math.PI/2],[Cy(.016,.034,10),M.light,.042,.16,-.14,0,Math.PI/2],[RB(.06,.06,.03,.008),M.dark,0,.11,-.24],[RB(.06,.06,.03,.008),M.dark,0,.11,-.04]);
+  P.push([Cy(.012,.06,8),M.light,.06,.04,.04,0,Math.PI/2],[Sp(.018,10,8),M.light,.095,.04,.04]);mag(P,M,-.09,-.1,1,.05);grip(P,M,-.12,.1);
+  P.push([RB(.075,.12,.3,.02),M.olive,0,-.01,.34],[RB(.05,.04,.16,.01),M.dark,0,.075,.3],[RB(.08,.15,.035,.012),M.grip,0,-.015,.5],[B(.082,.008,.5),gl,0,.0,-.2]);muzzle.set(0,.02,-1.44);}
+ else if(id==='rocket'){// HAMMER: ribbed tube, flared backblast, sight box, two grips, warhead visible in the bore
+  P.push([Cy(.12,1.0,18),M.olive,0,.02,-.15],[Cy(.14,.14,18,.125),M.dark,0,.02,-.68],[Cy(.16,.16,18,.12),M.dark,0,.02,.42]);for(let i=0;i<4;i++)P.push([Cy(.128,.025,18),M.dark,0,.02,-.42+i*.2]);
+  P.push([Cy(.06,.08,14),gl,0,.02,-.74],[RB(.07,.09,.18,.012),M.dark,-.15,.08,-.2],[B(.05,.04,.004),M.lens,-.15,.08,-.292],[RB(.025,.06,.03,.006),M.dark,-.11,.05,-.2]);
+  grip(P,M,-.16,.02);P.push([RB(.06,.15,.07,.012),M.grip,0,-.16,-.32,-.1],[RB(.24,.03,.12,.01),M.dark,0,-.11,.1],[B(.012,.012,.6),gl,.125,.05,-.15]);muzzle.set(0,.02,-.8);}
+ else if(id==='spark'){P.push([Sp(.1),M.alienG,0,0,-.12,0,0,0,1,.7,1.8],[Sp(.07),M.alienG,0,-.02,.08,0,0,0,1,1,1.4],[RB(.05,.15,.07,.016),M.alien,0,-.1,.05,.3],[Sp(.045),gl,0,.02,-.3,0,0,0,1,1,.8],[Tor(.07,.012),gl,0,0,-.22],
+   [Sp(.05),M.alien2,0,.07,-.06,0,0,0,.6,.5,1.6],[Tor(.085,.008),M.alien2,0,0,-.1],[B(.006,.06,.16),gl,0,.07,-.08]);for(const sx of[-1,1])P.push([Sp(.04),M.alien2,sx*.08,-.01,-.1,0,0,sx*.4,.4,.8,1.8]);muzzle.set(0,.01,-.36);}
+ else if(id==='ion'){P.push([Sp(.11),M.alien,0,0,-.18,0,0,0,1,.75,2.6],[Sp(.08),M.alien2,0,.06,.06,0,0,0,1,.8,1.6],[RB(.05,.16,.08,.016),M.alien,0,-.12,.06,.3],[Sp(.04),gl,-.07,.02,-.4],[Sp(.04),gl,.07,.02,-.4],
+   [Tor(.09,.014),gl,0,.0,-.3],[B(.012,.012,.32),gl,0,.1,-.15],[Tor(.105,.01),M.alien2,0,0,-.14],[Tor(.1,.01),M.alien2,0,0,-.04]);for(const sx of[-1,1])P.push([Sp(.05),M.alien2,sx*.1,0,-.22,0,0,0,.35,.6,2.2],[Sp(.02),gl,sx*.11,.03,-.08]);muzzle.set(0,.02,-.52);}
+ else if(id==='mortar'){P.push([Sp(.2),M.alien,0,0,-.2,0,0,0,1,.8,2.4],[Sp(.12),gl,0,0,-.62],[Tor(.17,.03,20),M.alien2,0,0,-.5],[Tor(.2,.02,22),M.alien2,0,0,-.25]);for(let i=0;i<3;i++)P.push([Sp(.06),M.alien2,0,.16,-.05-i*.15,0,0,0,.5,.5,1.2]);muzzle.set(0,0,-.72);}
+ const g=build(id,P,gl);g.userData={muzzle,glow:gl};return g;}
 
 /* ---------- first-person viewmodel ---------- */
 export class Viewmodel{

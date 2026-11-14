@@ -2,7 +2,14 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round32`)
+## Unreleased (on branch `round33`)
+
+### Round 33, batch 1 (v82): weapons you want to look at
+- **Starfall Vanguard arsenal rebuilt.** All eight guns (MK7 assault rifle, VX-3 battle rifle, Breacher-12 shotgun, Longbow sniper, Hammer rocket launcher and the three Kyrr energy weapons) are now built from rounded, bevelled parts that catch the light: reflex and magnified scopes with tinted glass and turrets, picatinny rails, vented handguards, curved magazines, ribbed grips, ported muzzle brakes, a fluted sniper barrel with a folded bipod and a ribbed launcher tube with a flared back end. Metal reads as metal (brighter dark steel, stronger reflections).
+- **Faster to spawn.** Each gun's merged geometry is now built once and shared by every soldier and weapon pickup, instead of being rebuilt for each one.
+- **Hardfall:** the shotgun (heat shield, ribbed pump, padded stock) and the smart pistol (serrated slide, tracking optic) get the same detailed treatment as its rifles.
+
+## Round 32 (branch `round32`)
 
 ### Round 32, batch 3 (v81): the 3D worlds go online
 - **All 56 3D worlds online as score duels.** The worlds run their own engines, so they cannot share one simulation like the cabinets; instead both players link up, each plays a round of the same world, and every finished round's score is sent across. When both have finished a round, a banner names the winner; a small bar at the top shows the rival's latest score.
