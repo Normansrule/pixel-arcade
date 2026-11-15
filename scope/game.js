@@ -65,15 +65,45 @@ const IMP={ground:null,stone:C(0xb0a898),wood:C(0x8a6a48),metal:null,glass:null,
 let vm=null,vmFlash=null;
 // the viewmodel sits inside the .5 m near plane: squeeze its depth into the front sliver of the buffer (never clipped, always in front), so the world keeps a 24-bit depth range without a log buffer
 const vmDepth=s=>{s.vertexShader=s.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\ngl_Position.z=gl_Position.w*(-1.+.0005*min(-mvPosition.z,2.));');};
-function makeRifle(r){const g=new THREE.Group(),std=o=>new THREE.MeshStandardMaterial(o);const body=std({color:r.body,metalness:.75,roughness:.35}),stock=std({color:r.stock,roughness:.6,metalness:r.stock===r.body?.6:.05}),blk=std({color:0x0c0d0f,metalness:.6,roughness:.4}),lens=std({color:0x203848,metalness:.9,roughness:.05,emissive:0x061018});
- const box=(w,h,d,m,x,y,z,rx=0)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.rotation.x=rx;g.add(o);return o;},cyl=(r1,r2,l,m,x,y,z,s=14)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,l,s),m);o.rotation.x=Math.PI/2;o.position.set(x,y,z);g.add(o);return o;};
- const L=r.len;box(.07,.14,.34,stock,0,-.03,.12);box(.05,.05,.2,stock,0,.03,.08);box(.065,.075,.3,body,0,0,-.18);box(.07,.07,.34,r.id==='whisper'?body:stock,0,-.012,-.48);
- cyl(.012,.013,L*.62,body,0,.01,-.36-L*.31);if(r.can)cyl(.024,.024,.24,blk,0,.01,-.36-L*.62);else cyl(.018,.014,.05,blk,0,.01,-.36-L*.62+.02);
- box(.035,.1,.08,blk,0,-.08,-.2);const bolt=new THREE.Group();bolt.position.set(.045,.015,-.07);const bh=new THREE.Mesh(new THREE.CylinderGeometry(.007,.007,.07,6),body);bh.rotation.z=Math.PI/2;bh.position.x=.03;bolt.add(bh);const bk=new THREE.Mesh(new THREE.SphereGeometry(.013,8,6),blk);bk.position.x=.065;bolt.add(bk);g.add(bolt);
- cyl(.021,.021,.34,blk,0,.075,-.2);cyl(.03,.022,.08,blk,0,.075,-.4);cyl(.026,.021,.07,blk,0,.075,-.01);const ln=new THREE.Mesh(new THREE.CircleGeometry(.027,16),lens);ln.position.set(0,.075,-.442);ln.rotation.y=Math.PI;g.add(ln);
- cyl(.012,.012,.03,blk,0,.105,-.2).rotation.x=0;const tw=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.03,10),blk);tw.rotation.z=Math.PI/2;tw.position.set(.035,.075,-.2);g.add(tw);
- for(const s of[-1,1]){const l=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.2,5),blk);l.rotation.x=Math.PI/2-.05;l.position.set(s*.02,-.05,-.52);g.add(l);}
- const f=new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),new THREE.MeshBasicMaterial({map:S.flare,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));f.position.set(0,.01,-.36-L*.62-(r.can?.15:.08));f.visible=false;g.add(f);
+// rifle profile helpers: a side-profile Shape (forward distance f, height y) extruded across the rifle's width with bevelled edges
+const sideX=(pts,w,bv=.008)=>{const sh=new THREE.Shape();pts.forEach(([f,y],i)=>i?sh.lineTo(f,y):sh.moveTo(f,y));const g=new THREE.ExtrudeGeometry(sh,{depth:w-2*bv,bevelEnabled:true,bevelThickness:bv,bevelSize:bv*.9,bevelSegments:3,curveSegments:6});g.rotateY(Math.PI/2);g.translate(-(w-2*bv)/2,0,0);g.computeVertexNormals();return g;};
+const smooth=(pts,n=3)=>{let p=pts;for(let k=0;k<n;k++){const q=[];for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];q.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25],[a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75]);}p=q;}return p;};
+function woodTex(base){const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#'+new THREE.Color(base).getHexString();x.fillRect(0,0,256,64);
+ for(let i=0;i<70;i++){const y=Math.random()*64,a=.04+Math.random()*.12;x.strokeStyle=Math.random()<.5?`rgba(0,0,0,${a})`:`rgba(255,220,170,${a*.6})`;x.lineWidth=.5+Math.random()*1.5;x.beginPath();x.moveTo(0,y);for(let u=0;u<=256;u+=16)x.lineTo(u,y+Math.sin(u*.03+i)*3*Math.random());x.stroke();}
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
+function makeRifle(r){const g=new THREE.Group(),std=o=>new THREE.MeshStandardMaterial(o);const wood=r.stock!==r.body;
+ const body=std({color:r.body,metalness:.8,roughness:.32}),stock=std({color:wood?0xffffff:r.stock,map:wood?woodTex(r.stock):null,roughness:wood?.55:.7,metalness:wood?.05:.35}),blk=std({color:0x121315,metalness:.65,roughness:.38}),
+  rub=std({color:0x161616,roughness:.95,metalness:0}),lens=std({color:0x203848,metalness:.9,roughness:.05,emissive:0x061018});
+ const mesh=(geo,m,x=0,y=0,z=0)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);g.add(o);return o;};
+ const cyl=(r1,r2,l,m,x,y,z,s=18)=>{const o=mesh(new THREE.CylinderGeometry(r1,r2,l,s),m,x,y,z);o.rotation.x=Math.PI/2;return o;};
+ const L=r.len,heavy=r.id==='halberd'||r.id==='longbow',chassis=r.id==='whisper'||r.id==='halberd';
+ // stock: a shaped profile with comb, pistol grip and fore-end (thumbhole chassis for the semi-auto and the .50)
+ const prof=chassis?[[-.33,.05],[-.33,-.11],[-.22,-.1],[-.2,-.04],[-.08,-.04],[-.06,-.14],[-.01,-.14],[.0,-.04],[.08,-.045],[.56,-.04],[.58,0],[.08,.005],[-.02,.01],[-.08,.05],[-.2,.05]]
+  :[[-.32,.045],[-.32,-.125],[-.2,-.09],[-.07,-.06],[-.05,-.13],[.0,-.135],[.02,-.05],[.08,-.05],[.55,-.035],[.58,-.008],[.55,.006],[.06,.004],[-.03,.02],[-.12,.04]];
+ mesh(sideX(smooth(prof,2),heavy?.062:.056,.01),stock,0,-.012,.14);
+ mesh(sideX([[-.322,.03],[-.322,-.11],[-.305,-.11],[-.305,.03]],.056,.006),rub,0,-.012,.14);// recoil pad
+ // receiver, bolt shroud, magazine, trigger guard
+ cyl(.022,.022,.27,body,0,.016,-.05);cyl(.02,.017,.04,body,0,.016,.1);
+ mesh(new THREE.BoxGeometry(.04,.055,.075),blk,0,-.06,-.12);mesh(new THREE.BoxGeometry(.046,.012,.08),body,0,-.034,-.12);
+ const tg=mesh(new THREE.TorusGeometry(.024,.004,6,14,Math.PI),blk,0,-.05,-.04);tg.rotation.y=Math.PI/2;tg.rotation.z=Math.PI;mesh(new THREE.BoxGeometry(.006,.026,.008),blk,0,-.055,-.035);
+ // barrel: tapered (fluted rings on the heavy rifles), crown, brake or can
+ const bL=L*.6,bz=-.18-bL/2;cyl(heavy?.016:.013,heavy?.014:.011,bL,body,0,.016,bz);
+ if(heavy)for(let i=0;i<5;i++)cyl(.0165,.0165,.012,blk,0,.016,-.3-i*bL*.15);
+ const mz=-.18-bL;if(r.can){cyl(.024,.024,.24,blk,0,.016,mz-.1);for(let i=0;i<6;i++)cyl(.025,.025,.006,body,0,.016,mz-.01-i*.04);}
+ else if(r.id==='halberd'){mesh(new THREE.BoxGeometry(.06,.032,.09),blk,0,.016,mz-.03);for(const s of[-1,1])for(let i=0;i<3;i++)mesh(new THREE.BoxGeometry(.004,.022,.014),body,s*.031,.016,mz-.005-i*.025);}
+ else cyl(.016,.013,.05,blk,0,.016,mz+.0);
+ // bolt (animated): handle + knob
+ const bolt=new THREE.Group();bolt.position.set(.03,.02,-.07);const bh=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.06,8),body);bh.rotation.z=Math.PI/2;bh.position.x=.03;bolt.add(bh);const bk=new THREE.Mesh(new THREE.SphereGeometry(.013,12,8),blk);bk.position.x=.062;bolt.add(bk);g.add(bolt);
+ // scope: tube, bells, rings with bases, turrets with knurl rings, lens glass both ends
+ const sy=.08;cyl(.017,.017,.3,blk,0,sy,-.08);cyl(.031,.017,.09,blk,0,sy,-.27);cyl(.031,.031,.02,blk,0,sy,-.32);cyl(.024,.017,.06,blk,0,sy,.1);cyl(.024,.024,.03,rub,0,sy,.14);
+ for(const z of[-.15,.01]){const ring=mesh(new THREE.TorusGeometry(.019,.005,6,16),body,0,sy,z);mesh(new THREE.BoxGeometry(.024,.04,.016),body,0,sy-.03,z);}
+ const t1=cyl(.012,.012,.03,blk,0,sy+.03,-.07);t1.rotation.x=0;const t1c=cyl(.0125,.0125,.006,body,0,sy+.04,-.07);t1c.rotation.x=0;
+ const t2=cyl(.012,.012,.03,blk,.03,sy,-.07);t2.rotation.set(0,0,Math.PI/2);const t3=cyl(.01,.01,.024,blk,-.026,sy,-.07);t3.rotation.set(0,0,Math.PI/2);
+ const ln=mesh(new THREE.CircleGeometry(.029,24),lens,0,sy,-.331);ln.rotation.y=Math.PI;mesh(new THREE.CircleGeometry(.021,20),lens,0,sy,.156);
+ // folded bipod under the fore-end
+ for(const s of[-1,1]){const l=new THREE.Mesh(new THREE.CylinderGeometry(.005,.005,.2,6),blk);l.rotation.x=Math.PI/2-.04;l.position.set(s*.018,-.06,-.42);g.add(l);mesh(new THREE.SphereGeometry(.008,8,6),rub,s*.018,-.064,-.52);}
+ mesh(new THREE.BoxGeometry(.04,.02,.03),blk,0,-.05,-.31);
+ const f=new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),new THREE.MeshBasicMaterial({map:S.flare,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));f.position.set(0,.016,mz-(r.can?.25:.08));f.visible=false;g.add(f);
  g.traverse(o=>{if(o.isMesh){o.castShadow=false;o.renderOrder=2;o.material.onBeforeCompile=vmDepth;}});g.userData={bolt,flash:f};return g;}
 function setRifle(r){if(vm){cam.remove(vm);}vm=makeRifle(r);cam.add(vm);vm.position.set(.17,-.2,-.3);vm.rotation.y=.05;}
 

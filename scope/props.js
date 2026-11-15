@@ -57,8 +57,13 @@ export function craneTower(W,x,z,h,ry=0){const y=W.groundAt(x,z)-.2;for(const[a,
  return y+h+.25;}
 export function billboard(W,x,y,z,ry,txt,col){W.box(x,y,z,.4,4,.4,'darksteel',{walk:false});W.box(x,y+4,z,12,.2,2.4,'darksteel',{ry});W.sign(x-Math.sin(ry)*.5,y+8,z-Math.cos(ry)*.5,11.6,5,txt,{ry:ry+Math.PI,bg:'#1a1030',fg:col||'#ffd040',size:96,tw:768,th:330});
  W.box(x-Math.sin(ry)*.2,y+5.4,z-Math.cos(ry)*.2,12,5.4,.3,'darksteel',{ry,walk:false});return y+4.2;}
+// sandbag: a stuffed pillow (flat seams at the ends, puffed in the middle) with a slight sag, ~.55 x .2 x .32 m
+let PIL=null;function pillow(){if(!PIL){const g=new THREE.SphereGeometry(1,28,14),p=g.attributes.position,sg=Math.sign;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+  const X=sg(x)*Math.pow(Math.abs(x),.35),Z=sg(z)*Math.pow(Math.abs(z),.55),puff=Math.sqrt(Math.max(0,1-Math.pow(Math.abs(X),6)));
+  p.setXYZ(i,X*.275,(y*(.2+.8*puff)-.12*(1-X*X))*.11,Z*.16*(.8+.2*puff));}
+  g.computeVertexNormals();PIL=g;}return PIL.clone();}
 export function sandbags(W,p,yaw,o={}){// a crescent of sandbags in front of a perch (yaw = facing)
  const c=Math.cos(yaw),s=Math.sin(yaw);const fx=-s,fz=-c,rx=c,rz=-s;const r=rng(9);
  for(let row=0;row<2;row++)for(let i=-3;i<=3;i++){const a=i*.17,d=.95+Math.abs(i)*.04;const x=p.x+(fx*Math.cos(a)+rx*Math.sin(a))*d,z=p.z+(fz*Math.cos(a)+rz*Math.sin(a))*d;
-  const g=new THREE.SphereGeometry(.5,10,6);g.scale(.55,.22,.32);W.geo(g,'vcol',M(x,p.y-.86+row*.2+r()*.02,z,0,yaw+a+(row%2)*.1,0),{col:o.col||0x8a7a5a,cast:false});}}
+  const g=pillow();W.geo(g,'vcol',M(x,p.y-.86+row*.2+r()*.02,z,0,yaw+a+(row%2)*.1,0),{col:o.col||0x8a7a5a,cast:false});}}
 export function scatter(n,seed,f){const r=rng(seed),out=[];let tries=0;while(out.length<n&&tries++<n*30){const p=f(r);if(p)out.push(p);}return out;}

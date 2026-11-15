@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 3 (v84): rifles worth carrying
+- **Long Shot rifles rebuilt.** The five rifles were stacks of boxes; each is now a shaped stock profile (comb, pistol grip, fore-end, rounded bevelled edges) with procedural wood grain on the wooden ones and a rubber recoil pad. The semi-auto and the .50 get a squarer chassis stock. Barrels taper, the magnum and the .50 have fluting rings, the suppressed rifles carry a ringed can and the .50 a slotted muzzle brake. Scopes have objective and eyepiece bells, rings on bases, turrets with knurl rings and tinted glass at both ends; plus a magazine, trigger guard, animated bolt and a folded bipod.
+- **Sandbags** at every perch are now stuffed pillows that sag in the middle instead of squashed spheres.
+
 ### Round 33, batch 2 (v83): ground you can feel
 - **Starfall Vanguard terrain relief.** Open ground now has its own surface detail (pebbles, cracks and ripples at two scales) that catches the sun, and a slow large-scale colour drift so the ground texture no longer visibly repeats.
 - **Scattered stones.** Up to 6,000 half-buried pebbles and stones (2,500 on the lowest graphics setting) are scattered across flatter ground in every mission, kept out of buildings and bases. They are one merged mesh that reuses the terrain material, so they cost a single draw call.
