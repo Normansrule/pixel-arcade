@@ -81,6 +81,12 @@ export function groundTex(c1,c2,c3,seed=3,blades=0){const n=512,f=fbm(n,seed,5,4
  const x=c.getContext('2d');for(let i=0;i<(blades?5000:1600);i++){const px=r()*n,py=r()*n,l=blades?2+r()*5:1+r()*2;x.strokeStyle=`rgba(${r()<.5?'255,255,230':'0,0,0'},${.05+r()*.1})`;x.lineWidth=1;x.beginPath();x.moveTo(px,py);x.lineTo(px+(r()-.5)*2,py-l);x.stroke();}
  for(let i=0;i<260;i++){x.fillStyle=`rgba(0,0,0,${r()*.15})`;x.beginPath();x.arc(r()*n,r()*n,1+r()*3,0,7);x.fill();}
  return tex(c);}
+/* ground micro-relief: pebbles, cracks and ripples as a tangent-space normal map (same seed as groundTex) */
+export function groundNormal(seed=3){const n=512,f=fbm(n,seed,5,4),g=fbm(n,seed+50,4,16),h=fbm(n,seed+90,3,32),r=rng(seed+7);
+ const Hc=fieldCanvas(n,f,(v,i)=>{const q=cl01(v*.35+g[i]*.35+h[i]*.3)*255;return[q,q,q];});const x=Hc.getContext('2d');
+ for(let i=0;i<900;i++){const px=r()*n,py=r()*n,rd=1+r()*3.5,gr=x.createRadialGradient(px,py,0,px,py,rd);gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.beginPath();x.arc(px,py,rd,0,7);x.fill();}
+ x.lineWidth=1.2;for(let i=0;i<40;i++){let px=r()*n,py=r()*n,a=r()*7;x.strokeStyle=`rgba(0,0,0,${.25+r()*.3})`;x.beginPath();x.moveTo(px,py);for(let k=0;k<8;k++){a+=(r()-.5)*1.2;px+=Math.cos(a)*6;py+=Math.sin(a)*6;x.lineTo(px,py);}x.stroke();}
+ return normalFrom(Hc,4);}
 /* stratified cliff rock albedo + normal */
 export function cliffSet(c1,c2,seed=9){const n=512,f=fbm(n,seed,5,4),g=fbm(n,seed+100,4,8),h=fbm(n,seed+200,4,16),N=6;
  const st=new Float32Array(n*n),fr=new Float32Array(n*n),bd=new Float32Array(n*n),ck=new Float32Array(n*n);

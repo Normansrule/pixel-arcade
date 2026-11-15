@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 2 (v83): ground you can feel
+- **Starfall Vanguard terrain relief.** Open ground now has its own surface detail (pebbles, cracks and ripples at two scales) that catches the sun, and a slow large-scale colour drift so the ground texture no longer visibly repeats.
+- **Scattered stones.** Up to 6,000 half-buried pebbles and stones (2,500 on the lowest graphics setting) are scattered across flatter ground in every mission, kept out of buildings and bases. They are one merged mesh that reuses the terrain material, so they cost a single draw call.
+
 ### Round 33, batch 1 (v82): weapons you want to look at
 - **Starfall Vanguard arsenal rebuilt.** All eight guns (MK7 assault rifle, VX-3 battle rifle, Breacher-12 shotgun, Longbow sniper, Hammer rocket launcher and the three Kyrr energy weapons) are now built from rounded, bevelled parts that catch the light: reflex and magnified scopes with tinted glass and turrets, picatinny rails, vented handguards, curved magazines, ribbed grips, ported muzzle brakes, a fluted sniper barrel with a folded bipod and a ribbed launcher tube with a flared back end. Metal reads as metal (brighter dark steel, stronger reflections).
 - **Faster to spawn.** Each gun's merged geometry is now built once and shared by every soldier and weapon pickup, instead of being rebuilt for each one.

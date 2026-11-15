@@ -3,7 +3,7 @@
 // control station, barrier, lift), and a baked sky with the ring-world arch and a gas giant.
 import * as THREE from '../vendor/three.module.min.js';
 import {V,M4,merge,boxUV,ctex,rng} from './util.js';
-import {panelSet,floorSet,crateSet,grateSet,hexTex,glowTex,groundTex,cliffSet} from './tex.js';
+import {panelSet,floorSet,crateSet,grateSet,hexTex,glowTex,groundTex,groundNormal,cliffSet} from './tex.js';
 import {fbm2} from './missions.js';
 
 const C=(r,g,b)=>new THREE.Color(r,g,b);
@@ -18,17 +18,19 @@ const TRIMS={p:C(2.4,.6,3.4),c:C(.4,1.8,3.2),o:C(3.4,1.6,.3),r:C(3.4,.4,.3)};
 
 /* ---------- triplanar terrain material ---------- */
 function terrainMat(T,gfx){const g=groundTex(T.ground[0],T.ground[1],T.ground[2],7,1),cl=cliffSet(T.cliff[0],T.cliff[1],13);
- const m=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.94,metalness:0});const U={tG:{value:g},tC:{value:cl.map},tCN:{value:cl.normalMap}};
+ const m=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.94,metalness:0});const U={tG:{value:g},tGN:{value:groundNormal(7)},tC:{value:cl.map},tCN:{value:cl.normalMap}};
  m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;varying vec3 vWN;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;vWN=normalize(mat3(modelMatrix)*objectNormal);');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D tG,tC,tCN;varying vec3 vWP;varying vec3 vWN;vec3 tpW;float tpF;')
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D tG,tGN,tC,tCN;varying vec3 vWP;varying vec3 vWN;vec3 tpW;float tpF;')
   .replace('#include <map_fragment>',`vec3 bw=pow(abs(vWN),vec3(4.));bw/=bw.x+bw.y+bw.z;const float S=.045;
    vec3 rock=texture2D(tC,vWP.zy*S).rgb*bw.x+texture2D(tC,vWP.xz*S*1.3).rgb*bw.y+texture2D(tC,vWP.xy*S).rgb*bw.z;
    vec3 grd=mix(texture2D(tG,vWP.xz*.09).rgb,texture2D(tG,vWP.xz*.013+.37).rgb,.45);
+   float mv=dot(texture2D(tG,vWP.xz*.0023+.71).rgb,vec3(.333))+dot(texture2D(tG,vWP.zx*.0061+.13).rgb,vec3(.333));grd*=mix(.8,1.16,smoothstep(.45,.95,mv));
    tpF=smoothstep(.7,.86,vWN.y);diffuseColor.rgb*=mix(rock,grd,tpF);
    vec3 nx=texture2D(tCN,vWP.zy*S).xyz*2.-1.,ny=texture2D(tCN,vWP.xz*S*1.3).xyz*2.-1.,nz=texture2D(tCN,vWP.xy*S).xyz*2.-1.;
    nx=vec3(nx.xy+vWN.zy,abs(nx.z)*vWN.x);ny=vec3(ny.xy+vWN.xz,abs(ny.z)*vWN.y);nz=vec3(nz.xy+vWN.xy,abs(nz.z)*vWN.z);
-   tpW=normalize(mix(normalize(nx.zyx*bw.x+ny.xzy*bw.y+nz.xyz*bw.z),vWN,tpF*.85));`)
+   vec3 gn=texture2D(tGN,vWP.xz*.09).xyz*2.-1.,gn2=texture2D(tGN,vWP.xz*.31+.5).xyz*2.-1.;vec3 gN=normalize(vWN+vec3(gn.x+gn2.x*.5,0.,-(gn.y+gn2.y*.5))*.8);
+   tpW=normalize(mix(normalize(nx.zyx*bw.x+ny.xzy*bw.y+nz.xyz*bw.z),gN,tpF*.85));`)
   .replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\nnormal=normalize((viewMatrix*vec4(tpW,0.)).xyz);');};
  m.customProgramCacheKey=()=>'terrain';return m;}
 
@@ -116,6 +118,11 @@ export function buildScene(D,R,gfx){const def=D.def,T=THEMES[def.theme],root=new
  const rk=[];const rr=rng(def.seed+5);for(const r of D.rocks){const g=new THREE.IcosahedronGeometry(1,1);const p=g.attributes.position;const sd=rr()*100;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);const k=.78+fbm2(x*1.7+sd,z*1.7+y*1.3)*.5;p.setXYZ(i,x*k,y*k,z*k);}
   rk.push([g,M4(r.x,r.y+r.h*.45,r.z,rr()*.3,rr()*6,rr()*.3,r.r,r.h*.6,r.r*(.8+rr()*.4)),new THREE.Color(1,1,1)]);}
  if(rk.length){const g=merge(rk);g.computeVertexNormals();const m=new THREE.Mesh(g,tm);m.castShadow=true;m.receiveShadow=true;root.add(m);}
+ // ground scatter: pebbles and stones half-buried on the flatter ground, so the floor has real relief up close
+ {const sc=[],sr=rng(def.seed+11),X0=hf.x0,Z0=hf.z0,XW=(hf.nx-1)*hf.cs,ZW=(hf.nz-1)*hf.cs,N=Math.min(gfx===0?2500:6000,XW*ZW/25|0);const base=new THREE.IcosahedronGeometry(1,0),base1=new THREE.IcosahedronGeometry(1,1);
+  for(let i=0;i<N;i++){const x=X0+sr()*XW,z=Z0+sr()*ZW,y=W.H(x,z),sl=Math.abs(W.H(x+1,z)-y)+Math.abs(W.H(x,z+1)-y);if(sl>.6)continue;let inS=false;for(const q of D.solids){if(q.a&&q.b&&x>q.a[0]-.5&&x<q.b[0]+.5&&z>q.a[2]-.5&&z<q.b[2]+.5&&q.b[1]>y-1){inS=true;break;}}if(inS)continue;
+   const big=sr()<.07,r=big?.3+sr()*.3:.06+sr()*.2;sc.push([big?base1:base,M4(x,y+r*.15,z,sr()*3,sr()*6,sr()*3,r*(.8+sr()*.6),r*(.45+sr()*.3),r*(.8+sr()*.6)),new THREE.Color(.8+sr()*.25,.8+sr()*.2,.78+sr()*.2)]);}
+  if(sc.length){const g=merge(sc);g.computeVertexNormals();const m=new THREE.Mesh(g,tm);m.receiveShadow=true;root.add(m);}}
  // solids -> merged buckets + trims
  const buckets={},trims={},WH=new THREE.Color(1,1,1);const add=(b,g)=>(buckets[b]||(buckets[b]=[])).push(b==='rockB'||b==='rockC'?[g,null,WH]:[g]);const trim=(k,g)=>(trims[k]||(trims[k]=[])).push([g]);
  for(const s of D.solids){if(s.o.novis||s.mat==='none'||s.o.door)continue;const h=s.b[1]-s.a[1];
