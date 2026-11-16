@@ -1,7 +1,8 @@
 // BREACH POINT — first-person viewmodels: procedural guns per weapon, gloved arms, sway/bob/kick, equip/reload/inspect/throw/plant animations.
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 const V=THREE.Vector3;
-const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
+const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(roundBox(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
 const cyl=(r,l,m,x=0,y=0,z=0,p,seg=12)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,l,seg),m);o.rotation.x=Math.PI/2;o.position.set(x,y,z);p&&p.add(o);return o;};
 
 export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o);

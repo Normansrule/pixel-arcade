@@ -1,9 +1,10 @@
 // HALCYON HEIST — first-person viewmodels: procedural guns, suit sleeves + gloves, sway/bob/kick, equip/reload/interact animations,
 // and the mask-on move (the mask rises into view and over the camera).
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 import {makeMask} from './actors.js';
 const V=THREE.Vector3;
-const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
+const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(roundBox(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
 const cyl=(r,l,m,x=0,y=0,z=0,p,seg=12)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,l,seg),m);o.rotation.x=Math.PI/2;o.position.set(x,y,z);p&&p.add(o);return o;};
 
 export function buildViewmodel(TX,crew){const std=o=>new THREE.MeshStandardMaterial(o);
@@ -27,6 +28,15 @@ export function buildViewmodel(TX,crew){const std=o=>new THREE.MeshStandardMater
   else if(id==='whisper'){P.slide=box(.034,.04,.18,M.black,0,.02,-.04,g);box(.032,.03,.15,M.poly,0,-.01,-.03,g);const gr=box(.03,.1,.045,M.poly,0,-.06,.03,g);gr.rotation.x=.25;P.mag=box(.024,.06,.03,M.black,0,-.1,.045,g);cyl(.017,.17,M.steel,0,.02,-.215,g,14);
    P.muzzle.set(0,.02,-.31);P.hand=[new V(0,-.06,.04),new V(-.01,-.07,.04)];}
   else if(id==='hands'){P.hand=[new V(.06,-.3,.2),new V(-.06,-.3,.2)];}
+  // surface detail (round 33): rail teeth, vent slots, serrations, brake, trigger guard
+  const teeth=(y,z0,n,w=.018)=>{for(let k=0;k<n;k++)box(w,.006,.007,M.black,0,y,z0-k*.016,g);};
+  const slots=(x,y,z0,n,gap=.034)=>{for(const sx of[-1,1])for(let k=0;k<n;k++)box(.004,.02,.022,M.black,sx*x,y,z0-k*gap,g);};
+  const guard=(y,z)=>{const t=new THREE.Mesh(new THREE.TorusGeometry(.02,.0035,6,12,Math.PI),M.black);t.rotation.set(0,Math.PI/2,Math.PI);t.position.set(0,y,z);g.add(t);box(.005,.022,.007,M.black,0,y+.006,z+.004,g);};
+  if(id==='falco'){teeth(.055,.05,6);teeth(.055,-.13,6);slots(.0265,.0,-.2,5);cyl(.018,.05,M.black,0,.01,-.53,g);for(let k=0;k<2;k++)box(.038,.006,.01,M.steel,0,.01,-.52-k*.02,g);box(.014,.016,.04,M.steel,.032,.03,.02,g);guard(-.045,.0);
+   box(.05,.02,.012,M.poly,0,-.02,.33,g);}
+  else if(id==='kite'){teeth(.033,.06,8,.016);slots(.0205,.0,-.11,3,.03);guard(-.042,.0);box(.012,.012,.03,M.steel,.03,.02,-.02,g);}
+  else if(id==='mastiff'){for(let k=0;k<5;k++)box(.054,.054,.01,M.black,0,0,-.05+k*.025,P.pump);for(let k=0;k<5;k++)box(.026,.006,.03,M.black,0,.037,-.2-k*.06,g);guard(-.04,.06);cyl(.019,.03,M.black,0,.018,-.55,g);}
+  else if(id==='whisper'){for(let k=0;k<6;k++)for(const sx of[-1,1])box(.003,.03,.004,M.black,sx*.0175,0,.045+k*.009,P.slide);for(let k=0;k<6;k++)cyl(.0175,.006,M.black,0,.02,-.15-k*.025,g);guard(-.03,-.0);}
   const fl=new THREE.Mesh(new THREE.PlaneGeometry(.16,.16),flashMat);fl.position.copy(P.muzzle);fl.visible=false;g.add(fl);const fl2=new THREE.Mesh(new THREE.PlaneGeometry(.16,.16),flashMat);fl2.rotation.y=Math.PI/2;fl.add(fl2);P.flash=fl;
   g.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});return{g,P};}
  const OFF={rifle:new V(.16,-.175,-.6),smg:new V(.15,-.16,-.52),shotgun:new V(.16,-.18,-.62),pistol:new V(.12,-.14,-.42),hands:new V(0,-.3,-.4)};

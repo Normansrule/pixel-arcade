@@ -1,5 +1,6 @@
 // EXFIL — procedural gun models (shared by first-person viewmodel and third-person rigs), attachments, and the animated viewmodel.
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 import {WPN,ITEMS} from './data.js';
 const V=THREE.Vector3;
 
@@ -10,7 +11,7 @@ export function gunMats(){if(MAT)return MAT;const std=o=>new THREE.MeshStandardM
   glove:std({color:0x2a2724,roughness:.85}),sleeve:std({color:0x5a5c4c,roughness:.92}),shell:std({color:0xa02a1a,roughness:.5}),
   flash:new THREE.MeshBasicMaterial({transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,color:new THREE.Color(3,2.2,1.4),side:THREE.DoubleSide})};
  return MAT;}
-const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
+const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(roundBox(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
 const cyl=(r,l,m,x=0,y=0,z=0,p,seg=12,r2)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2??r,l,seg),m);o.rotation.x=Math.PI/2;o.position.set(x,y,z);p&&p.add(o);return o;};
 
 // returns {g, P:{sight, muzzle, hands:[grip,guard], mag, pump, slide, rail}}; gun points down -Z, origin at the trigger

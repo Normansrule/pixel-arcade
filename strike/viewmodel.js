@@ -1,6 +1,7 @@
 // STRIKE ZONE — first-person viewmodel: nine procedural weapons with moving parts, gloved arms that follow the parts,
 // hip/ADS poses aligned to each sight, sway, bob, slide tilt, recoil kick, equip, mag / shell / bolt / cylinder reloads, melee and throws.
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 import {surf} from './tex.js';
 const V=THREE.Vector3,R=Math.random,cl=(v,a,b)=>v<a?a:v>b?b:v,ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,bump=(k,a,b)=>k<a||k>b?0:Math.sin((k-a)/(b-a)*Math.PI);
 
@@ -15,7 +16,7 @@ export function buildViewmodel(accent=0xff5a14){const std=o=>new THREE.MeshStand
  const flashMat=new THREE.MeshBasicMaterial({transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,color:new THREE.Color(3,2.3,1.5),side:THREE.DoubleSide});
  (()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.translate(64,64);for(let i=0;i<8;i++){x.rotate(Math.PI/4+R()*.2);const g=x.createLinearGradient(0,0,60,0);g.addColorStop(0,'rgba(255,245,210,1)');g.addColorStop(1,'rgba(255,130,30,0)');x.fillStyle=g;x.beginPath();x.moveTo(0,-6);x.lineTo(58,0);x.lineTo(0,6);x.fill();}
   const g=x.createRadialGradient(0,0,0,0,0,28);g.addColorStop(0,'rgba(255,255,240,1)');g.addColorStop(1,'rgba(255,170,60,0)');x.fillStyle=g;x.fillRect(-64,-64,128,128);flashMat.map=new THREE.CanvasTexture(c);flashMat.map.colorSpace=THREE.SRGBColorSpace;})();
- const B=(w,h,d,m,x,y,z,p,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);p.add(o);return o;};
+ const B=(w,h,d,m,x,y,z,p,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(roundBox(w,h,d),m);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);p.add(o);return o;};
  const C=(r,l,m,x,y,z,p,seg=14,r2)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2??r,l,seg),m);o.rotation.x=Math.PI/2;o.position.set(x,y,z);p.add(o);return o;};
  const G=()=>new THREE.Group();
  // ---------- guns: P.sight = eye-line point, P.hR/P.hL = hand anchors, moving parts by name

@@ -1,8 +1,9 @@
 // FORTRESS BREACH — first-person viewmodels: procedural guns + gadgets, gloved arms, ADS, sway/bob, recoil kick,
 // equip / reload / melee / throw / deploy animations, weapon flashlight.
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 const V=THREE.Vector3;
-const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
+const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(roundBox(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
 const cyl=(r,l,m,x=0,y=0,z=0,p,seg=12,r2)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2??r,l,seg),m);o.rotation.x=Math.PI/2;o.position.set(x,y,z);p&&p.add(o);return o;};
 export function buildViewmodel(TX){const std=o=>new THREE.MeshStandardMaterial(o);
  const M={steel:std({color:0x2a2c30,roughness:.35,metalness:.85}),black:std({color:0x141518,roughness:.55,metalness:.4}),poly:std({color:0x1d1e21,roughness:.7,metalness:.1}),tan:std({color:0x8a7558,roughness:.75}),olive:std({color:0x3e4630,roughness:.7}),

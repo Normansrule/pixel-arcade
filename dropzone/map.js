@@ -82,6 +82,17 @@ export function buildMap(mats){const geo=new Geo();geo.uvs=UVS;const W=new World
   slab(x0,z0,x1,z1,ry,ry+.25,'roof',d.rt??0x9a9a96,hole);
   for(const[a,b,c,e]of[[x0,z0,x1,z0+.3],[x0,z1-.3,x1,z1],[x0,z0+.3,x0+.3,z1-.3],[x1-.3,z0+.3,x1,z1-.3]])S(a,ry+.25,b,c,ry+1.05,e,ext,et,d.eo||{});
   Vb(x0-.12,ry+1.05,z0-.12,x1+.12,ry+1.15,z1+.12,'conc',0xc8c4ba,{});
+  // facade detail (round 33): corner pilasters, a downpipe, floor bands' end caps and a canopy over the front door
+  if(ext!=='corr'&&!d.big){const pc=new THREE.Color(et).multiplyScalar(.82).getHex();
+   for(const[cx,cz]of[[x0,z0],[x1,z0],[x0,z1],[x1,z1]])Vb(cx-.22,0,cz-.22,cx+.22,ry+1.05,cz+.22,ext,pc,{});
+   const bc=new THREE.Color(et).multiplyScalar(.6).getHex(),gx=(x0+x1)/2,gz=(z0+z1)/2,gw=d.big?2.4:1.25;// plinth band, split around the door positions
+   for(const[a,b]of[[x0,gx-gw],[gx+gw,x1]]){Vb(a,0,z0-.07,b,.55,z0,ext,bc,{});Vb(a,0,z1,b,.55,z1+.07,ext,bc,{});}
+   for(const[a,b]of[[z0,gz-gw],[gz+gw,z1]]){Vb(x0-.07,0,a,x0,.55,b,ext,bc,{});Vb(x1,0,a,x1+.07,.55,b,ext,bc,{});}
+   const dpx=x1+.24,dpz=z0+.6;Vb(dpx-.06,.1,dpz-.06,dpx+.06,ry+.9,dpz+.06,'steel',0x5a5c5e,{});Vb(dpx-.2,ry+.85,dpz-.1,dpx+.06,ry+1,dpz+.1,'steel',0x5a5c5e,{});
+   if(d.front&&fl>=1){const fr=d.front,along=fr==='n'||fr==='s',c=along?(x0+x1)/2:(z0+z1)/2,cy=Math.min(h-.4,2.9),aw=[0x9a2a24,0x23506e,0x2f5a34,0x7a5a2a,0x3a3a40][Math.abs(Math.round(x0*7+z0*13))%5];
+    const sg=fr==='n'||fr==='w'?-1:1,wl=fr==='n'?z0:fr==='s'?z1:fr==='w'?x0:x1;
+    if(along){Vb(c-1.7,cy,Math.min(wl,wl+sg*1.2),c+1.7,cy+.14,Math.max(wl,wl+sg*1.2),'fabric',aw,{});Vb(c-1.7,cy-.32,wl+sg*1.12-.03,c+1.7,cy,wl+sg*1.12+.03,'fabric',aw,{});}
+    else{Vb(Math.min(wl,wl+sg*1.2),cy,c-1.7,Math.max(wl,wl+sg*1.2),cy+.14,c+1.7,'fabric',aw,{});Vb(wl+sg*1.12-.03,cy-.32,c-1.7,wl+sg*1.12+.03,cy,c+1.7,'fabric',aw,{});}}}
   if(stOK&&roofAcc){const q=(fl-1)%2?fB:fA;// rails around the roof hatch
    Vb(q[0]-.05,ry+.25,q[1]-.1,q[2]+.05,ry+1.2,q[1]-.04,'steel',0x5a5e60);Cb(q[0]-.05,ry+.25,q[1]-.1,q[2]+.05,ry+1.2,q[1]-.04,1,1);}
   const nu=Math.floor(wx*wz/80);for(let i=0;i<nu;i++){const ux=x0+3+R()*(wx-6),uz=z0+3+R()*(wz-6);if(stOK&&ux<x0+4&&uz<sz0+L+1)continue;props.push({k:'ac',x:ux,y:ry+.25,z:uz,r:(R()*4|0)*Math.PI/2});Cb(ux-.8,ry+.25,uz-.6,ux+.8,ry+1.3,uz+.6,3,1);}

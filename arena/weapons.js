@@ -1,5 +1,6 @@
 // NOVA ARENA — arsenal: weapon + grenade definitions, procedural gun models (first-person + world), the animated viewmodel.
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 import {V,cl,damp,ctex,merge,M4} from './util.js';
 import {glowTex} from './tex.js';
 
@@ -24,7 +25,7 @@ const glowM=c=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplySca
 // part list -> merged meshes per material; returns group
 function build(parts){const g=new THREE.Group(),by=new Map();for(const[geo,mat,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1]of parts){let a=by.get(mat);if(!a)by.set(mat,a=[]);a.push([geo,M4(x,y,z,rx,ry,rz,sx,sy,sz)]);}
  for(const[m,a]of by){const o=new THREE.Mesh(merge(a),m);g.add(o);}return g;}
-const B=(w,h,d)=>new THREE.BoxGeometry(w,h,d),Cy=(r,l,s=12,r2)=>{const g=new THREE.CylinderGeometry(r,r2??r,l,s);g.rotateX(Math.PI/2);return g;};
+const B=(w,h,d)=>roundBox(w,h,d),Cy=(r,l,s=12,r2)=>{const g=new THREE.CylinderGeometry(r,r2??r,l,s);g.rotateX(Math.PI/2);return g;};
 export function gunModel(id){const M=mats(),w=WPN[id],gl=glowM(w.col);const P=[];let muzzle=new V(0,0,-.6),extra={};
  if(id==='pulse'){P.push([B(.11,.14,.62),M.body,0,0,-.12],[B(.12,.06,.5),M.dark,0,.095,-.1],[B(.09,.05,.28),M.dark,0,.13,-.08],[Cy(.035,.34),M.dark,0,.01,-.55],[B(.1,.1,.24),M.body,0,-.01,-.48],
    [B(.08,.2,.1),M.grip,0,-.14,.04,.25],[B(.09,.18,.13),M.dark,0,-.12,-.22,-.15],[B(.113,.008,.3),gl,0,.03,-.35],[B(.113,.008,.12),gl,0,-.05,-.5],[B(.1,.12,.2),M.body,0,.02,.26]);muzzle.set(0,.01,-.74);}

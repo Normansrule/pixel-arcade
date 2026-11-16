@@ -1,5 +1,6 @@
 // NIGHTFALL — arsenal: weapon stats, procedural gun models (wall-buys, crate, ally, first person), the forged (upgraded) look and the viewmodel animator.
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 const V=THREE.Vector3,ZAX=new THREE.Vector3(0,0,1),R=Math.random,cl=(v,a,b)=>v<a?a:v>b?b:v,TAU=Math.PI*2,ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
 
 export const WPN={
@@ -31,7 +32,7 @@ export function gunMats(){if(MAT)return MAT;const std=(o,e=.6)=>{const m=new THR
   glove:std({color:0x221c18,roughness:.85},.2),sleeve:std({color:0x262c1c,roughness:.95},.2),skin:std({color:0xb88a6a,roughness:.7})};
  MAT.forgedTex=ft;return MAT;}
 
-const box=(g,w,h,d,m,x=0,y=0,z=0,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);g.add(o);return o;};
+const box=(g,w,h,d,m,x=0,y=0,z=0,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(roundBox(w,h,d),m);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);g.add(o);return o;};
 const cyl=(g,r,l,m,x=0,y=0,z=0,seg=14,r2,ax='z')=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2??r,l,seg),m);if(ax==='z')o.rotation.x=Math.PI/2;else if(ax==='x')o.rotation.z=Math.PI/2;o.position.set(x,y,z);g.add(o);return o;};
 
 // gun model: barrel along -z, origin at the grip. userData: muzzle, parts, hands[grip,fore], sightY

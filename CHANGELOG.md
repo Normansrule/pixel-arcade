@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 4 (v85): gun overhaul across eight shooters
+- **Shared rounded parts.** New js/kit3d/rbox.js builds a cached rounded, bevelled box (with box-projected UVs, so wood and other textures still map). Every gun built from boxes in Dropzone, Halcyon Heist, Nova Arena, EXFIL, Nightfall, Breach Point, Fortress Breach and Strike Zone now uses it, so edges catch the light like machined or moulded parts instead of being razor sharp.
+- **Dropzone guns** (pistol, SMG, assault rifle, battle rifle, shotgun): picatinny rail teeth, side vent slots, slide serrations, charging handles, muzzle caps and a two-slot brake, cheek riser and sling swivels on the battle rifle, ribs that slide with the shotgun's pump, and a trigger guard on every gun.
+- **Halcyon Heist guns:** the same detail pass (rails, vents, brake, ribbed pump, serrated slide, suppressor rings, trigger guards).
+- **Dropzone town:** houses and shops get corner pilasters, a darker plinth band, a downpipe and a coloured canopy over the front door. The extra pieces are visual only, and their colours come from each building's position, so the map's layout and loot stay exactly as before.
+
 ### Round 33, batch 3 (v84): rifles worth carrying
 - **Long Shot rifles rebuilt.** The five rifles were stacks of boxes; each is now a shaped stock profile (comb, pistol grip, fore-end, rounded bevelled edges) with procedural wood grain on the wooden ones and a rubber recoil pad. The semi-auto and the .50 get a squarer chassis stock. Barrels taper, the magnum and the .50 have fluting rings, the suppressed rifles carry a ringed can and the .50 a slotted muzzle brake. Scopes have objective and eyepiece bells, rings on bases, turrets with knurl rings and tinted glass at both ends; plus a magazine, trigger guard, animated bolt and a folded bipod.
 - **Sandbags** at every perch are now stuffed pillows that sag in the middle instead of squashed spheres.

@@ -1,5 +1,6 @@
 // DROPZONE — weapon data (5 platforms x 5 rarity tiers with attachments), procedural gun models shared by the first-person viewmodel and loot, and the animated viewmodel.
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 const V=THREE.Vector3;
 
 export const RAR=[{n:'COMMON',c:'#b4b8bc',h:0xb4b8bc},{n:'UNCOMMON',c:'#5fd36a',h:0x5fd36a},{n:'RARE',c:'#4aa3ff',h:0x4aa3ff},{n:'EPIC',c:'#c27bff',h:0xb46bff},{n:'LEGENDARY',c:'#ffc53d',h:0xffb020}];
@@ -35,7 +36,7 @@ export function gunMats(){if(MAT)return MAT;const std=o=>new THREE.MeshStandardM
   glove:std({color:0x2a2724,roughness:.85}),sleeve:std({color:0x4a5040,roughness:.92}),shell:std({color:0xa02a1a,roughness:.5}),
   flash:new THREE.MeshBasicMaterial({transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,color:new THREE.Color(3,2.2,1.4),side:THREE.DoubleSide})};
  return MAT;}
-const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
+const box=(w,h,d,m,x=0,y=0,z=0,p)=>{const o=new THREE.Mesh(roundBox(w,h,d),m);o.position.set(x,y,z);p&&p.add(o);return o;};
 const cyl=(r,l,m,x=0,y=0,z=0,p,seg=12,r2)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2??r,l,seg),m);o.rotation.x=Math.PI/2;o.position.set(x,y,z);p&&p.add(o);return o;};
 
 // returns {g, P:{sight, muzzle, hands:[grip,guard], mag, pump, slide, rail}}; gun points down -Z, origin at the trigger
@@ -57,6 +58,18 @@ export function gunModel(wid,mods={},flashTex,rar=0){const M=gunMats();const g=n
  else if(wid==='stk'){box(.055,.075,.24,M.black,0,.01,0,g);cyl(.016,.56,M.steel,0,.03,-.4,g);cyl(.015,.44,M.black,0,-.008,-.34,g);P.pump=box(.06,.055,.17,wd,0,-.01,-.34,g);box(.05,.1,.3,wd,0,-.01,.27,g).rotation.x=.05;box(.044,.12,.025,M.poly,0,-.01,.43,g);
   const gr=box(.034,.09,.045,wd,0,-.065,.08,g);gr.rotation.x=.3;box(.006,.012,.006,M.brass,0,.05,-.66,g);for(let k=0;k<4;k++){const s=cyl(.009,.03,M.shell,.03,-.005,-.02+k*.03,g,8);s.rotation.set(0,0,Math.PI/2);}
   P.sight.set(0,.056,0);P.muzzle.set(0,.03,-.69);P.hands=[new V(0,-.06,.07),new V(0,-.035,-.34)];P.rail.set(0,.05,-.02);P.mzl=new V(0,.03,-.68);P.mag=null;}
+ // surface detail (round 33): rail teeth, vent slots, serrations, ports, ribs, trigger guards
+ const teeth=(y,z0,n,w=.018)=>{for(let k=0;k<n;k++)box(w,.006,.007,M.black,0,y,z0-k*.016,g);};
+ const slots=(x,y,z0,n,gap=.034,h=.022)=>{for(const sx of[-1,1])for(let k=0;k<n;k++)box(.004,h,.022,M.black,sx*x,y,z0-k*gap,g);};
+ const guard=(y,z)=>{const t=new THREE.Mesh(new THREE.TorusGeometry(.02,.0035,6,12,Math.PI),M.black);t.rotation.set(0,Math.PI/2,Math.PI);t.position.set(0,y,z);g.add(t);box(.005,.022,.007,M.black,0,y+.006,z+.004,g);};
+ if(wid==='p9'){for(let k=0;k<6;k++)for(const sx of[-1,1])box(.003,.024,.004,M.black,sx*.0165,.047,.03+k*.009,g);box(.034,.012,.028,M.black,.0,.058,-.07,g);cyl(.0075,.012,M.black,0,.045,-.146,g,10);guard(-.012,0);}
+ else if(wid==='vx9'){teeth(.06,.02,10,.015);slots(.0275,.0,-.15,4,.03);box(.014,.012,.03,M.steel,.03,.03,-.02,g);cyl(.024,.012,M.black,0,.012,-.355,g,12);guard(-.032,.0);}
+ else if(wid==='ark'){teeth(.072,.06,12);slots(.0285,.012,-.22,5);box(.004,.026,.06,M.black,.026,.03,-.02,g);
+  cyl(.018,.05,M.black,0,.015,-.69,g,12);for(const k of[0,1])box(.038,.006,.01,M.steel,0,.015,-.675-k*.02,g);box(.014,.016,.036,M.steel,.03,.036,.04,g);guard(-.035,.02);}
+ else if(wid==='hrn'){teeth(.075,.06,14);slots(.0305,.005,-.26,6,.04);box(.04,.03,.14,wd,0,.07,.32,g);for(const z of[-.5,.45])cyl(.006,.022,M.steel,0,-.05,z,g,8).rotation.set(0,0,Math.PI/2);
+  cyl(.02,.06,M.black,0,.02,-.9,g,12);box(.014,.016,.036,M.steel,.032,.04,.03,g);guard(-.038,.03);}
+ else if(wid==='stk'){for(let k=0;k<6;k++)box(.064,.059,.01,M.black,0,0,-.065+k*.026,P.pump);for(let k=0;k<5;k++)box(.026,.006,.03,M.black,0,.05,-.18-k*.07,g);
+  cyl(.019,.03,M.black,0,.03,-.66,g,12);box(.06,.008,.06,M.steel,0,.05,.0,g);guard(-.035,.06);}
  const o=mods.optic&&mods.optic.id;
  const IR={p9:[.05,-.13],vx9:[.06,-.24],ark:[.08,-.44],hrn:[.08,-.56]}[wid];
  if(IR&&!o){const r=P.rail.y,sy=r+.03;for(const sx of[-1,1])box(.005,.034,.008,M.black,sx*.0075,r+.017,IR[0],g);box(.024,.008,.01,M.black,0,r+.004,IR[0],g);box(.004,.03,.004,M.black,0,r+.015,IR[1],g);box(.02,.006,.008,M.black,0,r+.003,IR[1],g);P.sight.set(0,sy,0);}
