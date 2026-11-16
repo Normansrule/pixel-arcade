@@ -4,6 +4,11 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 5 (v86): trim, wear and the ninth shooter
+- **Gloss Riot trim kit.** Every crate gets a dark banded frame (edges, corner posts and a mid band), and walls, blocks, pillars, towers and rails get a light capping edge along the top and a darker kick strip at the base. The pieces sit only on edges, so every face stays paintable.
+- **Dropzone ground wear.** Up to 3,000 oil stains, dried puddles, crack webs and dirt patches are scattered over open streets, pavements and plazas (never indoors, never on slopes) as one merged mesh with a 2x2 texture atlas. A fixed seed means every player sees the same city.
+- **Starwarden guns** now use the shared rounded, bevelled parts as well (the earlier test crash came from the test browser, not the game; two clean runs since).
+
 ### Round 33, batch 4 (v85): gun overhaul across eight shooters
 - **Shared rounded parts.** New js/kit3d/rbox.js builds a cached rounded, bevelled box (with box-projected UVs, so wood and other textures still map). Every gun built from boxes in Dropzone, Halcyon Heist, Nova Arena, EXFIL, Nightfall, Breach Point, Fortress Breach and Strike Zone now uses it, so edges catch the light like machined or moulded parts instead of being razor sharp.
 - **Dropzone guns** (pistol, SMG, assault rifle, battle rifle, shotgun): picatinny rail teeth, side vent slots, slide serrations, charging handles, muzzle caps and a two-slot brake, cheek riser and sling swivels on the battle rifle, ribs that slide with the shotgun's pump, and a trigger guard on every gun.

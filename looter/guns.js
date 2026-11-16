@@ -1,5 +1,6 @@
 // STARWARDEN — procedural weapon models for every archetype (element glow + rarity finish) and the animated first-person viewmodel.
 import * as THREE from '../vendor/three.module.min.js';
+import {roundBox} from '../js/kit3d/rbox.js';
 import {V,cl,damp,ctex,merge,M4} from './util.js';
 import {ARCH,EL} from './loot.js';
 
@@ -11,7 +12,7 @@ function mats(){if(MS)return MS;const std=o=>new THREE.MeshStandardMaterial(o);
 const glowM=(c,k=1.6)=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(k)});
 function build(parts){const g=new THREE.Group(),by=new Map();for(const[geo,mat,x,y,z,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1]of parts){let a=by.get(mat);if(!a)by.set(mat,a=[]);a.push([geo,M4(x,y,z,rx,ry,rz,sx,sy,sz)]);}
  for(const[m,a]of by){const o=new THREE.Mesh(merge(a),m);g.add(o);}return g;}
-const B=(w,h,d)=>new THREE.BoxGeometry(w,h,d),Cy=(r,l,s=12,r2)=>{const g=new THREE.CylinderGeometry(r,r2??r,l,s);g.rotateX(Math.PI/2);return g;};
+const B=(w,h,d)=>roundBox(w,h,d),Cy=(r,l,s=12,r2)=>{const g=new THREE.CylinderGeometry(r,r2??r,l,s);g.rotateX(Math.PI/2);return g;};
 const cache={};
 // it: {a,el,r,x}; returns a group with userData.muzzle and userData.glow (a material)
 export function gunModel(it){const M=mats(),a=it.a,col=it.el==='kin'?0xffd9a0:EL[it.el].hex,gl=glowM(col,it.el==='kin'?1.1:1.9);

@@ -67,6 +67,18 @@ export function buildScene(D,paint,R,gfx){const T=THEMES[D.def.theme],root=new T
  // the paintable level
  const[fm,wm]=paint.build(T.pal,{floor:detailTex('floor'),wall:detailTex('wall')});root.add(fm,wm);S.level=[fm,wm];
  const R0=rng(D.def.seed+5);
+ // trim kit (round 33): crates get a dark banded frame, walls, blocks and pillars a capping edge and a kick strip.
+ // Visual only and kept to edges, so the paintable faces stay paintable.
+ {const tk=[],Bx=(w,h,d)=>new THREE.BoxGeometry(w,h,d);
+  for(const so of D.solids){const m=so.mat,a=so.a,b=so.b;if(!a||!b)continue;const w=b[0]-a[0],h=b[1]-a[1],d=b[2]-a[2],cx=(a[0]+b[0])/2,cz=(a[2]+b[2])/2;
+   if(m==='crate'||m==='crate2'){const c=C(T.pal[m]).multiplyScalar(.42),t=Math.min(.09,w*.07),o=.012;
+    for(const sy of[a[1]+t/2,b[1]-t/2])for(const sz of[-1,1]){tk.push([Bx(w+o*2,t,t),M4(cx,sy,cz+sz*(d/2-t/2+o)),c]);tk.push([Bx(t,t,d+o*2),M4(cx+sz*(w/2-t/2+o),sy,cz),c]);}
+    for(const sx of[-1,1])for(const sz of[-1,1])tk.push([Bx(t,h,t),M4(cx+sx*(w/2-t/2+o),a[1]+h/2,cz+sz*(d/2-t/2+o)),c]);
+    for(const sz of[-1,1]){tk.push([Bx(w*.92,t*.7,t*.5),M4(cx,a[1]+h/2,cz+sz*(d/2+o)),c]);tk.push([Bx(t*.5,t*.7,d*.92),M4(cx+sz*(w/2+o),a[1]+h/2,cz),c]);}}
+   else if((m==='wall'||m==='block'||m==='pillar'||m==='tower'||m==='rail'||m==='base')&&h>.9){const c=C(T.pal[m]||'#888'),cap=c.clone().lerp(C('#ffffff'),.35),kick=c.clone().multiplyScalar(.55),e=.1,o=.03;
+    for(const sz of[-1,1]){tk.push([Bx(w+o*2,e,e),M4(cx,b[1]-e/2,cz+sz*(d/2-e/2+o)),cap]);tk.push([Bx(e,e,d+o*2),M4(cx+sz*(w/2-e/2+o),b[1]-e/2,cz),cap]);
+     tk.push([Bx(w+o*2,.22,.05),M4(cx,a[1]+.11,cz+sz*(d/2+o)),kick]);tk.push([Bx(.05,.22,d+o*2),M4(cx+sz*(w/2+o),a[1]+.11,cz),kick]);}}}
+  if(tk.length){const tm=new THREE.Mesh(merge(tk),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.45,metalness:.1}));tm.castShadow=false;tm.receiveShadow=true;root.add(tm);}}
  // backdrop: colourful skyline / islands, merged
  const bl=[];const ring=(n,r0,r1,hmin,hmax)=>{for(let i=0;i<n;i++){const a=i/n*Math.PI*2+R0()*.1,r=r0+R0()*(r1-r0),w=8+R0()*14,d=8+R0()*12,h=hmin+R0()*(hmax-hmin);const x=Math.cos(a)*r,z=Math.sin(a)*r*1.25;
    const c=C(T.bld[i%T.bld.length]);fc.push([facadeUV(new THREE.BoxGeometry(w,h,d),h),M4(x,h/2-6,z,0,-a,0),c]);

@@ -34,7 +34,7 @@ const vmScene=new THREE.Scene(),vmCam=new THREE.PerspectiveCamera(58,1,.01,10);v
 vmScene.add(new THREE.HemisphereLight(0xd0d4d8,0x50483e,1.6));const vmKey=new THREE.DirectionalLight(0xfff0e0,2.2);vmKey.position.set(-1,2,1);vmScene.add(vmKey);
 
 /* ================= world ================= */
-const T=makeTextures(),SPR=makeSprites(),MATS=makeMats(T);const MAP=buildMap(MATS);scene.add(MAP.group);const W=MAP.W;const nav=new Nav(W,MAP.navBlock);
+const T=makeTextures(),SPR=makeSprites(),MATS=makeMats(T);const MAP=buildMap(MATS);scene.add(MAP.group);const W=MAP.W;scene.add(groundDecals(W,MAP.foot));const nav=new Nav(W,MAP.navBlock);
 // rover nav: the walker grid with walls grown by one more cell, so paths keep a rover's half-width clear (search buffers shared, stamps own)
 const cnav=Object.assign(Object.create(Nav.prototype),nav,{blk:new Uint8Array(nav.blk.length),stamp:new Uint32Array(nav.blk.length),cstamp:new Uint32Array(nav.blk.length),gen:1});{const N=nav.N,b=nav.blk;for(let j=0;j<N;j++)for(let k=0;k<N;k++){if(!b[j*N+k])continue;for(let dj=-1;dj<=1;dj++)for(let dk=-1;dk<=1;dk++){const y=j+dj,x=k+dk;if(x>=0&&y>=0&&x<N&&y<N)cnav.blk[y*N+x]=1;}}
  // thin posts fall between walker cells: rasterise every wall box again at rover radius
@@ -498,3 +498,20 @@ window.DROPZONE={get state(){return G.app;},G,MAP,W,nav,scene,cam,R:Rr,keys,mous
  jump:()=>{if(P.state==='plane'&&G.plane)jumpOut(P);},interact,buy:i=>{buy(i);},openBuy,enterGulag,kill:(v,src)=>damage(v||P,999,src||null,'body',null,'gun'),fire:()=>fire(P),giveLoadout:k=>giveLoadout(P,k),eliminate,redeploy,
  set god(v){G.god=v;},get crates(){return G.crates;},get cars(){return G.cars;},enterCar:c=>enterCar(P,c),
  teleport:(x,y,z,yaw)=>{P.pos.set(x,y,z);P.vel.set(0,0,0);if(yaw!==undefined)P.yaw=yaw;P.state='ground';P.chute.visible=false;VM.set(gunOf(P));},setMap};
+
+// ground wear (round 33): oil stains, dried puddles, crack webs and dirt patches scattered over open ground,
+// one merged mesh of flat quads with a 2x2 atlas; outside buildings only, seeded so every player sees the same city
+function groundDecals(W,foot){const n=512,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d'),q=n/2;let sd=77;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;
+ const blob=(cx,cy,rad,col,k)=>{for(let i=0;i<k;i++){const a=r()*6.28,d=r()*rad*.55,px=cx+Math.cos(a)*d,py=cy+Math.sin(a)*d,rr=rad*(.25+r()*.45),g=x.createRadialGradient(px,py,0,px,py,rr);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.beginPath();x.arc(px,py,rr,0,7);x.fill();}};
+ blob(q/2,q/2,q*.42,'rgba(12,10,8,.6)',14);blob(q/2,q/2,q*.2,'rgba(30,20,40,.25)',5);// oil
+ blob(q*1.5,q/2,q*.42,'rgba(36,42,48,.5)',12);// dried puddle
+ x.strokeStyle='rgba(20,18,16,.8)';x.lineCap='round';for(let b=0;b<7;b++){let px=q/2,py=q*1.5,a=r()*6.28;x.lineWidth=2.4;x.beginPath();x.moveTo(px,py);for(let k=0;k<9;k++){a+=(r()-.5)*1.1;px+=Math.cos(a)*11;py+=Math.sin(a)*11;x.lineTo(px,py);x.lineWidth=Math.max(.6,2.4-k*.25);}x.stroke();}// cracks
+ blob(q*1.5,q*1.5,q*.44,'rgba(70,56,36,.5)',16);for(let i=0;i<120;i++){x.fillStyle=`rgba(40,32,20,${.2+r()*.3})`;x.fillRect(q+q*.15+r()*q*.7,q+q*.15+r()*q*.7,1+r()*2,1+r()*2);}// dirt + grit
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;
+ const P=[],U=[],I=[];let v=0;
+ for(let i=0;i<6000&&v<12000;i++){const px=(r()-.5)*560,pz=(r()-.5)*560;if(foot.some(f=>px>f.x0-.5&&px<f.x1+.5&&pz>f.z0-.5&&pz<f.z1+.5))continue;
+  const y=W.groundAt(px,pz,1.5,.6);if(y<0||W.roofed(px,pz,y))continue;if(Math.abs(W.groundAt(px+1.5,pz,1.5,.1)-y)>.05||Math.abs(W.groundAt(px-1.5,pz,1.5,.1)-y)>.05||Math.abs(W.groundAt(px,pz+1.5,1.5,.1)-y)>.05||Math.abs(W.groundAt(px,pz-1.5,1.5,.1)-y)>.05)continue;
+  const k=(r()*4)|0,u0=(k%2)*.5,v0=(k>>1)*.5,sz=1.2+r()*2.2,a=r()*6.28,ca=Math.cos(a)*sz,sa=Math.sin(a)*sz,yy=y+.012;
+  P.push(px-ca+sa,yy,pz-sa-ca, px+ca+sa,yy,pz+sa-ca, px+ca-sa,yy,pz+sa+ca, px-ca-sa,yy,pz-sa+ca);U.push(u0,1-v0-.5, u0+.5,1-v0-.5, u0+.5,1-v0, u0,1-v0);I.push(v,v+2,v+1,v,v+3,v+2);v+=4;}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);g.computeVertexNormals();
+ const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:t,transparent:true,depthWrite:false,roughness:.7,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));m.receiveShadow=true;m.renderOrder=1;return m;}
