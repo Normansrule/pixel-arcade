@@ -15,8 +15,25 @@ function pair(size,draw,hdraw,str,rdraw){const c=cnv(size),x=c.getContext('2d');
  if(rdraw){const rc=cnv(size>>1);rdraw(rc.getContext('2d'),size>>1,size>>1);o.roughnessMap=T(rc,false);}return o;}
 
 // running-bond block pattern helper
-function blocks(x,w,h,bw,bh,base,vary,mortar,gap=3){x.fillStyle=mortar;x.fillRect(0,0,w,h);for(let r=0;r<h/bh;r++)for(let c=-1;c<w/bw+1;c++){const ox=(r%2)*bw/2,v=R();x.fillStyle=vary(v);x.fillRect(c*bw+ox+gap/2,r*bh+gap/2,bw-gap,bh-gap);}}
-function blocksH(x,w,h,bw,bh,gap=3){x.fillStyle='#202020';x.fillRect(0,0,w,h);for(let r=0;r<h/bh;r++)for(let c=-1;c<w/bw+1;c++){const ox=(r%2)*bw/2;x.fillStyle=`rgb(${170+R()*40|0},${170+R()*40|0},${170+R()*40|0})`;x.fillRect(c*bw+ox+gap/2+1,r*bh+gap/2+1,bw-gap-2,bh-gap-2);}speckle(x,w,h,6000,.35,2);}
+function blocks(x,w,h,bw,bh,base,vary,mortar,gap=3){x.fillStyle=mortar;x.fillRect(0,0,w,h);for(let r=0;r<h/bh;r++)for(let c=0;c<w/bw;c++){const ox=(r%2)*bw/2,v=R();const X=c*bw+ox+gap/2,Y=r*bh+gap/2,W=bw-gap,Hh=bh-gap;
+  const a0=.04+R()*.08,a1=.05+R()*.12,chip=R()<.45,cs=3+R()*7,cl=R()<.5,ct=R()<.5;
+  for(const wx of[0,-w]){const bx=X+wx;if(bx>=w||bx+W<=0)continue;x.fillStyle=vary(v);x.fillRect(bx,Y,W,Hh);
+   // per-block tone gradient, worn bevel (lit top edge, shaded bottom/right edge) and a chipped corner; wrap copy keeps the tile seamless
+   const g=x.createLinearGradient(bx,Y,bx+W,Y+Hh);g.addColorStop(0,`rgba(255,250,235,${a0})`);g.addColorStop(1,`rgba(40,25,10,${a1})`);x.fillStyle=g;x.fillRect(bx,Y,W,Hh);
+   x.fillStyle='rgba(255,248,230,.16)';x.fillRect(bx,Y,W,2);x.fillStyle='rgba(30,20,10,.22)';x.fillRect(bx,Y+Hh-3,W,3);x.fillRect(bx+W-2,Y,2,Hh);
+   if(chip){x.fillStyle=mortar;const cx=cl?bx:bx+W-cs,cy=ct?Y:Y+Hh-cs;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+cs,cy);x.lineTo(cx+(cl?0:cs),cy+cs);x.fill();}}}}
+function blocksH(x,w,h,bw,bh,gap=3){x.fillStyle='#202020';x.fillRect(0,0,w,h);for(let r=0;r<h/bh;r++)for(let c=0;c<w/bw;c++){const ox=(r%2)*bw/2,X=c*bw+ox+gap/2+1,Y=r*bh+gap/2+1,W=bw-gap-2,Hh=bh-gap-2,v=170+R()*40|0;
+  for(const wx of[0,-w]){const bx=X+wx;if(bx>=w||bx+W<=0)continue;x.fillStyle=`rgb(${v-50},${v-50},${v-50})`;x.fillRect(bx,Y,W,Hh);x.fillStyle=`rgb(${v-22},${v-22},${v-22})`;x.fillRect(bx+2,Y+2,W-4,Hh-4);x.fillStyle=`rgb(${v},${v},${v})`;x.fillRect(bx+5,Y+5,W-10,Hh-10);}}speckle(x,w,h,6000,.35,2);}
+// irregular flagstone paving: tileable Voronoi cells with mortar joints, per-stone tone + grain; returns [colour canvas, height canvas]
+function flagstones(w,cells,tone,mortar){const P=[];for(let i=0;i<cells;i++)P.push([R()*w,R()*w,R()]);const c=cnv(w),hc=cnv(w),x=c.getContext('2d'),hx=hc.getContext('2d'),o=x.createImageData(w,w),ho=hx.createImageData(w,w);
+ const cs=w/Math.sqrt(cells),G=Math.ceil(w/cs),grid=[];for(let i=0;i<G*G;i++)grid.push([]);P.forEach((p,i)=>grid[Math.min(G-1,p[1]/cs|0)*G+Math.min(G-1,p[0]/cs|0)].push(i));
+ for(let j=0;j<w;j++)for(let i=0;i<w;i++){let d1=1e9,d2=1e9,k1=0;const gx=i/cs|0,gy=j/cs|0;for(let oy=-2;oy<=2;oy++)for(let ox=-2;ox<=2;ox++){const cx=((gx+ox)%G+G)%G,cy=((gy+oy)%G+G)%G,sx=Math.floor((gx+ox)/G)*w,sy=Math.floor((gy+oy)/G)*w;
+   for(const k of grid[cy*G+cx]){const p=P[k],dx=p[0]+sx-i,dy=p[1]+sy-j,d=dx*dx+dy*dy;if(d<d1){d2=d1;d1=d;k1=k;}else if(d<d2)d2=d;}}
+  const e=Math.sqrt(d2)-Math.sqrt(d1),q=(j*w+i)*4,gr=(Math.sin(i*.9+j*.37)*Math.sin(j*.71-i*.23))*.5+.5,sp=R();
+  if(e<1.7){const m=mortar;o.data[q]=m[0]+sp*14;o.data[q+1]=m[1]+sp*12;o.data[q+2]=m[2]+sp*10;ho.data[q]=ho.data[q+1]=ho.data[q+2]=30;}
+  else{const t=tone(P[k1][2]),b=Math.min(1,(e-1.7)/5),sh=.82+.18*b+(sp>.97?.08:sp<.03?-.1:0)+gr*.04;o.data[q]=t[0]*sh;o.data[q+1]=t[1]*sh;o.data[q+2]=t[2]*sh;const hv=120+b*90+P[k1][2]*30+sp*12;ho.data[q]=ho.data[q+1]=ho.data[q+2]=hv;}
+  o.data[q+3]=ho.data[q+3]=255;}
+ x.putImageData(o,0,0);hx.putImageData(ho,0,0);return[c,hc];}
 
 export function makeTextures(mood){seed=mood==='noon'?11:23;const S={};
  /* ---------- shared ---------- */
@@ -41,8 +58,8 @@ export function makeTextures(mood){seed=mood==='noon'?11:23;const S={};
   S.tower=pair(512,(x,w,h)=>{x.fillStyle='#e8dcc4';x.fillRect(0,0,w,h);blotch(x,w,h,30,'rgba(150,120,80,.18)',20,100);speckle(x,w,h,10000,.15);x.fillStyle='rgba(150,110,70,.55)';x.fillRect(0,h*.47,w,22);x.fillStyle='rgba(120,80,50,.4)';for(let i=0;i<w;i+=32)x.fillRect(i+8,h*.47+5,14,12);},null,1.6);
   S.floor0=pair(512,(x,w,h)=>{x.fillStyle='#c9a877';x.fillRect(0,0,w,h);blotch(x,w,h,60,'rgba(150,115,70,.25)',10,70);blotch(x,w,h,40,'rgba(240,215,170,.22)',10,60);speckle(x,w,h,30000,.2,2);
    for(let i=0;i<120;i++){x.fillStyle=`rgba(${110+R()*40|0},${90+R()*30|0},${60+R()*20|0},.6)`;x.beginPath();x.arc(R()*w,R()*h,1+R()*3,0,7);x.fill();}},null,2);
-  S.floor1=pair(512,(x,w,h)=>{x.fillStyle='#6f5e48';x.fillRect(0,0,w,h);for(let i=0;i<420;i++){const cx=R()*w,cy=R()*h,r=12+R()*14,v=R();x.fillStyle=`rgb(${150+v*40|0},${130+v*34|0},${100+v*26|0})`;x.beginPath();x.ellipse(cx,cy,r,r*.8,R()*3,0,7);x.fill();}speckle(x,w,h,12000,.2);blotch(x,w,h,20,'rgba(80,60,40,.2)',20,80);},
-   (x,w,h)=>{x.fillStyle='#202020';x.fillRect(0,0,w,h);for(let i=0;i<420;i++){const cx=R()*w,cy=R()*h,r=12+R()*14;const g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,'#d0d0d0');g.addColorStop(1,'#606060');x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,r,r*.8,R()*3,0,7);x.fill();}},2.6);
+  S.floor1=(()=>{const[c,hc]=flagstones(512,70,v=>[170+v*48,146+v*40,110+v*30],[132,112,84]);const x=c.getContext('2d');blotch(x,512,512,22,'rgba(90,65,40,.18)',20,90);blotch(x,512,512,14,'rgba(255,240,210,.12)',20,70);speckle(x,512,512,9000,.16,2);
+   return{map:T(c),normalMap:T(normalFrom(hc,2.8),false)};})();
   S.floor2=pair(512,(x,w,h)=>{x.fillStyle='#b48c5e';x.fillRect(0,0,w,h);blotch(x,w,h,50,'rgba(120,85,50,.25)',15,90);speckle(x,w,h,26000,.22,2);x.strokeStyle='rgba(100,70,40,.25)';for(let i=0;i<30;i++){x.beginPath();x.moveTo(R()*w,R()*h);x.lineTo(R()*w,R()*h);x.stroke();}},null,2);
   S.site=pair(512,(x,w,h)=>{blocks(x,w,h,128,128,'',v=>`rgb(${206+v*24|0},${186+v*20|0},${150+v*16|0})`,'#7a6448',6);blotch(x,w,h,26,'rgba(120,90,50,.2)',20,80);speckle(x,w,h,16000,.2);},(x,w,h)=>blocksH(x,w,h,128,128,8),2.5);
   S.raised=S.site;S.roof=S.wall;S.thin=S.wood;S.low=S.wall;

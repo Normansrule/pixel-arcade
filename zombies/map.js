@@ -1,6 +1,7 @@
 // NIGHTFALL — "Bramblewood Field Station": tile layout, collision, ray casts, flow-field pathfinding and all static world geometry.
 import * as THREE from '../vendor/three.module.min.js';
 import {labelTex,DISP,MONO} from './tex.js';
+import {untile} from '../js/kit3d/untile.js';
 const V=THREE.Vector3,TAU=Math.PI*2;
 export const W=58,H=50;
 let sd=99;const rr=()=>{sd=(sd*16807)%2147483647;return(sd-1)/2147483646;};
@@ -142,6 +143,7 @@ export class GameMap{
    ceil:std({map:T.floor,roughness:.9,color:0x5a4a40,side:THREE.FrontSide}),shingle:std({map:T.shingle,bumpMap:T.shingle,bumpScale:2,roughness:.85,color:0x8a8078}),roofmetal:std({map:T.metal,roughness:.5,metalness:.6,color:0x6a7276}),
    wood:std({map:T.boards,roughness:.8,color:0xa08060}),dark:std({color:0x2a2622,roughness:.7,metalness:.2}),rust:std({map:T.rust,roughness:.7,metalness:.5,color:0xb0a090}),hay:std({map:T.hay,bumpMap:T.hay,bumpScale:2,roughness:1,color:0xd0b880}),
    bark:std({map:T.bark,roughness:.95,color:0x9a8a80}),steel:std({color:0x8a9096,roughness:.35,metalness:.85}),paint:std({color:0x3a4a3a,roughness:.6,metalness:.4}),cloth:std({color:0x3a3a30,roughness:1})};
+  untile(mats.gravel,{freq:.4,drift:.2});untile(mats.grass,{freq:.35,drift:.22});
   const gb=new GB();const g=this.g;
   // ground
   const gt=rep(T.ground,60);const ground=new THREE.Mesh(new THREE.PlaneGeometry(240,240),std({map:gt,bumpMap:gt,bumpScale:2,roughness:1,color:0x8a8478}));ground.rotation.x=-Math.PI/2;ground.position.set(W/2,0,H/2);ground.receiveShadow=true;G.add(ground);

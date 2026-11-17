@@ -4,6 +4,14 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 6 (v87): ground you can't see repeating
+- **No more tiled ground.** New js/kit3d/untile.js breaks up texture repetition on big surfaces: a slow noise picks a different offset of the texture in each region and blends neighbours smoothly, for the colour, the normal map and the bump map, plus a broad light and dark drift. It now runs on Dropzone's roads, lots, grass, sand, concrete and roofs, EXFIL's terrain, Nightfall's gravel and grass, and Breach Point's open floors.
+- **Dropzone streets.** Zebra crossings were a single collapsed bar; every intersection now has striped crossings on both approaches of both roads, plus stop lines. The open lots were bleached almost white in the sun; they are now darker, dusty gravel.
+- **Gravel that reads as gravel.** EXFIL and Dropzone ground texture rebuilt: a jittered field of rounded pebbles of different sizes and tones, shaded into packed dirt, with damp patches and fine grit.
+- **Breach Point stonework.** Every stone block now has its own tone, a lit top edge, a shaded lower edge and the odd chipped corner, and the block textures now tile without a seam. The courtyard floor that looked like leopard spots is now irregular flagstone paving with mortar joints.
+- **EXFIL forests.** Conifers were four near-black cones that read as cut-out silhouettes; each is now a tapered trunk under five overlapping needle tiers, lighter toward the top, in four greens chosen by position (so the map stays identical for every player).
+- **Iron Vanguard bases.** The two headquarters yards were hard-edged rectangles; they are now rounded, ragged patches of packed dirt that fray into the meadow, with churned ground around the edges.
+
 ### Round 33, batch 5 (v86): trim, wear and the ninth shooter
 - **Gloss Riot trim kit.** Every crate gets a dark banded frame (edges, corner posts and a mid band), and walls, blocks, pillars, towers and rails get a light capping edge along the top and a darker kick strip at the base. The pieces sit only on edges, so every face stays paintable.
 - **Dropzone ground wear.** Up to 3,000 oil stains, dried puddles, crack webs and dirt patches are scattered over open streets, pavements and plazas (never indoors, never on slopes) as one merged mesh with a 2x2 texture atlas. A fixed seed means every player sees the same city.

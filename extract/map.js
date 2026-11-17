@@ -99,7 +99,10 @@ export function buildMap(mats){const geo=new Geo();geo.uvs=UVS;const W=new World
  function sandbags(x0,z0,x1,z1,h=1){S(x0,0,z0,x1,h,z1,'fabric',0x8a7a5a,{s:.6});}
  function lamp(x,z,y=0){geo.cyl(x,y,z,.09,7,'steel',0x5a5e60,8);Vb(x-.1,y+6.8,z-.1,x+1.2,y+7,z+.1,'steel',0x5a5e60);Vb(x+.7,y+6.7,z-.15,x+1.3,y+6.8,z+.15,'glow',0x999999);W.add(x-.1,y,z-.1,x+.1,y+7,z+.1,3,1);}
  function pole(x,z){const y=H(x,z);geo.cyl(x,y-.5,z,.13,9.5,'wood',0x5a4a3a,8);Vb(x-1.1,y+8.4,z-.06,x+1.1,y+8.55,z+.06,'wood',0x5a4a3a);W.add(x-.13,y,z-.13,x+.13,y+9,z+.13,3,2);}
- function tree(x,z,s=1){const y=H(x,z);geo.cyl(x,y-.3,z,.18*s,3*s,'wood',0x4a3a2c,7);for(let k=0;k<4;k++){const r=(2.4-k*.5)*s,yy=y+1.6*s+k*1.5*s;geo.cyl(x,yy,z,r,2.2*s,'fabric',0x3e4c36,8,'y',{r2:.05});}W.add(x-.25*s,y,z-.25*s,x+.25*s,y+6*s,z+.25*s,3,2);}
+ function tree(x,z,s=1){const y=H(x,z);geo.cyl(x,y-.3,z,.2*s,3.4*s,'wood',0x5a4636,7,'y',{r2:.1*s});
+  // five overlapping needle tiers, lighter toward the sunlit top; the hue comes from the position (no draw from the map's seeded stream)
+  const hv=(Math.abs(Math.sin(x*12.9898+z*78.233))*43758.5453)%1,P=[[112,146,88],[98,134,80],[124,146,90],[104,140,100]][hv*4|0];
+  for(let k=0;k<5;k++){const r=(2.5-k*.44)*s,yy=y+1.3*s+k*1.12*s,l=.82+k*.07,c=(Math.min(255,P[0]*l)<<16)|(Math.min(255,P[1]*l)<<8)|Math.min(255,P[2]*l);geo.cyl(x,yy,z,r,1.9*s,'fabric',c,9,'y',{r2:.08*s});}W.add(x-.25*s,y,z-.25*s,x+.25*s,y+6*s,z+.25*s,3,2);}
  function rock(x,z,s){const y=H(x,z);Vb(x-s,y-s*.4,z-s*.8,x+s,y+s*.8,z+s*.8,'conc',0x7a7872,{rot:[R()*.6,R()*3,R()*.6],s:2});W.add(x-s*.8,y-s,z-s*.7,x+s*.8,y+s*.6,z+s*.7,3,0);}
  function fence(x0,z0,x1,z1,h=2.3,y=0){const ax=Math.abs(x1-x0)>Math.abs(z1-z0)?'x':'z';const L=ax==='x'?Math.abs(x1-x0):Math.abs(z1-z0);
   if(ax==='x'){const zz=z0;Vb(Math.min(x0,x1),y,zz-.01,Math.max(x0,x1),y+h,zz+.01,'fence',0xffffff,{s:2.4});W.add(Math.min(x0,x1),y,zz-.08,Math.max(x0,x1),y+h,zz+.08,1,1);for(let a=0;a<=L;a+=3)geo.cyl(Math.min(x0,x1)+a,y,zz,.05,h+.1,'steel',0x777,6);Vb(Math.min(x0,x1),y+h-.03,zz-.03,Math.max(x0,x1),y+h+.03,zz+.03,'steel',0x777);}

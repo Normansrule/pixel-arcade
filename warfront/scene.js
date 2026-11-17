@@ -63,11 +63,15 @@ export function buildWorld(W,TX,q){const G=new THREE.Group(),S={group:G,W,q,chun
  const RS=1024,rc=document.createElement('canvas');rc.width=rc.height=RS;const rx=rc.getContext('2d',{willReadFrequently:true});rx.fillStyle='#000';rx.fillRect(0,0,RS,RS);const px=x=>(x+EXT)/(2*EXT)*RS,mpx=RS/(2*EXT);
  rx.globalCompositeOperation='lighten';rx.lineCap=rx.lineJoin='round';
  const coded=(path,width,ch,steps)=>{for(let k=0;k<steps;k++){const v=Math.round(255*(k+1)/steps);rx.strokeStyle=ch==='r'?`rgb(${v},0,0)`:`rgb(0,${v},0)`;rx.lineWidth=Math.max(.6,width*(1-k/steps)*mpx);rx.beginPath();path.forEach(([x,z],i)=>i?rx.lineTo(px(x),px(z)):rx.moveTo(px(x),px(z)));rx.stroke();}};
- for(const rd of W.roads)coded(rd,6.5,'r',13);rx.fillStyle='#ff0000';for(const h of HQ)rx.fillRect(px(h.x-34),px(h.z-22),68*mpx,44*mpx);
+ for(const rd of W.roads)coded(rd,6.5,'r',13);rx.fillStyle='#ff0000';const hr=mulberry(717);
+ // HQ yards: a ragged, rounded outline (not a hard rectangle), so the packed-dirt yard bleeds into the meadow instead of ending on a ruled line
+ for(const h of HQ){rx.beginPath();for(let k=0;k<=96;k++){const a=k/96*PI*2,c=Math.cos(a),sn=Math.sin(a),e=Math.pow(Math.abs(c)**5+Math.abs(sn)**5,-.2);const j=1+(hr()-.5)*.07+Math.sin(a*7+h.z)*.025;
+  const X=h.x+c*e*35*j,Z=h.z+sn*e*23*j;k?rx.lineTo(px(X),px(Z)):rx.moveTo(px(X),px(Z));}rx.fill();}
  const tr=mulberry(404);for(let i=0;i<14;i++){const t=i%2,h=HQ[t],p=POINTS[tr()*POINTS.length|0];let x=h.x+(tr()-.5)*50,z=h.z+(t?30:-30)*(.5+tr()),a=Math.atan2(p.z-z,p.x-x);const pts=[[x,z]];
   for(let s=0;s<120;s++){a+=(Math.atan2(p.z-z,p.x-x)-a)*.12+(tr()-.5)*.3;x+=Math.cos(a)*7;z+=Math.sin(a)*7;pts.push([x,z]);if(Math.hypot(p.x-x,p.z-z)<18)break;}coded(pts,3.6,'g',10);}
  const blob=(x,z,r,v)=>{const g=rx.createRadialGradient(px(x),px(z),0,px(x),px(z),r*mpx);g.addColorStop(0,`rgb(0,0,${v|0})`);g.addColorStop(.6,`rgb(0,0,${v|0})`);g.addColorStop(1,'rgb(0,0,0)');rx.fillStyle=g;rx.beginPath();rx.arc(px(x),px(z),r*mpx,0,7);rx.fill();};
  for(const p of POINTS)if(p.kind!=='bridge')blob(p.x,p.z,15,74);for(const h of HQ)for(let i=0;i<10;i++)blob(h.x+(tr()-.5)*60,h.z+(tr()-.5)*36,8+tr()*8,70);
+ for(const h of HQ)for(let i=0;i<34;i++){const a=hr()*PI*2,c=Math.cos(a),sn=Math.sin(a),e=Math.pow(Math.abs(c)**5+Math.abs(sn)**5,-.2);blob(h.x+c*e*(35+hr()*5),h.z+sn*e*(23+hr()*5),3+hr()*6,46+hr()*30);}
  for(let i=0;i<80;i++){const x=(tr()*2-1)*(PLAY-40),z=(tr()*2-1)*160;blob(x,z,4+tr()*9,36+tr()*40);}
  for(const c of W.craters||[]){const cx=px(c.x),cz=px(c.z),R=c.r*mpx,g=rx.createRadialGradient(cx,cz,0,cx,cz,R*1.9);g.addColorStop(0,'rgb(0,0,255)');g.addColorStop(.52,'rgb(0,0,92)');g.addColorStop(.75,'rgb(0,0,76)');g.addColorStop(1,'rgb(0,0,0)');rx.fillStyle=g;rx.beginPath();rx.arc(cx,cz,R*1.9,0,7);rx.fill();}
  rx.globalCompositeOperation='source-over';

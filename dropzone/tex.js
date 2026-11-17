@@ -32,7 +32,15 @@ export function makeTextures(){const T={},N=256;
  T.steel=build(N,(u,v,c)=>{const n=fbm(u*6,v*6,6,4,20),scr=Math.abs(fbm(u*30,v*3,30,2,21)-.5)<.01?20:0,rs=sm(.66,.86,fbm(u*4,v*4,4,4,22));const l=210+n*24+scr;set(c,mix(l,140,rs),mix(l,90,rs),mix(l,60,rs));return n*.15+rs*.2;},{bump:2});
  T.rust=build(N,(u,v,c)=>{const n=fbm(u*8,v*8,8,5,23),m=fbm(u*20,v*20,20,3,24);set(c,110+n*70+m*20,58+n*35,32+n*18);return n*.6+m*.3;},{bump:5});
  T.fabric=build(N,(u,v,c)=>{const w=(Math.sin(u*Math.PI*2*48)*Math.sin(v*Math.PI*2*48))*.5+.5,n=fbm(u*6,v*6,6,3,25);const l=190+w*30+n*30;set(c,l,l,l);return w*.4;},{bump:2});
- T.ground=build(N,(u,v,c)=>{const n=fbm(u*8,v*8,8,5,26),m=fbm(u*32,v*32,32,3,27),st=hash((u*N)|0,(v*N)|0,28)>.97;const l=170+n*60+m*25+(st?25:0);set(c,l,l,l);return n*.5+m*.3+(st?.4:0);},{bump:4});
+ T.ground=build(N,(u,v,c)=>{const n=fbm(u*8,v*8,8,5,26),m=fbm(u*32,v*32,32,3,27),dm=fbm(u*4,v*4,4,4,29);
+  // gravel: a jittered grid of rounded pebbles of varied size and tone, over packed dirt with damp patches and fine grit
+  const G=32,gx=u*G,gy=v*G;let peb=0,pt=0,pr=0;for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){const cx=Math.floor(gx)+ox,cy=Math.floor(gy)+oy,wx=((cx%G)+G)%G,wy=((cy%G)+G)%G;
+   if(hash(wx,wy,30)>.55)continue;const px=cx+.2+hash(wx,wy,31)*.6,py=cy+.2+hash(wx,wy,32)*.6,r=.22+hash(wx,wy,33)*.3,d=Math.hypot((gx-px)*(1+hash(wx,wy,34)*.5),gy-py)/r;
+   if(d<1){const h=Math.sqrt(1-d*d);if(h>peb){peb=h;pt=hash(wx,wy,35);pr=hash(wx,wy,36);}}}
+  const grit=hash((u*N)|0,(v*N)|0,28),damp=sm(.55,.75,dm);
+  let l=176+n*44+m*22-damp*34+(grit>.96?22:grit<.04?-26:0),r=l,g=l*.985,b=l*.95;
+  if(peb>0){const pl=150+pt*70+peb*24-damp*20;const warm=pr>.6?1.05:pr<.25?.97:1.01;r=pl*warm;g=pl*.99;b=pl*(2-warm)*.94;const ao=sm(0,.35,peb);r=r*ao+(l*.72)*(1-ao);g=g*ao+(l*.72*.985)*(1-ao);b=b*ao+(l*.72*.95)*(1-ao);}
+  set(c,r,g,b);return n*.35+m*.2+peb*.75-(grit<.04?.15:0);},{bump:5});
  T.water=build(N,(u,v,c)=>{const n=fbm(u*6,v*6,6,5,29);set(c,128,128,255);return n;},{bump:6});
  T.tile=build(N,(u,v,c)=>{const t=8,fx=(u*t)%1,fy=(v*t)%1,gr=fx<.05||fy<.05,n=fbm(u*8,v*8,8,3,30),b=hash(Math.floor(u*t),Math.floor(v*t),31);if(gr){set(c,120,118,112);return -.3;}const l=200+b*30+n*15;set(c,l,l*.99,l*.95);return .1;},{bump:3});
  // facades: tiling window bays (1 tile = 3 m wide x 3.2 m storey); windows are dark glass with sky reflection gradient, frames + sills

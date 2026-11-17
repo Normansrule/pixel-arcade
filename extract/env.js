@@ -1,13 +1,14 @@
 // EXFIL — environment: terrain meshes, sea shader, overcast sky dome with drifting clouds, rain, grass, distant ridges.
 import * as THREE from '../vendor/three.module.min.js';
 import {H,WATER,shoreX} from './world.js';
+import {untile} from '../js/kit3d/untile.js';
 
 const sst=(a,b,v)=>{const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t);};
 function n2(x,z){return Math.sin(x*.071+Math.sin(z*.05))*Math.cos(z*.063-Math.sin(x*.04))*.5+.5;}
 function farH(x,z){const h=H(x,z);const r=Math.max(0,-x-140,-z-120,z-110);return h+(r>0?r*.22+Math.sin(x*.02)*Math.cos(z*.025)*14*sst(0,80,r):0);}
 
 export function buildTerrain(T,roads){const g=new THREE.Group();
- const mat=new THREE.MeshStandardMaterial({vertexColors:true,map:T.ground.map,normalMap:T.ground.normalMap,normalScale:new THREE.Vector2(.7,.7),roughness:.97,metalness:0});
+ const mat=new THREE.MeshStandardMaterial({vertexColors:true,map:T.ground.map,normalMap:T.ground.normalMap,normalScale:new THREE.Vector2(.7,.7),roughness:.97,metalness:0});untile(mat,{freq:.3,drift:.16});
  const mk=(x0,z0,x1,z1,step,inner)=>{const nx=Math.round((x1-x0)/step),nz=Math.round((z1-z0)/step);const geo=new THREE.PlaneGeometry(x1-x0,z1-z0,nx,nz);geo.rotateX(-Math.PI/2);geo.translate((x0+x1)/2,0,(z0+z1)/2);
   const p=geo.attributes.position,uv=geo.attributes.uv,col=new Float32Array(p.count*3);const c=new THREE.Color();
   for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);let h=inner?H(x,z):farH(x,z);if(!inner&&x>-152&&x<152&&z>-132&&z<122)h-=4;p.setY(i,h);uv.setXY(i,x/5,z/5);

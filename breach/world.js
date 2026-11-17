@@ -2,6 +2,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {CS} from './maps.js';
 import {letterTex} from './tex.js';
+import {untile} from '../js/kit3d/untile.js';
 const V=THREE.Vector3;
 
 /* ---------- geometry builder ---------- */
@@ -55,6 +56,7 @@ export function buildWorld(L,TX,mood,R){const group=new THREE.Group();const M=MO
   wall:mat(TX.wall,{r:.92,ns:1.2}),wall2:mat(TX.wall2,{r:.9}),tower:mat(TX.tower,{r:.88}),wallLow:mat(noon?TX.wall:TX.tower,{r:.9}),low:mat(TX.low,{r:.9}),
   thin:mat(TX.thin,noon?{r:.8}:{r:.45,m:.55}),container:mat(TX.container||TX.metal,{r:.55,m:.5}),roof:mat(TX.roof,{r:.95}),hull:mat(TX.container||TX.wall,{r:.6,m:.4}),
   floor0:mat(TX.floor0,{r:noon?.95:1}),floor1:mat(TX.floor1,{r:noon?.9:1}),floor2:mat(TX.floor2,{r:noon?.95:1}),site:mat(TX.site,{r:noon?.85:1}),raised:mat(TX.raised,{r:.9}),indoor:mat(TX.indoor||TX.floor2,{r:noon?.9:1})};
+ for(const k of['floor0','floor2'])untile(MAT[k],{freq:.45,drift:.14});
  if(!noon){for(const k of['floor0','floor1','floor2','site'])MAT[k].envMapIntensity=1.6;MAT.indoor.envMapIntensity=.8;}
  const SCALE={wall:4,wall2:4,tower:6,wallLow:4,low:3,thin:3,container:2.6,roof:4,hull:6};
  const gbs={};const gb=k=>gbs[k]||(gbs[k]=new GB(SCALE[k]||4));

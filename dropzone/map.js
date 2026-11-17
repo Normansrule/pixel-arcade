@@ -3,6 +3,7 @@
 // and the off-shore gulag arena "THE CAGE".
 import * as THREE from '../vendor/three.module.min.js';
 import {World,Geo,LAND} from './world.js';
+import {untile} from '../js/kit3d/untile.js';
 
 export function makeMats(T){const std=(t,o={})=>{const m=new THREE.MeshStandardMaterial({vertexColors:true,map:t?t.map:null,normalMap:t?t.normalMap:null,roughness:.9,metalness:0,...o});if(t)m.normalScale=new THREE.Vector2(.8,.8);return m;};
  const fc=document.createElement('canvas');fc.width=fc.height=64;const x=fc.getContext('2d');x.strokeStyle='#c8ccd0';x.lineWidth=2.2;for(let i=-64;i<128;i+=16){x.beginPath();x.moveTo(i,0);x.lineTo(i+64,64);x.stroke();x.beginPath();x.moveTo(i+64,0);x.lineTo(i,64);x.stroke();}
@@ -15,6 +16,7 @@ export function makeMats(T){const std=(t,o={})=>{const m=new THREE.MeshStandardM
   glass:new THREE.MeshStandardMaterial({color:0x8fa8b8,roughness:.08,metalness:.85,vertexColors:true,envMapIntensity:1.4}),
   dark:new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:1,vertexColors:true}),paint:std(null,{roughness:.6})};
  M.fence.userData.noShadow=true;M.glow.userData.noShadow=true;M.screen.userData.noShadow=true;for(const k in M)M[k].envMapIntensity=M[k].envMapIntensity===1?.6:M[k].envMapIntensity;
+ untile(M.asph,{drift:.22});untile(M.grass,{drift:.25});untile(M.sand,{drift:.2});untile(M.conc,{drift:.12});untile(M.roof,{drift:.15});
  const fac=t=>{t.map.repeat.set(1,1);};['facA','facB','facC','facD'].forEach(k=>fac(T[k]));return M;}
 const UVS={conc:3,plaster:2.5,brick:2.2,metal:2.6,corr:3,wood:1.6,floor:2,tile:2,asph:8,roof:4,steel:2,rust:2,fabric:1,glow:1,screen:1,fence:2.4,dark:2,paint:2,grass:6,sand:6,glass:4,facA:6,facB:6,facC:6,facD:6};
 // surface ids for impacts + footsteps: 0 concrete 1 metal 2 wood 3 dirt 4 water 5 soft
@@ -144,7 +146,10 @@ export function buildMap(mats){const geo=new Geo();geo.uvs=UVS;const W=new World
   // lane markings
   for(let a=-LAND+8;a<LAND-8;a+=8){if(ROADS.some(q=>Math.abs(a+1.5-q)<RW+1))continue;Vb(r-.08,.022,a,r+.08,.03,a+3,'paint',0xd8c860,{});Vb(a,.023,r-.08,a+3,.031,r+.08,'paint',0xd8c860,{});}
   // crosswalks at intersections
-  for(const q of ROADS)for(let k=-2;k<=2;k++){Vb(r-RW+.5,.024,q+RW+1+k*.0,r+RW-.5,.032,q+RW+1.6,'paint',0xe0e0d8,{});}}
+  // zebra crosswalks on both approaches of every intersection, plus stop lines
+  for(const q of ROADS)for(const sd of [-1,1]){const z0=sd>0?q+RW+.8:q-RW-3.3,z1=z0+2.5;
+   for(let x=r-RW+.7;x<r+RW-.6;x+=1.05){Vb(x,.024,z0,x+.55,.032,z1,'paint',0xe4e4dc,{});Vb(z0,.025,x,z1,.033,x+.55,'paint',0xe4e4dc,{});}
+   const zs=sd>0?z1+.6:z0-.95;Vb(sd>0?r:r-RW+.4,.024,zs,sd>0?r+RW-.4:r,.032,zs+.35,'paint',0xe4e4dc,{});Vb(zs,.025,sd>0?r-RW+.4:r,zs+.35,.033,sd>0?r:r+RW-.4,'paint',0xe4e4dc,{});}}
  // sidewalks (low curbs, walkable) around every block
  for(const b of blocks){const x0=b.x0,x1=b.x1,z0=b.z0,z1=b.z1;const c=0xb8b4ac;
   if(b.bi>0)S(x0-SW,0,z0-SW,x0,.14,z1+SW,'conc',c,{s:1.5,f:1});if(b.bi<7)S(x1,0,z0-SW,x1+SW,.14,z1+SW,'conc',c,{s:1.5,f:1});

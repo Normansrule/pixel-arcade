@@ -1,17 +1,18 @@
 // DROPZONE — environment: ground + beach, sea shader, sky dome, the toxic gas wall, instanced street props, the transport plane, parachutes, supply crates, rovers.
 import * as THREE from '../vendor/three.module.min.js';
 import {Geo,LAND,WATER} from './world.js';
+import {untile} from '../js/kit3d/untile.js';
 const V=THREE.Vector3;
 const sst=(a,b,v)=>{const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t);};
 const n2=(x,z)=>Math.sin(x*.071+Math.sin(z*.05))*Math.cos(z*.063-Math.sin(x*.04))*.5+.5;
 export const groundH=(x,z)=>{const e=Math.max(Math.abs(x),Math.abs(z))-LAND;return e>0?-Math.min(5,e*.22):-.02;};
 
 export function buildGround(T,MAP){const g=new THREE.Group();
- const mat=new THREE.MeshStandardMaterial({vertexColors:true,map:T.ground.map,normalMap:T.ground.normalMap,normalScale:new THREE.Vector2(.6,.6),roughness:.97});
+ const mat=new THREE.MeshStandardMaterial({vertexColors:true,map:T.ground.map,normalMap:T.ground.normalMap,normalScale:new THREE.Vector2(.6,.6),roughness:.97});untile(mat,{freq:.3,drift:.2});
  const mk=(half,step,inner)=>{const n=Math.round(half*2/step);const geo=new THREE.PlaneGeometry(half*2,half*2,n,n);geo.rotateX(-Math.PI/2);const p=geo.attributes.position,uv=geo.attributes.uv,col=new Float32Array(p.count*3);
   for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);let h=groundH(x,z);if(!inner&&Math.abs(x)<LAND+30&&Math.abs(z)<LAND+30)h-=6;p.setY(i,h);uv.setXY(i,x/7,z/7);
    const e=Math.max(Math.abs(x),Math.abs(z))-LAND;const nn=n2(x,z),n3=n2(x*3.1+40,z*2.7);
-   let r=.46+nn*.06,gg=.45+nn*.05,b=.42+nn*.04;// dusty concrete lots
+   let r=.25+nn*.06+n3*.03,gg=.24+nn*.05+n3*.02,b=.22+nn*.04;// dusty gravel lots (darker so the sun no longer bleaches them white)
    const grassy=(x<-170&&z>-170&&z<230)||MAP.parks.some(q=>x>q[0]&&x<q[2]&&z>q[1]&&z<q[3]);if(grassy){const k=.75+n3*.25;r=.33*k+.06;gg=.43*k+.04;b=.2*k;}
    if(z<-246&&x>40)r*=.88,gg*=.86,b*=.84;// foundry soot
    const sd=sst(-14,-2,e);r+=(.7-r)*sd;gg+=(.64-gg)*sd;b+=(.5-b)*sd;const wt=sst(0,6,e);r+=(.42-r)*wt;gg+=(.38-gg)*wt;b+=(.31-b)*wt;
