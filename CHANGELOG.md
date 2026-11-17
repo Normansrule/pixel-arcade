@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 8 (v89): ground with grit
+- **Hardfall streets and sand.** The asphalt, sand and pavement textures were built only from soft cloud noise, so up close they looked smeared, almost liquid. Each now has a crisp layer of fine grain and thousands of small stones (aggregate in the asphalt, grit in the concrete), wind ripples in the sand, and less of the blurry large-scale noise. Asphalt and sand also use the shared anti-tiling shader, so they no longer repeat.
+- **Starwarden ground.** The open ground used the cliff texture, whose banded strata made it read as a wavy purple sheet. It now has its own alien regolith: soft dust drifts, fine grit, scattered rounded stones and a web of dry cracks, coloured per planet, with no visible repeats.
+
 ### Round 33, batch 7 (v88): nights you can see in, water and lawns
 - **Nightfall nights read again.** The moon is brighter, the sky fill is bluer and stronger, and the haze is a lighter moonlit blue instead of near black, so trees, fences and buildings show their shapes while the night still feels dark. Dawn on later waves keeps its warm shift.
 - **Fortress Breach lawns.** About 5,000 wet grass tufts (crossed blade cards, each with its own size, turn and tone) now cover the open lawns around the house, never on paths, roads, props or inside the walls. They have no collision, so cover and movement are unchanged. The lawn texture no longer visibly repeats.

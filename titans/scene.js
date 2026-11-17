@@ -2,6 +2,7 @@
 // a baked procedural sky (+ distant mesas or skyline) as background + environment, sun shadows and a wet-street mirror.
 import * as THREE from '../vendor/three.module.min.js';
 import {V,M4,merge,boxUV,ctex,rng} from './util.js';
+import {untile} from '../js/kit3d/untile.js';
 import {panelSet,rockSet,glowTex,facadeSet,containerSet,groundSet,roofSet,hazardSet} from './tex.js';
 
 const C=(r,g,b)=>new THREE.Color(r,g,b);
@@ -54,7 +55,7 @@ function makeMat(key,spec,T,mirror){const[k,a,b,rough,metal]=spec;let m;const id
  if(k==='plain')m=new THREE.MeshStandardMaterial({color:a,roughness:rough,metalness:metal});
  else if(k==='fac'){const s=setCache[id]||(setCache[id]=facadeSet(a,key.length*17+(T.winI>1?5:1),b));m=new THREE.MeshStandardMaterial({map:s.map,normalMap:s.normalMap,roughnessMap:s.roughnessMap,emissiveMap:s.emissiveMap,emissive:0xffffff,emissiveIntensity:T.winI,roughness:1,metalness:b.style==='glass'?.35:.05,normalScale:new THREE.Vector2(.8,.8)});m.userData.uv=1/16;}
  else if(k==='cont'){const s=setCache[id]||(setCache[id]=containerSet(a,key.length*5+3,b));m=new THREE.MeshStandardMaterial({...s,roughness:.6,metalness:.45});}
- else if(k==='ground'){const s=setCache[id]||(setCache[id]=groundSet(a,key.length*7+1));m=new THREE.MeshStandardMaterial({...s,roughness:rough??1,metalness:metal??0});if(mirror&&key==='asphalt'&&T.refl){reflective(m,mirror.U);mirror.U.uReflStr.value=T.refl;m.userData.mirror=true;}}
+ else if(k==='ground'){const s=setCache[id]||(setCache[id]=groundSet(a,key.length*7+1));m=new THREE.MeshStandardMaterial({...s,roughness:rough??1,metalness:metal??0});if(mirror&&key==='asphalt'&&T.refl){reflective(m,mirror.U);mirror.U.uReflStr.value=T.refl;m.userData.mirror=true;}if(a!=='conc')untile(m,{freq:.4,drift:.15});}
  else if(k==='rock'){const s=setCache[id]||(setCache[id]=rockSet(a,b,key.length*7));m=new THREE.MeshStandardMaterial({...s,roughness:1,metalness:0});m.userData.uv=.08;}
  else if(k==='roof'){const s=setCache.roof||(setCache.roof=roofSet());m=new THREE.MeshStandardMaterial({...s,roughness:.95,metalness:0});}
  else if(k==='hazard'){const s=hazardSet();m=new THREE.MeshStandardMaterial({...s,roughness:.6,metalness:.3});}

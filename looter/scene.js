@@ -2,7 +2,8 @@
 // to a cubemap (shattered moon, ringed giant, aurora twin moons), ruins set pieces, crystals, flora, floating isles, doors.
 import * as THREE from '../vendor/three.module.min.js';
 import {V,M4,merge,boxUV,ctex,rng} from './util.js';
-import {panelSet,rockSet,stoneSet,glowTex,hexTex} from './tex.js';
+import {panelSet,rockSet,stoneSet,glowTex,hexTex,regolithSet} from './tex.js';
+import {untile} from '../js/kit3d/untile.js';
 
 const C=(r,g,b)=>new THREE.Color(r,g,b);
 export const THEMES={
@@ -60,7 +61,7 @@ function skyPieces(theme,sunDir,sc){
 function makeMats(T,theme){const k=(n,o)=>{n.repeat?.set(1,1);return o;};const std=o=>new THREE.MeshStandardMaterial(o);
  const rk=(c,seed,r=1)=>{const s=rockSet(c[0],c[1],seed);return std({...s,roughness:r,metalness:0});};
  const st=(c,seed,o={})=>{const s=stoneSet(c[0],c[1],seed,o);const m=std({...s,roughness:.9,metalness:0});if(s.emissiveMap){m.emissive=new THREE.Color(T.glow);m.emissiveIntensity=1.6;}return m;};
- const ground=rk(T.ground,17,1),cliff=rk(T.cliff,29,1),mega=rk(T.mega,41,1);
+ const ground=(()=>{const g=std({...regolithSet(T.ground[0],T.ground[1],17),roughness:1,metalness:0});untile(g,{freq:.35,drift:.2});return g;})(),cliff=rk(T.cliff,29,1),mega=rk(T.mega,41,1);
  const stone=st(T.stone,7,{rows:4}),glyph=st(T.stone,9,{rows:4,glyph:1}),floor=st(T.stone.map(c=>c.map(v=>v*.82)),13,{rows:2,glyph:1});
  const hs=panelSet(T.hull,23,{stripes:'#'+new THREE.Color(T.glow).getHexString()});const hull=std({...hs,roughness:.45,metalness:.75});
  floor.emissiveIntensity=.9;

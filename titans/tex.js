@@ -112,15 +112,22 @@ export function containerSet(col='#8a2f22',seed=3,label=''){const n=512,r=rng(se
  return{map:tex(A),normalMap:normalFrom(Hc,1.6)};}
 
 // asphalt / sand / concrete slabs (512 = 4 m)
-export function groundSet(kind='asphalt',seed=13,o={}){const n=512,r=rng(seed),f=fbm(256,seed,6,4),g2=fbm(256,seed+9,3,16);
+export function groundSet(kind='asphalt',seed=13,o={}){const n=512,r=rng(seed),f=fbm(256,seed,6,4),g2=fbm(256,seed+9,3,16),N=256;
  const pal={asphalt:[[52,52,54],[30,30,33]],sand:[[176,146,108],[128,100,72]],conc:[[150,146,140],[108,104,100]],dirt:[[112,92,70],[66,54,44]]}[kind];
- const A=fieldCanvas(256,f,(v,i)=>{const m=g2[i];const k=v*.75+m*.25;return pal[1].map((c,j)=>c+(pal[0][j]-c)*k);});
+ // fine aggregate: tileable per-texel grain (blurred white noise) plus scattered stones / grit, so the surface has crisp small-scale
+ // texture instead of only the soft cloud noise that read as smeared liquid up close
+ const wn=new Float32Array(N*N);for(let i=0;i<N*N;i++)wn[i]=r();const grain=new Float32Array(N*N);
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){let t=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)t+=wn[((y+dy+N)%N)*N+((x+dx+N)%N)]*(dx||dy?1:2);grain[y*N+x]=t/10;}
+ const st=new Float32Array(N*N),nst=kind==='asphalt'?2600:kind==='sand'?900:kind==='conc'?500:1400;
+ for(let k=0;k<nst;k++){const cx=r()*N,cy=r()*N,rad=kind==='asphalt'?.8+r()*1.6:.6+r()*1.4,h=.5+r()*.5;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const d=Math.hypot(dx+(cx%1)-.5,dy+(cy%1)-.5)/rad;if(d<1){const i=((Math.floor(cy)+dy+N)%N)*N+((Math.floor(cx)+dx+N)%N);st[i]=Math.max(st[i],h*Math.sqrt(1-d*d));}}}
+ const rip=kind==='sand'?(i)=>{const x=i%N,y=i/N|0;return Math.sin((x*.9+y*.35+f[i]*40)*.32)*.5+.5;}:()=>0;
+ const A=fieldCanvas(256,f,(v,i)=>{const m=g2[i];const k=v*.6+m*.2+grain[i]*.25+st[i]*(kind==='asphalt'?.55:.3)-.05+rip(i)*.12;return pal[1].map((c,j)=>c+(pal[0][j]-c)*Math.max(0,Math.min(1.25,k)));});
  const a=A.getContext('2d');for(let i=0;i<2600;i++){a.fillStyle=`rgba(${r()<.5?'0,0,0':'255,255,255'},${r()*.09})`;a.fillRect(r()*256,r()*256,1,1);}
  if(kind==='conc'){a.strokeStyle='rgba(30,28,26,.55)';a.lineWidth=1.5;for(let i=0;i<=2;i++){a.beginPath();a.moveTo(i*128,0);a.lineTo(i*128,256);a.stroke();a.beginPath();a.moveTo(0,i*128);a.lineTo(256,i*128);a.stroke();}}
  if(kind==='asphalt'){a.strokeStyle='rgba(10,10,10,.6)';a.lineWidth=1;for(let i=0;i<7;i++){let x=r()*256,y=r()*256;a.beginPath();a.moveTo(x,y);for(let k=0;k<8;k++){x+=(r()-.5)*24;y+=(r()-.5)*24;a.lineTo(x,y);}a.stroke();}
   for(let i=0;i<5;i++){a.fillStyle=`rgba(0,0,0,${.08+r()*.1})`;a.beginPath();a.ellipse(r()*256,r()*256,10+r()*30,6+r()*20,r()*3,0,7);a.fill();}}
- const Hc=fieldCanvas(256,f,(v,i)=>{const q=(v*.6+g2[i]*.4)*255;return[q,q,q];});const Rc=fieldCanvas(256,g2,v=>{const q=(kind==='asphalt'?150:200)+v*55;return[q,q,q];});
- return{map:tex(A),normalMap:normalFrom(Hc,kind==='sand'?4:2.5),roughnessMap:tex(Rc,false)};}
+ const Hc=fieldCanvas(256,f,(v,i)=>{const q=(v*.22+g2[i]*.13+grain[i]*.3+st[i]*.45+rip(i)*.25)*255;return[q,q,q];});const Rc=fieldCanvas(256,g2,(v,i)=>{const q=(kind==='asphalt'?150:200)+v*45-st[i]*30;return[q,q,q];});
+ return{map:tex(A),normalMap:normalFrom(Hc,kind==='sand'?3:2.2),roughnessMap:tex(Rc,false)};}
 
 // flat roof: tar + gravel + seams
 export function roofSet(seed=21){const n=512,r=rng(seed),A=canvas(n),a=A.getContext('2d');a.fillStyle='#5e5b56';a.fillRect(0,0,n,n);

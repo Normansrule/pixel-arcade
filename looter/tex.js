@@ -52,6 +52,15 @@ export function rockSet(c1=[120,52,48],c2=[60,22,30],seed=9){const n=256,f=fbm(n
  const Hc=fieldCanvas(n,f,(v,i)=>{const q=(v*.75+g[i]*.25)*255;return[q,q,q];});const Rc=fieldCanvas(n,g,v=>{const q=170+v*70;return[q,q,q];});
  return{map:tex(A),normalMap:normalFrom(Hc,6),roughnessMap:tex(Rc,false)};}
 
+/* alien regolith for open ground: soft dunes of dust, crisp grit, scattered rounded stones and a web of dry cracks (no strata bands) */
+export function regolithSet(c1=[132,132,150],c2=[52,50,70],seed=17){const n=256,r=rng(seed),f=fbm(n,seed,5,4),g=fbm(n,seed+100,3,16);
+ const wn=new Float32Array(n*n).map(()=>r()),grain=new Float32Array(n*n);for(let y=0;y<n;y++)for(let x=0;x<n;x++){let t=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)t+=wn[((y+dy+n)%n)*n+((x+dx+n)%n)]*(dx||dy?1:2);grain[y*n+x]=t/10;}
+ const st=new Float32Array(n*n);for(let k=0;k<700;k++){const cx=r()*n,cy=r()*n,rad=.8+r()*2.6*(r()<.1?2:1),h=.5+r()*.5;const R=Math.ceil(rad)+1;for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){const d=Math.hypot(dx+(cx%1)-.5,dy+(cy%1)-.5)/rad;if(d<1){const i=((Math.floor(cy)+dy+n)%n)*n+((Math.floor(cx)+dx+n)%n);st[i]=Math.max(st[i],h*Math.sqrt(1-d*d));}}}
+ const cr=new Float32Array(n*n);for(let k=0;k<14;k++){let x=r()*n,y=r()*n,a=r()*6.28;for(let s=0;s<40;s++){a+=(r()-.5)*.9;x+=Math.cos(a)*2;y+=Math.sin(a)*2;const i=((Math.floor(y)%n+n)%n)*n+((Math.floor(x)%n+n)%n);cr[i]=1;if(r()<.04)break;}}
+ const A=fieldCanvas(n,f,(v,i)=>{const k=Math.max(0,Math.min(1.15,v*.55+g[i]*.2+grain[i]*.3+st[i]*.35-cr[i]*.45));return[c2[0]+(c1[0]-c2[0])*k,c2[1]+(c1[1]-c2[1])*k,c2[2]+(c1[2]-c2[2])*k];});
+ const Hc=fieldCanvas(n,f,(v,i)=>{const q=(v*.3+g[i]*.1+grain[i]*.25+st[i]*.5-cr[i]*.3)*255;return[q,q,q];});const Rc=fieldCanvas(n,g,(v,i)=>{const q=190+v*50-st[i]*40;return[q,q,q];});
+ return{map:tex(A),normalMap:normalFrom(Hc,3.5),roughnessMap:tex(Rc,false)};}
+
 /* glowing reactor grate (emissive) */
 export function grateSet(col='#3fd8ff'){const n=256,A=canvas(n),E=canvas(n),a=A.getContext('2d'),e=E.getContext('2d');a.fillStyle='#14181f';a.fillRect(0,0,n,n);e.fillStyle='#000';e.fillRect(0,0,n,n);
  for(let i=0;i<8;i++)for(let j=0;j<8;j++){const x=i*32,y=j*32;a.fillStyle='#05070a';a.fillRect(x+5,y+5,22,22);const g=e.createRadialGradient(x+16,y+16,2,x+16,y+16,14);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');e.fillStyle=g;e.fillRect(x+5,y+5,22,22);}
