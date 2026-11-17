@@ -34,7 +34,7 @@ function makeEnv(bright){const pm=new THREE.PMREMGenerator(RR);const s=new THREE
  for(const[x,y,z,c]of[[0,6,-6,[1.4,1.3,1.2]],[-6,3,3,[.6,.7,1.2]],[6,2,4,[1.4,.8,.4]]]){const p=new THREE.Mesh(new THREE.PlaneGeometry(4,2),new THREE.MeshBasicMaterial({color:new THREE.Color(...c).multiplyScalar(bright)}));p.position.set(x,y,z);p.lookAt(0,0,0);s.add(p);}
  const rt=pm.fromScene(s,.04);pm.dispose();return rt.texture;}
 scene.environment=makeEnv(1);vmScene.environment=makeEnv(1.4);
-scene.fog=new THREE.FogExp2(0x070a14,.03);scene.background=new THREE.Color(0x05070d);
+scene.fog=new THREE.FogExp2(0x0d1426,.025);scene.background=new THREE.Color(0x05070d);
 
 /* ================= sky ================= */
 const skyU={uDawn:{value:0},uMoon:{value:new V(-.45,.55,-.7).normalize()},uSun:{value:new V(.85,.02,.5).normalize()},uT:{value:0}};
@@ -52,9 +52,9 @@ const sky=new THREE.Mesh(new THREE.SphereGeometry(450,40,20),new THREE.ShaderMat
   gl_FragColor=vec4(c,1.);}`}));sky.renderOrder=-10;sky.frustumCulled=false;scene.add(sky);
 
 /* ================= lights ================= */
-const moon=new THREE.DirectionalLight(0x8aa4ff,.75);moon.castShadow=true;moon.shadow.mapSize.set(2048,2048);Object.assign(moon.shadow.camera,{left:-38,right:38,top:38,bottom:-38,near:1,far:180});moon.shadow.bias=-.0004;moon.shadow.normalBias=.035;
+const moon=new THREE.DirectionalLight(0x8aa4ff,1.15);moon.castShadow=true;moon.shadow.mapSize.set(2048,2048);Object.assign(moon.shadow.camera,{left:-38,right:38,top:38,bottom:-38,near:1,far:180});moon.shadow.bias=-.0004;moon.shadow.normalBias=.035;
 const MC=new V(W/2,0,H/2);moon.position.copy(MC).addScaledVector(skyU.uMoon.value,80);moon.target.position.copy(MC);scene.add(moon,moon.target);
-const hemi=new THREE.HemisphereLight(0x34446c,0x0c0a08,.6);scene.add(hemi);
+const hemi=new THREE.HemisphereLight(0x34446c,0x161210,.95);scene.add(hemi);
 const flashlight=new THREE.SpotLight(0xfff0dc,0,34,.46,.55,1.5);flashlight.position.set(.18,-.12,0);flashlight.target.position.set(0,-.2,-6);cam.add(flashlight,flashlight.target);flashlight.shadow.mapSize.set(1024,1024);flashlight.shadow.bias=-.0006;flashlight.shadow.camera.near=.3;
 // point lights are the expensive part of the frame: 4 area + 2 braziers + 1 effect flash + 1 crate. Everything else glows through emissive + bloom.
 const crateLight=new THREE.PointLight(0xffc070,0,12,1.6);scene.add(crateLight);const dummyL=()=>({intensity:0,position:new V(),color:new THREE.Color()});const bossLight=dummyL(),forgeLight=dummyL(),pupLight=dummyL();
@@ -393,10 +393,10 @@ function best(){return bestScore('nightfall');}
 function updateBest(){const b=best();$('best').textContent=b?'BEST · '+b.toLocaleString()+' PTS':'';}
 
 /* ================= visuals ================= */
-let menuA=0;const MOONC=new THREE.Color(0x8aa4ff),SUNC=new THREE.Color(0xffa060),FOGN=new THREE.Color(0x070a14),FOGD=new THREE.Color(0x4a3a3e),HSKY=new THREE.Color(0x34446c),HSKYD=new THREE.Color(0x8a7a90);
+let menuA=0;const MOONC=new THREE.Color(0x8aa4ff),SUNC=new THREE.Color(0xffa060),FOGN=new THREE.Color(0x0d1426),FOGD=new THREE.Color(0x4a3a3e),HSKY=new THREE.Color(0x3c5080),HSKYD=new THREE.Color(0x8a7a90);
 function visuals(dt){const p=P();const dk=dawnK();skyU.uDawn.value=dk;
- moon.color.copy(MOONC).lerp(SUNC,dk);moon.intensity=.75+dk*1.2;const ld=skyU.uMoon.value.clone().lerp(skyU.uSun.value.clone().setY(.25),dk).normalize();moon.position.copy(MC).addScaledVector(ld,80);
- scene.fog.color.copy(FOGN).lerp(FOGD,dk);scene.fog.density=.03-dk*.012;hemi.color.copy(HSKY).lerp(HSKYD,dk);hemi.intensity=.6+dk*.6;
+ moon.color.copy(MOONC).lerp(SUNC,dk);moon.intensity=1.15+dk*.9;const ld=skyU.uMoon.value.clone().lerp(skyU.uSun.value.clone().setY(.25),dk).normalize();moon.position.copy(MC).addScaledVector(ld,80);
+ scene.fog.color.copy(FOGN).lerp(FOGD,dk);scene.fog.density=.025-dk*.009;hemi.color.copy(HSKY).lerp(HSKYD,dk);hemi.intensity=.95+dk*.4;
  if(G.app==='menu'||G.app==='over'&&!G.result){menuA+=dt*.05;const a=menuA;cam.position.set(34+Math.cos(a)*9,2.4+Math.sin(a*.7)*.5,32+Math.sin(a)*7);cam.lookAt(28+Math.cos(a+1.2)*5,1.4,30+Math.sin(a+1.2)*6);fovFor(66);vm.root.visible=false;flashlight.intensity=0;snd.listener(cam.position.x,cam.position.y,cam.position.z,0);return;}
  if(G.app==='over'){menuA+=dt*.04;const c=p.pos;cam.position.set(c.x+Math.cos(menuA)*6,3.2,c.z+Math.sin(menuA)*6);cam.lookAt(c.x,1,c.z);fovFor(60);vm.root.visible=false;flashlight.intensity=0;return;}
  const sp=Math.hypot(p.vel.x,p.vel.z);const bob=p.onGround?Math.sin(G.time*(p.sprint?13:9.5))*Math.min(1,sp/4.4)*(p.sprint?.045:.025)*(1-vm.ads*.8):0;

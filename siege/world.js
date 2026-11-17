@@ -2,6 +2,7 @@
 // level so furniture and walls cast real shadows); destructible walls are rebuilt per chunk from their cell grids;
 // night sky, rain, wet ground, streetlights, lightning.
 import * as THREE from '../vendor/three.module.min.js';
+import {untile} from '../js/kit3d/untile.js';
 import {CELL,FH,SLAB_B,ROOF,PH,BX0,BX1,BZ0,BZ1,OX0,OX1,OZ0,OZ1,ROOMS} from './level.js';
 import {labelTex} from './tex.js';
 const V=THREE.Vector3;
@@ -129,6 +130,19 @@ export function buildWorld(L,TX,R){const group=new THREE.Group();const lamps=mak
  emit(FL.wood,MAT.wood);emit(FL.tile,MAT.tile);emit(FL.carpet,MAT.carpet);emit(FL.server,MAT.server);emit(FL.concrete,MAT.concrete);emit(CEIL,MAT.plaster);emit(EDGE,MAT.concrete);
  emit(STAIR,MAT.wood,{cs:true});emit(ROOFG,MAT.roof,{cs:true});emit(TRIM,MAT.wood);emit(BRK,MAT.brick,{cs:true});emit(CON,MAT.concrete,{cs:true});
  emit(GR.grass,MAT.grass);emit(GR.asphalt,MAT.asphalt);emit(GR.paving,MAT.paving);
+ untile(MAT.grass,{freq:.4,drift:.2});
+ // wet lawn tufts: crossed alpha-cut blade cards on open grass only (own seed, so the level's seeded stream is untouched; no collision)
+ {const c=document.createElement('canvas');c.width=128;c.height=128;const x=c.getContext('2d');let sd=901;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;
+  for(let i=0;i<46;i++){const bx=6+r()*116,h=50+r()*74,lean=(r()-.5)*36,v=r();x.strokeStyle=`rgb(${48+v*44|0},${74+v*52|0},${34+v*22|0})`;x.lineWidth=2+r()*2.5;x.beginPath();x.moveTo(bx,128);x.quadraticCurveTo(bx+lean*.3,128-h*.6,bx+lean,128-h);x.stroke();}
+  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
+  const g=new THREE.PlaneGeometry(.55,.42);g.translate(0,.21,0);const g2=g.clone().rotateY(Math.PI/2);const pos=[...g.attributes.position.array,...g2.attributes.position.array],uv=[...g.attributes.uv.array,...g2.attributes.uv.array],idx=[...g.index.array,...g2.index.array.map(i=>i+4)];
+  const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));tg.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));tg.setAttribute('normal',new THREE.Float32BufferAttribute(new Array(pos.length/3).fill([0,1,0]).flat(),3));tg.setIndex(idx);
+  const tm=new THREE.MeshStandardMaterial({map:tex,alphaTest:.4,side:THREE.DoubleSide,roughness:.7,color:0xd0dcc0});
+  const N=5200,im=new THREE.InstancedMesh(tg,tm,N),m4=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),ps=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),col=new THREE.Color();let n=0;let s2=4243;const r2=()=>(s2=(s2*16807)%2147483647)/2147483647;
+  for(let k=0;k<N*4&&n<N;k++){const tx=OX0+r2()*(OX1-OX0),tz=OZ0+r2()*(OZ1-OZ0),a=r2()*6.283,k1=.6+r2()*.8,cv=.7+r2()*.45;
+   if(tx>BX0-.6&&tx<BX1+.6&&tz>BZ0-.6&&tz<BZ1+.6)continue;if(zone(tx,tz)!=='grass'||L.groundAt(tx,tz,1)>.02)continue;
+   q.setFromAxisAngle(up,a);sc.set(k1,k1*(.8+r2()*.5),k1);ps.set(tx,0,tz);m4.compose(ps,q,sc);im.setMatrixAt(n,m4);im.setColorAt(n,col.setRGB(cv,cv*(.95+r2()*.1),cv*.9));n++;}
+  im.count=n;im.receiveShadow=true;im.frustumCulled=false;group.add(im);}
  emit(PROPS.wood,MAT.wood,{cs:true});emit(PROPS.fabric,MAT.fabric,{cs:true});emit(PROPS.metal,MAT.metal,{cs:true});emit(PROPS.steel,MAT.steel,{cs:true});emit(PROPS.dark,MAT.dark,{cs:true});emit(PROPS.paint,MAT.paint,{cs:true});
  emit(PROPS.hedge,MAT.hedge,{cs:true});emit(PROPS.bark,MAT.bark,{cs:true});emit(PROPS.concrete,MAT.concrete,{cs:true});emit(PROPS.led,MAT.led,{rs:false});emit(PROPS.white,MAT.plaster,{cs:true});
  const felt=bakeMat({color:0x1f6a3a,roughness:.95,vertexColors:true});emit(PROPS.felt,felt);

@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 7 (v88): nights you can see in, water and lawns
+- **Nightfall nights read again.** The moon is brighter, the sky fill is bluer and stronger, and the haze is a lighter moonlit blue instead of near black, so trees, fences and buildings show their shapes while the night still feels dark. Dawn on later waves keeps its warm shift.
+- **Fortress Breach lawns.** About 5,000 wet grass tufts (crossed blade cards, each with its own size, turn and tone) now cover the open lawns around the house, never on paths, roads, props or inside the walls. They have no collision, so cover and movement are unchanged. The lawn texture no longer visibly repeats.
+- **Long Shot water.** The shallows used to glow as one ruled cyan band at any time of day. Their depth now ripples with the waves, the sandy bed shows through the last few centimetres, the water takes the light of the sky (so dusk shallows are dusky), and the shore foam breaks up.
+- **Strike Zone interiors.** More light bounces up from the ground at dusk and at night, so ceilings and covered walkways are no longer flat black.
+
 ### Round 33, batch 6 (v87): ground you can't see repeating
 - **No more tiled ground.** New js/kit3d/untile.js breaks up texture repetition on big surfaces: a slow noise picks a different offset of the texture in each region and blends neighbours smoothly, for the colour, the normal map and the bump map, plus a broad light and dark drift. It now runs on Dropzone's roads, lots, grass, sand, concrete and roofs, EXFIL's terrain, Nightfall's gravel and grass, and Breach Point's open floors.
 - **Dropzone streets.** Zebra crossings were a single collapsed bar; every intersection now has striped crossings on both approaches of both roads, plus stop lines. The open lots were bleached almost white in the sun; they are now darker, dusty gravel.

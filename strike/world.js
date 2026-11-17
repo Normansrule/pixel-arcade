@@ -5,8 +5,8 @@ import {surf,fxTex,signTex} from './tex.js';
 const V=THREE.Vector3,R=Math.random;
 
 export const MOODS={
- dusk:{sky:{top:0x24203c,hor:0xf08848,gnd:0x2a2422,sun:[-.78,.2,.42],sunCol:0xffa060,clouds:.7,cloudCol:0x6a4a58,stars:0},hemi:[0x9aa0c8,0x5a4a40,1.25],sun:[0xffb070,2.7],fog:[0x6a5a5c,.0085],exp:1.05,bloom:.42,thr:.86,sat:1.08,tint:0xfff0e4,env:.9,amb:.45},
- night:{sky:{top:0x05060f,hor:0x2a1c48,gnd:0x0a0812,sun:[.35,.55,-.6],sunCol:0x9ab4ff,clouds:.35,cloudCol:0x2a2840,stars:1},hemi:[0x7484c8,0x3a2440,1.5],sun:[0xb0c4ff,1.9],fog:[0x1a1630,.0095],exp:1.4,bloom:.75,thr:.72,sat:1.12,tint:0xeef0ff,env:1.1,amb:.62,lamp:1.8},
+ dusk:{sky:{top:0x24203c,hor:0xf08848,gnd:0x2a2422,sun:[-.78,.2,.42],sunCol:0xffa060,clouds:.7,cloudCol:0x6a4a58,stars:0},hemi:[0x9aa0c8,0x6e5c50,1.25],sun:[0xffb070,2.7],fog:[0x6a5a5c,.0085],exp:1.05,bloom:.42,thr:.86,sat:1.08,tint:0xfff0e4,env:.9,amb:.45},
+ night:{sky:{top:0x05060f,hor:0x2a1c48,gnd:0x0a0812,sun:[.35,.55,-.6],sunCol:0x9ab4ff,clouds:.35,cloudCol:0x2a2840,stars:1},hemi:[0x7484c8,0x5c4048,1.5],sun:[0xb0c4ff,1.9],fog:[0x1a1630,.0095],exp:1.4,bloom:.75,thr:.72,sat:1.12,tint:0xeef0ff,env:1.1,amb:.62,lamp:1.8},
  noon:{sky:{top:0x2c6cc8,hor:0xcfe0ee,gnd:0xb8a888,sun:[.42,.82,.38],sunCol:0xfff2d8,clouds:.32,cloudCol:0xffffff,stars:0},hemi:[0xc0d6ff,0xa08a68,.85],sun:[0xfff2dc,3.3],fog:[0xd8dce0,.0048],exp:.92,bloom:.28,thr:.94,sat:1.1,tint:0xfff6ec,env:1,amb:.42}};
 
 /* ---------- geometry builder ---------- */

@@ -40,9 +40,12 @@ uniform sampler2D nrm,depth;uniform vec3 deep,shallow,sunDir,sunCol,skyH,skyT,fo
   vec3 n=normalize(vec3(n1.x+n2.x+n3.x*1.5,6.*rough,n1.y+n2.y+n3.y*1.5));vec3 v=normalize(cameraPosition-vW);float dist=length(cameraPosition-vW);
   float fr=.02+.98*pow(1.-max(dot(n,v),0.),5.);vec3 r=reflect(-v,n);vec3 sky=mix(skyH,skyT,pow(clamp(r.y,0.,1.),.5));
   vec2 duv=(vW.xz-dC)/dRange*.5+.5;float dep=1.;if(duv.x>0.&&duv.x<1.&&duv.y>0.&&duv.y<1.)dep=texture2D(depth,duv).r;
-  vec3 body=mix(shallow,deep,smoothstep(0.,.55,dep));vec3 c=mix(body,sky,fr);
+  // depth broken up by the wave normals so the shallows are not a ruled band; the sandy bed shows through the last few centimetres;
+  // the water body takes the light level of the sky so shallows no longer glow cyan at dusk
+  float dn=clamp(dep+(n1.x+n2.y)*.045+n3.x*.05,0.,1.);float lum=clamp(.42+max(sunDir.y,0.)*.9,.4,1.);vec3 sh=mix(shallow,deep,.35);
+  vec3 bed=vec3(.5,.44,.33)*lum;vec3 body=mix(sh*lum,deep*mix(lum,1.,.4),smoothstep(.03,.45,dn));body=mix(mix(bed,sh*lum,.45),body,smoothstep(0.,.14,dn));vec3 c=mix(body,sky,fr);
   float sp=pow(max(dot(r,sunDir),0.),mix(900.,180.,rough));c+=sunCol*sp*3.;
-  float foam=foamOn*(1.-smoothstep(0.,.045,dep))*(.6+.4*sin(time*1.6+vW.x*.7+vW.z*.5+n1.x*4.));c=mix(c,vec3(.92),clamp(foam,0.,1.));
+  float foam=foamOn*(1.-smoothstep(0.,.045,dn))*(.6+.4*sin(time*1.6+vW.x*.7+vW.z*.5+n1.x*4.))*smoothstep(-.2,.5,n2.x+n1.y);c=mix(c,vec3(.92)*lum,clamp(foam,0.,1.));
   float fg=1.-exp(-fogD*fogD*dist*dist);c=mix(c,fogC,fg);gl_FragColor=vec4(c,1.);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
