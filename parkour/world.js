@@ -18,9 +18,16 @@ function textures(){if(TX)return TX;TX={};
    for(let k=0;k<2;k++){const x0=k*256+34;const g=x.createLinearGradient(0,y0+40,0,y0+210);g.addColorStop(0,'#9db8d2');g.addColorStop(.45,'#4d6a88');g.addColorStop(1,'#2a3a50');x.fillStyle=g;x.fillRect(x0,y0+40,188,170);
     x.fillStyle='rgba(255,255,255,.18)';x.beginPath();x.moveTo(x0+20,y0+40);x.lineTo(x0+80,y0+40);x.lineTo(x0+20,y0+150);x.fill();
     x.fillStyle='#c9c4ba';x.fillRect(x0+92,y0+40,5,170);x.fillRect(x0,y0+120,188,4);x.fillStyle='#bdb7ab';x.fillRect(x0-6,y0+210,200,8);}}});
- TX.roofGravel=ctex(512,512,(x,w,h)=>{x.fillStyle='#cbc7be';x.fillRect(0,0,w,h);noise(x,w,h,26000,.16);noise(x,w,h,6000,.12,'255,255,255');
-  x.strokeStyle='rgba(60,55,50,.35)';x.lineWidth=3;for(let i=0;i<=2;i++){x.beginPath();x.moveTo(i*256,0);x.lineTo(i*256,h);x.stroke();x.beginPath();x.moveTo(0,i*256);x.lineTo(w,i*256);x.stroke();}
-  x.fillStyle='rgba(80,70,60,.12)';for(let i=0;i<6;i++){x.beginPath();x.ellipse(Math.random()*w,Math.random()*h,40+Math.random()*60,20+Math.random()*40,Math.random()*3,0,7);x.fill();}});
+ TX.roofGravel=ctex(512,512,(x,w,h)=>{x.fillStyle='#b4afa5';x.fillRect(0,0,w,h);const r=Math.random;
+  // broad weathering: water stains and sun-bleached areas, wrapped so the tile stays seamless
+  for(let i=0;i<16;i++){const cx=r()*w,cy=r()*h,rr=50+r()*110,dk=r()<.55;for(const ox of[-w,0,w])for(const oy of[-h,0,h]){const g=x.createRadialGradient(cx+ox,cy+oy,0,cx+ox,cy+oy,rr);g.addColorStop(0,dk?'rgba(70,64,56,.38)':'rgba(255,252,244,.26)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(cx+ox-rr,cy+oy-rr,rr*2,rr*2);}}
+  // ballast gravel: thousands of small stones, each with a lit cap and a contact shadow
+  for(let i=0;i<7000;i++){const px=r()*w,py=r()*h,s=1+r()*r()*3.2,v=120+r()*100|0,t=r()*16-8;x.fillStyle='rgba(30,26,22,.35)';x.fillRect(px+.6,py+.8,s,s*.8);x.fillStyle=`rgb(${v+t},${v},${v-t-6})`;x.fillRect(px,py,s,s*.8);if(s>1.8){x.fillStyle='rgba(255,255,250,.25)';x.fillRect(px,py,s*.5,s*.3);}}
+  // bitumen seams of the membrane underneath, partly showing through, plus a patched repair
+  x.strokeStyle='rgba(38,34,30,.4)';x.lineWidth=4;for(let i=0;i<=2;i++){x.beginPath();x.moveTo(i*256,0);x.lineTo(i*256,h);x.stroke();}
+  x.lineWidth=2;x.strokeStyle='rgba(38,34,30,.25)';for(let i=0;i<=2;i++){x.beginPath();x.moveTo(0,i*256+3);x.lineTo(w,i*256+3);x.stroke();}
+  for(let i=0;i<1;i++){const px=r()*w,py=r()*h,pw=40+r()*70,ph=30+r()*50;x.fillStyle='rgba(52,48,44,.3)';x.fillRect(px,py,pw,ph);x.strokeStyle='rgba(20,18,16,.3)';x.lineWidth=2;x.strokeRect(px,py,pw,ph);}
+  noise(x,w,h,8000,.08);});
  TX.conc=ctex(256,256,(x,w,h)=>{x.fillStyle='#e7e5e0';x.fillRect(0,0,w,h);noise(x,w,h,7000,.07);x.strokeStyle='rgba(0,0,0,.12)';x.lineWidth=2;x.strokeRect(0,0,w,h);});
  TX.metal=ctex(256,256,(x,w,h)=>{x.fillStyle='#8a9098';x.fillRect(0,0,w,h);for(let i=0;i<400;i++){x.fillStyle=`rgba(255,255,255,${Math.random()*.06})`;x.fillRect(0,Math.random()*h,w,1);}noise(x,w,h,3000,.08);
   x.fillStyle='rgba(0,0,0,.25)';for(let i=0;i<4;i++)x.fillRect(0,i*64,w,2);});
@@ -31,7 +38,11 @@ function textures(){if(TX)return TX;TX={};
   for(let f=0;f<4;f++)for(let k=0;k<4;k++){if(Math.random()<.42){const c=C[Math.random()*C.length|0];const g=x.createLinearGradient(0,f*128+22,0,f*128+102);g.addColorStop(0,c);g.addColorStop(1,'#40301a');x.fillStyle=g;x.globalAlpha=.5+Math.random()*.5;x.fillRect(k*128+18,f*128+22,92,80);x.globalAlpha=1;
    if(Math.random()<.5){x.fillStyle='rgba(0,0,0,.6)';x.fillRect(k*128+18+Math.random()*60,f*128+22,10+Math.random()*30,80);}}}});
  TX.roofMetal=ctex(512,512,(x,w,h)=>{x.fillStyle='#2c2f37';x.fillRect(0,0,w,h);noise(x,w,h,20000,.18);x.strokeStyle='rgba(0,0,0,.5)';x.lineWidth=3;for(let i=0;i<4;i++){x.beginPath();x.moveTo(i*128,0);x.lineTo(i*128,h);x.stroke();}
-  x.fillStyle='rgba(120,140,190,.07)';for(let i=0;i<14;i++){x.beginPath();x.ellipse(Math.random()*w,Math.random()*h,30+Math.random()*70,12+Math.random()*30,0,0,7);x.fill();}});
+  // standing seams: a lit edge beside each dark joint, cross laps with rivets, rust bleeding down from the fixings, and rain puddles
+  for(let i=0;i<4;i++){x.fillStyle='rgba(150,165,200,.22)';x.fillRect(i*128+2,0,2,h);x.fillStyle='rgba(0,0,0,.25)';x.fillRect(i*128+64,0,1,h);}
+  for(const y of[0,256]){x.fillStyle='rgba(0,0,0,.35)';x.fillRect(0,y,w,3);x.fillStyle='rgba(150,165,200,.15)';x.fillRect(0,y+3,w,1);for(let k=0;k<32;k++){const rx=k*16+8;x.fillStyle='rgba(170,180,210,.5)';x.fillRect(rx,y+7,2,2);
+   if(Math.random()<.2){const g=x.createLinearGradient(0,y+9,0,y+40);g.addColorStop(0,'rgba(140,70,30,.35)');g.addColorStop(1,'rgba(140,70,30,0)');x.fillStyle=g;x.fillRect(rx-1,y+9,4,31);}}}
+  x.fillStyle='rgba(120,140,190,.12)';for(let i=0;i<14;i++){x.beginPath();x.ellipse(Math.random()*w,Math.random()*h,30+Math.random()*70,12+Math.random()*30,0,0,7);x.fill();}});
  TX.facTower=ctex(512,512,(x,w,h)=>{x.fillStyle='#efebe4';x.fillRect(0,0,w,h);noise(x,w,h,5000,.05);
   for(let k=0;k<4;k++){const g=x.createLinearGradient(k*128,0,k*128+90,0);g.addColorStop(0,'#8fa9c4');g.addColorStop(.5,'#cfdceb');g.addColorStop(1,'#6f86a3');x.fillStyle=g;x.fillRect(k*128+20,0,88,h);x.fillStyle='#c9a35a';x.fillRect(k*128+18,0,3,h);x.fillRect(k*128+106,0,3,h);}
   x.fillStyle='#ddd6c9';for(let f=0;f<4;f++)x.fillRect(0,f*128,w,10);});
@@ -96,7 +107,7 @@ export const DPOST=[
  {exposure:1,bloom:.7,bloomThreshold:1.15,bloomRadius:.55,saturation:1.15,tint:0xf2ecff,vignette:.42},
  {exposure:.8,bloom:.3,bloomThreshold:3,bloomRadius:.45,saturation:1.1,tint:0xfffaf6,vignette:.32}];
 function matsFor(d){textures();ENVI=[.5,1,.55][d];const M={};
- if(d===0){M.bld=o=>wmat({side:TX.facDay,top:TX.roofGravel,ss:1/6,ts:1/8,rough:.85,...o});M.par=o=>wmat({side:TX.conc,rough:.8,...o});M.wall=o=>wmat({side:TX.metal,color:0xe8e8ea,metal:.4,rough:.5,...o});
+ if(d===0){M.bld=o=>wmat({side:TX.facDay,top:TX.roofGravel,ss:1/6,ts:1/5,rough:.85,...o});M.par=o=>wmat({side:TX.conc,rough:.8,...o});M.wall=o=>wmat({side:TX.metal,color:0xe8e8ea,metal:.4,rough:.5,...o});
   M.beam=o=>wmat({side:TX.metal,color:0xf2b51a,metal:.5,rough:.45,...o});M.ramp=o=>wmat({side:TX.ribs,top:TX.ribs,color:0xdfe3e8,metal:.6,rough:.35,ss:.6,ts:.6,...o});M.surf=o=>wmat({side:TX.panel,top:TX.panel,ss:.2,ts:.2,rough:.5,...o});
   M.acc=o=>wmat({side:TX.conc,color:0xff5a1f,rough:.6,...o});M.pipe=o=>wmat({side:TX.metal,color:0xd9dde3,metal:.7,rough:.35,...o});M.plat=o=>wmat({side:TX.cracks,top:TX.cracks,ss:.3,ts:.3,...o});}
  if(d===1){M.bld=o=>wmat({side:TX.facNight,top:TX.roofMetal,ss:1/8,ts:1/8,rough:.42,metal:.25,emis:TX.facNightE,emisI:2.2,...o});M.par=o=>wmat({side:TX.metal,color:0x3b3f4a,metal:.6,rough:.4,...o});
@@ -192,7 +203,10 @@ export function buildLevel(L,R,scene,d){SEED=L.id.length*977+L.district*31+7;tex
     for(let i=0;i<n;i++){const f=-len/2+.8+i*1.6;put('beam',b.hint,BOX,mtx([cx+ax.x*f,b.p[1]-.6,cz+ax.z*f],[(i%2?.6:-.6),b.r[1],0],[.08,1.25,.08]));}}
    continue;}
   if(mat==='bld'){put('bld',false,BOX,mtx(b.p,b.r,b.s));// roof edge coping
-   if(!b.dk)put('par',false,BOX,mtx([b.p[0],b.p[1]+b.s[1]/2-.12,b.p[2]],b.r,[b.s[0]+.16,.26,b.s[2]+.16]));continue;}
+   // coping: a raised concrete rim round the roof edge (it used to be one slab over the whole roof, hiding the gravel)
+   if(!b.dk){const cy=b.p[1]+b.s[1]/2-.12,cw=.42,yw=b.r[1]||0,ca=Math.cos(yw),sa=Math.sin(yw),sx=b.s[0]+.16,sz=b.s[2]+.16;
+    for(const[lx,lz,wx,wz]of[[0,(sz-cw)/2,sx,cw],[0,-(sz-cw)/2,sx,cw],[(sx-cw)/2,0,cw,sz-2*cw],[-(sx-cw)/2,0,cw,sz-2*cw]])
+     put('par',false,BOX,mtx([b.p[0]+lx*ca+lz*sa,cy,b.p[2]-lx*sa+lz*ca],b.r,[wx,.26,wz]));}continue;}
   put(mat,b.hint,BOX,mtx(b.p,b.r,b.s),b.tint?new THREE.Color(b.tint):null);}
  /* ---- crumbling slabs ---- */
  for(const b of L.crumbles){const bx=solid(b.p,b.s,b.r,{crumble:true});const mesh=new THREE.Mesh(BOX,M.plat({}));mesh.scale.set(...b.s);mesh.position.set(...b.p);mesh.quaternion.copy(bx.q);mesh.castShadow=mesh.receiveShadow=true;G.add(mesh);

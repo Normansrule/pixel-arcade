@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v91", "date": "18 Nov 2026", "branch": "round33", "round": 33, "games": 600, "worlds": 56,
+     "added": "Runline's rooftops finally show their gravel, seamed metal and tile surfaces after a roof-edge fault had covered every roof with one pale slab, and Critter Kart's island grass gets blade detail with no visible repeat."},
     {"v": "v90", "date": "18 Nov 2026", "branch": "round33", "round": 33, "games": 600, "worlds": 56,
      "added": "Ashen Vigil's graveyard gets mud, pebbles, dead grass and shaded flagstones with lighter fog, Longbow Keep's stone is chipped and pitted, Hollow Manor is a little easier to read, Brawl's island gets grass tufts and flowers, and Night Drive's roads stop repeating."},
     {"v": "v89", "date": "17 Nov 2026", "branch": "round33", "round": 33, "games": 600, "worlds": 56,

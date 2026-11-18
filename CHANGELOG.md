@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 10 (v91): real rooftops and grassy tracks
+- **Runline rooftops.** A fault in the roof edge meant the concrete rim was built as one slab over the whole roof, so every rooftop in the game looked like a plain pale sheet and the roof finishes were never seen. The rim is now a raised border round the edge, so the roofs show their own surfaces: the sunlit district has gravel roofs with water stains, sun-bleached patches, bitumen seams and repairs, the night district has seamed metal roofs with faint rust and rain puddles, and the tower district has tiles. Movement and collisions are unchanged.
+- **Critter Kart grass.** The island terrain gets fine grass-blade and clump detail (sand and rock simply look granular), and the shared anti-tiling shader stops it repeating.
+
 ### Round 33, batch 9 (v90): stone, mud and grass
 - **Ashen Vigil yard and halls.** The starting graveyard was one flat smear of brown mud under a grey fog sheet. It now has damp and dry patches, clumps of dead grass, small lit pebbles and sunken flagstones with shading, cracks and mud over their edges, with no visible repeats. The stone floors inside are now worn granite setts with moss in the joints. The ground fog is thinner and bluer, and the moon and sky fill are brighter, so the yard reads at night instead of washing out.
 - **Longbow Keep stonework.** Every wall block has pits, stains and a chipped corner on about half of them, and the stronger relief catches the light.

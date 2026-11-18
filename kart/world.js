@@ -5,6 +5,7 @@ import {SEA,at,atK,yawAt} from './course.js';
 import {podMesh,berryGeo,coinGeo,ringMesh,balloonMesh,mat,makeCritter} from './models.js';
 import {DRIVERS} from './data.js';
 import {Placer} from '../js/kit3d/place.js';
+import {untile} from '../js/kit3d/untile.js';
 
 const TONE='\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n';
 const col=c=>new THREE.Color(c);
@@ -55,8 +56,12 @@ function makeTerrain(T,TR){const nx=TR.nx,nz=TR.nz,g=new THREE.BufferGeometry(),
   if(h<SEA-.3)tmp.lerp(cs,.6).multiplyScalar(.75);const v=.9+nn*.18;colr.set([tmp.r*v,tmp.g*v,tmp.b*v],k*3);
   if(a<nz-1&&b<nx-1)idx.push(k,k+nx,k+1,k+1,k+nx,k+nx+1);}
  g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(colr,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
- const det=ctex(256,256,(x,w,h)=>{speckle(x,w,h,'#c8c8c8',.22,9000,2);for(let i=0;i<260;i++){x.fillStyle=`rgba(${Math.random()<.5?0:255},${Math.random()<.5?40:255},0,.05)`;x.beginPath();x.arc(Math.random()*w,Math.random()*h,2+Math.random()*7,0,7);x.fill();}});
- const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,map:det,roughness:.95,metalness:0}));m.receiveShadow=true;return m;}
+ // neutral detail map (the vertex colours tint it): soft clumps, then short blade strokes leaning every way, then fine grit,
+ // so grass reads as grass up close and sand / rock just look granular; untile() hides the 12 m repeat
+ const det=ctex(512,512,(x,w,h)=>{speckle(x,w,h,'#c8c8c8',.18,14000,2);const r=Math.random;
+  for(let i=0;i<420;i++){const cx=r()*w,cy=r()*h,rr=4+r()*14,lt=r()<.5;x.fillStyle=lt?'rgba(255,255,235,.07)':'rgba(0,20,0,.08)';x.beginPath();x.arc(cx,cy,rr,0,7);x.fill();}
+  for(let i=0;i<7000;i++){const px=r()*w,py=r()*h,a=-1.57+(r()-.5)*1.4,l=3+r()*6,v=r();x.strokeStyle=v<.45?`rgba(0,0,0,${.08+r()*.12})`:`rgba(255,255,240,${.08+r()*.14})`;x.lineWidth=1;x.beginPath();x.moveTo(px,py);x.lineTo(px+Math.cos(a)*l,py+Math.sin(a)*l);x.stroke();}});
+ const m=new THREE.Mesh(g,untile(new THREE.MeshStandardMaterial({vertexColors:true,map:det,roughness:.95,metalness:0}),{freq:.3,drift:.12}));m.receiveShadow=true;return m;}
 
 /* ================= road ================= */
 function roadTex(style){let em=null;const map=ctex(256,512,(x,w,h)=>{
