@@ -1088,8 +1088,20 @@ how:'HOLD A TO CHARGE, RELEASE TO LEAP. HOLD LEFT/RIGHT TO LEAP SIDEWAYS. NO AIR
  g.draw=()=>{const s=cl(Math.floor((p.y-1)/240),0,11),oy=s*240,Z=ZN[s];GR(0,0,W,H,Z[1],Z[2]);
   if(s<=2){for(let i=0;i<6;i++){const x=((i*71+t*(s%2?.4:-.4))%380+380)%380-30,y=30+i*34;EL(x,y,26,8,'rgba(255,255,255,.5)');EL(x+14,y-4,16,7,'rgba(255,255,255,.5)');}for(let i=0;i<8;i++){const y=(i*29+t)%240;AL(.4);L(((i*53+t*(s%2?2:-2))%320+320)%320,y,((i*53+t*(s%2?2:-2))%320+320)%320+(s%2?12:-12),y,'#ffffff');AL(1);}}
   else if(s<=5){for(let i=0;i<3;i++){const x=50+i*110;R(x,40,30,70,'#2a1a3a');A.c.fillStyle='#2a1a3a';A.c.beginPath();A.c.arc(x+15,40,15,Math.PI,0);A.c.fill();GR(x+4,34,22,72,'#ff8ad8','#5a8aff');AL(.5);R(x+14,30,2,76,'#2a1a3a');R(x+4,64,22,2,'#2a1a3a');AL(1);}}
-  else if(s<=8){for(let y=0;y<H;y+=16)for(let x=((y/16)%2)*16;x<W;x+=32){AL(.15);R(x,y,30,14,'#000000');AL(1);}}
-  else{for(let i=0;i<9;i++){const x=i*38+10;R(x,0,8,H,'#2a1a10');C(x+4,30+(i%3)*40,18,'#2a5a2a');}}
+  else if(s<=8)X.cache('jk_ruins',()=>{const c=A.c,hh=(i,j)=>{let h=(i*374761393+j*668265263)|0;h=(h^(h>>>13))*1274126177|0;return((h^(h>>>16))>>>0)/4294967296;};
+   // mossy ruins: weathered ashlar with mortar, stains, moss creeping down from ledges, hanging ivy and an arched window of daylight
+   for(let r=0;r<H/16;r++)for(let k=-1;k<W/32+1;k++){const x=k*32+(r%2)*16,y=r*16,v=hh(k,r);X.rr(x+1,y+1,30,14,2,X.lg(0,y,0,y+16,[v<.3?'#55605a':v<.7?'#4c564e':'#444e48','#384038']));if(v>.75)X.ell(x+8+v*12,y+8,6,3,'rgba(30,40,30,.25)');c.fillStyle='rgba(255,255,255,.06)';c.fillRect(x+2,y+1.5,28,1);}
+   for(const wx of[96,224]){X.rr(wx-18,40,36,60,2,'#2a3430');X.ell(wx,42,18,13,'#2a3430');X.rr(wx-15,44,30,56,1,X.lg(0,40,0,100,['#cfe8f0','#8ab8c8']));X.ell(wx,46,15,10,'#cfe8f0');X.rr(wx-1,40,2,60,0,'#2a3430');X.rr(wx-15,70,30,2,0,'#2a3430');X.glow(wx,120,60,'#d8f0e8',.12);}
+   for(let i=0;i<18;i++){const x=hh(i,3)*W,y=hh(i,4)*H,l=10+hh(i,5)*40;for(let k=0;k<l;k+=3)X.disc(x+Math.sin(k*.3+i)*2,y+k,1.6+hh(i,k)*1.2,k%2?'#4a8a3a':'#3a7a30');}
+   for(let i=0;i<40;i++)X.ell(hh(i,6)*W,hh(i,7)*H,4+hh(i,8)*6,2,'rgba(80,140,60,.35)');});
+  else X.cache('jk_woods',()=>{const c=A.c,hh=(i,j)=>{let h=(i*374761393+j*668265263)|0;h=(h^(h>>>13))*1274126177|0;return((h^(h>>>16))>>>0)/4294967296;};
+   // old woods: misty layers of trunks, the nearest with bark and moss, shafts of light through the canopy, ferns and fireflies
+   for(let layer=0;layer<3;layer++){const n=[14,10,7][layer],col=['rgba(40,70,50,.55)','rgba(34,54,36,.8)','#2a1e14'][layer],w=[5,8,12][layer];for(let i=0;i<n;i++){const x=(i+hh(i,layer)*.6)*W/n,ww=w*(.8+hh(i,layer+5)*.5);X.rr(x-ww/2,0,ww,H,ww*.3,col);if(layer===2){for(let y=0;y<H;y+=7)X.rr(x-ww/2+1+hh(i,y)*ww*.6,y,1.2,4+hh(y,i)*4,0,'rgba(0,0,0,.3)');X.rr(x-ww/2,0,2,H,0,'rgba(140,170,110,.18)');X.rr(x+ww/2-3,0,3,H,0,'rgba(60,110,50,.4)');}}
+    X.vg(0,0,W,H,['rgba(150,200,160,'+[.12,.08,0][layer]+')','rgba(150,200,160,0)']);}
+   for(let i=0;i<5;i++){const x=20+i*70+hh(i,9)*30;X.poly([[x,0],[x+18,0],[x+60,H],[x+26,H]],'rgba(230,255,200,.06)');}
+   for(let i=0;i<14;i++){const x=hh(i,10)*W;X.disc(x,8+hh(i,11)*20,16+hh(i,12)*14,'rgba(30,70,34,.85)');X.disc(x-4,6+hh(i,11)*20,9,'rgba(70,130,60,.5)');}
+   for(let i=0;i<30;i++){const x=hh(i,13)*W,y=H-6-hh(i,14)*10;for(let k=-2;k<=2;k++)X.stroke([[x,y+6],[x+k*4,y-2-Math.abs(k)*-1]],'#3a7a34',1);}});
+  if(s>=9&&A.gfx!=='off')for(let i=0;i<10;i++){const x=(i*37+Math.sin(t*.02+i)*20+320)%320,y=(i*53+Math.cos(t*.017+i*2)*16+240)%240;X.glow(x,y,6,'#d8ff80',.35+.25*Math.sin(t*.1+i));}
   for(const wx of[0,312]){FF(wx,0,8,H,X.lg(wx,0,wx+8,0,['#3a3038','#1e181e']));for(let y=-((oy)%12);y<H;y+=12)FF(wx,y,8,1,'rgba(0,0,0,.35)');}
   for(const q of PL){const y=q.y-oy;if(y>H||y+q.h<0)continue;const col=q.k==='summit'?'#e8c860':q.k==='ground'?'#4a3a2a':s<=2?'#c8d0e0':s<=5?'#6a5a7a':s<=8?'#7a7a70':'#6a4a2a';
    if(q.k!=='ground')X.ell(q.x+q.w/2,y+q.h+3,q.w/2,2.5,'rgba(0,0,0,.25)');X.block(q.x,y,q.w,q.h,col,2);if(q.k==='summit')X.glow(q.x+q.w/2,y,30,'#ffe080',.3);if(s>=6&&s<=8&&q.k!=='ground')R(q.x+2,y-1,q.w-4,2,'#5a9a4a');if(s<=2&&q.k!=='ground'){AL(.7);R(q.x+1,y+q.h,q.w-2,2,'#ffffff');AL(1);}

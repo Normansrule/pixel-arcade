@@ -4,6 +4,15 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 13 (v94): six more arcade scenes repainted
+A second review of the arcade contact sheets picked six more cabinets with plain or flat scenes. Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Tower Line.** The plain green field is now a meadow with mown stripes, grass and wild flowers, a pond with reeds, rocks and a split-rail fence. The road is packed dirt with wheel ruts, cobbles and grass at its edges, and the trees have layered canopies and soft shadows.
+- **Cave Raid.** The empty purple cavern has stalactite columns and spikes that scroll past at two depths, with coloured pools of light. The cave walls have rock bands, moss along the floor and glowing crystal clusters set into the stone.
+- **Lemonade Stand.** The stand now sits in a town park, with two layers of skyline with lit windows, round trees, street lamps, a bench, a flower bed, a paved footpath with a kerb, a hedge, a picnic blanket and flowers on the lawn. The sky and weather still change each day.
+- **Burger Rush.** The kitchen has glossy subway tile, a steel hood, heat lamps, a chalk menu board, hanging pans, a steel order rail and a butcher-block counter with wood grain.
+- **Summit Leap.** The Old Woods at the start have misty layers of trunks, bark and moss on the nearest trees, light shafts, a leafy canopy, ferns and fireflies. The Mossy Ruins have weathered stone blocks, arched windows of daylight, hanging ivy and moss.
+- **Boomerang.** The arena floors have grass and wild flowers in the meadow, ripples and pebbles in the dunes, and rubble and weeds in the ruins.
+
 ### Round 33, batch 12 (v93): nine flat arcade scenes repainted
 A sweep of all 544 arcade cabinets showed nine with flat or empty scenes. Each one is repainted. Controls, rules, time limits, results screens and CPU difficulty are unchanged.
 - **Storm Chaser.** The flat grey sky is now a supercell: bruised green-grey cloud bands, a shelf cloud with a lit underside, pouched clouds under the anvil, rain shafts from the core and a golden break of light on the horizon behind farm silhouettes. Forked lightning flickers inside the storm now and then. The tornado is a real tapering funnel that hangs from the cloud, with spinning bands, a dust cloud and debris at the ground.

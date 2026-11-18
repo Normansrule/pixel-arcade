@@ -227,7 +227,21 @@ A.add({id:'lemonade',name:'LEMONADE STAND',cat:'SIM',how:'EACH MORNING SET PRICE
   if(ph==='report'&&(A.hit(0).a||t>200)){if(day>=10){g.score=Math.round(cash*100);g.over='$'+cash.toFixed(2)+(cash>=20?' PROFIT! WIN':' LOSS');}else nd();}};
  g.draw=()=>{const c=A.c,sky=[['#5a6a7a','#9aa8b8'],['#8aa8c8','#c8d8e8'],['#3a8ae0','#a8d8f8'],['#ff8a4a','#ffd08a']][weather];c.fillStyle=X.lg(0,0,0,170,sky);c.fillRect(0,0,W,170);
   if(weather>=2){X.glow(270,40,40,'#fff0a0',.4);X.disc(270,40,16,weather===3?'#fff0c0':'#fffbe0');}if(weather<=1){for(let i=0;i<4;i++){c.globalAlpha=.85;X.disc(40+i*80,40+(i%2)*10,14,weather?'#e8eef8':'#a8b0c0');X.disc(56+i*80,34+(i%2)*10,16,weather?'#ffffff':'#b8c0d0');c.globalAlpha=1;}}if(weather===0){c.strokeStyle='rgba(220,230,255,.6)';c.lineWidth=1;for(let i=0;i<40;i++){const x=(i*37+t*3)%W,y=(i*53+t*6)%170;c.beginPath();c.moveTo(x,y);c.lineTo(x-2,y+6);c.stroke();}}
-  X.skyline(162,'rgba(80,90,120,.4)',0,3,null);X.vg(0,160,W,80,['#6aa84a','#4a8a3a']);X.vg(0,176,W,20,['#b8b8c8','#8a8a9a']);c.fillStyle='rgba(0,0,0,.1)';for(let x=0;x<W;x+=16)c.fillRect(x,176,1,20);
+  X.cache('lm_park',()=>{const c=A.c,hh=(i,j)=>{let h=(i*374761393+j*668265263)|0;h=(h^(h>>>13))*1274126177|0;return((h^(h>>>16))>>>0)/4294967296;};
+   // a town park: two layers of skyline with lit windows, a row of round trees, lamps, a bench, mown grass and a paved footpath with a kerb
+   X.skyline(150,'rgba(90,100,140,.35)',37,7,null);X.skyline(162,'rgba(70,78,110,.6)',0,3,'rgba(255,230,160,.5)');
+   X.vg(0,154,W,10,['rgba(255,255,255,0)','rgba(255,255,255,.12)']);
+   for(let i=0;i<9;i++){const x=10+i*38+hh(i,1)*8;if(x>110&&x<210)continue;const r=11+hh(i,2)*5,y=150-r*.6;X.rr(x-1.5,y,3,14,1,'#5a3a24');X.disc(x,y,r,'#2e6e34');X.disc(x-r*.35,y-r*.3,r*.65,'#3a8a40');X.disc(x-r*.45,y-r*.45,r*.3,'rgba(170,230,120,.4)');}
+   X.vg(0,160,W,16,['#78b850','#5a9a40']);for(let x=0;x<W;x+=24){c.fillStyle='rgba(255,255,255,.05)';c.fillRect(x,160,12,16);}for(let i=0;i<120;i++){const x=hh(i,3)*W,y=161+hh(i,4)*14;X.stroke([[x,y],[x-1+hh(i,5)*2,y-2.5]],hh(i,6)<.5?'#8ad060':'#3a7a2a',.8);}
+   for(const x of[28,292]){X.rr(x-1,120,2,56,1,'#3a3a44');X.rr(x-4,116,8,5,2,'#2a2a34');X.disc(x,121,2.6,'#fff4c0');}
+   X.rr(232,164,30,3,1,'#8a5a30');X.rr(232,159,30,2,1,'#8a5a30');X.rr(234,167,2,6,0,'#3a3a44');X.rr(258,167,2,6,0,'#3a3a44');
+   for(let i=0;i<14;i++){const x=40+i*4;X.disc(x,172,2.2,'#3a7a2a');X.disc(x,170.5,1.2,['#ff6a8a','#ffd84a','#ffffff','#c88aff'][i%4]);}
+   X.rr(0,175,W,2,0,'#d8d8e0');X.vg(0,177,W,19,['#c8c4c0','#a8a4a0']);for(let x=0;x<W;x+=16){c.fillStyle='rgba(0,0,0,.12)';c.fillRect(x,177,1,19);}c.fillStyle='rgba(0,0,0,.1)';c.fillRect(0,186,W,1);for(let x=8;x<W;x+=16){c.fillStyle='rgba(0,0,0,.12)';c.fillRect(x,186,1,10);}
+   for(let i=0;i<30;i++)X.ell(hh(i,7)*W,179+hh(i,8)*15,2+hh(i,9)*3,.8,'rgba(255,255,255,.12)');
+   X.vg(0,196,W,44,['#6aa84a','#4a8a3a']);X.rr(0,195,W,2,0,'#e0e0e4');for(let i=0;i<80;i++){const x=hh(i,10)*W,y=199+hh(i,11)*40;X.stroke([[x,y],[x-1+hh(i,12)*2,y-3]],hh(i,13)<.5?'#8ad060':'#3a7a2a',.8);}
+   for(let x=-6;x<W+10;x+=13){X.disc(x,236,10,'#2a6a2e');X.disc(x-2,232,8,'#3a8a3a');X.disc(x-3,230,3,'rgba(170,230,120,.35)');}
+   for(let i=0;i<26;i++){const x=hh(i,14)*W,y=204+hh(i,15)*18;X.stroke([[x,y],[x,y-4]],'#3a7a2a',.7);X.disc(x,y-4.5,1.4,['#ff6a8a','#ffd84a','#ffffff','#c88aff'][i%4]);}
+   X.rr(70,210,40,14,2,'rgba(220,60,60,.85)');for(let k=0;k<5;k++){X.rr(70+k*8,210,4,14,0,'rgba(255,255,255,.55)');}X.rr(78,206,10,6,2,'#c8a060');X.disc(98,212,3,'#ff4a4a');});
   X.shadow(160,162,40,4,.3);X.block(130,120,60,40,'#ffe36a',2);c.fillStyle='#c8a030';c.fillRect(130,138,60,2);for(let i=0;i<5;i++){c.fillStyle=i%2?'#ffffff':'#ff4f6d';c.fillRect(126+i*13.6,108,13.6,12);X.disc(132.8+i*13.6,120,6.8,i%2?'#ffffff':'#ff4f6d');}T('LEMONADE',160,128,'#7a5a10',1,'c',1);for(let i=0;i<4;i++){X.rr(140+i*10,113,6,7,1,'rgba(255,255,255,.7)');c.fillStyle='#ffe36a';c.fillRect(141+i*10,116,4,3);}X.disc(176,116,5,'#ffcf3f');
   A.person(160,160,{s:.7,c:'#ff4f9a',pants:'#3a3a5a',cap:'#ffcf3f',d:1,id:5});
   crowd.forEach((cc,i)=>{if(cc.x<W+10)A.person(cc.x,190,{s:.7,c:['#4dabff','#3ddc84','#ff9838','#c86dff','#2fd6c3','#ffcf3f'][cc.id],pants:'#2a2a3a',d:1,id:cc.id,st:cc.x*.2,arm2:cc.done?-2:undefined});if(cc.done&&cc.x<W+10){X.rr(cc.x+3,166,4,5,1,'rgba(255,255,255,.8)');c.fillStyle='#ffe36a';c.fillRect(cc.x+3.5,168,3,2.5);}});
