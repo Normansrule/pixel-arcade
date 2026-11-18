@@ -4,6 +4,10 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 11 (v92): grassy verges
+- **Critter Kart verges.** Every grassy course now has about 12,000 grass tufts on the green ground beside the track, each with its own size, lean and shade. They keep off the sand near the sea, steep rock, the snowy course and the night course, and have no collision, so racing lines are unchanged. The faint blotches that repeated across the grass are gone.
+- **Dustwater checked.** The town had never been reviewed because it crashed the automated test browser. The crash comes from that browser's software display, which runs out of memory once the round minimap is drawn; it is not a game fault. Testing now hides the minimap, and the town, street and porches look right.
+
 ### Round 33, batch 10 (v91): real rooftops and grassy tracks
 - **Runline rooftops.** A fault in the roof edge meant the concrete rim was built as one slab over the whole roof, so every rooftop in the game looked like a plain pale sheet and the roof finishes were never seen. The rim is now a raised border round the edge, so the roofs show their own surfaces: the sunlit district has gravel roofs with water stains, sun-bleached patches, bitumen seams and repairs, the night district has seamed metal roofs with faint rust and rain puddles, and the tower district has tiles. Movement and collisions are unchanged.
 - **Critter Kart grass.** The island terrain gets fine grass-blade and clump detail (sand and rock simply look granular), and the shared anti-tiling shader stops it repeating.

@@ -59,7 +59,6 @@ function makeTerrain(T,TR){const nx=TR.nx,nz=TR.nz,g=new THREE.BufferGeometry(),
  // neutral detail map (the vertex colours tint it): soft clumps, then short blade strokes leaning every way, then fine grit,
  // so grass reads as grass up close and sand / rock just look granular; untile() hides the 12 m repeat
  const det=ctex(512,512,(x,w,h)=>{speckle(x,w,h,'#c8c8c8',.18,14000,2);const r=Math.random;
-  for(let i=0;i<420;i++){const cx=r()*w,cy=r()*h,rr=4+r()*14,lt=r()<.5;x.fillStyle=lt?'rgba(255,255,235,.07)':'rgba(0,20,0,.08)';x.beginPath();x.arc(cx,cy,rr,0,7);x.fill();}
   for(let i=0;i<7000;i++){const px=r()*w,py=r()*h,a=-1.57+(r()-.5)*1.4,l=3+r()*6,v=r();x.strokeStyle=v<.45?`rgba(0,0,0,${.08+r()*.12})`:`rgba(255,255,240,${.08+r()*.14})`;x.lineWidth=1;x.beginPath();x.moveTo(px,py);x.lineTo(px+Math.cos(a)*l,py+Math.sin(a)*l);x.stroke();}});
  const m=new THREE.Mesh(g,untile(new THREE.MeshStandardMaterial({vertexColors:true,map:det,roughness:.95,metalness:0}),{freq:.3,drift:.12}));m.receiveShadow=true;return m;}
 
@@ -152,11 +151,23 @@ function startGate(C,grp,worldCol,label){const B=C.B,i=0,w=C.def.wd+2,plane=C.de
  grp.add(g);return g;}
 
 /* ================= build everything ================= */
+// grass tufts on the green ground beside the track (not on sand, rock, snow or the night world); no collision
+function grassTufts(C,T,TR,grp){if(T.snow||T.night)return;const r=rng((C.def.seed||1)*131),w=C.def.wd,cg=col(T.ground[1]);
+ const P=[],Cc=[];for(let k=0;k<5;k++){const a=k/5*Math.PI+r()*.3,lean=(r()-.5)*.5,bw=.07;const dx=Math.cos(a)*bw,dz=Math.sin(a)*bw,tx=Math.cos(a+1.57)*lean,tz=Math.sin(a+1.57)*lean;
+  P.push(-dx,0,-dz,dx,0,dz,tx*.3,1,tz*.3);Cc.push(.5,.5,.5,.5,.5,.5,1.12,1.12,1.12);}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(Cc,3));g.computeVertexNormals();
+ const x0=TR.x0,z0=TR.z0,W=(TR.nx-1)*TR.cs,H=(TR.nz-1)*TR.cs,pts=[];
+ for(let t=0;t<200000&&pts.length<12000;t++){const x=x0+r()*W,z=z0+r()*H,d=TR.d(x,z);if(d<w+1.6||d>w+40)continue;const h=TR.h(x,z);if(h<2.6)continue;// sand belt near the sea stays bare
+  const sl=Math.abs(TR.h(x+1,z)-TR.h(x-1,z))+Math.abs(TR.h(x,z+1)-TR.h(x,z-1));if(sl>1.1)continue;// steep ground is rock
+  if(r()>Math.min(1,(d-w)/10+.3))continue;pts.push([x,h,z]);}
+ if(!pts.length)return;const im=new THREE.InstancedMesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9,side:THREE.DoubleSide}),pts.length);const c=new THREE.Color();
+ pts.forEach(([x,h,z],i)=>{const s=1.1+r()*1.1;im.setMatrixAt(i,M4(x,h-.05,z,(r()-.5)*.2,r()*6.28,(r()-.5)*.2,s*(1+r()*.6),s*(.4+r()*.35),s*(1+r()*.6)));im.setColorAt(i,c.copy(cg).multiplyScalar(.95+r()*.4));});
+ im.receiveShadow=true;grp.add(im);}
 export function buildWorld(C,TR,T,opts={}){const grp=new THREE.Group(),B=C.B,plane=C.def.veh==='plane';
  const fogU={c:{value:col(T.fog)},d:{value:T.fogD*(plane?.75:1)}};
  const sky=makeSky(T);grp.add(sky);const sea=makeSea(T,TR,fogU);grp.add(sea);const ter=makeTerrain(T,TR);grp.add(ter);
  if(!plane)makeRoad(C,T,grp,opts.col||'#ff4d00');
- const props=scatter(C,T,TR,grp,plane?260:opts.hub?260:340);const cl3=clouds(grp,T,C,plane);backdrop(grp,T,(C.def.seed||3)*5);
+ const props=scatter(C,T,TR,grp,plane?260:opts.hub?260:340);if(!plane)grassTufts(C,T,TR,grp);const cl3=clouds(grp,T,C,plane);backdrop(grp,T,(C.def.seed||3)*5);
  if(!opts.hub)startGate(C,grp,opts.col||'#ff4d00',C.def.n);
  if(!plane){cutRoads(C,T,grp);gapFills(C,T,TR,grp);}
  const anim=landmarks(C,T,TR,grp,opts.col||'#ff4d00');if(!opts.hub&&C.def.veh==='kart'){grandstand(C,T,TR,grp,opts.col||'#ff4d00',anim);arches(C,T,grp,opts.col||'#ff4d00');}
