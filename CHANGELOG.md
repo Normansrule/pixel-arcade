@@ -4,6 +4,18 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 12 (v93): nine flat arcade scenes repainted
+A sweep of all 544 arcade cabinets showed nine with flat or empty scenes. Each one is repainted. Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Storm Chaser.** The flat grey sky is now a supercell: bruised green-grey cloud bands, a shelf cloud with a lit underside, pouched clouds under the anvil, rain shafts from the core and a golden break of light on the horizon behind farm silhouettes. Forked lightning flickers inside the storm now and then. The tornado is a real tapering funnel that hangs from the cloud, with spinning bands, a dust cloud and debris at the ground.
+- **Stargazer.** The sky has a proper Milky Way band with dark dust lanes, dense star fields and a few bright tinted stars. Below it are a town glow on the horizon, two ridges with pine silhouettes, a grassy meadow and a stone observatory with a shaded dome, an open slit and a lit door.
+- **Icicle Alley.** The grey wall is now a snowy brick street. Upstairs are lit sash windows with snow on the sills, the eave carries a heavy snow load with small icicles, and street level has a bakery, a bookshop and a toy shop with striped awnings, glowing windows, wreathed doors and snow banks on a cobbled pavement.
+- **Snowman.** The plain white field has sculpted drifts, long blue tree shadows from the sunset, a fence along the back, a red sled, old footprints and sparkles. Untouched snow shows the field and dug patches show the grass as before.
+- **Lasso Loop.** The ranch has cumulus clouds, layered mesas with rock bands and shaded sides, a windmill, a fence line, sagebrush, stones, tall grass, a rail corral and a red barn with white trim.
+- **Penguin Slide.** The polar sky has aurora curtains made of fine rays over a rose dusk horizon. A distant ice shelf with cliffs sits behind lit and shaded icebergs, and the ice floe has a pink sheen, wind ridges, old cracks and drift streaks that scroll past.
+- **Fruit Slice.** The chopping board now has flowing wood grain, knots, bevelled planks, knife scratches, old juice stains, corner screws and warm light from above.
+- **Safari Snap.** The savanna has elephant and giraffe herds in the heat haze, a dusty track, a termite mound and tussock grass.
+- **Galaxy.** Space has nebula clouds, a dust lane, a far spiral galaxy, a fuller star field and a ringed gas giant.
+
 ### Round 33, batch 11 (v92): grassy verges
 - **Critter Kart verges.** Every grassy course now has about 12,000 grass tufts on the green ground beside the track, each with its own size, lean and shade. They keep off the sand near the sea, steep rock, the snowy course and the night course, and have no collision, so racing lines are unchanged. The faint blotches that repeated across the grass are gone.
 - **Dustwater checked.** The town had never been reviewed because it crashed the automated test browser. The crash comes from that browser's software display, which runs out of memory once the round minimap is drawn; it is not a game fault. Testing now hides the minimap, and the town, street and porches look right.

@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v93", "date": "18 Nov 2026", "branch": "round33", "round": 33, "games": 600, "worlds": 56,
+     "added": "Nine flat arcade scenes are repainted, including Storm Chaser's supercell and tornado, Stargazer's Milky Way, Icicle Alley's shop street and Penguin Slide's aurora."},
     {"v": "v92", "date": "18 Nov 2026", "branch": "round33", "round": 33, "games": 600, "worlds": 56,
      "added": "Critter Kart's grassy courses get about 12,000 grass tufts along the verges, and Dustwater's town is finally reviewed after a test-browser crash was traced to its software display."},
     {"v": "v91", "date": "18 Nov 2026", "branch": "round33", "round": 33, "games": 600, "worlds": 56,

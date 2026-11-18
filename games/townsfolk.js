@@ -374,8 +374,24 @@ A.add({id:'stargazer',name:'STARGAZER',cat:'SIM',tags:'telescope comets night sk
   if(t%Math.max(40,110-t/60|0)===0){const fl=Math.random()<.5,sp=1+rnd(1.2)+t/6000;co.push({x:fl?-10:W+10,y:20+rnd(110),vx:(fl?1:-1)*sp,vy:.2+rnd(.6),c:['#9ae8ff','#ffd0a0','#c8a0ff','#a0ffc8'][ri(4)],tr:[]});}
   for(const o of co){o.x+=o.vx;o.y+=o.vy;o.tr.unshift([o.x,o.y]);if(o.tr.length>16)o.tr.pop();}co=co.filter(o=>o.x>-30&&o.x<W+30&&o.y<200&&!o.got);
   if(A.hit(0).a&&!cd&&film>0){film--;cd=20;flash=8;let got=0;for(const o of co){const d=hyp(o.x-rx,o.y-ry);if(d<22){o.got=1;got++;const p=10+Math.round(30*(1-d/22));g.score+=p;fx.pop(o.x,o.y-14,'+'+p,'#7dff9a');fx.ring(o.x,o.y,o.c,18,16);}}S(got?'coin':'blip');if(got)shots++;if(!got)fx.pop(rx,ry-26,'JUST STARS','#8a9ac8');if(film<=0){g.over='OUT OF FILM';}}};
- g.draw=()=>{const c=A.c;X.cache('tf_star',()=>{const c=A.c;X.sky(['#060818','#141838','#2a2a5a','#4a3a6a'],200);X.stars(160,5,0,0,190,1);for(let i=0;i<260;i++){const q=hash(i,4),px=q*W,py=170-q*150+(hash(i,5)-.5)*40;X.disc(px,py,2+hash(i,7)*6,'rgba('+['168,160,232','232,176,208','144,184,240'][i%3]+','+(.03+hash(i,6)*.06).toFixed(3)+')');}for(let i=0;i<80;i++){const q=hash(i,8);X.disc(q*W,170-q*150+(hash(i,9)-.5)*30,.7,'#ffffff');}
-   X.hills(186,12,'#141824',0,.015,2);X.vg(0,190,W,50,['#141824','#0a0c14']);X.rr(250,150,40,40,0,'#c8c8d0');ink(c=>c.arc(270,150,22,Math.PI,0),X.lg(248,0,292,0,['#e8e8f0','#a8a8b8']),.8);X.rr(266,128,8,22,0,'#2a2a3a');X.rr(274,166,8,12,1,'#ffd880');});
+ g.draw=()=>{const c=A.c;X.cache('tf_star2',()=>{const c=A.c;X.sky(['#03050f','#0a1028','#1a1c48','#352a5c','#5a3a68'],200);
+   // the Milky Way: many soft glows along a diagonal band, a dark dust lane through the middle, then dense star fields
+   const band=u=>[u*W,182-u*168+Math.sin(u*5)*8];
+   c.save();c.globalCompositeOperation='lighter';for(let i=0;i<70;i++){const u=hash(i,2),[x,y]=band(u),r=16+hash(i,3)*22;X.disc(x+(hash(i,4)-.5)*20,y+(hash(i,5)-.5)*20,r,X.rg(x,y,0,x,y,r,['rgba('+['120,110,190','170,120,170','100,140,200'][i%3]+',.10)','rgba(60,60,120,0)']));}
+   for(let i=0;i<20;i++){const u=.25+hash(i,6)*.5,[x,y]=band(u);X.glow(x,y,26,'#ffe0c0',.08);}c.restore();
+   for(let i=0;i<40;i++){const u=hash(i,7),[x,y]=band(u);X.ell(x+4,y+2,10+hash(i,8)*14,2+hash(i,9)*2.5,'rgba(6,8,20,.2)');}
+   for(let i=0;i<700;i++){const u=hash(i,11),[x,y]=band(u),sp=(hash(i,12)-.5)*(i<400?36:180);const px=x+sp*.5,py=y+sp;if(py>184)continue;c.fillStyle='rgba(255,255,255,'+(.15+hash(i,13)*.6).toFixed(2)+')';c.fillRect(px,py,hash(i,14)<.9?.8:1.4,hash(i,14)<.9?.8:1.4);}
+   // a few bright tinted stars with tiny spikes
+   for(let i=0;i<14;i++){const x=hash(i,15)*W,y=10+hash(i,16)*150,col=['#bfd8ff','#ffe2b0','#ffffff'][i%3];X.glow(x,y,5,col,.5);X.stroke([[x-3,y],[x+3,y]],col,.5);X.stroke([[x,y-3],[x,y+3]],col,.5);}
+   // town glow on the horizon, two ridges with pine silhouettes, and a meadow
+   X.vg(0,150,W,40,['rgba(255,170,120,0)','rgba(255,150,110,.18)']);
+   X.hills(182,18,'#1a1a34',0,.012,4);for(let x=0;x<W;x+=7){const h=hash(x,21);if(h<.5)continue;const y=180-18*(.5+.3*Math.sin(x*.012+4)+.2*Math.sin(x*.012*2.3+12))+4;X.poly([[x-3,y],[x,y-8-h*6],[x+3,y]],'#14142a');}
+   X.hills(190,10,'#10121e',60,.02,2);X.vg(0,190,W,50,['#10121e','#06070c']);
+   for(let i=0;i<90;i++){const x=hash(i,23)*W,y=196+hash(i,24)*40;X.stroke([[x,y],[x-1+hash(i,25)*2,y-3-hash(i,26)*3]],'rgba(70,80,120,.35)',.8);}
+   // observatory: stone base, shaded dome with an open slit, a lit door and a little path
+   X.rr(246,150,48,42,1,X.lg(246,0,294,0,['#b8b8c8','#8a8aa0','#5a5a70']));for(let r=0;r<5;r++)for(let k=0;k<4;k++)X.rr(246+k*12+(r%2)*6,154+r*8,11,.8,0,'rgba(30,30,50,.35)');
+   ink(c=>c.arc(270,150,26,Math.PI,0),X.lg(244,0,296,0,['#f0f0f8','#c0c0d0','#7a7a90']),.8);for(let k=1;k<5;k++)X.stroke([[270+Math.cos(Math.PI+k*.63)*26,150+Math.sin(Math.PI+k*.63)*26],[270,124]],'rgba(60,60,80,.25)',.6);
+   X.poly([[265,150],[265,125],[275,125],[275,150]],'#141428');X.rr(260,149,20,3,0,'#4a4a5a');X.rr(274,170,9,22,1,'#ffd880');X.rr(272,168,13,2,0,'#6a6a7a');X.poly([[274,192],[283,192],[300,240],[262,240]],'rgba(255,216,128,.045)');});
   if(lo())X.glow(278,172,14,'#ffd880',.4);
   for(const o of co){for(let i=0;i<o.tr.length;i++){const[a,b]=o.tr[i];c.globalAlpha=(1-i/16)*.7;X.disc(a,b,3-i*.15,o.c);}c.globalAlpha=1;if(lo())X.glow(o.x,o.y,10,o.c,.6);X.disc(o.x,o.y,2.6,'#ffffff');}
   ink(c=>{c.moveTo(56,206);c.lineTo(64,180);c.lineTo(68,182);c.lineTo(62,206);c.closePath();},'#4a3a2a',.6);c.save();c.translate(66,180);c.rotate(Math.atan2(ry-180,rx-66));X.rr(0,-4,30,8,2,X.lg(0,-4,0,4,['#d8b050','#8a6020']));X.rr(26,-5,6,10,1,'#3a3a44');c.restore();

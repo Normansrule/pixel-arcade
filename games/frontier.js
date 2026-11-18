@@ -303,10 +303,38 @@ A.add({id:'stormchaser',name:'STORM CHASER',cat:'ACTION',tags:'tornado truck pho
   if(t%Math.max(14,40-t/100|0)===0&&d<120)deb.push({x:tor+rnd(20)-10,y:120+rnd(60),vx:-2-rnd(2),vy:-1-rnd(2),r:rnd(6),k:ri(3)});
   for(const b of deb){b.vy+=.08;b.x+=b.vx;b.y+=b.vy;b.r+=.2;if(!inv&&b.y>RY-24&&b.y<RY&&Math.abs(b.x-tx)<14){b.dead=1;lives--;inv=90;S('hit');A.shake=6;fx.pop(160,100,'DENTED!','#ff6a5a');if(lives<=0)g.over='TOTALLED';}}deb=deb.filter(b=>!b.dead&&b.y<H);
   if(d<20&&!inv){lives--;inv=120;tx-=40;S('lose');fx.pop(160,100,'SUCKED IN!','#ff6a5a');if(lives<=0)g.over='GONE WITH THE WIND';}if(d>200){tx+=1;}};
- g.draw=()=>{const c=A.c;X.cache('fr_storm',()=>{const c=A.c;X.sky(['#2a2a38','#4a4a58','#6a6a6a','#8a8a72'],RY);for(let i=0;i<12;i++)cloud(i*30,30+(i%3)*12,1.6,i%2?'#3a3a48':'#44445a');X.vg(0,0,W,70,['rgba(20,20,30,.6)','rgba(20,20,30,0)']);X.vg(0,RY-30,W,30,['rgba(200,190,140,0)','rgba(200,190,140,.25)']);});
+ g.draw=()=>{const c=A.c;X.cache('fr_storm2',()=>{const c=A.c;
+   // supercell sky: bruised green-grey overhead, a golden break of light under the storm on the horizon
+   X.sky(['#1c2226','#2e3a3a','#4a5650','#7a7a5c','#d8b26a','#f0d090'],RY);
+   X.glow(250,RY-26,120,'#ffd890',.35);X.glow(60,RY-20,80,'#ffe0a0',.18);
+   // the mesocyclone base: stacked rolling bands of cloud, darker towards the core on the right
+   for(let b=0;b<6;b++){const yb=24+b*13,dk=b/6;for(let i=-1;i<24;i++){const x=i*15+(b%2)*7,r=10+hash(i,b)*9;X.disc(x,yb+Math.sin(i*1.3+b)*3,r,X.rgba(b<3?'#2a3234':'#3c4644',.85-dk*.25));X.ell(x,yb+r*.55,r*.9,2.2,'rgba(150,160,140,'+(.1+dk*.1)+')');}}
+   // a shelf cloud lip with a lit underside, like a wall cloud above the fields
+   c.beginPath();c.moveTo(0,98);for(let x=0;x<=W;x+=8)c.lineTo(x,98+Math.sin(x*.03)*4+(x>160?(x-160)*.14:0));c.lineTo(W,30);c.lineTo(0,30);c.closePath();c.fillStyle=X.lg(0,30,0,120,['rgba(38,46,48,0)','rgba(38,46,48,.9)','#3a4440']);c.fill();
+   for(let x=0;x<W;x+=6){const y=98+Math.sin(x*.03)*4+(x>160?(x-160)*.14:0);X.ell(x,y,5,1.6,'rgba(220,200,150,.22)');}
+   // mammatus pouches hanging under the anvil
+   for(let i=0;i<14;i++){const x=10+i*22+hash(i,9)*8,y=40+hash(i,3)*14;X.ell(x,y,7,5,'rgba(70,80,74,.55)');X.ell(x-1,y+2,5,2.5,'rgba(190,180,140,.18)');}
+   // rain shafts falling from the core on the right
+   c.save();c.globalAlpha=.22;for(let i=0;i<40;i++){const x=200+i*3+hash(i,5)*6;X.stroke([[x,110+hash(i,1)*10],[x-8,RY-14]],'#9aa8a8',1);}c.restore();
+   X.vg(200,108,W-200,RY-120,['rgba(110,124,120,0)','rgba(110,124,120,.35)']);
+   // far tree lines and a farm silhouette against the bright band
+   X.hills(RY-14,10,'#4a4a36',0,.05,2);X.hills(RY-8,8,'#3a3a2a',40,.07,5);
+   for(const[x,s]of[[40,1],[118,.7],[262,.9]]){X.rr(x,RY-14-14*s,12*s,14*s,0,'#2e2a22');X.poly([[x-2*s,RY-14-14*s],[x+6*s,RY-22*s-14],[x+14*s,RY-14-14*s]],'#2a241c');X.rr(x+14*s,RY-14-20*s,5*s,20*s,2,'#3a3a34');X.disc(x+16.5*s,RY-14-20*s,3*s,'#3a3a34');}
+   X.vg(0,0,W,60,['rgba(10,14,16,.55)','rgba(10,14,16,0)']);X.vg(0,RY-30,W,30,['rgba(240,210,140,0)','rgba(240,210,140,.22)']);});
+   // lightning: an occasional forked bolt inside the core that lights the clouds
+   const lt=(A.t%173);if(lt<9&&lo()){const bx=210+hash(A.t/173|0,4)*90;c.fillStyle='rgba(220,230,255,'+(.18*(1-lt/9))+')';c.fillRect(0,0,W,RY);if(lt<5){let x=bx,y=70;const pts=[[x,y]];while(y<RY-18){y+=8+rnd(6);x+=rnd(14)-7;pts.push([x,y]);}X.stroke(pts,'rgba(255,255,255,.9)',1.6);X.glow(bx,80,50,'#c8d8ff',.45);}}
   const o1=cam*.3;for(let k=Math.floor(o1/80)-1;k<Math.floor(o1/80)+6;k++){const x=k*80-o1,h=hash(k,2);if(h<.4)continue;X.rr(x,RY-28,2,28,0,'#3a3a3a');X.stroke([[x-8,RY-26],[x+8,RY-26]],'#3a3a3a',1);if(h>.8){X.rr(x+14,RY-22,18,22,1,'#8a3a2a');X.poly([[x+12,RY-22],[x+23,RY-32],[x+34,RY-22]],'#5a2a20');}}
   X.vg(0,RY-6,W,H-RY+6,['#8a8a52','#6a6a3a','#4a4a2a']);for(let i=0;i<50;i++){const x=((i*37-cam*1.0)%W+W)%W;X.stroke([[x,RY-4],[x-2-Math.sin(A.t*.1+i)*2,RY-10]],'#a0a060',1);}c.fillStyle='#3a3a40';c.fillRect(0,RY+8,W,12);c.fillStyle='#e8d870';for(let i=0;i<10;i++)c.fillRect(((i*40-cam*1.4)%W+W)%W,RY+13,16,1.5);
-  const sx=tor-cam;c.save();for(let i=0;i<26;i++){const yy=10+i*7,w=6+i*i*.09,ox=Math.sin(A.t*.15+i*.4)*(4+i*.3);c.globalAlpha=.55;X.ell(sx+ox,RY-4-(25-i)*7,w,4,i%2?'#6a6a6a':'#5a5a5a');}c.globalAlpha=1;c.restore();if(lo()){c.globalAlpha=.3;X.ell(sx,RY-2,40,8,'#8a7a5a');c.globalAlpha=1;}
+  const sx=tor-cam;c.save();
+  // funnel: a tapering column hanging from the wall cloud, lit on one edge, with rope striations that spin
+  const fy0=92,fy1=RY-4,L=[],R=[];for(let i=0;i<=24;i++){const u=i/24,y=fy0+(fy1-fy0)*u,w=4+Math.pow(1-u,1.8)*30,ox=Math.sin(A.t*.12+u*5)*(3+u*6)+u*u*8;L.push([sx+ox-w,y]);R.unshift([sx+ox+w,y]);}
+  X.poly(L.concat(R),X.lg(sx-30,0,sx+30,0,['rgba(70,76,72,.9)','rgba(120,122,108,.92)','rgba(170,160,130,.85)','rgba(80,84,78,.88)']));
+  for(let i=0;i<7;i++)X.disc(sx+(i-3)*9,fy0+Math.sin(A.t*.05+i)*2-(Math.abs(i-3)*2),11-Math.abs(i-3),'rgba(52,60,58,.95)');
+  for(let k=0;k<9;k++){const u=((k/9+A.t*.012)%1),i=Math.round(u*24),a=L[i],b=R[24-i];if(a&&b)X.stroke([a,[(a[0]+b[0])/2,a[1]+3],b],'rgba(40,44,42,.35)',1);}
+  // dust and debris cloud at the ground where it touches down
+  for(let i=0;i<10;i++){const a=A.t*.08+i*.63,rx=sx+Math.cos(a)*(18+i%3*6)+8,ry=RY-8+Math.sin(a)*4-i%4*3;X.disc(rx,ry,7+i%3*2,'rgba(140,120,84,.45)');}
+  if(lo())for(let i=0;i<14;i++){const a=A.t*.2+i*1.7,r=10+i*2;X.rr(sx+8+Math.cos(a)*r,RY-14-i*4+Math.sin(a)*3,2,1.4,0,'#3a2a1a');}
+  c.restore();if(lo()){c.globalAlpha=.3;X.ell(sx+8,RY-2,46,8,'#8a7a5a');c.globalAlpha=1;}
   const z0=tx+50-cam,z1=tx+110-cam;c.fillStyle='rgba(120,255,140,.12)';c.fillRect(z0,RY-6,z1-z0,4);c.fillStyle='rgba(120,255,140,.6)';c.fillRect(z0,RY-6,1,4);c.fillRect(z1,RY-6,1,4);
   for(const b of deb){const x=b.x-cam;c.save();c.translate(x,b.y);c.rotate(b.r);if(b.k===0)X.rr(-4,-1.5,8,3,0,'#7a5430');else if(b.k===1)X.rr(-3,-3,6,6,0,'#8a3a2a');else X.disc(0,0,2.5,'#4a6a3a');c.restore();}
   const vx=tx-cam;if(!(inv&&A.t%6<3)){c.save();c.translate(vx,RY+6);X.shadow(0,2,22,3,.4);X.rr(-20,-14,40,12,3,X.lg(0,-14,0,-2,['#f0f0f4','#c84a3a','#8a2a24']));X.rr(-12,-22,20,9,3,X.lg(0,-22,0,-13,['#e8e8ec','#a8a8b0']));X.rr(-10,-20,8,6,1,'#5a8ab8');X.rr(0,-20,6,6,1,'#5a8ab8');X.rr(-16,-26,28,3,1,'#3a3a40');X.disc(-6,-26,2,A.t%20<10?'#ff4040':'#4040ff');X.disc(6,-26,2,A.t%20>=10?'#ff4040':'#4040ff');for(const w of[-12,12]){X.disc(w,-1,5,'#1a1a1e');X.disc(w,-1,2,'#9a9aa0');}
