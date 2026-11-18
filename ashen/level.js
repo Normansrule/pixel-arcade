@@ -2,6 +2,7 @@
 // stained glass, broken roofs), god-ray shafts, ground fog, sky, shrines, gates, levers, fog walls, and the spawn plan.
 import * as THREE from '../vendor/three.module.min.js';
 import {makeRig,animate,bakeRig,mergeGeos,makeLongsword,makeGreatsword,std,tex as rigTex} from './rig.js';
+import {untile} from '../js/kit3d/untile.js';
 const V=THREE.Vector3;
 const R=(()=>{let a=1234567;return()=>{a=(a*16807)%2147483647;return a/2147483647;};})();
 const rr=(a,b)=>a+R()*(b-a);
@@ -18,13 +19,33 @@ let TX=null;export function tex(){if(TX)return TX;
     for(let k=0;k<26;k++){x.fillStyle=`rgba(0,0,0,${R()*.18})`;x.beginPath();x.arc(px+R()*bw,y+R()*rowH,R()*6,0,6.3);x.fill();}if(px+bw>w){x.fillStyle=`rgb(${v+wv+6},${v+2},${v-6-wv})`;x.fillRect(px+3-w,y+3,bw-6,rowH-6);}px+=bw;}}
   noiseDots(x,w,h,9000,.07);cracks(x,w,h,14,.35);
   const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(0,0,0,.22)');g.addColorStop(.5,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(20,24,10,.18)');x.fillStyle=g;x.fillRect(0,0,w,h);});
- const floor=canvasTex(512,512,(x,w,h)=>{x.fillStyle='#262422';x.fillRect(0,0,w,h);const n=4,s=w/n;for(let i=0;i<n;i++)for(let j=0;j<n;j++){const split=R()<.4;const cells=split?[[0,0,1,.5],[0,.5,1,.5]]:[[0,0,1,1]];
-   for(const c of cells){const v=78+R()*36|0;x.fillStyle=`rgb(${v+4},${v},${v-6})`;const px=i*s+c[0]*s+3,py=j*s+c[1]*s+3,cw=c[2]*s-6,ch=c[3]*s-6;x.fillRect(px,py,cw,ch);for(let k=0;k<40;k++){x.fillStyle=`rgba(0,0,0,${R()*.15})`;x.beginPath();x.arc(px+R()*cw,py+R()*ch,R()*9,0,6.3);x.fill();}
-    const g=x.createRadialGradient(px+cw/2,py+ch/2,0,px+cw/2,py+ch/2,cw*.7);g.addColorStop(0,'rgba(255,255,255,.05)');g.addColorStop(1,'rgba(0,0,0,.2)');x.fillStyle=g;x.fillRect(px,py,cw,ch);}}
-  noiseDots(x,w,h,8000,.06);cracks(x,w,h,20,.45);});
+ // worn granite setts in running courses: rounded domed stones, dark gritty joints with moss, the odd sunken or missing sett
+ const floor=canvasTex(512,512,(x,w,h)=>{x.fillStyle='#14130f';x.fillRect(0,0,w,h);const rows=10,rh=h/rows;
+  for(let r=0;r<rows;r++){let px=-(r%2)*24-R()*10;const y0=r*rh;const xs=[];while(px<w){const sw=34+R()*30;xs.push([px,sw]);px+=sw;}const wrap=xs[xs.length-1][0]+xs[xs.length-1][1]-w;
+   for(const[sx,sw]of xs){const v=70+R()*58|0,tint=R()*12-6,sunk=R()<.06;const cx=sx+sw/2,cy=y0+rh/2,rx=sw/2-2.5,ry=rh/2-2.5;
+    for(const ox of[0,-w,w]){if(cx+ox+rx<0||cx+ox-rx>w)continue;x.save();x.beginPath();const rr=Math.min(rx,ry)*.45;x.roundRect?x.roundRect(cx+ox-rx,cy-ry,rx*2,ry*2,rr):x.rect(cx+ox-rx,cy-ry,rx*2,ry*2);x.clip();
+     x.fillStyle=`rgb(${v+tint+4},${v+2},${v-tint-4})`;x.fillRect(cx+ox-rx,cy-ry,rx*2,ry*2);
+     const g=x.createRadialGradient(cx+ox-rx*.25,cy-ry*.35,1,cx+ox,cy,Math.max(rx,ry)*1.15);g.addColorStop(0,`rgba(255,250,240,${sunk?.02:.16})`);g.addColorStop(.6,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${sunk?.55:.42})`);x.fillStyle=g;x.fillRect(cx+ox-rx,cy-ry,rx*2,ry*2);
+     for(let k=0;k<10;k++){x.fillStyle=R()<.5?`rgba(0,0,0,${R()*.18})`:`rgba(255,255,255,${R()*.07})`;x.fillRect(cx+ox-rx+R()*rx*2,cy-ry+R()*ry*2,1+R()*2,1+R()*2);}x.restore();}}}
+  // moss and grit in the joints
+  for(let k=0;k<1400;k++){const v=R();x.fillStyle=v<.45?`rgba(46,58,30,${.25+R()*.35})`:`rgba(28,26,22,${.3+R()*.4})`;const yy=Math.round(R()*rows)*rh+(R()-.5)*3;x.fillRect(R()*w,yy,1+R()*3,1+R()*2);}
+  noiseDots(x,w,h,6000,.05);cracks(x,w,h,8,.35);});
  const dirt=canvasTex(512,512,(x,w,h)=>{x.fillStyle='#2a2620';x.fillRect(0,0,w,h);for(let k=0;k<5000;k++){const v=R();x.fillStyle=v<.3?`rgba(52,58,34,${.2+R()*.3})`:v<.6?`rgba(70,62,50,${.15+R()*.25})`:`rgba(18,16,14,${.2+R()*.3})`;x.beginPath();x.arc(R()*w,R()*h,1+R()*5,0,6.3);x.fill();}
-  // sunken flagstones in the mud
-  for(let k=0;k<14;k++){const px=R()*w,py=R()*h,sw=40+R()*60,sh=30+R()*50;x.fillStyle=`rgba(${80+R()*30|0},${78+R()*26|0},${72+R()*20|0},.75)`;x.save();x.translate(px,py);x.rotate(R()*.4-.2);x.fillRect(-sw/2,-sh/2,sw,sh);x.restore();}noiseDots(x,w,h,6000,.08);});
+  // broad damp / dry patches so the yard is not one flat brown
+  for(let k=0;k<18;k++){const cx=R()*w,cy=R()*h,r=40+R()*90,dry=R()<.5;for(const ox of[-w,0,w])for(const oy of[-h,0,h]){const g=x.createRadialGradient(cx+ox,cy+oy,0,cx+ox,cy+oy,r);g.addColorStop(0,dry?'rgba(120,108,86,.22)':'rgba(8,8,6,.32)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(cx+ox-r,cy+oy-r,r*2,r*2);}}
+  // dead grass clumps: short pale strokes fanning out
+  for(let k=0;k<260;k++){const cx=R()*w,cy=R()*h,n=5+R()*8|0;for(let q=0;q<n;q++){const a=-1.57+(R()-.5)*1.6,l=4+R()*9;x.strokeStyle=R()<.5?`rgba(${120+R()*40|0},${110+R()*30|0},${70+R()*20|0},.55)`:`rgba(70,82,44,.5)`;x.lineWidth=1;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+Math.cos(a)*l,cy+Math.sin(a)*l);x.stroke();}}
+  // pebbles with a lit top edge and a dark underside
+  for(let k=0;k<200;k++){const px=R()*w,py=R()*h,r=.8+R()*R()*4,v=58+R()*50|0;x.fillStyle='rgba(0,0,0,.45)';x.beginPath();x.ellipse(px+.8,py+1,r,r*.75,0,0,6.3);x.fill();x.fillStyle=`rgb(${v},${v-4},${v-10})`;x.beginPath();x.ellipse(px,py,r,r*.75,0,0,6.3);x.fill();x.fillStyle='rgba(255,250,235,.18)';x.beginPath();x.ellipse(px-r*.3,py-r*.3,r*.45,r*.3,0,0,6.3);x.fill();}
+  // sunken flagstones in the mud: rounded, shaded, cracked, with mud lapping over the edges
+  for(let k=0;k<14;k++){const px=R()*w,py=R()*h,sw=40+R()*60,sh=30+R()*50,v=80+R()*30|0;x.save();x.translate(px,py);x.rotate(R()*.4-.2);
+   x.fillStyle='rgba(0,0,0,.5)';x.beginPath();x.roundRect?x.roundRect(-sw/2+2,-sh/2+3,sw,sh,6):x.rect(-sw/2+2,-sh/2+3,sw,sh);x.fill();
+   x.beginPath();x.roundRect?x.roundRect(-sw/2,-sh/2,sw,sh,6):x.rect(-sw/2,-sh/2,sw,sh);x.save();x.clip();x.fillStyle=`rgb(${v},${v-2},${v-8})`;x.fillRect(-sw/2,-sh/2,sw,sh);
+   const g=x.createLinearGradient(0,-sh/2,0,sh/2);g.addColorStop(0,'rgba(255,248,230,.16)');g.addColorStop(1,'rgba(0,0,0,.3)');x.fillStyle=g;x.fillRect(-sw/2,-sh/2,sw,sh);
+   for(let q=0;q<30;q++){x.fillStyle=R()<.5?`rgba(0,0,0,${R()*.2})`:`rgba(60,72,40,${R()*.3})`;x.fillRect(-sw/2+R()*sw,-sh/2+R()*sh,1+R()*3,1+R()*3);}
+   x.strokeStyle='rgba(10,8,6,.6)';x.lineWidth=1;x.beginPath();let cxx=-sw/2+R()*sw,cyy=-sh/2;x.moveTo(cxx,cyy);for(let q=0;q<5;q++){cxx+=R()*12-6;cyy+=sh/5;x.lineTo(cxx,cyy);}x.stroke();
+   x.fillStyle='rgba(30,26,20,.75)';for(let q=0;q<6;q++){x.beginPath();x.arc((R()-.5)*sw,R()<.5?-sh/2:sh/2,4+R()*8,0,6.3);x.fill();}
+   x.restore();x.restore();}noiseDots(x,w,h,6000,.08);});
  const wood=canvasTex(256,256,(x,w,h)=>{for(let i=0;i<4;i++){const v=58+R()*22|0;x.fillStyle=`rgb(${v+14},${v},${v-12})`;x.fillRect(i*w/4,0,w/4,h);for(let k=0;k<40;k++){x.strokeStyle=`rgba(10,6,2,${.1+R()*.2})`;x.beginPath();const gx=i*w/4+R()*w/4;x.moveTo(gx,0);x.bezierCurveTo(gx+R()*8-4,h*.3,gx+R()*8-4,h*.7,gx,h);x.stroke();}x.fillStyle='rgba(0,0,0,.6)';x.fillRect(i*w/4,0,2,h);}});
  // leaded stained glass: an ember rose over tall lancets
  const glass=canvasTex(256,512,(x,w,h)=>{x.fillStyle='#000';x.fillRect(0,0,w,h);const pal=['#7a1410','#a83a10','#c87a18','#1a3a6a','#2a5a8a','#3a1a5a','#5a7a2a','#d8a840'];
@@ -75,7 +96,7 @@ const FOG_FS=`uniform float uT,uA;uniform vec3 uCol;varying vec2 vUv;varying vec
  float fb(vec2 p){return n(p)*.5+n(p*2.1)*.27+n(p*4.3)*.14;}
  void main(){vec2 p=vW.xz*.11;float f=fb(p+vec2(uT*.03,uT*.017))*fb(p*1.7-vec2(uT*.02,0.));float e=smoothstep(0.,.12,vUv.x)*smoothstep(1.,.88,vUv.x)*smoothstep(0.,.12,vUv.y)*smoothstep(1.,.88,vUv.y);
   gl_FragColor=vec4(uCol,clamp(f*1.9-.12,0.,1.)*uA*e);}`;
-function fogMat(a,col=0x8a94a8){return new THREE.ShaderMaterial({uniforms:{uT:U.uT,uA:{value:a},uCol:{value:new THREE.Color(col)}},vertexShader:SHAFT_VS,fragmentShader:FOG_FS,transparent:true,depthWrite:false,fog:false});}
+function fogMat(a,col=0x5c6678){return new THREE.ShaderMaterial({uniforms:{uT:U.uT,uA:{value:a},uCol:{value:new THREE.Color(col)}},vertexShader:SHAFT_VS,fragmentShader:FOG_FS,transparent:true,depthWrite:false,fog:false});}
 const WALL_FS=`uniform float uT,uA;varying vec2 vUv;varying vec3 vW;
  float h(vec2 p){return fract(sin(dot(p,vec2(41.3,289.1)))*43758.5);}float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
  void main(){vec2 p=vUv*vec2(3.,5.);float a=n(p+vec2(sin(uT*.7+p.y)*.6,-uT*.5))*.6+n(p*2.3+vec2(uT*.3,-uT*.9))*.4;float e=smoothstep(0.,.15,vUv.x)*smoothstep(1.,.85,vUv.x)*smoothstep(1.,.75,vUv.y);
@@ -93,8 +114,8 @@ const SKY_FS=`uniform vec3 uMoon;uniform float uT,uRed;varying vec3 vD;
 export function buildLevel(scene,phys){const T=tex(),B=new Builder(scene);
  const mWall=new THREE.MeshStandardMaterial({color:0xb4aea4,roughness:.92,map:T.wall,bumpMap:T.wall,bumpScale:2.5});
  const mWall2=new THREE.MeshStandardMaterial({color:0x8a8680,roughness:.95,map:T.wall,bumpMap:T.wall,bumpScale:2.5});
- const mFloor=new THREE.MeshStandardMaterial({color:0xa8a49c,roughness:.85,map:T.floor,bumpMap:T.floor,bumpScale:2});
- const mDirt=new THREE.MeshStandardMaterial({color:0xa09888,roughness:.95,map:T.dirt,bumpMap:T.dirt,bumpScale:3});
+ const mFloor=new THREE.MeshStandardMaterial({color:0xd2cec4,roughness:.72,map:T.floor,bumpMap:T.floor,bumpScale:3.2});
+ const mDirt=new THREE.MeshStandardMaterial({color:0xc4b8a4,roughness:.95,map:T.dirt,bumpMap:T.dirt,bumpScale:3});untile(mDirt,{freq:.33,drift:.2});
  const mTrim=new THREE.MeshStandardMaterial({color:0x9a958c,roughness:.8,map:T.wall,bumpMap:T.wall,bumpScale:1.5});
  const mWood=new THREE.MeshStandardMaterial({color:0x8a7a68,roughness:.85,map:T.wood,bumpMap:T.wood,bumpScale:2});
  const mIron=new THREE.MeshStandardMaterial({color:0x6a6662,metalness:.75,roughness:.55,map:T.iron});
@@ -141,7 +162,7 @@ export function buildLevel(scene,phys){const T=tex(),B=new Builder(scene);
   xf(sg,x+Math.sin(face)*.02,y-.3,z+Math.cos(face)*.02,0,face,0);B.add(mGlass,sg,false,false);};
  const shaft=(x,y,z,dir,len,w,col=0xb8c8ff,a=.22)=>{// volumetric light shaft from (x,y,z) along dir
   const g=new THREE.PlaneGeometry(w,len,1,1);g.translate(0,-len/2,0);const g2=g.clone().rotateY(Math.PI/2);const m=new THREE.Mesh(mergeGeos([g,g2]),shaftMat(col,a));const q=new THREE.Quaternion().setFromUnitVectors(new V(0,-1,0),dir.clone().normalize());m.quaternion.copy(q);m.position.set(x,y,z);m.renderOrder=7;scene.add(m);L.shafts.push(m);};
- const fogPlane=(x0,z0,x1,z1,y,a=.45)=>{const g=new THREE.PlaneGeometry(x1-x0,z1-z0).rotateX(-Math.PI/2);const m=new THREE.Mesh(g,fogMat(a));m.position.set((x0+x1)/2,y,(z0+z1)/2);m.renderOrder=6;scene.add(m);L.fogPlanes.push(m);};
+ const fogPlane=(x0,z0,x1,z1,y,a=.45)=>{const g=new THREE.PlaneGeometry(x1-x0,z1-z0).rotateX(-Math.PI/2);const m=new THREE.Mesh(g,fogMat(a*.34));m.position.set((x0+x1)/2,y,(z0+z1)/2);m.renderOrder=6;scene.add(m);L.fogPlanes.push(m);};
  const banner=(x,y,z,yaw,w=1.2,h=3)=>{const g=new THREE.PlaneGeometry(w,h,1,4);g.translate(0,-h/2,0);const m=new THREE.Mesh(g,mBanner);m.position.set(x,y,z);m.rotation.y=yaw;m.castShadow=true;scene.add(m);L.banners.push({m,ph:R()*6});
   B.add(mIron,xf(new THREE.CylinderGeometry(.03,.03,w+.3,6),x,y,z,0,yaw,Math.PI/2));};
  const statue=(x,z,yaw,y=0,pose='kneel',s=1.25)=>{const r=makeRig('knight');const st={mode:pose==='kneel'?'kneel':'idle',t:0,speed:0,atk:pose==='point'?{name:'point',p:1}:pose==='raise'?{name:'cast',p:.5}:null};for(let i=0;i<40;i++)animate(r,st,.1);

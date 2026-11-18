@@ -24,7 +24,10 @@ export function makeEnv(R,top,hor,bot,lights=[]){const s=new THREE.Scene();s.add
 
 /* ---------- textures ---------- */
 const T={};
-function grassTex(){return T.grass||(T.grass=ctex(256,256,(x,w,h)=>{x.fillStyle='#4f9a3a';x.fillRect(0,0,w,h);for(let i=0;i<5000;i++){const v=rnd();x.fillStyle=v<.5?`rgba(30,80,20,${rnd(.4)})`:`rgba(170,230,110,${rnd(.25)})`;x.fillRect(rnd(w),rnd(h),1.5,2+rnd(4));}}));}
+function grassTex(){return T.grass||(T.grass=ctex(256,256,(x,w,h)=>{x.fillStyle='#4f9a3a';x.fillRect(0,0,w,h);
+  // broad tonal patches (wrapped so the tile stays seamless), then clover clumps, before the fine blade strokes
+  for(let i=0;i<26;i++){const cx=rnd(w),cy=rnd(h),r=18+rnd(40),lt=rnd()<.5;for(const ox of[-w,0,w])for(const oy of[-h,0,h]){const g=x.createRadialGradient(cx+ox,cy+oy,0,cx+ox,cy+oy,r);g.addColorStop(0,lt?'rgba(150,210,80,.28)':'rgba(30,90,30,.3)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(cx+ox-r,cy+oy-r,r*2,r*2);}}
+  for(let i=0;i<70;i++){const cx=rnd(w),cy=rnd(h);x.fillStyle=`rgba(${rnd()<.5?'40,110,40':'120,190,70'},.5)`;for(let k=0;k<3;k++){x.beginPath();x.arc(cx+Math.cos(k*2.1)*2.2,cy+Math.sin(k*2.1)*2.2,2.3,0,7);x.fill();}}for(let i=0;i<5000;i++){const v=rnd();x.fillStyle=v<.5?`rgba(30,80,20,${rnd(.4)})`:`rgba(170,230,110,${rnd(.25)})`;x.fillRect(rnd(w),rnd(h),1.5,2+rnd(4));}}));}
 function rockTex(base='#7a6a5a'){return ctex(256,256,(x,w,h)=>{x.fillStyle=base;x.fillRect(0,0,w,h);for(let i=0;i<3000;i++){x.fillStyle=`rgba(${rnd()<.5?'0,0,0':'255,240,220'},${rnd(.12)})`;const s=1+rnd(6);x.fillRect(rnd(w),rnd(h),s,s);}
  x.strokeStyle='rgba(0,0,0,.25)';x.lineWidth=2;for(let i=0;i<14;i++){x.beginPath();let px=rnd(w),py=rnd(h);x.moveTo(px,py);for(let j=0;j<5;j++){px+=rnd(40)-20;py+=rnd(30);x.lineTo(px,py);}x.stroke();}});}
 function plateTex(){return T.plate||(T.plate=ctex(256,256,(x,w,h)=>{x.fillStyle='#5a5f66';x.fillRect(0,0,w,h);for(let i=0;i<2500;i++){x.fillStyle=`rgba(0,0,0,${rnd(.1)})`;x.fillRect(rnd(w),rnd(h),2,2);}
@@ -47,6 +50,21 @@ function slab(s,mats,o={}){const g=new THREE.Group();const top=o.top??.45;
  g.add(M(tg,mats.top,(s.x0+s.x1)/2,s.y-top/2+.02,0));
  if(mats.edge){const e=M(new THREE.BoxGeometry(s.x1-s.x0+.5,.07,.07),mats.edge,(s.x0+s.x1)/2,s.y-.04,DEPTH/2+.27,false);g.add(e);for(const x of[s.x0-.25,s.x1+.25])g.add(M(new THREE.BoxGeometry(.09,.09,DEPTH+.5),mats.edge,x,s.y-.04,0,false));}
  return g;}
+// grass tufts over a slab top: a soft fringe hanging over the front lip, taller clumps behind the fighting line, a few flowers
+function grassTufts(s,greens,petals){const blade=new THREE.BufferGeometry();const P=[],C=[];
+ for(let k=0;k<5;k++){const a=k/5*Math.PI+rnd(.3),lean=(rnd()-.5)*.5,w=.05;const dx=Math.cos(a)*w,dz=Math.sin(a)*w,tx=Math.cos(a+1.57)*lean,tz=Math.sin(a+1.57)*lean;
+  P.push(-dx,0,-dz, dx,0,dz, tx*.3,1,tz*.3);C.push(.55,.55,.55, .55,.55,.55, 1.15,1.15,1.15);}
+ blade.setAttribute('position',new THREE.Float32BufferAttribute(P,3));blade.setAttribute('color',new THREE.Float32BufferAttribute(C,3));blade.computeVertexNormals();
+ const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,side:THREE.DoubleSide});
+ const spots=[];const W=s.x1-s.x0;
+ for(let i=0;i<Math.round(W*9);i++)spots.push([s.x0+rnd(W),DEPTH/2+.05+rnd(.3),.12+rnd(.12)]);// front lip, kept short so feet stay readable
+ for(let i=0;i<Math.round(W*14);i++)spots.push([s.x0+rnd(W),-DEPTH/2+rnd(DEPTH/2-1.2),.2+rnd(.32)]);// behind the fighting line
+ const im=new THREE.InstancedMesh(blade,mat,spots.length);const mm=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),c=new THREE.Color();
+ spots.forEach(([x,z,h],i)=>{q.setFromEuler(e.set((rnd()-.5)*.25,rnd(6.3),(rnd()-.5)*.25));mm.compose(new V(x,s.y-.02,z),q,new V(1+rnd(.6),h,1+rnd(.6)));im.setMatrixAt(i,mm);im.setColorAt(i,c.setHex(greens[i%greens.length]).multiplyScalar(.85+rnd(.3)));});
+ im.receiveShadow=true;const g=new THREE.Group();g.add(im);
+ const fl=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.06,0),new THREE.MeshStandardMaterial({roughness:.6,emissive:0x222222}),Math.round(W*1.6));
+ for(let i=0;i<fl.count;i++){mm.compose(new V(s.x0+rnd(W),s.y+.16+rnd(.12),-DEPTH/2+rnd(DEPTH/2-1.2)),q.identity(),new V(1,.6,1));fl.setMatrixAt(i,mm);fl.setColorAt(i,c.setHex(petals[i%petals.length]));}
+ g.add(fl);return g;}
 function softPlat(p,mats,o={}){const g=new THREE.Group();const w=p.x1-p.x0,d=o.depth??3.2;const tg=new THREE.BoxGeometry(w,.28,d);const tuv=tg.attributes.uv;for(let i=0;i<tuv.count;i++)tuv.setXY(i,tuv.getX(i)*w/5,tuv.getY(i));
  g.add(M(tg,mats.top,0,-.14,0));if(mats.under)g.add(M(new THREE.BoxGeometry(w*.86,.3,d*.8),mats.under,0,-.42,0));
  if(mats.edge)g.add(M(new THREE.BoxGeometry(w,.06,.06),mats.edge,0,-.06,d/2+.02,false));
@@ -75,6 +93,7 @@ function garden(R,S,grp,out,add){const s=S.solids[0];
  // main island
  const side=std({map:rockTex('#a8846a'),color:0xd8b49a,roughness:.92}),top=std({map:grassTex(),color:0xd0f4a8,roughness:.9});
  add(slab(s,{side,top,edge:std({color:0xf2e6c8,roughness:.6})},{island:true,depth:11,top:.55}));
+ add(grassTufts(s,[0x4fa83c,0x6cc24a,0x3d8f34,0x8fd860],[0xffffff,0xffd84a,0xff8ac0,0xb8a0ff]));
  // hanging rocks + trees + crystals
  for(let i=0;i<14;i++){const r=M(new THREE.DodecahedronGeometry(.4+rnd(1.2),0),side,s.x0+rnd(s.x1-s.x0),s.y-2-rnd(6),(rnd()-.5)*5);r.rotation.set(rnd(3),rnd(3),0);add(r);}
  const trunk=std({color:0x5a3a24,roughness:.9}),leaf=std({color:0x5cc84a,roughness:.8,emissive:0x0a2a08,emissiveIntensity:.3}),leaf2=std({color:0xff9ac8,roughness:.8,emissive:0x2a0814,emissiveIntensity:.3});

@@ -20,10 +20,10 @@ const EMBER=[C(2.6,.9,.2),C(2.2,.5,.1),C(1.8,1.2,.4)],ASH=C(.16,.14,.13);
 /* ================= renderer / scene ================= */
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});R.setPixelRatio(Math.min(devicePixelRatio,1.25));
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
-const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x0d1016,.03);scene.background=new THREE.Color(0x07080b);
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x0d1016,.022);scene.background=new THREE.Color(0x07080b);
 const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,900);
-const hemi=new THREE.HemisphereLight(0x5a6a8a,0x1a140e,1.05);scene.add(hemi);
-const moon=new THREE.DirectionalLight(0xaabbe0,1.7);moon.castShadow=true;moon.shadow.mapSize.set(2048,2048);Object.assign(moon.shadow.camera,{left:-32,right:32,top:32,bottom:-32,near:1,far:220});moon.shadow.bias=-.0005;moon.shadow.normalBias=.05;scene.add(moon,moon.target);
+const hemi=new THREE.HemisphereLight(0x7488ac,0x30261a,1.45);scene.add(hemi);
+const moon=new THREE.DirectionalLight(0xaabbe0,2.3);moon.castShadow=true;moon.shadow.mapSize.set(2048,2048);Object.assign(moon.shadow.camera,{left:-32,right:32,top:32,bottom:-32,near:1,far:220});moon.shadow.bias=-.0005;moon.shadow.normalBias=.05;scene.add(moon,moon.target);
 const fill=new THREE.PointLight(0xffc89a,6,9,1.6);scene.add(fill);// the Unkindled's faint ember glow keeps them readable in the dark
 const NL=8;const lamps=[];for(let i=0;i<NL;i++){const l=new THREE.PointLight(0xff8a3a,0,16,1.7);scene.add(l);lamps.push(l);}
 const phys=new Phys();

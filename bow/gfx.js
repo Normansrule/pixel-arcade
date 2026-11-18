@@ -30,10 +30,13 @@ export function makeTextures(){const T={};
     x.fillStyle=`rgb(${g+tint},${g-3},${g-8-tint})`;x.fillRect(xx+3,y+3,bw-6,rh-6);
     const gr=x.createLinearGradient(0,y,0,y+rh);gr.addColorStop(0,'rgba(255,255,255,.12)');gr.addColorStop(1,'rgba(0,0,0,.18)');x.fillStyle=gr;x.fillRect(xx+3,y+3,bw-6,rh-6);
     hx.fillStyle=`rgb(${190+Math.random()*50|0},0,0)`;hx.fillRect(xx+4,y+4,bw-8,rh-8);hx.fillStyle='rgba(255,0,0,.35)';hx.fillRect(xx+8,y+8,bw-16,rh-16);
+    // weathered face: pits and lichen dabs in colour and height, a chipped corner or two
+    for(let k=0;k<22;k++){const px=xx+6+Math.random()*(bw-12),py=y+6+Math.random()*(rh-12),pr=1+Math.random()*4;x.fillStyle=Math.random()<.75?`rgba(30,26,22,${.12+Math.random()*.18})`:`rgba(255,250,235,${.06+Math.random()*.08})`;x.beginPath();x.arc(px,py,pr,0,7);x.fill();hx.fillStyle=`rgba(0,0,0,${.25+Math.random()*.3})`;hx.beginPath();hx.arc(px,py,pr,0,7);hx.fill();}
+    if(Math.random()<.5){const cs=5+Math.random()*9,cx=Math.random()<.5?xx+3:xx+bw-3-cs,cy=Math.random()<.5?y+3:y+rh-3-cs;x.fillStyle='rgba(60,56,50,.9)';x.fillRect(cx,cy,cs,cs*.7);hx.fillStyle='rgb(40,0,0)';hx.fillRect(cx,cy,cs,cs*.7);}
     for(let wrap of[0,S])if(xx+bw>S&&wrap){x.fillStyle=`rgb(${g+tint},${g-3},${g-8-tint})`;x.fillRect(xx+3-S,y+3,bw-6,rh-6);hx.fillStyle='rgb(210,0,0)';hx.fillRect(xx+4-S,y+4,bw-8,rh-8);}
     xx+=bw;}y+=rh;}
   speckle(x,S,S,9000,.12,2);for(let i=0;i<40;i++){x.fillStyle=`rgba(60,80,40,${Math.random()*.12})`;x.beginPath();x.arc(Math.random()*S,Math.random()*S,10+Math.random()*30,0,7);x.fill();}
-  T.stone=canvasTex(c);T.stoneN=normalFrom(hc,2.2);}
+  T.stone=canvasTex(c);T.stoneN=normalFrom(hc,2.8);}
  // wood planks
  {const S=256;const[c,x]=cv(S,S),[hc,hx]=cv(S,S);hx.fillStyle='#fff';hx.fillRect(0,0,S,S);const pw=S/5;
   for(let i=0;i<5;i++){const g=120+Math.random()*40|0;x.fillStyle=`rgb(${g+30},${g},${g-40})`;x.fillRect(i*pw,0,pw,S);for(let k=0;k<26;k++){x.strokeStyle=`rgba(60,35,15,${.12+Math.random()*.2})`;x.lineWidth=1+Math.random()*1.5;x.beginPath();const ox=i*pw+Math.random()*pw;x.moveTo(ox,0);x.bezierCurveTo(ox+6*Math.random()-3,S*.3,ox-6*Math.random()+3,S*.6,ox+Math.random()*4-2,S);x.stroke();}

@@ -3,6 +3,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {N,SP,ROAD,HALF,WALK,HY,WORLD,rng} from './city.js';
 import {Placer} from '../js/kit3d/place.js';
+import {untile} from '../js/kit3d/untile.js';
 const V=THREE.Vector3,cl=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
 
 class GB{constructor(){this.p=[];this.n=[];this.u=[];this.i=[];this.c=[];}
@@ -61,7 +62,7 @@ export function buildWorld(city,T,renderer){const R=rng(1234);const group=new TH
  // sidewalks: raised slabs around blocks
  for(const b of city.blocks){if(b.d==='river'||b.d==='park'||b.d==='hill')continue;const h=.18;walks.box(b.x0,-.2,b.z0,b.x1,h,b.z0+WALK,{us:4});walks.box(b.x0,-.2,b.z1-WALK,b.x1,h,b.z1,{us:4});walks.box(b.x0,-.2,b.z0+WALK,b.x0+WALK,h,b.z1-WALK,{us:4});walks.box(b.x1-WALK,-.2,b.z0+WALK,b.x1,h,b.z1-WALK,{us:4});
   walks.box(b.x0+WALK,-.2,b.z0+WALK,b.x1-WALK,.05,b.z1-WALK,{skip:{pz:1,nz:1,px:1,nx:1},us:4});}
- const roadMesh=new THREE.Mesh(roads.geo(),M.road);roadMesh.receiveShadow=true;group.add(roadMesh);M.road.map.repeat.set(1,1);
+ untile(M.road,{freq:.3,drift:.14});untile(M.deck,{freq:.3,drift:.14});const roadMesh=new THREE.Mesh(roads.geo(),M.road);roadMesh.receiveShadow=true;group.add(roadMesh);M.road.map.repeat.set(1,1);
  const wm=new THREE.Mesh(walks.geo(),M.walk);wm.receiveShadow=true;group.add(wm);group.add(new THREE.Mesh(lines.geo(),M.line));group.add(new THREE.Mesh(ylines.geo(),M.yline));
 
  /* ---------- buildings ---------- */

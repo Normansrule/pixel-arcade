@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round33`)
 
+### Round 33, batch 9 (v90): stone, mud and grass
+- **Ashen Vigil yard and halls.** The starting graveyard was one flat smear of brown mud under a grey fog sheet. It now has damp and dry patches, clumps of dead grass, small lit pebbles and sunken flagstones with shading, cracks and mud over their edges, with no visible repeats. The stone floors inside are now worn granite setts with moss in the joints. The ground fog is thinner and bluer, and the moon and sky fill are brighter, so the yard reads at night instead of washing out.
+- **Longbow Keep stonework.** Every wall block has pits, stains and a chipped corner on about half of them, and the stronger relief catches the light.
+- **Hollow Manor.** The haze is a touch thinner and the moonlit fill a little bluer and brighter, so the hall, the stairs and the checkered floor show their shapes while the house stays dark.
+- **Brawl grass.** The floating island's lawn has broad light and dark patches and clover clumps instead of a flat green, plus about 500 grass tufts and a scatter of small flowers. The tufts along the front edge are kept short so the fighters' feet stay easy to read.
+- **Night Drive roads.** The asphalt on streets and bridge decks no longer visibly repeats.
+
 ### Round 33, batch 8 (v89): ground with grit
 - **Hardfall streets and sand.** The asphalt, sand and pavement textures were built only from soft cloud noise, so up close they looked smeared, almost liquid. Each now has a crisp layer of fine grain and thousands of small stones (aggregate in the asphalt, grit in the concrete), wind ripples in the sand, and less of the blurry large-scale noise. Asphalt and sand also use the shared anti-tiling shader, so they no longer repeat.
 - **Starwarden ground.** The open ground used the cliff texture, whose banded strata made it read as a wavy purple sheet. It now has its own alien regolith: soft dust drifts, fine grit, scattered rounded stones and a web of dry cracks, coloured per planet, with no visible repeats.

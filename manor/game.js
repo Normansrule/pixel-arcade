@@ -17,7 +17,7 @@ const mmss=s=>{s=Math.max(0,Math.round(s));return(s/60|0)+':'+String(s%60).padSt
 try{await Promise.race([Promise.all([document.fonts.load('64px Anton'),document.fonts.load('20px "JetBrains Mono"')]),new Promise(r=>setTimeout(r,2500))]);}catch(e){}
 const canvas=$('c');const RR=new THREE.WebGLRenderer({canvas,powerPreference:'high-performance'});RR.setPixelRatio(Math.min(devicePixelRatio,1.5));RR.shadowMap.enabled=true;RR.shadowMap.type=THREE.PCFSoftShadowMap;RR.shadowMap.autoUpdate=false;// redrawn once per frame in render(): not again for the AO normal pass, not while the torch is dark
 
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x010102);scene.fog=new THREE.FogExp2(0x030305,.07);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x010102);scene.fog=new THREE.FogExp2(0x07080e,.055);
 const cam=new THREE.PerspectiveCamera(75,1,.03,90);cam.rotation.order='YXZ';scene.add(cam);
 const T=makeTextures();
 const std=o=>new THREE.MeshStandardMaterial(Object.assign({vertexColors:true,roughness:.85,metalness:0},o)),obj=o=>new THREE.MeshStandardMaterial(Object.assign({roughness:.7,metalness:0},o));
@@ -39,7 +39,7 @@ for(const k of['wpG','wpR','wpD','wpP','wpN','wpB'])M[k]=std({map:T[k],roughness
 const house=new House();house.build(scene,T,M);
 
 /* ================= lights ================= */
-const hemi=new THREE.HemisphereLight(0x4a5a88,0x0c0a08,.3);scene.add(hemi);
+const hemi=new THREE.HemisphereLight(0x5a6c9c,0x1c1612,.9);scene.add(hemi);
 const flash=new THREE.SpotLight(0xfff0d8,0,28,.5,.6,1.35);flash.position.set(.2,-.19,-.5);flash.target.position.set(.05,-.45,-7);cam.add(flash,flash.target);flash.shadow.mapSize.set(1024,1024);flash.shadow.bias=-.0006;flash.shadow.normalBias=.02;flash.shadow.camera.near=.15;flash.shadow.camera.far=28;
 const POOLN=8,pool=[];for(let i=0;i<POOLN;i++){const l=new THREE.PointLight(0xffa050,0,6,2);scene.add(l);pool.push(l);}
 // the flashlight in hand
