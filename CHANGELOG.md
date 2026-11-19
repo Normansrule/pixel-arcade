@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round34`)
 
+### Round 34, batch 2 (v96): three arcade scenes repainted
+Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Rally Maze.** The grey grid and green dots are now a small country town seen from above: asphalt lanes with grain, oil spots, kerbs, white edge lines and yellow centre dashes, clipped hedges that cast soft shadows, round trees and cottages with tiled roofs, and fields beside the town with a dirt lane, a fence and wild flowers. The map is painted once per level and scrolls, so it costs nothing extra per frame.
+- **Scramble Run.** The sky has a ringed planet, a small moon and drifting nebula. The ground has rock strata that follow its shape and pebbles, with grass and flowers on the hills, boulders in the desert, craters in the meteor field and blinking lights on the base.
+- **Firework Show.** The empty night is now a harbour: a moon with a halo and its reflection, clouds lit by the city, two layers of skyline, a suspension bridge with lights, rippling water with window reflections, and a stone promenade with a railing and a string of coloured lights.
+
 ### Round 34, batch 1 (v95): Harbor Pals realism pass, Tumble Royale camera fix
 A fresh sweep of all 544 arcade cabinets and a survey of the 3D worlds that had not yet had a realism pass. Controls, rules, time limits, results screens and CPU difficulty are unchanged.
 - **Harbor Pals.** The promenade paving is rebuilt from scratch: rows of hand-laid cobbles in warm granite, grey granite and dark basalt, each with its own shape, grain, chips, hairline cracks and lichen, set in dark joint sand with moss. The upper terrace uses large worn flagstones. The dock boards now show wood grain, knots, sun-bleached tops, rusty nail heads and dark gaps between the boards. All three surfaces have real relief (the joints sink and the stones dome), polished and damp patches that catch the evening light, and a shared anti-tiling shader so the pattern never visibly repeats.
