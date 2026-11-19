@@ -2,7 +2,14 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round33`)
+## Unreleased (on branch `round34`)
+
+### Round 34, batch 1 (v95): Harbor Pals realism pass, Tumble Royale camera fix
+A fresh sweep of all 544 arcade cabinets and a survey of the 3D worlds that had not yet had a realism pass. Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Harbor Pals.** The promenade paving is rebuilt from scratch: rows of hand-laid cobbles in warm granite, grey granite and dark basalt, each with its own shape, grain, chips, hairline cracks and lichen, set in dark joint sand with moss. The upper terrace uses large worn flagstones. The dock boards now show wood grain, knots, sun-bleached tops, rusty nail heads and dark gaps between the boards. All three surfaces have real relief (the joints sink and the stones dome), polished and damp patches that catch the evening light, and a shared anti-tiling shader so the pattern never visibly repeats.
+- **Tumble Royale.** The fly-over at the start of every race round used to pass through the finish arch, so the screen filled with a pink beam. The camera now rises over the arch and shows the whole course. The FINISH banner is painted on both faces of the arch, so it no longer reads mirrored from behind.
+
+## Round 33 (branch `round33`, v82 to v94)
 
 ### Round 33, batch 13 (v94): six more arcade scenes repainted
 A second review of the arcade contact sheets picked six more cabinets with plain or flat scenes. Controls, rules, time limits, results screens and CPU difficulty are unchanged.

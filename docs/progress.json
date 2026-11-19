@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v95", "date": "19 Nov 2026", "branch": "round34", "round": 34, "games": 600, "worlds": 56,
+     "added": "Harbor Pals gets its realism pass: worn granite cobbles, big flagstones and weathered dock boards with real relief, damp patches and no visible repeat. Tumble Royale's race fly-overs no longer clip through the finish arch, and the arch banner reads the right way round from both sides."},
     {"v": "v94", "date": "18 Nov 2026", "branch": "round33", "round": 33, "games": 600, "worlds": 56,
      "added": "Six more arcade scenes are repainted: Tower Line's meadow, Cave Raid's cavern, Lemonade Stand's park, Burger Rush's kitchen, Summit Leap's woods and ruins, and Boomerang's arena floors."},
     {"v": "v93", "date": "18 Nov 2026", "branch": "round33", "round": 33, "games": 600, "worlds": 56,
@@ -134,6 +136,7 @@
     "wildquest":      {"v": "v33", "passes": 1},
     "kartgp":         {"v": "v33", "passes": 1},
     "abyss3d":        {"v": "v33", "passes": 1},
-    "swellguard":     {"v": "v33", "passes": 1}
+    "swellguard":     {"v": "v33", "passes": 1},
+    "harborpals":     {"v": "v95", "passes": 1}
   }
 }

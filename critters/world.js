@@ -1,6 +1,7 @@
 // HARBOR PALS — the harbor: walkable regions (heights, stairs as ramps), merged static geometry, procedural textures,
 // tide water, dusk sky, lamps, and the task props (dig mounds, broken pier gap, winch + motor, the boat "Puffin").
 import * as THREE from '../vendor/three.module.min.js';
+import {untile} from '../js/kit3d/untile.js';
 const V=THREE.Vector3,C=c=>new THREE.Color(c),cl=(v,a,b)=>v<a?a:v>b?b:v;
 export function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 
@@ -50,14 +51,52 @@ export const onFar=(p)=>p.z>16.2&&p.x>4&&p.x<21; // beyond the gap (the bridge o
 
 /* ================= procedural textures ================= */
 function cv(n,f){const c=document.createElement('canvas');c.width=c.height=n;f(c.getContext('2d'),n);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
-function texCobble(){return cv(256,(x,n)=>{const r=mulberry(3);x.fillStyle='#6a5444';x.fillRect(0,0,n,n);const rows=8;for(let j=0;j<rows;j++){const off=(j%2)*16;for(let i=-1;i<8;i++){const w=30+r()*6,h=n/rows-4,cx=i*32+off+2,cy=j*n/rows+2,v=150+r()*70|0,t=r()*16-8;
- x.fillStyle=`rgb(${v+t|0},${v*.9+t|0},${v*.74|0})`;x.beginPath();x.roundRect(cx,cy,w-4,h,7);x.fill();x.fillStyle='rgba(255,255,255,.10)';x.beginPath();x.roundRect(cx+2,cy+2,w-10,h*.35,5);x.fill();}}
- for(let i=0;i<900;i++){x.fillStyle=`rgba(0,0,0,${r()*.12})`;x.fillRect(r()*n,r()*n,2,2);}});}
-function texFlag(){return cv(256,(x,n)=>{const r=mulberry(17);x.fillStyle='#7a6450';x.fillRect(0,0,n,n);const rows=[0,64,128,192,256];for(let j=0;j<4;j++){let px=-r()*40;while(px<n){const w=50+r()*60,v=185+r()*45|0;x.fillStyle=`rgb(${v},${v*.88|0},${v*.72|0})`;x.fillRect(px+2,rows[j]+2,w-4,60);
- x.fillStyle='rgba(255,255,255,.08)';x.fillRect(px+3,rows[j]+3,w-6,10);for(let k=0;k<30;k++){x.fillStyle=`rgba(90,60,40,${r()*.15})`;x.fillRect(px+2+r()*(w-6),rows[j]+2+r()*58,2+r()*3,2+r()*3);}px+=w;}}});}
-function texPlank(){return cv(256,(x,n)=>{const r=mulberry(5);for(let j=0;j<8;j++){const v=130+r()*60|0;x.fillStyle=`rgb(${v},${v*.72|0},${v*.5|0})`;x.fillRect(0,j*32,n,32);
- for(let k=0;k<26;k++){x.strokeStyle=`rgba(60,30,10,${.08+r()*.12})`;x.lineWidth=1;x.beginPath();const y=j*32+3+r()*26;x.moveTo(0,y);x.bezierCurveTo(80,y+r()*4-2,170,y+r()*4-2,n,y);x.stroke();}
- x.fillStyle='rgba(30,15,5,.55)';x.fillRect(0,j*32,n,2);const cut=r()*n;x.fillRect(cut,j*32,2,32);x.fillStyle='rgba(30,20,10,.6)';for(const q of[cut-8,cut+8]){x.beginPath();x.arc(q,j*32+9,1.6,0,7);x.arc(q,j*32+23,1.6,0,7);x.fill();}}});}
+// three canvases at once: colour (sRGB), height (bump) and roughness; f(colour ctx, height ctx, rough ctx, n)
+function cv3(n,f){const mk=()=>{const c=document.createElement('canvas');c.width=c.height=n;return c;};const a=mk(),b=mk(),d=mk();f(a.getContext('2d'),b.getContext('2d'),d.getContext('2d'),n);
+ const T=c=>{const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;};const map=T(a);map.colorSpace=THREE.SRGBColorSpace;return{map,bump:T(b),rough:T(d)};}
+// draw a shape at x,y and at its wrapped copies so stones crossing the tile edge stay seamless
+function wrap(n,x,y,draw){for(const ox of[-n,0,n])for(const oy of[-n,0,n])draw(x+ox,y+oy);}
+// a worn stone: jittered rounded polygon of w x h at cx,cy
+function stonePath(x,cx,cy,w,h,r,jit){const pts=[];const k=10;for(let i=0;i<k;i++){const a=i/k*6.2832,c=Math.cos(a),s=Math.sin(a);const q=Math.pow(Math.abs(c),.35)*Math.sign(c),p=Math.pow(Math.abs(s),.35)*Math.sign(s);pts.push([cx+q*w/2*(1-jit*r()),cy+p*h/2*(1-jit*r())]);}
+ x.beginPath();pts.forEach((p,i)=>{const nx=pts[(i+1)%k],mx=(p[0]+nx[0])/2,my=(p[1]+nx[1])/2;i?x.quadraticCurveTo(p[0],p[1],mx,my):x.moveTo(mx,my);});const p0=pts[0],p1=pts[1];x.quadraticCurveTo(p0[0],p0[1],(p0[0]+p1[0])/2,(p0[1]+p1[1])/2);x.closePath();}
+// grout bed shared by cobbles and flags: dark joint sand, moss, grit
+function groutBed(x,h,g,n,r,base){x.fillStyle=base;x.fillRect(0,0,n,n);h.fillStyle='#262626';h.fillRect(0,0,n,n);g.fillStyle='#f2f2f2';g.fillRect(0,0,n,n);
+ for(let i=0;i<n*n/90;i++){const v=r();x.fillStyle=v<.3?`rgba(70,90,40,${.15+r()*.3})`:v<.6?`rgba(30,22,16,${r()*.4})`:`rgba(200,180,150,${r()*.25})`;x.fillRect(r()*n,r()*n,1+r()*2.5,1+r()*2.5);}}
+// stone body: tone, grains, highlight, edge shadow; matching dome in the height map and polish in roughness
+function stoneBody(x,h,g,r,cx,cy,w,hh,jit,tone){const R=Math.max(w,hh)/2,v=tone;
+ stonePath(x,cx,cy,w,hh,r,jit);const sg=x.createLinearGradient(cx-w/2,cy-hh/2,cx+w/2,cy+hh/2);sg.addColorStop(0,`rgb(${v[0]+18|0},${v[1]+16|0},${v[2]+14|0})`);sg.addColorStop(1,`rgb(${v[0]*.7|0},${v[1]*.7|0},${v[2]*.7|0})`);x.fillStyle=sg;x.fill();
+ x.save();x.clip();for(let i=0;i<w*hh/9;i++){const q=r();x.fillStyle=q<.45?`rgba(0,0,0,${r()*.26})`:q<.8?`rgba(255,255,255,${r()*.2})`:`rgba(${120+r()*60|0},${90+r()*40|0},${60+r()*30|0},${r()*.2})`;x.fillRect(cx-w/2+r()*w,cy-hh/2+r()*hh,1+r()*1.6,1+r()*1.6);}
+ const pg=x.createRadialGradient(cx-w*.12,cy-hh*.15,0,cx,cy,R);pg.addColorStop(0,'rgba(255,248,235,.16)');pg.addColorStop(.6,'rgba(255,248,235,0)');pg.addColorStop(1,'rgba(20,12,6,.5)');x.fillStyle=pg;x.fillRect(cx-R,cy-R,R*2,R*2);
+ if(r()<.22){x.strokeStyle='rgba(30,20,12,.45)';x.lineWidth=.8;x.beginPath();let px=cx-w*.3+r()*w*.2,py=cy-hh*.4;x.moveTo(px,py);for(let k=0;k<4;k++){px+=r()*w*.2-w*.05;py+=hh*.22;x.lineTo(px,py);}x.stroke();}
+ if(r()<.3){x.fillStyle=`rgba(${150+r()*40|0},${160+r()*30|0},${90|0},.22)`;for(let k=0;k<5;k++){x.beginPath();x.arc(cx-w/2+r()*w,cy-hh/2+r()*hh,1+r()*3,0,6.3);x.fill();}}
+ x.restore();
+ stonePath(h,cx,cy,w,hh,r,jit);const hg=h.createRadialGradient(cx,cy,0,cx,cy,R*1.05);const top=170+r()*60|0;hg.addColorStop(0,`rgb(${top},${top},${top})`);hg.addColorStop(.7,`rgb(${top-25},${top-25},${top-25})`);hg.addColorStop(1,'rgb(90,90,90)');h.fillStyle=hg;h.fill();
+ h.save();h.clip();for(let i=0;i<w*hh/40;i++){h.fillStyle=`rgba(0,0,0,${r()*.25})`;h.fillRect(cx-w/2+r()*w,cy-hh/2+r()*hh,1+r()*2,1+r()*2);}h.restore();
+ stonePath(g,cx,cy,w,hh,r,jit);const rg=g.createRadialGradient(cx,cy,0,cx,cy,R);const pol=90+r()*60|0;rg.addColorStop(0,`rgb(${pol},${pol},${pol})`);rg.addColorStop(1,'rgb(200,200,200)');g.fillStyle=rg;g.fill();}
+// damp patches: darker, smoother areas spread over the tile (wrapped)
+function damp(x,g,n,r,k){for(let i=0;i<k;i++){const cx=r()*n,cy=r()*n,R=n*(.06+r()*.12);wrap(n,cx,cy,(px,py)=>{const a=x.createRadialGradient(px,py,0,px,py,R);a.addColorStop(0,'rgba(40,30,22,.2)');a.addColorStop(1,'rgba(40,30,22,0)');x.fillStyle=a;x.fillRect(px-R,py-R,R*2,R*2);
+  const b=g.createRadialGradient(px,py,0,px,py,R);b.addColorStop(0,'rgba(40,40,40,.55)');b.addColorStop(1,'rgba(40,40,40,0)');g.fillStyle=b;g.fillRect(px-R,py-R,R*2,R*2);});}}
+// a row of stones whose widths sum to exactly one tile, shifted by off so joints stagger; wrapped at the edges
+function row(n,r,minW,maxW,off,each){const ws=[];let t=0;while(t<n-minW*.5){const w=minW+r()*(maxW-minW);ws.push(w);t+=w;}const k=n/t;let px=off;ws.forEach((w,i)=>{w*=k;each(px+w/2,w,i);px+=w;});}
+function texCobble(){return cv3(512,(x,h,g,n)=>{const r=mulberry(3);groutBed(x,h,g,n,r,'#4a3c30');const rows=16,rh=n/rows;
+ for(let j=0;j<rows;j++){const cy=j*rh+rh/2;row(n,r,22,38,(j%2)*14+r()*6,(cx,w,i)=>{const t=r(),q=r(),v=q<.2?[96+t*30,94+t*28,92+t*26]:q<.55?[180+t*50,160+t*44,138+t*36]:[168+t*50,164+t*48,158+t*44],sd=j*97+i*13+1;
+   wrap(n,cx,cy,(X,Y)=>stoneBody(x,h,g,mulberry(sd),X,Y,w-5,rh-5,.18,v));});}
+ damp(x,g,n,r,7);});}
+function texFlag(){return cv3(512,(x,h,g,n)=>{const r=mulberry(17);groutBed(x,h,g,n,r,'#5a4a3c');const rows=4,rh=n/rows;
+ for(let j=0;j<rows;j++){row(n,r,90,190,r()*120,(cx,w,i)=>{const t=r(),v=[196+t*40,180+t*36,156+t*30],sd=j*131+i*7+1;
+   wrap(n,cx,j*rh+rh/2,(X,Y)=>stoneBody(x,h,g,mulberry(sd),X,Y,w-5,rh-5,.035,v));});}
+ damp(x,g,n,r,5);});}
+// weathered dock boards: grain, knots, sun-bleached tops, dark gaps; height sinks the gaps and grain, roughness wets the joints
+function texPlank(){return cv3(512,(x,h,g,n)=>{const r=mulberry(5),bw=n/8;x.fillStyle='#1c120a';x.fillRect(0,0,n,n);h.fillStyle='#202020';h.fillRect(0,0,n,n);g.fillStyle='#d8d8d8';g.fillRect(0,0,n,n);
+ for(let j=0;j<8;j++){const y0=j*bw+2,bh=bw-4,v=120+r()*70|0,gr=x.createLinearGradient(0,y0,0,y0+bh);gr.addColorStop(0,`rgb(${v+25|0},${v*.78+20|0},${v*.58+12|0})`);gr.addColorStop(.5,`rgb(${v},${v*.72|0},${v*.5|0})`);gr.addColorStop(1,`rgb(${v*.7|0},${v*.48|0},${v*.32|0})`);x.fillStyle=gr;x.fillRect(0,y0,n,bh);
+  h.fillStyle='#b8b8b8';h.fillRect(0,y0,n,bh);h.fillStyle='rgba(255,255,255,.25)';h.fillRect(0,y0+bh*.25,n,bh*.5);
+  for(let k=0;k<70;k++){const yy=y0+2+r()*(bh-4),a=.05+r()*.16;x.strokeStyle=`rgba(50,26,10,${a})`;x.lineWidth=.6+r()*1.2;x.beginPath();x.moveTo(0,yy);let px=0;while(px<n){px+=30+r()*50;x.lineTo(px,yy+r()*2.4-1.2);}x.stroke();
+   h.strokeStyle=`rgba(0,0,0,${a*1.4})`;h.lineWidth=.8;h.beginPath();h.moveTo(0,yy);h.lineTo(n,yy+r()*2-1);h.stroke();}
+  for(let k=0;k<2;k++){const kx=r()*n,ky=y0+bh*(.3+r()*.4),kr=3+r()*5;for(const ox of[-n,0,n]){const kg=x.createRadialGradient(kx+ox,ky,0,kx+ox,ky,kr*2.2);kg.addColorStop(0,'rgba(40,18,6,.8)');kg.addColorStop(.4,'rgba(70,36,14,.4)');kg.addColorStop(1,'rgba(70,36,14,0)');x.fillStyle=kg;x.beginPath();x.ellipse(kx+ox,ky,kr*2.2,kr*1.1,0,0,6.3);x.fill();h.fillStyle='rgba(0,0,0,.3)';h.beginPath();h.ellipse(kx+ox,ky,kr,kr*.6,0,0,6.3);h.fill();}}
+  x.fillStyle='rgba(235,225,205,.09)';for(let k=0;k<40;k++)x.fillRect(r()*n,y0+r()*bh*.6,20+r()*60,1+r()*2);
+  const cut=r()*n;x.fillStyle='#1c120a';x.fillRect(cut,y0,2.5,bh);h.fillStyle='#202020';h.fillRect(cut,y0,2.5,bh);g.fillStyle='#606060';g.fillRect(cut-3,y0,8,bh);
+  for(const q of[cut-9,cut+11])for(const yy of[y0+bh*.28,y0+bh*.72]){x.fillStyle='#3a3430';x.beginPath();x.arc(q,yy,2.2,0,7);x.fill();x.fillStyle='rgba(150,80,40,.35)';x.beginPath();x.arc(q+1.5,yy+2.5,3.5,0,7);x.fill();g.fillStyle='#707070';g.beginPath();g.arc(q,yy,2.4,0,7);g.fill();}}
+ damp(x,g,n,r,4);});}
 function texRoof(){return cv(256,(x,n)=>{const r=mulberry(9);x.fillStyle='#5a2a20';x.fillRect(0,0,n,n);for(let j=0;j<8;j++)for(let i=-1;i<9;i++){const v=170+r()*60|0,cx=i*32+(j%2)*16,cy=j*32;
  const g=x.createLinearGradient(0,cy,0,cy+32);g.addColorStop(0,`rgb(${v},${v*.5|0},${v*.38|0})`);g.addColorStop(1,`rgb(${v*.62|0},${v*.28|0},${v*.2|0})`);x.fillStyle=g;x.beginPath();x.moveTo(cx+1,cy);x.lineTo(cx+31,cy);x.lineTo(cx+31,cy+22);x.quadraticCurveTo(cx+16,cy+36,cx+1,cy+22);x.fill();}});}
 function texSand(){return cv(256,(x,n)=>{const r=mulberry(11);x.fillStyle='#d9bf8e';x.fillRect(0,0,n,n);for(let i=0;i<5000;i++){const v=r();x.fillStyle=v<.5?`rgba(120,90,50,${r()*.18})`:`rgba(255,250,230,${r()*.25})`;x.fillRect(r()*n,r()*n,1+r()*2,1+r()*2);}
@@ -100,10 +139,11 @@ function shelf(K,x0,x1,z0,z1,h,ext,sides=[1,1,1,1]){const nx=Math.ceil((x1-x0+ex
  const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*(x1-x0+ext*2)/3,uv.getY(i)*(z1-z0+ext*2)/3);g.computeVertexNormals();K.add('sand',g,'#f0d9ac');}
 /* ================= the world ================= */
 export function buildWorld(scene,R){
- const T={flag:texFlag(),cob:texCobble(),plank:texPlank(),roof:texRoof(),sand:texSand(),plaster:texPlaster()};
+ const FL=texFlag(),CB=texCobble(),PL=texPlank(),T={flag:FL.map,cob:CB.bump,cobS:CB,flagS:FL,plank:PL.map,roof:texRoof(),sand:texSand(),plaster:texPlaster()};
  const std=(o)=>new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,metalness:0,...o});
- const M={flag:std({map:T.flag,bumpMap:T.flag,bumpScale:1,roughness:.8}),stone:std({map:T.cob,bumpMap:T.cob,bumpScale:1.4}),wood:std({map:T.plank,bumpMap:T.plank,bumpScale:1,roughness:.8}),roof:std({map:T.roof,bumpMap:T.roof,bumpScale:1.5,roughness:.7}),
+ const M={flag:std({map:FL.map,bumpMap:FL.bump,bumpScale:1.6,roughnessMap:FL.rough,roughness:.95}),stone:std({map:CB.map,bumpMap:CB.bump,bumpScale:2.2,roughnessMap:CB.rough,roughness:.95}),wood:std({map:PL.map,bumpMap:PL.bump,bumpScale:1.4,roughnessMap:PL.rough,roughness:.9}),roof:std({map:T.roof,bumpMap:T.roof,bumpScale:1.5,roughness:.7}),
   sand:std({map:T.sand,roughness:.95}),plaster:std({map:T.plaster,roughness:.9}),paint:std({roughness:.6}),glow:new THREE.MeshBasicMaterial({vertexColors:true,toneMapped:true}),rock:std({map:T.sand,roughness:.92,flatShading:true}),metal:std({roughness:.45,metalness:.5})};
+ for(const k of['flag','stone','wood','sand'])untile(M[k],{freq:.31,drift:.12});
  const K=new Kit();const W={M,T,lamps:[],gulls:[],mounds:[],time:0};
  /* ---- ground surfaces from the regions ---- */
  for(const r of REG){if(r.kind==='solid')continue;const mat=r.kind==='sand'?'sand':r.kind==='wood'?'wood':'stone';const col=r.kind==='stone'?(r.h>2.5&&!r.ax?'#e4d2bf':'#d6c8b8'):r.kind==='wood'?'#b98c62':'#f2dcb0';

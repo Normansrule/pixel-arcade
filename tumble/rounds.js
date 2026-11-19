@@ -48,7 +48,8 @@ function slider(c,x0,amp,y,z,per,ph,rx,size=[3,1.6,1.6]){const col=mkBox(new V()
 function bumper(c,x,y,z,r=.85){c.cyl(x,y+.8,z,r,1.6,'bump',{cp:{bounce:1.15,tag:'bumper'}});c.deco(new THREE.TorusGeometry(r+.02,.12,8,24),M(x,y+1.62,z,Math.PI/2),'white');}
 function arch(c,z,y,w,label='FINISH'){const h=6.5;for(const s of[-1,1]){c.block(s*(w/2+.6),y+h/2,z,1.2,h,1.2,'yellow',{r:.5});}c.block(0,y+h+.6,z,w+2.6,1.4,1.3,'pink',{col:false,r:.5});
  const tex=ctex(1024,128,(x,W,Ht)=>{for(let i=0;i<32;i++)for(let j=0;j<4;j++){x.fillStyle=(i+j)%2?'#fff':'#23243a';x.fillRect(i*32,j*32,32,32);}x.fillStyle='#ff4f9a';x.fillRect(300,10,424,108);x.fillStyle='#fff';x.font='88px Anton, Impact, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(label,512,68);},{clamp:true});
- const ban=new THREE.Mesh(new THREE.PlaneGeometry(w,w/8),new THREE.MeshStandardMaterial({map:tex,roughness:.6,side:THREE.DoubleSide}));ban.position.set(0,y+h-.45-w/16,z-.05);ban.rotation.y=Math.PI;c.grp.add(ban);
+ // one banner per face, so the label never reads mirrored from the far side
+ const bm=new THREE.MeshStandardMaterial({map:tex,roughness:.6});for(const f of[0,1]){const ban=new THREE.Mesh(new THREE.PlaneGeometry(w,w/8),bm);ban.position.set(0,y+h-.45-w/16,f?z+.05:z-.05);ban.rotation.y=f?0:Math.PI;c.grp.add(ban);}
  c.block(0,y+.02,z,w,.06,1.6,'check',{col:false,r:.02});}
 function startPad(c,w,key,z0=-13,z1=4){c.floor(0,z0,z1,w,key);c.block(0,1.2,z0-.3,w,2.4,.6,'side');for(const s of[-1,1])c.block(s*(w/2+.3),1.2,(z0+z1)/2,.6,2.4,z1-z0,'side');
  const gate=mkBox(new V(0,1.6,z1-.3),new V(w/2,1.6,.2));c.W.cols.push(gate);const vis=c.mesh(rbox(w,3.2,.4,.18),'pink');vis.position.copy(gate.c);c.grp.add(vis);
@@ -56,7 +57,7 @@ function startPad(c,w,key,z0=-13,z1=4){c.floor(0,z0,z1,w,key);c.block(0,1.2,z0-.
 function rails(c,z0,z1,y,w){for(const s of[-1,1])c.block(s*(w/2+.3),y+.45,(z0+z1)/2,.6,.9,z1-z0,'side',{r:.25});}
 function grid(n,cx,cz,cols,dx,dz,y=0,yaw=0){const out=[];for(let i=0;i<n;i++){const r=i/cols|0,k=i%cols;out.push([cx+(k-(cols-1)/2)*dx+(r%2?dx*.5:0)+rnd(.2)-.1,y,cz-r*dz,yaw]);}return out.sort(()=>Math.random()-.5);}
 function ring(n,cx,cz,r0,r1,y=0){const out=[];for(let i=0;i<n;i++){const a=i/n*TAU+rnd(.2),r=r0+(r1-r0)*((i*7)%5)/4;const x=cx+Math.sin(a)*r,z=cz+Math.cos(a)*r;out.push([x,y,z,Math.atan2(cx-x,cz-z)]);}return out;}
-const raceIntro=(fz,fy)=>[[7,fy+7,fz+12,0,fy+1,fz-6],[-10,fy+8,fz*.72,0,fy*.6+1,fz*.5],[10,7,fz*.4,0,1,fz*.18],[-6,5,fz*.12,0,1,-2],[0,4.2,-17,0,1.4,-2]];
+const raceIntro=(fz,fy)=>[[8,fy+12.5,fz+14,0,fy+1,fz-8],[-10,fy+9,fz*.72,0,fy*.6+1,fz*.5],[10,7,fz*.4,0,1,fz*.18],[-6,5,fz*.12,0,1,-2],[0,4.2,-17,0,1.4,-2]];
 const arenaIntro=(y=0)=>[[0,y+16,CZ+26,0,y,CZ],[20,y+10,CZ+6,0,y,CZ],[6,y+8,CZ-18,0,y,CZ],[0,y+5.5,CZ-16,0,y+1,CZ]];
 
 /* ================= ROUND DEFINITIONS ================= */
