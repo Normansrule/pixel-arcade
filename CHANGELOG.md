@@ -4,6 +4,14 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round35`)
 
+### Round 35, batch 2 (v99): five more weak scenes from the audit repainted
+Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Crystal Cave.** The cave now has layered rock strata, dripping stalactites, stalagmites, an underground pool, timber supports and a mine track. Crystal clusters glow in the walls, so the dark around your lantern is no longer pitch black.
+- **Camel Caravan.** Dunes with lit faces and shadowed sides, red mesas, wind ripples and pebbles in the sand, a slow layer of distant dunes, and a heat shimmer over the horizon.
+- **Cheese Roll.** Both lanes get a wooden fence lined with a cheering crowd that scrolls past, plus mown stripes, grass and daisies.
+- **Basket Toss.** Now a night carnival booth: a striped big top, a Ferris wheel, string lights, a starry sky and a prize shelf of plush toys.
+- **Seed Spit.** A county fair, with striped tents, bunting, a crowd, a watermelon stand and a dirt lane under the distance markers.
+
 ### Round 35, batch 1 (v98): audit, a story for every cabinet, six games overhauled
 A headless sweep played all 544 canvas cabinets and ranked them weakest first ([`docs/AUDIT.md`](docs/AUDIT.md)). Time limits, results screens and CPU difficulty still apply everywhere.
 - **Mission briefings.** No arcade cabinet had any story before this round. Each of the 544 now has its own one-line briefing on the title card, under the name (in `games/stories.js`).
