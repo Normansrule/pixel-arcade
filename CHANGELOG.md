@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round34`)
 
+### Round 34, batch 3 (v97): three more arcade scenes repainted
+Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Panda Climb.** The pale backdrop and big green triangles are gone. You now climb through a misty bamboo forest: karst peaks far below that sink away as you gain height, two layers of pale bamboo that scroll at different speeds, and leafy sprays at the edges.
+- **Snow Rescue.** The plain white slope has wind-blown drifts with lit tops and blue shadows, wind ripples, a frozen creek, rocks poking through, old ski tracks, sparkles in the snow and shadows under the pines.
+- **Tiny City.** The meadow has broad light and dark patches, clover clumps, stones and mixed wild flowers, and slow cloud shadows drift across the town.
+
 ### Round 34, batch 2 (v96): three arcade scenes repainted
 Controls, rules, time limits, results screens and CPU difficulty are unchanged.
 - **Rally Maze.** The grey grid and green dots are now a small country town seen from above: asphalt lanes with grain, oil spots, kerbs, white edge lines and yellow centre dashes, clipped hedges that cast soft shadows, round trees and cottages with tiled roofs, and fields beside the town with a dirt lane, a fence and wild flowers. The map is painted once per level and scrolls, so it costs nothing extra per frame.

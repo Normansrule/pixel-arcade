@@ -766,8 +766,13 @@ A.add({id:'tinycity',name:'TINY CITY',cat:'SIM',time:480,how:'ARROWS MOVE, A BUI
   if(lv<=2){const hs=lv===1?[[x+2,11]]:[[x+1,6],[x+8,6]];for(const[hx,w]of hs){box3(hx,y+8,w,6,'#f0e0c8');X.poly([[hx-1,y+8.5],[hx+w/2,y+(lv===1?1.5:3.5)],[hx+w+1,y+8.5]],X.lg(hx,y+2,hx+w,y+8,[X.lt(c,1.25),X.lt(c,.75)]));X.poly([[hx+w/2,y+(lv===1?1.5:3.5)],[hx+w+3,y+5.5],[hx+w+1,y+8.5]],X.lt(c,.55));R(hx+w/2-1,y+10.5,2,3.5,'#7a4a24');win(hx+1,y+10,(x+y)%3===0);}return;}
   const hh=lv===3?14:22,top=y+14-hh;box3(x+3,top,9,hh,lv===3?'#e8d0b0':'#c8ccd8',c);for(let j=top+3;j<y+12;j+=4)for(let i=0;i<3;i++)win(x+4+i*3,j,(i*7+j+x)%5===0);R(x+6,y+11,3,3,'#5a3a1a');};
  g.draw=()=>{A.cls('#2a5a2a');
-  X.cache('tc_grass',()=>{A.cls('#2a5a2a');for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const px=x*TS,py=OY+y*TS,v=hsh(x,y);R(px,py,TS,TS,X.lg(px,py,px+TS,py+TS,[v<.5?'#4f9440':'#4a8c3c',v<.5?'#468636':'#43823a']));for(let k=0;k<4;k++){const gx=px+hsh(x*4+k,y)*14+1,gy=py+hsh(x,y*4+k)*13+2;R(gx,gy,1,2,'#64aa4c');}if(v>.92){X.disc(px+8,py+8,2.2,'#ff8ac8');X.disc(px+11,py+10,1.6,'#ffe070');}R(px,py+15,TS,1,'rgba(0,0,0,.08)');}
+  X.cache('tc_grass2',()=>{A.cls('#2a5a2a');for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const px=x*TS,py=OY+y*TS,v=hsh(x,y);R(px,py,TS,TS,X.lg(px,py,px+TS,py+TS,[v<.5?'#4f9440':'#4a8c3c',v<.5?'#468636':'#43823a']));for(let k=0;k<4;k++){const gx=px+hsh(x*4+k,y)*14+1,gy=py+hsh(x,y*4+k)*13+2;R(gx,gy,1,2,'#64aa4c');}if(v>.92){X.disc(px+8,py+8,2.2,'#ff8ac8');X.disc(px+11,py+10,1.6,'#ffe070');}R(px,py+15,TS,1,'rgba(0,0,0,.08)');}
+   // broad meadow tones (damp hollows, sunlit rises), clover clumps, stones and mixed wild flowers over the plots
+   for(let i=0;i<22;i++){const x=hsh(i,91)*W,y=OY+hsh(i,92)*(GH*TS),r=24+hsh(i,93)*40;X.glow(x,y,r,hsh(i,94)<.5?'#2a6a2a':'#b8e070',.16);}
+   for(let i=0;i<160;i++){const x=hsh(i,95)*W,y=OY+hsh(i,96)*(GH*TS),q=hsh(i,97);if(q<.45){X.disc(x,y,1.3,'#3d7a30');X.disc(x+1.4,y+.4,1.1,'#5aa246');X.disc(x+.6,y-1,1,'#68b452');}else if(q<.6){X.ell(x,y,1.6,1,'#8a8a7a');}else if(q<.8){R(x,y,1,1,['#ffffff','#c8a0ff','#ffe070','#ff8ac8'][i%4]);}else{R(x,y,1,2.5,'#7ac05a');R(x+1.5,y+.5,1,2,'#5aa046');}}
    X.vg(0,0,W,OY,['#14201a','#14201a']);});
+  // slow cloud shadows drifting over the town
+  if(A.gfx!=='off'){for(let i=0;i<3;i++){const x=((A.t*.12+i*140)%(W+160))-80,y=OY+30+i*44+Math.sin(A.t*.003+i)*8;X.ell(x,y,48,20,'rgba(10,30,20,.10)');X.ell(x+22,y+6,30,14,'rgba(10,30,20,.07)');}}
   const rd=(x,y)=>{const q=M(x,y);return q&&q.t==='R';};
   for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const m=M(x,y),px=x*TS,py=OY+y*TS;if(m.t!=='R')continue;const ud=rd(x,y-1)||rd(x,y+1),lr=rd(x-1,y)||rd(x+1,y)||!ud;
    if(lr){F(px,py+3,TS,10,'#4a4e58');F(px,py+3,TS,1,'#8a8e98');F(px,py+12,TS,1,'#2e3138');}if(ud){F(px+3,py,10,TS,'#4a4e58');F(px+3,py,1,TS,'#8a8e98');F(px+12,py,1,TS,'#2e3138');}if(lr&&ud)F(px+3,py+3,10,10,'#4a4e58');
