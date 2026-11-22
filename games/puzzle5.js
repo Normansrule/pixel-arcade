@@ -556,7 +556,14 @@ A.add({id:'wordscramble',name:'WORD SCRAMBLE',cat:'PUZZLE',typing:1,mouse:1,time
   if(P.press){const n=word.length;let hit=-1;tiles.forEach((t,i)=>{if(!t.used&&Math.abs(P.x-t.x)<16&&Math.abs(P.y-t.y)<18)hit=i;});if(hit>=0)add(hit);else if(Math.abs(P.y-AY)<20&&Math.abs(P.x-160)<n*18+10)back();else if(inR(118,204,84,18))shuffle();}
   const n=word.length;if(P.d.l){kc=(kc+n-1)%n;S('blip');}if(P.d.r){kc=(kc+1)%n;S('blip');}if(P.ka){const i=tiles.findIndex(t=>t.slot===kc);if(i>=0&&!tiles[i].used)add(i);else S('hit');}if(P.kb||P.rc)back();};
  const tileG=(x,y,ch,col)=>{blit('wsc'+ch+col,x-15,y-17,30,34,(X,Y)=>{bev(X,Y,30,32,col,5,3);fr(X+3,Y+3,24,24,4,'rgba(255,255,255,.12)');T(ch,X+16,Y+8,'#4a3018',3,'c');});};
- g.draw=()=>{bgd('#3b2a52');const c=A.c,n=word.length,f=cl(tl/tmax,0,1);
+ const stage=()=>{const c=A.c;X.vg(0,0,W,H,['#1a0a14','#2a0e1c','#12060c']);
+  for(let x=-10;x<W+20;x+=18){c.fillStyle=X.lg(x,0,x+18,0,['#3a0814','#9a1a30','#b82a40','#3a0814']);c.fillRect(x,0,18,186);}
+  X.vg(0,0,W,40,['rgba(0,0,0,.6)','rgba(0,0,0,0)']);c.fillStyle='#5a0a1a';for(let x=0;x<W;x+=32){c.beginPath();c.moveTo(x,18);c.quadraticCurveTo(x+16,34,x+32,18);c.lineTo(x+32,0);c.lineTo(x,0);c.fill();}c.fillStyle='#d8a040';c.fillRect(0,17,W,2);
+  X.vg(0,186,W,H-186,['#7a4a22','#5a3414','#3a200a']);for(let k=-12;k<=12;k++){c.strokeStyle='rgba(30,14,4,.4)';c.lineWidth=1;c.beginPath();c.moveTo(160+k*14,186);c.lineTo(160+k*34,H);c.stroke();}for(let y=192;y<H;y+=(y-180)*.35){c.fillStyle='rgba(30,14,4,.3)';c.fillRect(0,y,W,1);}c.fillStyle='#d8a040';c.fillRect(0,185,W,1.5);
+  for(const sx_ of [70,250]){c.fillStyle='rgba(255,240,200,.07)';c.beginPath();c.moveTo(sx_-8,0);c.lineTo(sx_+8,0);c.lineTo(sx_+(160-sx_)*.6+60,186);c.lineTo(sx_+(160-sx_)*.6-60,186);c.fill();}
+  X.glow(160,120,130,'#ffe8b0',.16);X.ell(160,192,110,10,'rgba(255,230,170,.18)');
+  for(let i=0;i<16;i++){const x=10+i*20+((i*7)%5),y=226+(i%2)*4;X.disc(x,y,7,'#120408');X.ell(x,y+12,10,7,'#120408');}X.vignette(.35);};
+ g.draw=()=>{X.cache('wsc_stage',stage);const c=A.c,n=word.length,f=cl(tl/tmax,0,1);
   well(20,26,280,9,4);fr(21,27,278*f,7,3,f>.5?'#48d97c':f>.25?'#ffd84a':(A.t%20<10?'#ff5a6e':'#ff8a6a'));
   T('WORD '+Math.min(wi+1,4)+'/4',20,42,K.gr,1);T(n+' LETTERS',300,42,K.gr,1,'r');
   for(let k=0;k<n;k++)well(sx(k,n)-15,AY-17,30,34,5,'rgba(0,0,0,.35)');

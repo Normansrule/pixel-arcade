@@ -4,6 +4,16 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round35`)
 
+### Round 35, batch 3 (v100): seven more games overhauled, worst first
+Time limits, results screens and CPU difficulty still apply.
+- **Lava Escape 3D.** The lava now churns in bright cracks and dark crust, and a smoking volcano with lava rivers stands on the horizon. The path is made of varied stone slabs with rock rims, boulders and glowing fissures in the cliffs. Crumbling slabs show glowing cracks before they fall, and embers drift up. New: magma gems on the path are worth 40 each. The lava rises a little slower on the easy setting.
+- **Hover Tank 3D.** The open grid is now a walled neon arena with monolith pillars that block shots both ways, so you can take cover. From the sixth drone on, every third drone is a heavy one: it takes two hits and fire a three-shot spread. Repair cells restore armour. The radar shows pillars and repairs. Drones fire less often on the easy setting.
+- **Snowball Fight.** The arena is now a snowy park with drifts, frozen ponds, fences, pines and snowmen, and you leave footprints in the snow. Forts now crumble under hits and slowly rebuild, so cover keeps changing.
+- **Hangman.** The chalkboard now hangs in a classroom, with a wooden frame, smudged old lessons and a chalk tray. New: B buys a hint letter for one miss.
+- **Checkers.** The board sits on a lamp-lit wooden table, with a bevelled frame, wood-grain squares and a cup of tea.
+- **Space Miner 3D.** Rare blue crystal rocks pay 150 and take longer to mine. Ore mined in quick succession builds a chain worth up to four times the points, and hull patch capsules restore a shield.
+- **Word Scramble.** The tiles now sit on a spelling bee stage, with velvet curtains, spotlights, a wooden stage floor and an audience in silhouette.
+
 ### Round 35, batch 2 (v99): five more weak scenes from the audit repainted
 Controls, rules, time limits, results screens and CPU difficulty are unchanged.
 - **Crystal Cave.** The cave now has layered rock strata, dripping stalactites, stalagmites, an underground pool, timber supports and a mine track. Crystal clusters glow in the walls, so the dark around your lantern is no longer pitch black.
