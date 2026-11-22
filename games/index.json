@@ -76,7 +76,8 @@
   "games/frontier.js",
   "games/voyage.js",
   "games/townsfolk.js",
-  "games/seasons.js"
+  "games/seasons.js",
+  "games/stories.js"
  ],
  "after": [
   "js/online/safe.js",

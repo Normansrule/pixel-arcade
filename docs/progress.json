@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v98", "date": "22 Nov 2026", "branch": "round35", "round": 35, "games": 600, "worlds": 56,
+     "added": "Every one of the 544 arcade cabinets now opens with a one-line mission briefing on its title card. Air Traffic is rebuilt around a storm over a detailed airfield with fuel and holding patterns, City Cruiser 3D gets a real skyline and lit towers, and Museum Guard, Golf Tour, Bee Dance and Nest Builder are repainted with new gameplay twists."},
     {"v": "v97", "date": "22 Nov 2026", "branch": "round34", "round": 34, "games": 600, "worlds": 56,
      "added": "Three more arcade scenes repainted: Panda Climb gets a misty bamboo forest over karst peaks, Snow Rescue gets drifts, wind ripples, a frozen creek and rocks, and Tiny City's meadow gets tonal patches, clover, stones, flowers and drifting cloud shadows."},
     {"v": "v96", "date": "19 Nov 2026", "branch": "round34", "round": 34, "games": 600, "worlds": 56,

@@ -2,7 +2,19 @@
 
 Release numbers follow the commit history on GitHub. Numbers that are missing from the list (v2, v6, v9, v11, v17, v18, v20, v21, v24) were working builds whose changes shipped in the next listed release.
 
-## Unreleased (on branch `round34`)
+## Unreleased (on branch `round35`)
+
+### Round 35, batch 1 (v98): audit, a story for every cabinet, six games overhauled
+A headless sweep played all 544 canvas cabinets and ranked them weakest first ([`docs/AUDIT.md`](docs/AUDIT.md)). Time limits, results screens and CPU difficulty still apply everywhere.
+- **Mission briefings.** No arcade cabinet had any story before this round. Each of the 544 now has its own one-line briefing on the title card, under the name (in `games/stories.js`).
+- **Air Traffic** (rebuilt). Storm over a detailed airfield: patchwork farmland, a river, a road with traffic, numbered runways with threshold markings and edge lights, taxiways, a terminal with parked jets, a control tower and a radar sweep. A storm cell drifts across with rain and lightning and buffets the planes inside it. Each flight has a call sign and a fuel gauge. A jumps to the plane lowest on fuel, B puts a plane into a holding circle, and quick landings in a row build a chain bonus.
+- **City Cruiser 3D.** The ground and the horizon now line up, with a skyline silhouette and a magenta glow behind it. Towers are taller, with lit windows on every side, rooftop tanks, antennas and neon signs, and cars have headlights and tail lights. Coins picked up quickly build a chain worth up to x5, and cash bags worth 50 appear on the map.
+- **Museum Guard.** The night gallery is now a grand hall with columns, crimson walls, gold frames under spotlights, velvet ropes, a red carpet and a marble floor. This fixes a painting that used to paint over the whole floor. Hold B to sprint, which uses stamina.
+- **Golf Tour.** Each hole has a curving fairway, a tee box, a green with a fringe, rough with grain, bunkers with raked sand, ponds with reeds, and pines and oaks. Wind arrives from hole 2: the flag and an arrow show its direction and strength, and it pushes the ball in flight.
+- **Bee Dance.** The flat green field is now a meadow with a tree line, clouds, grass, wild flowers, flowers that sway, and a straw hive on a stand. From round 3 a wasp patrols the meadow and stuns your bee if it touches it.
+- **Nest Builder.** A spring countryside with a sun, layered hills, a hedgerow, a blossoming oak with bark and branches, and a meadow with flowers. Gold feathers worth 25 points float in now and then.
+
+## Round 34 (branch `round34`)
 
 ### Round 34, batch 3 (v97): three more arcade scenes repainted
 Controls, rules, time limits, results screens and CPU difficulty are unchanged.
