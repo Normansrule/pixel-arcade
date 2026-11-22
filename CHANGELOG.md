@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round35`)
 
+### Round 35, batch 5 (v102): four more scenes from the audit repainted
+Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Tailor's Seam.** The fabric now lies on a wooden workbench, with a woven texture, frayed edges, a metal needle plate under a work light and a gilded black machine.
+- **Hi-Lo.** A street card hustle: a brick wall, a neon sign, a lit window and a felt-topped crate on the pavement.
+- **Dice Kings.** A royal court of purple velvet with gold diamonds and a crown, and a green baize dice tray with gold trim.
+- **Scarecrow.** A farm at sunset with a red barn, a silo, trees on the hills, furrowed fields, stubble and fenced plots with planted rows.
+
 ### Round 35, batch 4 (v101): four more games from the audit
 Time limits, results screens and CPU difficulty still apply.
 - **Snow Roller 3D.** The checkerboard snow is now a varied snowfield with packed village paths, a frozen pond and a snowy pine forest along the horizon.
