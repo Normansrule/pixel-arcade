@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round35`)
 
+### Round 35, batch 4 (v101): four more games from the audit
+Time limits, results screens and CPU difficulty still apply.
+- **Snow Roller 3D.** The checkerboard snow is now a varied snowfield with packed village paths, a frozen pond and a snowy pine forest along the horizon.
+- **Roll the Block.** The paths now float above a sea of clouds at dusk, with a low sun and small grassy islands drifting in the distance.
+- **Untangle.** The puzzle sits over a night city skyline with lit windows, power poles and sagging wires.
+- **Triple Pong.** A star appears in the middle now and then. Hit it with a ball you last touched and your paddle grows for a few seconds.
+
 ### Round 35, batch 3 (v100): seven more games overhauled, worst first
 Time limits, results screens and CPU difficulty still apply.
 - **Lava Escape 3D.** The lava now churns in bright cracks and dark crust, and a smoking volcano with lava rivers stands on the horizon. The path is made of varied stone slabs with rock rims, boulders and glowing fissures in the cliffs. Crumbling slabs show glowing cracks before they fall, and embers drift up. New: magma gems on the path are worth 40 each. The lava rises a little slower on the easy setting.
