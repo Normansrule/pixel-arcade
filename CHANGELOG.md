@@ -4,6 +4,12 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round35`)
 
+### Round 35, batch 6 (v103): three more games from the audit
+Time limits, results screens and CPU difficulty still apply.
+- **Memory Grid.** The test now takes place in a spy academy briefing room, with a glowing world map, data screens and a top-secret file. New: once a round, B shows the pattern again for a moment, at a cost of 2 points.
+- **Bumper Cars.** New: A fires a ramming boost, and a meter under each car shows when it is ready again. The CPU uses it too, more often on harder settings.
+- **Light Up.** The puzzle now hangs in a dark manor room with moonlit windows, candles on side tables and wooden floorboards.
+
 ### Round 35, batch 5 (v102): four more scenes from the audit repainted
 Controls, rules, time limits, results screens and CPU difficulty are unchanged.
 - **Tailor's Seam.** The fabric now lies on a wooden workbench, with a woven texture, frayed edges, a metal needle plate under a work light and a gilded black machine.
