@@ -4,6 +4,11 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round35`)
 
+### Round 35, batch 7 (v104): two more scenes from the audit repainted
+Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Sheepdog.** The plain pasture now has mown stripes, a dry-stone wall along the top, a winding dirt track, a reedy pond, wildflowers, grass tufts and more trees.
+- **Skate Park.** Coloured string lights hang over the bowl, a chain-link fence runs behind it, and the concrete has texture and two graffiti panels.
+
 ### Round 35, batch 6 (v103): three more games from the audit
 Time limits, results screens and CPU difficulty still apply.
 - **Memory Grid.** The test now takes place in a spy academy briefing room, with a glowing world map, data screens and a top-secret file. New: once a round, B shows the pattern again for a moment, at a cost of 2 points.

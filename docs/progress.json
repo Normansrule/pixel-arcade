@@ -1,6 +1,8 @@
 {
   "_about": "Progress tracker data for the README. tools/gen_docs.py turns this into the <!-- gen:progress --> block. Game counts for the newest release come from the live registry; older releases keep the counts they shipped with.",
   "releases": [
+    {"v": "v104", "date": "23 Nov 2026", "branch": "round35", "round": 35, "games": 600, "worlds": 56,
+     "added": "Two more audit scenes repainted: Sheepdog (mown stripes, a dry-stone wall, a dirt track, a reedy pond, wildflowers and more trees) and Skate Park (string lights over the bowl, a chain-link fence, textured concrete and graffiti panels)."},
     {"v": "v103", "date": "23 Nov 2026", "branch": "round35", "round": 35, "games": 600, "worlds": 56,
      "added": "Three more audit games improved: Memory Grid (a spy academy briefing room, and B peeks at the pattern once a round for 2 points), Bumper Cars (A fires a ramming boost with a cooldown meter, used by the CPU too) and Light Up (a dark manor room with moonlit windows and candles)."},
     {"v": "v102", "date": "22 Nov 2026", "branch": "round35", "round": 35, "games": 600, "worlds": 56,
