@@ -4,6 +4,13 @@ Release numbers follow the commit history on GitHub. Numbers that are missing fr
 
 ## Unreleased (on branch `round35`)
 
+### Round 35, batch 8 (v105): four more scenes from the audit repainted
+Controls, rules, time limits, results screens and CPU difficulty are unchanged.
+- **Ludo Race.** The board now sits on a tea house table, on a lace tablecloth, with a blue teapot and a cup of tea.
+- **Sandcastle.** The beach gets a surf line with foam, wet sand, a sailboat, a palm tree, shells, and a red beach umbrella over a striped towel.
+- **Balloon Crossing.** Two hazy mountain ranges, a low sun, drifting clouds and a flock of birds sit behind the canyon.
+- **Bus Stop.** A morning sun, an extra cloud and a distant range of snow-capped mountains behind the town.
+
 ### Round 35, batch 7 (v104): two more scenes from the audit repainted
 Controls, rules, time limits, results screens and CPU difficulty are unchanged.
 - **Sheepdog.** The plain pasture now has mown stripes, a dry-stone wall along the top, a winding dirt track, a reedy pond, wildflowers, grass tufts and more trees.
